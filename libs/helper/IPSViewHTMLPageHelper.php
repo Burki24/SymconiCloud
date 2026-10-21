@@ -19,7 +19,7 @@ require_once __DIR__ . '/HelperTranslationHelper.php';
  * visual implementation in style.css/app.js. The helper owns asset loading,
  * bootstrap encoding, page metadata, fixed placeholders and validation.
  *
- * @version 1.5.1
+ * @version 1.5.2
  */
 trait IPSViewHTMLPageHelper
 {
