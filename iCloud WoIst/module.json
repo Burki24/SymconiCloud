@@ -1,0 +1,18 @@
+{
+    "id": "{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}",
+    "name": "iCloud WoIst",
+    "type": 3,
+    "vendor": "Apple",
+    "aliases": [
+        "iCloud WoIst Karte"
+    ],
+    "parentRequirements": [
+        "{1E60F0BE-03E4-4AA4-A1CE-AA838725A4E2}"
+    ],
+    "childRequirements": [],
+    "implemented": [
+        "{FCE7780F-9520-4E52-92F3-60034FFAED6D}"
+    ],
+    "prefix": "ICWI",
+    "url": "https://github.com/Burki24/SymconiCloud/blob/main/iCloud%20WoIst/README.md"
+}

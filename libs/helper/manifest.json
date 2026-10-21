@@ -25,6 +25,24 @@
             "sha256": "ce620078e72bcbffed1adfdd02e8f64baf5f2b2e8e1531e3bb1ae7b32b390fb8",
             "path": "libs/helper/VariablePresentationHelper.php",
             "source_sha": "d13d726f8df24a5ad6e3d659242f407731a10567"
+        },
+        "VisualizationAssetHelper": {
+            "version": "1.0.0",
+            "sha256": "1693b2399bcf95d270a6d9a01df6534caad906497bd4ba9489916a951abaffcc",
+            "path": "libs/helper/VisualizationAssetHelper.php",
+            "source_sha": "d13d726f8df24a5ad6e3d659242f407731a10567"
+        },
+        "VisualizationThemeHelper": {
+            "version": "1.1.0",
+            "sha256": "29fe61a7eccafeb8b2beb77fe3f7a4896f43b3eaace9ebe428a4fc8250fd9088",
+            "path": "libs/helper/VisualizationThemeHelper.php",
+            "source_sha": "d13d726f8df24a5ad6e3d659242f407731a10567"
+        },
+        "ResponsiveVisualizationHelper": {
+            "version": "1.0.0",
+            "sha256": "0cebd0f08e6416a6d7d4d5fdbb19bf96d457d3e2d51fcf2a1d3e6adf5e967451",
+            "path": "libs/helper/ResponsiveVisualizationHelper.php",
+            "source_sha": "d13d726f8df24a5ad6e3d659242f407731a10567"
         }
     }
 }

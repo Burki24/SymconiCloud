@@ -15,6 +15,15 @@
         },
         "VariablePresentationHelper": {
             "target": "libs/helper/VariablePresentationHelper.php"
+        },
+        "VisualizationAssetHelper": {
+            "target": "libs/helper/VisualizationAssetHelper.php"
+        },
+        "VisualizationThemeHelper": {
+            "target": "libs/helper/VisualizationThemeHelper.php"
+        },
+        "ResponsiveVisualizationHelper": {
+            "target": "libs/helper/ResponsiveVisualizationHelper.php"
         }
     }
 }

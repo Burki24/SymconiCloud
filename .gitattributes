@@ -2,3 +2,4 @@
 
 # Vendored helper bytes must match their upstream SHA-256 manifest.
 /libs/helper/** -text
+/libs/vendor/** -text

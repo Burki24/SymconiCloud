@@ -1,0 +1,34 @@
+{
+    "translations": {
+        "de": {
+            "Mark positions as old after seconds": "Positionen nach Sekunden als veraltet kennzeichnen",
+            "HTTPS map tile URL with {z}, {x}, {y}": "HTTPS-Kartenkachel-URL mit {z}, {x}, {y}",
+            "Map attribution": "Quellenangabe der Karte",
+            "Map tiles are loaded by your browser. Device names and account credentials are not sent to the tile provider.": "Kartenkacheln werden im Browser geladen. Gerätenamen und Zugangsdaten werden nicht an den Kartenanbieter gesendet.",
+            "Add this instance to the tile visualization. All devices of the connected account are shown; separate device instances are not required.": "Diese Instanz zur Kachelvisualisierung hinzufügen. Angezeigt werden alle Geräte des verbundenen Kontos; einzelne Geräteinstanzen sind nicht erforderlich.",
+            "Read account cache": "Gespeicherte Kontodaten lesen",
+            "Refresh devices from Apple": "Geräte bei Apple aktualisieren",
+            "No iCloud account connected.": "Kein iCloud-Konto verbunden.",
+            "Account data unavailable.": "Kontodaten nicht verfügbar.",
+            "Invalid map configuration.": "Ungültige Kartenkonfiguration.",
+            "WoIst": "WoIst",
+            "Refresh from Apple": "Bei Apple aktualisieren",
+            "Show all positions": "Alle Positionen anzeigen",
+            "Devices": "Geräte",
+            "No devices available.": "Keine Geräte verfügbar.",
+            "No position available": "Keine Position verfügbar",
+            "Last known position": "Letzte bekannte Position",
+            "Recent position": "Aktuelle Position",
+            "Offline": "Offline",
+            "Battery": "Akku",
+            "Account updated": "Konto aktualisiert",
+            "Accuracy": "Genauigkeit",
+            "Map tiles unavailable. Device data is still shown.": "Kartenkacheln nicht verfügbar. Gerätedaten werden weiterhin angezeigt.",
+            "The map could not be loaded.": "Die Karte konnte nicht geladen werden.",
+            "Refreshing…": "Wird aktualisiert…",
+            "Account unavailable. Positions shown are last known.": "Konto nicht verfügbar. Angezeigte Positionen sind zuletzt bekannte Standorte.",
+            "ago": "zuvor",
+            "Unknown": "Unbekannt"
+        }
+    }
+}

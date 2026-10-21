@@ -1,0 +1,58 @@
+{
+    "elements": [
+        {
+            "type": "NumberSpinner",
+            "name": "StaleAfter",
+            "caption": "Mark positions as old after seconds",
+            "minimum": 60,
+            "maximum": 86400
+        },
+        {
+            "type": "ValidationTextBox",
+            "name": "TileURL",
+            "caption": "HTTPS map tile URL with {z}, {x}, {y}"
+        },
+        {
+            "type": "ValidationTextBox",
+            "name": "TileAttribution",
+            "caption": "Map attribution"
+        },
+        {
+            "type": "Label",
+            "caption": "Map tiles are loaded by your browser. Device names and account credentials are not sent to the tile provider."
+        },
+        {
+            "type": "Label",
+            "caption": "Add this instance to the tile visualization. All devices of the connected account are shown; separate device instances are not required."
+        }
+    ],
+    "actions": [
+        {
+            "type": "Button",
+            "caption": "Read account cache",
+            "onClick": "ICWI_Update($id);"
+        },
+        {
+            "type": "Button",
+            "caption": "Refresh devices from Apple",
+            "onClick": "ICWI_RefreshDevices($id);"
+        }
+    ],
+    "status": [
+        {
+            "code": 201,
+            "icon": "inactive",
+            "caption": "No iCloud account connected."
+        },
+        {
+            "code": 202,
+            "icon": "error",
+            "caption": "Account data unavailable."
+        },
+        {
+            "code": 203,
+            "icon": "error",
+            "caption": "Invalid map configuration."
+        }
+    ]
+}

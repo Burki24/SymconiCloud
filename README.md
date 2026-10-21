@@ -2,7 +2,7 @@
 
 SymconiCloud verbindet Apple-iCloud-Dienste mit IP-Symcon. Die Library bietet Apple-Anmeldung mit Zwei-Faktor-Bestätigung, einen Gerätekonfigurator und **iCloud Gerät** zur Anzeige der von Apple gelieferten Geräte-, Akku- und Standortdaten.
 
-**WoIst** ist für ein separates Kartenmodul vorgesehen, das die Positionen der gelisteten Geräte darstellen wird. Diese Karte ist noch nicht enthalten. Kalender, Kontakte, Fotos und iCloud Drive sind ebenfalls nicht enthalten.
+**[WoIst](iCloud%20WoIst/README.md)** zeigt die verfügbaren Positionen aller Geräte eines Kontos gemeinsam auf einer Karte. Kalender, Kontakte, Fotos und iCloud Drive sind nicht enthalten.
 
 ## Voraussetzungen
 
@@ -20,6 +20,7 @@ Die Anbindung verwendet Apples Web-Endpunkte. Apple stellt dafür keine zugesich
 3. Den Code vom vertrauenswürdigen Apple-Gerät unter **Zwei-Faktor-Authentifizierung** eingeben und bestätigen. Nach erfolgreicher Anmeldung wird die Geräteliste abgerufen.
 4. [iCloud Configurator](iCloud%20Configurator/README.md) anlegen und mit diesem Konto verbinden.
 5. Geräte über den Konfigurator als [iCloud Device](iCloud%20Device/README.md) anlegen.
+6. Für die Kartenansicht **iCloud WoIst Karte** anlegen, mit dem Konto verbinden und in der Kachelvisualisierung hinzufügen. Einzelne Geräteinstanzen sind für die Karte nicht erforderlich.
 
 Ein Konto kann mehrere Geräte bedienen; mehrere Apple-Konten verwenden getrennte Kontoinstanzen. Das Konto speichert Sitzung und Gerätecache über Symcon-Neustarts hinweg. Passwörter und Sitzungstokens gehören zu den vertraulichen Instanzdaten; Symcon-Konfiguration und Backups entsprechend schützen.
 

@@ -22,7 +22,7 @@ $modules = [];
 $ids = [$library['id']];
 foreach (glob($root . '/*/module.json') as $file) {
     $module = $json($file);
-    $modules[$module['type']] = $module;
+    $modules[$module['id']] = $module;
     $assert(preg_match('/\A[A-Z0-9]{4}\z/D', $module['prefix']) === 1, 'Module prefixes must have exactly four characters');
     $assert(!in_array($module['id'], $ids, true), 'Duplicate module ID');
     $assert(preg_match('/\A\{[A-F0-9]{8}(?:-[A-F0-9]{4}){3}-[A-F0-9]{12}\}\z/D', $module['id']) === 1, 'Invalid module GUID');
@@ -50,12 +50,21 @@ foreach (glob($root . '/*/module.json') as $file) {
     $walk($form['elements']);
     $walk($form['actions']);
 }
-$assert(count($modules) === 3 && isset($modules[2], $modules[3], $modules[4]), 'Account splitter, device and configurator required');
-$assert($modules[2]['parentRequirements'] === [], 'HTTPS account needs no artificial I/O parent');
-foreach ([3, 4] as $type) {
-    $assert(!str_contains($modules[$type]['name'], 'WoIst'), 'WoIst is reserved for the future map module');
-    $assert($modules[$type]['parentRequirements'] === $modules[2]['implemented'], 'Upstream data contract');
-    $assert($modules[$type]['implemented'] === $modules[2]['childRequirements'], 'Downstream data contract');
+$account = $modules['{10BF9A03-98A3-495A-B0FA-A4FA0B1002D5}'];
+$assert(count($modules) === 4 && $account['type'] === 2, 'Account splitter, device, configurator and map required');
+$assert($account['parentRequirements'] === [], 'HTTPS account needs no artificial I/O parent');
+foreach ($modules as $module) {
+    if ($module['id'] === $account['id']) {
+        continue;
+    }
+    $assert($module['parentRequirements'] === $account['implemented'], 'Upstream data contract');
+    $assert($module['implemented'] === $account['childRequirements'], 'Downstream data contract');
+}
+$map = $modules['{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}'];
+$assert($map['name'] === 'iCloud WoIst' && $map['prefix'] === 'ICWI' && $map['type'] === 3, 'WoIst map identity');
+$vendorRoot = $root . '/libs/vendor/leaflet/';
+foreach ($json($vendorRoot . 'manifest.json')['files'] as $name => $hash) {
+    $assert(hash_file('sha256', $vendorRoot . $name) === $hash, 'Leaflet vendor integrity: ' . $name);
 }
 $manifest = $json($root . '/libs/helper/manifest.json');
 $subscriptions = $json($root . '/.helper-sync.json')['helpers'];
