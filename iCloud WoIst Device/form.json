@@ -1,0 +1,38 @@
+{
+    "elements": [
+        {
+            "type": "ValidationTextBox",
+            "name": "DeviceID",
+            "caption": "Device ID"
+        }
+    ],
+    "actions": [
+        {
+            "type": "Label",
+            "name": "Result",
+            "caption": ""
+        },
+        {
+            "type": "Button",
+            "caption": "Read account cache",
+            "onClick": "IPS_RequestAction($id, 'Update', '');"
+        }
+    ],
+    "status": [
+        {
+            "code": 201,
+            "icon": "inactive",
+            "caption": "Select an account and device."
+        },
+        {
+            "code": 202,
+            "icon": "error",
+            "caption": "Account data unavailable."
+        },
+        {
+            "code": 203,
+            "icon": "inactive",
+            "caption": "Device not in current account list."
+        }
+    ]
+}

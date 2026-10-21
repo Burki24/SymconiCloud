@@ -1,0 +1,30 @@
+{
+    "schema": 1,
+    "source_repository": "Burki24/Symcon_ModuleHelper",
+    "helpers": {
+        "ConfigurationFormHelper": {
+            "version": "1.0.1",
+            "sha256": "bd45f15a1c2f6e2800eff51eefeb3094f5745a3469434d6a57b98d54f30d363f",
+            "path": "libs/helper/ConfigurationFormHelper.php",
+            "source_sha": "d13d726f8df24a5ad6e3d659242f407731a10567"
+        },
+        "DataFlowHelper": {
+            "version": "1.0.0",
+            "sha256": "4c25828b283367692d0db1631d2b7d71ba6012883798bc5ffddb8f2d551d6dfb",
+            "path": "libs/helper/DataFlowHelper.php",
+            "source_sha": "d13d726f8df24a5ad6e3d659242f407731a10567"
+        },
+        "ParentConnectionHelper": {
+            "version": "1.0.0",
+            "sha256": "d4f01dee721aa32e64410979ca15b2795a0fcc59c0232c0ad69e4702d9ff573c",
+            "path": "libs/helper/ParentConnectionHelper.php",
+            "source_sha": "d13d726f8df24a5ad6e3d659242f407731a10567"
+        },
+        "VariablePresentationHelper": {
+            "version": "2.0.0",
+            "sha256": "ce620078e72bcbffed1adfdd02e8f64baf5f2b2e8e1531e3bb1ae7b32b390fb8",
+            "path": "libs/helper/VariablePresentationHelper.php",
+            "source_sha": "d13d726f8df24a5ad6e3d659242f407731a10567"
+        }
+    }
+}

@@ -1,0 +1,121 @@
+{
+    "elements": [
+        {
+            "type": "CheckBox",
+            "name": "Enabled",
+            "caption": "Enable account"
+        },
+        {
+            "type": "ValidationTextBox",
+            "name": "Username",
+            "caption": "Apple account"
+        },
+        {
+            "type": "PasswordTextBox",
+            "name": "Password",
+            "caption": "Apple account password"
+        },
+        {
+            "type": "NumberSpinner",
+            "name": "RefreshInterval",
+            "caption": "Refresh interval in seconds",
+            "minimum": 60,
+            "maximum": 86400
+        },
+        {
+            "type": "Label",
+            "caption": "Use the account password, not an app-specific password. Save settings before signing in."
+        }
+    ],
+    "actions": [
+        {
+            "type": "Label",
+            "caption": "Session state"
+        },
+        {
+            "type": "Label",
+            "caption": ""
+        },
+        {
+            "type": "Button",
+            "caption": "Sign in",
+            "onClick": "ICAC_Login($id);"
+        },
+        {
+            "type": "ExpansionPanel",
+            "name": "TwoFactor",
+            "caption": "Two-factor authentication",
+            "visible": false,
+            "items": [
+                {
+                    "type": "PasswordTextBox",
+                    "name": "Code",
+                    "caption": "Verification code"
+                },
+                {
+                    "type": "Button",
+                    "caption": "Verify code",
+                    "onClick": "ICAC_VerifyCode($id, $Code);"
+                },
+                {
+                    "type": "Button",
+                    "caption": "Request new code",
+                    "onClick": "ICAC_ResendCode($id);"
+                }
+            ]
+        },
+        {
+            "type": "Button",
+            "caption": "Refresh devices",
+            "onClick": "ICAC_RefreshDevices($id);"
+        },
+        {
+            "type": "Button",
+            "caption": "Delete local session",
+            "onClick": "ICAC_Logout($id);",
+            "confirm": "Delete the local session and cached device data?"
+        }
+    ],
+    "status": [
+        {
+            "code": 102,
+            "icon": "active",
+            "caption": "Authenticated"
+        },
+        {
+            "code": 104,
+            "icon": "inactive",
+            "caption": "Disabled or signed out"
+        },
+        {
+            "code": 201,
+            "icon": "error",
+            "caption": "Invalid configuration"
+        },
+        {
+            "code": 202,
+            "icon": "error",
+            "caption": "Verification code required"
+        },
+        {
+            "code": 203,
+            "icon": "error",
+            "caption": "Session expired"
+        },
+        {
+            "code": 204,
+            "icon": "error",
+            "caption": "Apple request failed"
+        },
+        {
+            "code": 205,
+            "icon": "error",
+            "caption": "PHP extension missing"
+        },
+        {
+            "code": 206,
+            "icon": "error",
+            "caption": "Apple requests a pause"
+        }
+    ]
+}

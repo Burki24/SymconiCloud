@@ -1,0 +1,15 @@
+{
+    "translations": {
+        "de": {
+            "Devices": "Geräte",
+            "Device": "Gerät",
+            "Model": "Modell",
+            "Cached device list. Refresh explicitly to contact Apple.": "Gespeicherte Geräteliste. Zum Abruf bei Apple ausdrücklich aktualisieren.",
+            "Reload cached list": "Gespeicherte Liste neu laden",
+            "Refresh devices from Apple": "Geräte bei Apple aktualisieren",
+            "No iCloud account connected.": "Kein iCloud-Konto verbunden.",
+            "Account data unavailable.": "Kontodaten nicht verfügbar.",
+            "Not in current list": "Nicht in aktueller Liste"
+        }
+    }
+}

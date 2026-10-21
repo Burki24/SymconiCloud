@@ -1,0 +1,56 @@
+{
+    "provenance": {
+        "group": "https://www.rfc-editor.org/rfc/rfc5054.txt",
+        "groupSection": "Appendix A, 2048-bit Group",
+        "method": "Independent server verifier with Python hashlib and builtin pow; all inputs synthetic",
+        "generator": "tests/generate-srp-fixtures.py"
+    },
+    "group": {
+        "nHex": "AC6BDB41324A9A9BF166DE5E1389582FAF72B6651987EE07FC3192943DB56050A37329CBB4A099ED8193E0757767A13DD52312AB4B03310DCD7F48A9DA04FD50E8083969EDB767B0CF6095179A163AB3661A05FBD5FAAAE82918A9962F0B93B855F97993EC975EEAA80D740ADBF4FF747359D041D5C33EA71D281E446B14773BCA97B43A23FB801676BD207A436C6481F1D2B9078717461A5B9D32E688F87748544523B524B0D57D5EA77A2775D2ECFA032CFBDBF52FB3786160279004E57AE6AF874E7303CE53299CCC041C7BC308D82A5698F3A8D0C38271AE35F8E9DBFBB694B5C803D89F7AE435DE236D525F54759B65E372FCD68EF20FA7111F9E4AFF73",
+        "g": 2
+    },
+    "vectors": [
+        {
+            "protocol": "s2k",
+            "username": "synthetic.fixture@example.invalid",
+            "password": "Synthetic-Passwort-ä-2026!",
+            "privateHex": "f3a0f7ad4f2b35d2e2354f6045c71886515b206e103155e73d7d9db15e5b37b2",
+            "serverPrivateHex": "0f2ad07b3361be650e20bf5f7e088e9e2544010b747ccb79238834e3d0fe707a",
+            "challenge": {
+                "protocol": "s2k",
+                "iteration": 1000,
+                "salt": "ABEiM0RVZneImaq7zN3u/w==",
+                "b": "XSJ6yxWOigNWQQPxiYS8JLgVZwLeLsQDFMfiz8FIzanetvOwbg9vwk/2HIeCNisVR23yfoe5Ze2tBSL15V48OL1sgs3ak9NaGBbzIjggIc5qemsyUlblzQCApdxTI+ZlTS8gIFMuq36zWIOvMoR/Hf06plL1HAyPm6nCOaVWA3jgKsCPEdm25kXXPva54y2fre0AYJwF0piNer0wrf0LzcXpjbA77M75r0Lyax/2LrFFy2/5kgN2EiHy2T0FmnGFSTuq+V5IRmOHmCQ55caB2+ex+CcMZDrHw8ok96iAiTc83+udpj/yctc3p5pMUeADXDGEoR8DBbZPuhCxguk1VA==",
+                "c": "synthetic-continuation"
+            },
+            "expected": {
+                "a": "FRF8RA3Bn/AismrlEWH4E+ouUKA29LAcncG2xDSvsYgTq1XF2ThhLgUoPtpcN98sLFKrlED4n9ofOLDlhDIAmFzziT4ujpghxDf3NECRZQkH6sM0b1QZZNi7y3Rv+QletZj1FzNYp8YSjPl5t1unBcUoFcf0QwrYiqJnoirNga2Gundv3HWkqpB3QxPEEqvxFcuiEYDm4QH6rHg/zUcweTZdgXBGqZQLTPAy+vBpToPhmgri+PzjTQ2uqIf3kcWHO9uwsK1+cfK8xgLHkoUkfCXp6cDn0iEPS8SxMIFrQfjytK3Pb7+7sWK2o9kCGkX6bZYtOUlfjR6bzbx1449J",
+                "m1": "ItB7UyPuwPDS0Tbi0H2VkkO4qA73/DnZb79Lrh1yAzY=",
+                "m2": "iz54rzO/h7Qju/sdDWM/ZSN/TiFqrPAm0xfyok6sQbs=",
+                "serverKeyHex": "ba41ae1962c37265d1b03759d06e99cfe66621e3b9dbf39f783222545ecc3929",
+                "aByteLength": 255
+            }
+        },
+        {
+            "protocol": "s2k_fo",
+            "username": "synthetic.fixture@example.invalid",
+            "password": "Synthetic-Passwort-ä-2026!",
+            "privateHex": "f3a0f7ad4f2b35d2e2354f6045c71886515b206e103155e73d7d9db15e5b37b2",
+            "serverPrivateHex": "0f2ad07b3361be650e20bf5f7e088e9e2544010b747ccb79238834e3d0fe707a",
+            "challenge": {
+                "protocol": "s2k_fo",
+                "iteration": 1000,
+                "salt": "ABEiM0RVZneImaq7zN3u/w==",
+                "b": "IOwa2NA5IZBLdfybpuAz/pelq9zlPuSiHUh/QMWCYZ2o+hwVzYb+aFiMv4OR5bAsB0O+V5cRWiMvhXVuXDeBB3CbA9Kf9XSr8QfsHFo75CAXhCpthk7JC9k9VZRq7A//Vx3FU8wfdR3mYN9iOsi5+OkaqMj5FdLdMZG/n0Keq+lZyV4kGW+CLr8HMtm1Pj7uyxdN/V2NiZNn9UQr2kld2vbOstVTBz5+5k2NheJPvbBtYeIb3ptplwGWw+kZW2FtE+wNxl4wxX80Ln2fS/elxYHAkNoeczA0lGRBMtqbL22PtHjbSa7FSZOrMgBuPzdjfOs651t+qcZ8fEnZzF4k+A==",
+                "c": "synthetic-continuation"
+            },
+            "expected": {
+                "a": "FRF8RA3Bn/AismrlEWH4E+ouUKA29LAcncG2xDSvsYgTq1XF2ThhLgUoPtpcN98sLFKrlED4n9ofOLDlhDIAmFzziT4ujpghxDf3NECRZQkH6sM0b1QZZNi7y3Rv+QletZj1FzNYp8YSjPl5t1unBcUoFcf0QwrYiqJnoirNga2Gundv3HWkqpB3QxPEEqvxFcuiEYDm4QH6rHg/zUcweTZdgXBGqZQLTPAy+vBpToPhmgri+PzjTQ2uqIf3kcWHO9uwsK1+cfK8xgLHkoUkfCXp6cDn0iEPS8SxMIFrQfjytK3Pb7+7sWK2o9kCGkX6bZYtOUlfjR6bzbx1449J",
+                "m1": "QNBO1D1qgYA25mBYUA4lxtEiyYmSKf4DEWkXVaYVXW8=",
+                "m2": "x264+S4Pvv3Rjbkt1nRR8yGNKcAOf1TGArr8ppgdl5s=",
+                "serverKeyHex": "4185c63e2f348c2cbe8346bb5866b6f35f4ebb594e7507b32ed4984d309c3e3d",
+                "aByteLength": 255
+            }
+        }
+    ]
+}

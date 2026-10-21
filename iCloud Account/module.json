@@ -1,0 +1,18 @@
+{
+    "id": "{10BF9A03-98A3-495A-B0FA-A4FA0B1002D5}",
+    "name": "iCloud Account",
+    "type": 2,
+    "vendor": "Apple",
+    "aliases": [
+        "iCloud Konto"
+    ],
+    "parentRequirements": [],
+    "childRequirements": [
+        "{FCE7780F-9520-4E52-92F3-60034FFAED6D}"
+    ],
+    "implemented": [
+        "{1E60F0BE-03E4-4AA4-A1CE-AA838725A4E2}"
+    ],
+    "prefix": "ICAC",
+    "url": "https://github.com/Burki24/SymconiCloud/blob/main/iCloud%20Account/README.md"
+}

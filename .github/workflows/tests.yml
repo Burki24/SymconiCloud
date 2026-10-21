@@ -1,0 +1,29 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+  pull_request:
+    branches:
+      - dev
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Run shared module tests
+        uses: Burki24/Symcon_ModuleCI/php-tests@v1.0.0
+        with:
+          php-version: '8.5'
+          php-extensions: curl, bcmath, dom

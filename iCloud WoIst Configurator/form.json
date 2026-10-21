@@ -1,0 +1,56 @@
+{
+    "elements": [
+        {
+            "type": "Configurator",
+            "name": "Devices",
+            "caption": "Devices",
+            "rowCount": 12,
+            "columns": [
+                {
+                    "name": "name",
+                    "caption": "Device",
+                    "width": "auto"
+                },
+                {
+                    "name": "model",
+                    "caption": "Model",
+                    "width": "180px"
+                }
+            ],
+            "sort": {
+                "column": "name",
+                "direction": "ascending"
+            },
+            "values": []
+        }
+    ],
+    "actions": [
+        {
+            "type": "Label",
+            "name": "Result",
+            "caption": "Cached device list. Refresh explicitly to contact Apple."
+        },
+        {
+            "type": "Button",
+            "caption": "Reload cached list",
+            "onClick": "IPS_RequestAction($id, 'Reload', '');"
+        },
+        {
+            "type": "Button",
+            "caption": "Refresh devices from Apple",
+            "onClick": "IPS_RequestAction($id, 'RefreshDevices', '');"
+        }
+    ],
+    "status": [
+        {
+            "code": 201,
+            "icon": "inactive",
+            "caption": "No iCloud account connected."
+        },
+        {
+            "code": 202,
+            "icon": "error",
+            "caption": "Account data unavailable."
+        }
+    ]
+}

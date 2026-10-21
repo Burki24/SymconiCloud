@@ -1,0 +1,29 @@
+{
+    "translations": {
+        "de": {
+            "Device ID": "Geräte-ID",
+            "Read account cache": "Gespeicherte Kontodaten lesen",
+            "Select an account and device.": "Konto und Gerät auswählen.",
+            "Account data unavailable.": "Kontodaten nicht verfügbar.",
+            "Device not in current account list.": "Gerät nicht in aktueller Kontoliste.",
+            "DataAvailable": "Kontodaten verfügbar",
+            "Online": "Online",
+            "LocationAvailable": "Standort verfügbar",
+            "LocationIsOld": "Standort veraltet",
+            "BatteryAvailable": "Akkustand verfügbar",
+            "DeviceName": "Gerätename",
+            "Model": "Modell",
+            "DeviceClass": "Geräteklasse",
+            "BatteryStatus": "Akkustatus",
+            "DeviceStatus": "Gerätestatus",
+            "BatteryLevel": "Akkustand",
+            "Latitude": "Breitengrad",
+            "Longitude": "Längengrad",
+            "Accuracy": "Genauigkeit",
+            "LocationTimestamp": "Standortzeit",
+            "LastUpdate": "Letzter erfolgreicher Geräteabruf",
+            "Yes": "Ja",
+            "No": "Nein"
+        }
+    }
+}

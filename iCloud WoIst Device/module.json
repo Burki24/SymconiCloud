@@ -1,0 +1,18 @@
+{
+    "id": "{DEA72AD7-7877-4392-B64F-055B63D1E5C4}",
+    "name": "iCloud WoIst Device",
+    "type": 3,
+    "vendor": "Apple",
+    "aliases": [
+        "iCloud WoIst Gerät"
+    ],
+    "parentRequirements": [
+        "{1E60F0BE-03E4-4AA4-A1CE-AA838725A4E2}"
+    ],
+    "childRequirements": [],
+    "implemented": [
+        "{FCE7780F-9520-4E52-92F3-60034FFAED6D}"
+    ],
+    "prefix": "ICWD",
+    "url": "https://github.com/Burki24/SymconiCloud/blob/main/iCloud%20WoIst%20Device/README.md"
+}
