@@ -1,6 +1,6 @@
 # 0004: WoIst-Ausgaben und Design
 
-Datum: 2026-10-21. Status: angenommen.
+Datum: 2026-10-21. Status: angenommen; Datenübertragung durch ADR 0005 ersetzt.
 
 WoIst benötigt eine native Tile-Kachel und eine IPSView-Ausgabe mit eigenem Designer. SymconECharts dient als Referenz für Designübernahme, unabhängige Einstellung und verwaltete HTML-Ausgabe.
 

@@ -58,6 +58,8 @@ trait WoIstDesign
             $items = [];
             if ($prefix === 'IPSView') {
                 $items = $this->IPSViewHTMLPageFormItems();
+                $items[] = ['type' => 'ValidationTextBox', 'name' => 'IPSViewServerURL', 'caption' => 'Symcon server URL for IPSView (optional)'];
+                $items[] = ['type' => 'Label', 'caption' => 'Use the reachable HTTP(S) server origin without a path. Required when IPSView does not provide an HTTP(S) page origin.'];
                 $items[] = ['type' => 'CheckBox', 'name' => 'IPSViewUseTileDesign', 'caption' => 'Use Tile design',
                     'onChange'     => 'ICWI_UpdateIPSViewDesignAvailability($id, $IPSViewUseTileDesign);'];
                 $items[] = ['type' => 'Label', 'caption' => 'Independent settings apply when Use Tile design is disabled.'];

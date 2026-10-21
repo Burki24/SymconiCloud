@@ -42,7 +42,11 @@
             "Show heading": "Überschrift anzeigen",
             "Show device list": "Geräteliste anzeigen",
             "Show map controls": "Kartenbedienung anzeigen",
-            "WoIst for IPSView": "WoIst für IPSView"
+            "WoIst for IPSView": "WoIst für IPSView",
+            "Symcon server URL for IPSView (optional)": "Symcon-Server-URL für IPSView (optional)",
+            "Use the reachable HTTP(S) server origin without a path. Required when IPSView does not provide an HTTP(S) page origin.": "Erreichbare HTTP(S)-Server-Adresse ohne Pfad verwenden. Erforderlich, wenn IPSView keine HTTP(S)-Seitenadresse bereitstellt.",
+            "Live updates unavailable. Retrying…": "Live-Aktualisierung nicht verfügbar. Erneuter Versuch folgt…",
+            "Configure the Symcon server URL for IPSView live updates.": "Für die Live-Aktualisierung die Symcon-Server-URL für IPSView eintragen."
         }
     }
 }

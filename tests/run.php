@@ -9,9 +9,11 @@ foreach (['validate_structure.php', 'apple-client.php', 'account.php', 'sdk-cont
         exit(1);
     }
 }
-$process = proc_open(['node', __DIR__ . '/map-ui.js'], [STDIN, STDOUT, STDERR], $pipes, dirname(__DIR__));
-if (!is_resource($process) || proc_close($process) !== 0) {
-    exit(1);
+foreach (['map-ui.js', 'map-transport.js'] as $test) {
+    $process = proc_open(['node', __DIR__ . '/' . $test], [STDIN, STDOUT, STDERR], $pipes, dirname(__DIR__));
+    if (!is_resource($process) || proc_close($process) !== 0) {
+        exit(1);
+    }
 }
 $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(dirname(__DIR__), FilesystemIterator::SKIP_DOTS));
 foreach ($iterator as $file) {

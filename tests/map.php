@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+ob_start();
 require_once __DIR__ . '/modules.php';
 
 // Keep the genuine map instance and kernel routing; only Apple transport is synthetic.
@@ -108,11 +109,12 @@ foreach ([$map->GetVisualizationTile(), $map->GetIPSViewHTML()] as $literalPage)
 $firstBoundary->result = $envelope;
 $map->RequestAction('IPSViewHTMLRegenerateVariables', '');
 $check(IPS_GetObjectIDByIdent('IPSViewWoIst', $mapID) === $outputID, 'HTML regeneration must preserve its output variable.');
+$html = GetValueString($outputID);
 $notification = $envelope;
 $notification['devices'][0]['name'] = 'Synthetic IPSView update';
 $firstBoundary->commands = [];
 $map->ReceiveData(json_encode(['DataID' => '{FCE7780F-9520-4E52-92F3-60034FFAED6D}'] + $notification, JSON_THROW_ON_ERROR));
-$check(str_contains(GetValueString($outputID), 'Synthetic IPSView update'), 'Account notifications must update IPSView output.');
+$check(GetValueString($outputID) === $html, 'Data notifications must never rewrite the persistent IPSView document.');
 $check($firstBoundary->commands === [], 'Publishing received IPSView data must not request the account again.');
 IPS_SetProperty($mapID, 'IPSViewUseTileDesign', false);
 IPS_SetProperty($mapID, 'IPSViewMarkerSize', 13);
@@ -129,4 +131,64 @@ $check(IPS_GetObjectIDByIdent('IPSViewWoIst', $mapID) === $outputID && GetValueS
 $map->ReceiveData(json_encode(['DataID' => '{FCE7780F-9520-4E52-92F3-60034FFAED6D}'] + $notification, JSON_THROW_ON_ERROR));
 $check(GetValueString($outputID) === $lastHtml, 'Disabled IPSView output must stop updating retained content.');
 
+// The standalone document receives data through a read-only authenticated cache endpoint.
+IPS_SetProperty($mapID, 'EnableIPSView', true);
+IPS_ApplyChanges($mapID);
+$readAttribute = new ReflectionMethod($map, 'ReadAttributeString');
+$token = $readAttribute->invoke($map, 'IPSViewTransportToken');
+$check(strlen($token) === 64 && ctype_xdigit($token), 'IPSView must have a cryptographically random per-instance token.');
+$check(!str_contains($map->GetState(), $token) && !str_contains($map->GetVisualizationTile(), $token), 'Native SDK state and Tile must never expose the standalone transport token.');
+$hook = new ReflectionMethod($map, 'ProcessHookData');
+$callHook = static function (string $method = 'POST', ?string $provided = null, ?string $path = null) use ($map, $mapID, $hook): array
+{
+    $_SERVER = ['REQUEST_METHOD' => $method, 'REQUEST_URI' => $path ?? '/hook/SymconiCloudWoIst' . $mapID];
+    if ($provided !== null) {
+        $_SERVER['HTTP_X_WOIST_TOKEN'] = $provided;
+    }
+    ob_start();
+    $hook->invoke($map);
+    return [http_response_code(), ob_get_clean()];
+};
+$firstBoundary->commands = [];
+$stableHtml = GetValueString($outputID);
+$map->ReceiveData(json_encode(['DataID' => '{FCE7780F-9520-4E52-92F3-60034FFAED6D}'] + $notification, JSON_THROW_ON_ERROR));
+[$status, $body] = $callHook('POST', $token);
+$payload = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+$check($status === 200 && $payload['state']['devices'][0]['name'] === 'Synthetic IPSView update', 'Authenticated polling must deliver current notifications from the sanitized cache.');
+$check(!str_contains($body, $token) && $payload['options']['design']['markerSize'] === 7, 'State responses must preserve IPSView design and omit transport credentials.');
+$check(GetValueString($outputID) === $stableHtml && $firstBoundary->commands === [], 'Polling and notifications must neither rewrite HTML nor contact the account.');
+$check($callHook('OPTIONS')[0] === 204 && $callHook('OPTIONS')[1] === '', 'CORS preflight must return no device state.');
+$check($callHook('POST')[0] === 403 && $callHook('POST', 'invalid')[0] === 403, 'Missing and incorrect transport tokens must be rejected.');
+$check($callHook('GET', $token)[0] === 405 && $callHook('POST', $token, '/hook/SymconiCloudWoIst' . $mapID . '/extra')[0] === 404, 'Only POST on the exact instance hook is allowed.');
+$map->Update();
+$map->RefreshDevices();
+$check(GetValueString($outputID) === $stableHtml, 'Cache updates and explicit Apple refresh must preserve the IPSView document.');
+IPS_DisconnectInstance($mapID);
+IPS_ConnectInstance($mapID, $secondAccount);
+$check($callHook('POST', $token)[0] === 404, 'Connection changes must immediately deny access to the prior account cache.');
+IPS_ApplyChanges($mapID);
+$newToken = $readAttribute->invoke($map, 'IPSViewTransportToken');
+$check($newToken !== $token && $callHook('POST', $token)[0] === 403, 'Changing accounts must rotate standalone credentials.');
+$check(json_decode($callHook('POST', $newToken)[1], true, 512, JSON_THROW_ON_ERROR)['state']['devices'] === [], 'New account polling must not retain prior account positions.');
+foreach (['https://user@example.invalid', 'https://example.invalid/path', 'https://example.invalid?query=1', 'javascript:alert(1)', "https://example.invalid\n"] as $invalidOrigin) {
+    IPS_SetProperty($mapID, 'IPSViewServerURL', $invalidOrigin);
+    IPS_ApplyChanges($mapID);
+    $check($callHook('POST', $newToken)[0] === 404, 'Invalid explicit server origins must disable transport.');
+}
+IPS_SetProperty($mapID, 'IPSViewServerURL', 'https://symcon.example.invalid:3777');
+IPS_ApplyChanges($mapID);
+$check(str_contains($map->GetIPSViewHTML(), 'https://symcon.example.invalid:3777/hook/SymconiCloudWoIst'), 'Configured origins must resolve the IPSView endpoint explicitly.');
+$otherMapID = IPS_CreateInstance('{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}');
+IPS_ConnectInstance($otherMapID, $secondAccount);
+IPS_SetProperty($otherMapID, 'EnableIPSView', true);
+IPS_ApplyChanges($otherMapID);
+$otherMap = IPS\InstanceManager::getInstanceInterface($otherMapID);
+$otherToken = $readAttribute->invoke($otherMap, 'IPSViewTransportToken');
+$currentToken = $readAttribute->invoke($map, 'IPSViewTransportToken');
+$check($otherToken !== $currentToken && $callHook('POST', $otherToken)[0] === 403, 'Separate map instances must never share transport authorization.');
+IPS_SetProperty($mapID, 'EnableIPSView', false);
+IPS_ApplyChanges($mapID);
+$check($readAttribute->invoke($map, 'IPSViewTransportToken') === '' && $readAttribute->invoke($map, 'IPSViewTransportState') === '' && $callHook('POST', $newToken)[0] === 404, 'Disabling IPSView must revoke tokens and clear its device cache.');
+$_SERVER = [];
 echo "Map integration checks passed.\n";
+ob_end_flush();

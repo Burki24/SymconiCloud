@@ -77,6 +77,12 @@
             "sha256": "d3deee581eca9f8eb11e9adce060170227a2dc836ee898bd134f93d27604f639",
             "path": "libs/helper/HelperTranslationHelper.php",
             "source_sha": "d13d726f8df24a5ad6e3d659242f407731a10567"
+        },
+        "HttpResponseHelper": {
+            "version": "1.1.0",
+            "sha256": "be4fae4c23f757ab462237d8e74d2a9dca1b504937ed4d4b51c7ff76004cf1cd",
+            "path": "libs/helper/HttpResponseHelper.php",
+            "source_sha": "7b3bdd2634666c863061e084a68838baaa44295e"
         }
     }
 }

@@ -30,6 +30,9 @@
         },
         "HelperTranslationHelper": {
             "target": "libs/helper/HelperTranslationHelper.php"
+        },
+        "HttpResponseHelper": {
+            "target": "libs/helper/HttpResponseHelper.php"
         }
     }
 }

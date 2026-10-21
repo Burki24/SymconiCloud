@@ -10,6 +10,8 @@ require_once __DIR__ . '/../libs/helper/VisualizationThemeHelper.php';
 require_once __DIR__ . '/../libs/helper/ResponsiveVisualizationHelper.php';
 require_once __DIR__ . '/../libs/helper/IPSViewHTMLPageHelper.php';
 require_once __DIR__ . '/../libs/WoIstDesign.php';
+require_once __DIR__ . '/../libs/WoIstIPSViewTransport.php';
+require_once __DIR__ . '/../libs/helper/HttpResponseHelper.php';
 
 /** One account's device positions, rendered through the authenticated HTML SDK. */
 class iCloudWoIst extends IPSModuleStrict
@@ -22,6 +24,8 @@ class iCloudWoIst extends IPSModuleStrict
     use \Burki24\SymconModuleHelper\ResponsiveVisualizationHelper;
     use \Burki24\SymconModuleHelper\IPSViewHTMLPageHelper;
     use \SymconiCloud\WoIstDesign;
+    use \SymconiCloud\WoIstIPSViewTransport;
+    use \Burki24\SymconModuleHelper\HttpResponseHelper;
 
     private const ACCOUNT_MODULE = '{10BF9A03-98A3-495A-B0FA-A4FA0B1002D5}';
     private const REQUEST_DATA = '{1E60F0BE-03E4-4AA4-A1CE-AA838725A4E2}';
@@ -32,10 +36,11 @@ class iCloudWoIst extends IPSModuleStrict
     {
         parent::Create();
         $this->RegisterIPSViewHTMLPageProperties();
+        $this->RegisterWoIstIPSViewTransport();
         $this->RegisterWoIstDesignProperties();
         $this->RegisterPropertyInteger('StaleAfter', 900);
         $this->RegisterPropertyString('TileURL', 'https://tile.openstreetmap.org/{z}/{x}/{y}.png');
-        $this->RegisterPropertyString('TileAttribution', 'Â© OpenStreetMap contributors');
+        $this->RegisterPropertyString('TileAttribution', '© OpenStreetMap contributors');
         $this->SetVisualizationType(1);
     }
 
@@ -45,7 +50,11 @@ class iCloudWoIst extends IPSModuleStrict
         parent::ApplyChanges();
         $this->SetVisualizationType(1);
         $this->MaintainIPSViewHTMLVariable('IPSViewWoIst', $this->Translate('WoIst for IPSView'), 100, '', false);
+        $this->ConfigureWoIstIPSViewTransport();
         $this->Update();
+        if ($this->IsIPSViewHTMLPageEnabled()) {
+            $this->RegenerateIPSViewHTMLPages();
+        }
     }
 
     /** @return string Official SDK descriptor for sharing an account splitter. */
@@ -84,10 +93,12 @@ class iCloudWoIst extends IPSModuleStrict
         return $this->renderPage(false, $this->bootstrap($this->request('GetDevices')));
     }
 
-    /** @return string Standalone HTML output refreshed by the managed WebContent variable. */
+    /** @return string Standalone HTML shell; data updates are delivered separately through the cache endpoint. */
     public function GetIPSViewHTML(): string
     {
-        return $this->renderPage(true, $this->bootstrap($this->request('GetDevices')));
+        $bootstrap = $this->bootstrap($this->request('GetDevices'));
+        $this->PublishWoIstIPSViewState($bootstrap);
+        return $this->renderPage(true, $bootstrap);
     }
 
     /** @param string $JSONString Normalized account notification. @return string Empty acknowledgement. */
@@ -119,6 +130,9 @@ class iCloudWoIst extends IPSModuleStrict
     {
         $bootstrap['mode'] = $ipsView ? 'ipsview' : 'symcon';
         $bootstrap['options']['design'] = $this->WoIstDesign($ipsView);
+        if ($ipsView && $this->IsIPSViewHTMLPageEnabled()) {
+            $bootstrap['options']['ipsViewTransport'] = $this->WoIstIPSViewTransportOptions();
+        }
         return $this->RenderVisualizationHTMLPage($ipsView, [
             'title'              => $this->Translate('WoIst'),
             'visualizationTheme' => $this->VisualizationThemeCSS(),
@@ -162,13 +176,7 @@ class iCloudWoIst extends IPSModuleStrict
         $state = $bootstrap['state'];
         $this->SetStatus(!$this->configurationValid() ? 203 : (!$this->HasParent() ? 201 : ($state['success'] ? IS_ACTIVE : 202)));
         $this->UpdateVisualizationValue($this->encode($bootstrap));
-        if ($this->IsIPSViewHTMLPageEnabled()) {
-            $html = $this->renderPage(true, $bootstrap);
-            $variableID = $this->IPSViewHTMLVariableID('IPSViewWoIst');
-            if ($variableID > 0 && GetValueString($variableID) !== $html) {
-                $this->UpdateIPSViewHTMLVariable('IPSViewWoIst', $html);
-            }
-        }
+        $this->PublishWoIstIPSViewState($bootstrap);
         return $state['success'];
     }
 
@@ -207,12 +215,14 @@ class iCloudWoIst extends IPSModuleStrict
         }
         $labels = [];
         foreach ([
-            'title'      => 'WoIst', 'refresh' => 'Refresh from Apple', 'fit' => 'Show all positions', 'devices' => 'Devices',
-            'noDevices'  => 'No devices available.', 'noLocation' => 'No position available', 'stale' => 'Last known position',
-            'current'    => 'Recent position', 'offline' => 'Offline', 'battery' => 'Battery', 'updated' => 'Account updated',
-            'accuracy'   => 'Accuracy', 'mapUnavailable' => 'Map tiles unavailable. Device data is still shown.',
-            'loadError'  => 'The map could not be loaded.', 'refreshing' => 'Refreshingâ€¦',
-            'cacheError' => 'Account unavailable. Positions shown are last known.', 'ago' => 'ago', 'unknown' => 'Unknown'
+            'title'                  => 'WoIst', 'refresh' => 'Refresh from Apple', 'fit' => 'Show all positions', 'devices' => 'Devices',
+            'noDevices'              => 'No devices available.', 'noLocation' => 'No position available', 'stale' => 'Last known position',
+            'current'                => 'Recent position', 'offline' => 'Offline', 'battery' => 'Battery', 'updated' => 'Account updated',
+            'accuracy'               => 'Accuracy', 'mapUnavailable' => 'Map tiles unavailable. Device data is still shown.',
+            'loadError'              => 'The map could not be loaded.', 'refreshing' => 'Refreshing…',
+            'transportError'         => 'Live updates unavailable. Retrying…',
+            'transportConfiguration' => 'Configure the Symcon server URL for IPSView live updates.',
+            'cacheError'             => 'Account unavailable. Positions shown are last known.', 'ago' => 'ago', 'unknown' => 'Unknown'
         ] as $key => $text) {
             $labels[$key] = $this->Translate($text);
         }
