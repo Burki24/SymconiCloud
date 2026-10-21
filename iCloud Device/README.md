@@ -1,6 +1,6 @@
 # iCloud Device / iCloud Gerät
 
-Eine Instanz zeigt die Geräte-, Akku- und Standortdaten eines Apple-Gerätes aus dem Kontocache an. Voraussetzung ist Symcon 9 und ein angemeldetes iCloud-Konto dieser Library. Geräte vorzugsweise über den iCloud-Konfigurator anlegen. Eine Karte ist nicht Bestandteil dieser Geräteinstanz; dafür ist das spätere Modul WoIst vorgesehen.
+Eine Instanz zeigt die Geräte-, Akku- und Standortdaten eines Apple-Gerätes aus dem Kontocache an. Voraussetzung ist Symcon 9 und ein angemeldetes iCloud-Konto dieser Library. Geräte vorzugsweise über den iCloud-Geräte-Konfigurator anlegen. Eine Karte ist nicht Bestandteil dieser Geräteinstanz; dafür ist das spätere Modul WoIst vorgesehen.
 
 ## Konfiguration
 

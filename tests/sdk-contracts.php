@@ -9,13 +9,13 @@ declare(strict_types=1);
 require __DIR__ . '/modules.php';
 
 /** Enforces the documented UpdateFormField wire contract missing from the stubs. */
-class ContractConfigurator extends iCloudConfigurator
+class ContractConfigurator extends iCloudDeviceConfigurator
 {
     public array $fieldUpdates = [];
 
     protected function UpdateFormField(string $Field, string $Parameter, mixed $Value): bool
     {
-        $form = json_decode(file_get_contents(dirname(__DIR__) . '/iCloud Configurator/form.json'), true, 512, JSON_THROW_ON_ERROR);
+        $form = json_decode(file_get_contents(dirname(__DIR__) . '/iCloud Device Configurator/form.json'), true, 512, JSON_THROW_ON_ERROR);
         $fields = array_column(array_merge($form['elements'], $form['actions']), null, 'name');
         if (!isset($fields[$Field]) || in_array($Parameter, ['name', 'type'], true)) {
             throw new RuntimeException('UpdateFormField targets an unknown field or immutable parameter.');

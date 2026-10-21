@@ -18,7 +18,7 @@ Die Anbindung verwendet Apples Web-Endpunkte. Apple stellt dafür keine zugesich
 1. `https://github.com/Burki24/SymconiCloud` in der Modulverwaltung als Bibliothek hinzufügen. Die erste Entwicklung liegt auf `dev`.
 2. [iCloud Account](iCloud%20Account/README.md) als **iCloud Konto** anlegen, aktivieren, Zugangsdaten speichern und **Anmelden** wählen.
 3. Den Code vom vertrauenswürdigen Apple-Gerät unter **Zwei-Faktor-Authentifizierung** eingeben und bestätigen. Nach erfolgreicher Anmeldung wird die Geräteliste abgerufen.
-4. [iCloud Configurator](iCloud%20Configurator/README.md) anlegen und mit diesem Konto verbinden.
+4. [iCloud Device Configurator](iCloud%20Device%20Configurator/README.md) anlegen und mit diesem Konto verbinden.
 5. Geräte über den Konfigurator als [iCloud Device](iCloud%20Device/README.md) anlegen.
 6. Für die Kartenansicht **iCloud WoIst Karte** anlegen, mit dem Konto verbinden und in der Kachelvisualisierung hinzufügen. Einzelne Geräteinstanzen sind für die Karte nicht erforderlich.
 

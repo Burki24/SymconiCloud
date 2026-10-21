@@ -1,4 +1,4 @@
-# iCloud Configurator / iCloud Konfigurator
+# iCloud Device Configurator / iCloud Geräte Konfigurator
 
 Der Konfigurator legt lesende iCloud-Geräteinstanzen aus der gespeicherten Geräteliste eines iCloud-Kontos an. Voraussetzung ist Symcon 9 und ein eingerichtetes iCloud-Konto aus dieser Library.
 

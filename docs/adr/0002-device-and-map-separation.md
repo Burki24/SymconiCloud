@@ -8,7 +8,7 @@
 
 Auf Benutzerwunsch bezeichnet WoIst ausschließlich ein separates Kartenmodul zur Darstellung der Positionen gelisteter Geräte. Die Karte wird in einem eigenen nächsten Schritt umgesetzt.
 
-Die bereits implementierte Geräteinstanz heißt iCloud Device / iCloud Gerät (Typ 3, Präfix ICID). Sie stellt Geräte-, Akku- und Standortdaten als Variablen bereit. Der allgemeine iCloud Configurator / iCloud Konfigurator (Typ 4, Präfix ICDC) erzeugt Geräteinstanzen und ist direkt mit dem Kontomodul verbunden. Das Konto behält ICAC.
+Die bereits implementierte Geräteinstanz heißt iCloud Device / iCloud Gerät (Typ 3, Präfix ICID). Sie stellt Geräte-, Akku- und Standortdaten als Variablen bereit. Der allgemeine iCloud Device Configurator / iCloud Geräte Konfigurator (Typ 4, Präfix ICDC) erzeugt Geräteinstanzen und ist direkt mit dem Kontomodul verbunden. Das Konto behält ICAC.
 
 ## Testphase und Umbenennung
 
