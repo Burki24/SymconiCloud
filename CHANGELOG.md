@@ -2,6 +2,8 @@
 
 ## Fixes
 
+- Das eingebundene OpenFreeMap-Helper-Manifest enthält jetzt auch die Abhängigkeiten `HelperTranslationHelper` und `VisualizationAssetHelper` einschließlich ihrer Ressourcen.
+
 - Der Kartenrenderer wird lokal und komprimiert über einen öffentlichen Asset-Endpunkt ausgeliefert, damit native Kachel und HTTP-Seite unter Symcons Ausgabelimit bleiben. Konfliktmarkierungen im vorhandenen Helper-Manifest wurden mit den kanonischen Metadaten abgeglichen.
 
 - Die eingebettete IPSView-Ausgabe ermittelt die Serveradresse über den zentralen HTTP-Ursprungsresolver automatisch aus dem einbettenden Kontext. Die HTTP-Kartenseite nutzt einen expliziten Asset-Pfad für den Symcon-WebHook-Kontext und meldet fehlende Assets mit HTTP 503.
