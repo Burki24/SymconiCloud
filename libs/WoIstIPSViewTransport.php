@@ -121,6 +121,7 @@ trait WoIstIPSViewTransport
             return;
         }
         $bootstrap['mode'] = 'ipsview';
+        $bootstrap['options'] = array_replace($bootstrap['options'], $this->ResponsiveVisualizationLayoutOptions(false));
         $bootstrap['options']['design'] = $this->WoIstDesign(true);
         $this->WriteAttributeString('IPSViewTransportState', $this->encode($bootstrap));
     }

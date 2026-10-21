@@ -20,6 +20,17 @@ $parents = json_decode($map->GetCompatibleParents(), true, 512, JSON_THROW_ON_ER
 $check($parents === ['type' => 'connect', 'moduleIDs' => [$accountModule]], 'The map must offer the official shared account parent descriptor.');
 $firstBoundary->commands = [];
 $initial = $state();
+$check($initial['options']['tileHeaderVisible'] === true && $initial['options']['tileHeaderInset'] === 58, 'Native tiles must reserve the Symcon title by default.');
+$check($initial['options']['design']['height'] === 0, 'New map designs must fit the viewport automatically.');
+// Official stubs predate the Symcon 9.1 title field; supply it without modifying vendor sources.
+$objectsProperty = new ReflectionProperty(IPS\ObjectManager::class, 'objects');
+$objects = $objectsProperty->getValue();
+$objects[$mapID]['ObjectIsHiddenTitle'] = true;
+$objectsProperty->setValue(null, $objects);
+$check($state()['options']['tileHeaderVisible'] === false && $state()['options']['tileHeaderInset'] === 0, 'Hidden native titles must release their reserved header space.');
+$objects[$mapID]['ObjectIsHiddenTitle'] = false;
+$objectsProperty->setValue(null, $objects);
+$check($state()['options']['tileHeaderVisible'] === true, 'Title visibility must be read again for SDK state updates.');
 $check($initial['state']['devices'][0]['location']['latitude'] === 51.25, 'Map must preserve normalized account coordinates.');
 $check($initial['state']['devices'][0]['batteryLevel'] === 0.42, 'Map must preserve normalized battery fractions.');
 $check($map->Update(), 'Cache update must succeed.');
@@ -109,6 +120,7 @@ $outputID = IPS_GetObjectIDByIdent('IPSViewWoIst', $mapID);
 $html = GetValueString($outputID);
 $check(str_contains($html, '/page') && !str_contains($html, 'leaflet'), 'IPSView must create a small loader for the real HTTP map page.');
 [$pageStatus, $pageHTML] = $callHook('GET', null, '/hook/SymconiCloudWoIst' . $mapID . '/page');
+$check(str_contains($pageHTML, '"tileHeaderVisible":false'), 'Standalone IPSView pages must not reserve a native Symcon title.');
 $check($pageStatus === 200 && str_contains($pageHTML, '"mode":"ipsview"') && str_contains($pageHTML, '--symc-background'), 'The HTTP page must embed the complete standalone map and theme.');
 $check(IPS_GetVariable($outputID)['VariableType'] === VARIABLETYPE_STRING, 'IPSView output must be a String WebContent variable.');
 $check(!str_contains($html, '{{') && !str_contains($html, 'synthetic-secret-session'), 'IPSView must resolve templates and exclude account secrets.');

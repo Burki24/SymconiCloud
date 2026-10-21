@@ -6,6 +6,8 @@ const path = require('node:path');
 const vm = require('node:vm');
 const source = fs.readFileSync(path.join(__dirname, '../iCloud WoIst/visualization/app.js'), 'utf8');
 const api = require('../iCloud WoIst/visualization/app.js');
+assert.ok(source.includes('\u00a9 OpenStreetMap contributors'), 'Map attribution must preserve its UTF-8 copyright sign.');
+assert.ok(source.includes(' \u00b7 '), 'Device details must preserve their UTF-8 separator.');
 
 assert.equal(api.validLocation({latitude: 0, longitude: 0}), true, 'Zero coordinates are valid locations.');
 for (const location of [null, {}, {latitude: 91, longitude: 0}, {latitude: 0, longitude: 181}, {latitude: NaN, longitude: 1}, {latitude: '0', longitude: 0}]) {
@@ -31,7 +33,7 @@ class Element {
 const elements = Object.fromEntries(['woist-heading', 'woist-devices', 'woist-controls', 'woist-bootstrap', 'title', 'updated', 'fit', 'refresh', 'devices-title', 'device-list', 'empty', 'account-message', 'transport-message', 'map-message', 'map'].map((id) => [id, new Element()]));
 const timestamp = Math.floor(Date.now() / 1000);
 const maliciousName = '<img src=x onerror=alert(1)>';
-elements['woist-bootstrap'].textContent = JSON.stringify({state: {success: true, updatedAt: timestamp, staleAfter: 900, devices: [
+elements['woist-bootstrap'].textContent = JSON.stringify({mode: 'symcon', options: {tileHeaderVisible: true, tileHeaderInset: 58}, state: {success: true, updatedAt: timestamp, staleAfter: 900, devices: [
     {id: 'synthetic-a', name: maliciousName, location: {latitude: 0, longitude: 0, timestamp, isOld: false}},
     {id: 'synthetic-b', name: 'No location', location: null}
 ]}});
@@ -43,13 +45,13 @@ const tileProviders = [];
 let fits = 0;
 let viewChanges = 0;
 let sizeInvalidations = 0;
-const map = {events: {}, setView(center, zoom) { this.center = center; this.zoom = zoom; viewChanges++; return this; }, on(name, action) { this.events[name] = action; }, getZoom() { return this.zoom; }, fitBounds() { fits++; }, removeLayer() {}, invalidateSize(options) { sizeInvalidations++; assert.equal(options.pan, false); }};
+const map = {events: {}, setView(center, zoom) { this.center = center; this.zoom = zoom; viewChanges++; return this; }, on(name, action) { this.events[name] = action; }, getCenter() { return this.center; }, getZoom() { return this.zoom; }, fitBounds() { fits++; }, removeLayer() {}, invalidateSize(options) { sizeInvalidations++; assert.equal(options.pan, false); }};
 const layer = {addTo() { return this; }, removeLayer(marker) { markers.splice(markers.indexOf(marker), 1); }};
 const window = {
     document: {readyState: 'complete', documentElement: documentRoot, querySelector(selector) { return selector === '.workspace' ? workspace : null; }, getElementById(id) { return elements[id]; }, createElement() { return new Element(); }, querySelectorAll() { return elements['device-list'].children.map((item) => item.children[0]); }},
     requestAction(name) { requests.push(name); }, fetch() { throw new Error('Native tile must not poll.'); }, addEventListener() {}, setInterval() {}, setTimeout() { return 1; }, clearTimeout() {},
     L: {
-        map() { return map; }, tileLayer(url, options) { tileProviders.push({url, options}); return {addTo() { return this; }, on() { return this; }}; }, layerGroup() { return layer; }, latLngBounds(value) { return value; },
+        map(_id, options) { assert.equal(options.trackResize, false, 'Only the view-preserving resize handler controls Leaflet resizing.'); return map; }, tileLayer(url, options) { tileProviders.push({url, options}); return {addTo() { return this; }, on() { return this; }}; }, layerGroup() { return layer; }, latLngBounds(value) { return value; },
         circleMarker(position, options) {
             const marker = {position, options, addTo() { markers.push(this); return this; }, bindPopup(content, popupOptions) { this.popup = content; this.popupOptions = popupOptions; return this; }, setPopupContent(content) { this.popup = content; return this; }, setLatLng(value) { this.position = value; return this; }, setStyle(value) { this.options = value; return this; }, setRadius(value) { this.options.radius = value; return this; }, on() {}, getLatLng() { return this.position; }, openPopup() { this.opened = true; }, isPopupOpen() { return !!this.opened; }};
             return marker;
@@ -57,6 +59,7 @@ const window = {
     }
 };
 vm.runInNewContext(source, {window, Date, Map, Promise, console});
+assert.equal(documentRoot.style['--symc-tile-header-inset'], '58px', 'Native content reserves the established Symcon title area.');
 assert.deepEqual(requests, ['GetState'], 'Loading requests cached state only, never Apple refresh.');
 assert.equal(markers.length, 1, 'Unavailable positions do not create a marker.');
 assert.equal(markers[0].popup.children[0].textContent, maliciousName, 'Untrusted names become DOM text.');
@@ -121,6 +124,8 @@ assert.equal(elements['woist-heading'].hidden, false, 'Live design changes can r
 assert.equal(elements['woist-devices'].hidden, false);
 assert.equal(elements['woist-controls'].hidden, false);
 assert.equal(workspace.style.gridTemplateColumns, '');
+window.handleMessage({state: {success: true, devices: []}, options: {tileHeaderVisible: false, tileHeaderInset: 0}});
+assert.equal(documentRoot.style['--symc-tile-header-inset'], '0px', 'A hidden native tile title does not leave an empty header gap.');
 assert.equal(tileProviders.length, providersBeforeDesign, 'Design-only changes do not recreate the background layer.');
 const invalidationsBeforeData = sizeInvalidations;
 window.handleMessage({state: {success: true, devices: []}, options: {design: {height: 99999, fontSize: 1, currentColor: '#123456', showTitle: true, showDevices: true, showControls: true}}});
@@ -141,4 +146,15 @@ const requestsBeforeIPSView = requests.length;
 vm.runInNewContext(source, {window, Date, Map, Set, Promise, URL, console});
 assert.equal(requests.length, requestsBeforeIPSView, 'IPSView never calls the native SDK or an Apple refresh.');
 assert.equal(elements['transport-message'].hidden, false, 'IPSView exposes a missing live endpoint without discarding the map.');
+assert.equal(documentRoot.style['--symc-tile-header-inset'], '0px', 'The HTTP IPSView page must not reserve native tile title space.');
+let resizeCallback;
+window.ResizeObserver = class { constructor(callback) { resizeCallback = callback; } observe() {} };
+vm.runInNewContext(source, {window, Date, Map, Set, Promise, URL, console});
+const centerBeforeResize = map.center;
+const zoomBeforeResize = map.zoom;
+const invalidate = map.invalidateSize;
+map.invalidateSize = function (options) { invalidate(options); this.center = [99, 99]; };
+resizeCallback();
+assert.equal(map.center, centerBeforeResize, 'Resizing restores the exact center after Leaflet invalidates its projection.');
+assert.equal(map.zoom, zoomBeforeResize);
 console.log('WoIst UI contracts passed.');

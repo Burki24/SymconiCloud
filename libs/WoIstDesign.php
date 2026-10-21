@@ -8,7 +8,7 @@ namespace SymconiCloud;
 trait WoIstDesign
 {
     private const MAP_DESIGN = [
-        'Height'       => [480, 240, 1200, 'Map height in pixels'],
+        'Height'       => [0, 0, 1200, 'Fallback map height in pixels (0 = automatic)'],
         'FontSize'     => [14, 10, 28, 'Font size in pixels'],
         'MarkerSize'   => [9, 4, 24, 'Marker radius in pixels'],
         'CurrentColor' => [0x168D80, 0, 0xFFFFFF, 'Current position color'],
@@ -100,7 +100,7 @@ trait WoIstDesign
     private function WoIstDesignCSS(bool $ipsView): string
     {
         $design = $this->WoIstDesign($ipsView);
-        $css = ':root{--woist-height:' . $design['height'] . 'px;--woist-font-size:' . $design['fontSize']
+        $css = ':root{--woist-height:' . ($design['height'] > 0 ? $design['height'] : 480) . 'px;--woist-font-size:' . $design['fontSize']
             . 'px;--woist-current:' . $design['currentColor'] . ';--woist-stale:' . $design['staleColor'] . ';}';
         return $css;
     }

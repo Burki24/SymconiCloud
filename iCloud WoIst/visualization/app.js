@@ -180,6 +180,8 @@
     let selected = null;
     let fitted = false;
     let ready = false;
+    let outputMode = '';
+    let resizing = false;
     let refreshTimer;
     const markers = new Map();
     const el = (id) => global.document.getElementById(id);
@@ -262,6 +264,27 @@
         tiles.on('tileerror', () => { el('map-message').textContent = text('loadError'); el('map-message').hidden = false; });
     }
 
+    function configureTileHeader(options) {
+        const root = global.document.documentElement;
+        const inset = outputMode === 'symcon' ? options.tileHeaderInset : 0;
+        if (root && root.style && Number.isFinite(inset) && inset >= 0) root.style.setProperty('--symc-tile-header-inset', inset + 'px');
+    }
+
+    function resizeMap() {
+        if (!map) return;
+        const center = map.getCenter();
+        const zoom = map.getZoom();
+        const wasFitted = fitted;
+        resizing = true;
+        try {
+            map.invalidateSize({pan: false});
+            map.setView(center, zoom, {animate: false, reset: true});
+        } finally {
+            fitted = wasFitted;
+            resizing = false;
+        }
+    }
+
     function configureDesign(options) {
         if (!options || typeof options !== 'object') return;
         const layout = (value) => JSON.stringify([value.height, value.fontSize, value.showTitle, value.showDevices, value.showControls]);
@@ -269,8 +292,8 @@
         design = options;
         const root = global.document.documentElement;
         if (root && root.style) {
-            for (const [key, variable, minimum, maximum] of [['height', '--woist-height', 240, 1200], ['fontSize', '--woist-font-size', 10, 28]]) {
-                if (Number.isFinite(design[key])) root.style.setProperty(variable, Math.max(minimum, Math.min(maximum, design[key])) + 'px');
+            for (const [key, variable, minimum, maximum] of [['height', '--woist-height', 0, 1200], ['fontSize', '--woist-font-size', 10, 28]]) {
+                if (Number.isFinite(design[key])) root.style.setProperty(variable, (key === 'height' && design[key] === 0 ? 480 : Math.max(minimum, Math.min(maximum, design[key]))) + 'px');
             }
             for (const [key, variable] of [['currentColor', '--woist-current'], ['staleColor', '--woist-stale']]) {
                 if (/^#[0-9a-f]{6}$/i.test(design[key])) root.style.setProperty(variable, design[key]);
@@ -280,10 +303,13 @@
             if (el(id) && typeof design[key] === 'boolean') el(id).hidden = !design[key];
         }
         const workspace = global.document.querySelector && global.document.querySelector('.workspace');
-        if (workspace) workspace.style.gridTemplateColumns = design.showDevices === false ? 'minmax(0, 1fr)' : '';
+        if (workspace) {
+            workspace.style.gridTemplateColumns = design.showDevices === false ? 'minmax(0, 1fr)' : '';
+            workspace.style.gridTemplateRows = design.showDevices === false ? 'minmax(0, 1fr)' : '';
+        }
         // ResizeObserver handles real size changes. Invalidating an unchanged
         // Leaflet map discards its exact center and introduces pixel rounding.
-        if (map && layoutChanged && typeof global.ResizeObserver !== 'function') map.invalidateSize({pan: false});
+        if (map && layoutChanged && typeof global.ResizeObserver !== 'function') resizeMap();
     }
 
     function render() {
@@ -348,7 +374,7 @@
         if (!next) return;
         const envelope = typeof value === 'string' ? JSON.parse(value) : value;
         if (envelope.labels) labels = Object.assign({}, fallback, envelope.labels);
-        if (envelope.options) { configureTiles(envelope.options); configureDesign(envelope.options.design); }
+        if (envelope.options) { configureTileHeader(envelope.options); configureTiles(envelope.options); configureDesign(envelope.options.design); }
         state = next;
         if (refreshTimer) global.clearTimeout(refreshTimer);
         if (ready) {
@@ -363,6 +389,8 @@
         try { bootstrap = JSON.parse(el('woist-bootstrap').textContent); } catch (_) { /* Show empty state. */ }
         const transportConfiguration = bootstrap.mode === 'ipsview'
             ? consumeFragmentToken((bootstrap.options || {}).ipsViewTransport, global) : null;
+        outputMode = bootstrap.mode || '';
+        configureTileHeader(bootstrap.options || {});
         labels = Object.assign({}, fallback, bootstrap.labels || {});
         state = parseState(bootstrap.state) || state;
         configureDesign((bootstrap.options || {}).design);
@@ -372,12 +400,12 @@
         el('map').setAttribute('aria-label', text('title'));
         try {
             if (!global.L) throw new Error('Leaflet unavailable');
-            map = global.L.map('map').setView([20, 0], 2);
-            map.on('movestart', () => { fitted = true; });
+            map = global.L.map('map', {trackResize: false}).setView([20, 0], 2);
+            map.on('movestart', () => { if (!resizing) fitted = true; });
             configureTiles(bootstrap.options || {});
             layer = global.L.layerGroup().addTo(map);
-            if (typeof global.ResizeObserver === 'function') new global.ResizeObserver(() => map.invalidateSize({pan: false})).observe(el('map'));
-            else global.addEventListener('resize', () => map.invalidateSize({pan: false}));
+            if (typeof global.ResizeObserver === 'function') new global.ResizeObserver(resizeMap).observe(el('map'));
+            else global.addEventListener('resize', resizeMap);
         } catch (_) {
             el('map-message').textContent = text('mapUnavailable');
             el('map-message').hidden = false;

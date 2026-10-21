@@ -40,9 +40,9 @@
         },
         "ResponsiveVisualizationHelper": {
             "version": "1.0.0",
-            "sha256": "0cebd0f08e6416a6d7d4d5fdbb19bf96d457d3e2d51fcf2a1d3e6adf5e967451",
+            "sha256": "d48656a9d03da7e2332321d8a0d448fd1f558a5f0dbab808a5622e0ab7dd8afe",
             "path": "libs/helper/ResponsiveVisualizationHelper.php",
-            "source_sha": "d13d726f8df24a5ad6e3d659242f407731a10567"
+            "source_sha": "7b3bdd2634666c863061e084a68838baaa44295e"
         },
         "IPSViewHTMLPageHelper": {
             "version": "1.5.1",

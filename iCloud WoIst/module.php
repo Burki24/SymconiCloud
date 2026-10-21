@@ -135,6 +135,7 @@ class iCloudWoIst extends IPSModuleStrict
     {
         $bootstrap['mode'] = $ipsView ? 'ipsview' : 'symcon';
         $bootstrap['options']['design'] = $this->WoIstDesign($ipsView);
+        $bootstrap['options'] = array_replace($bootstrap['options'], $this->ResponsiveVisualizationLayoutOptions(!$ipsView));
         if ($ipsView && $this->IsIPSViewHTMLPageEnabled()) {
             $bootstrap['options']['ipsViewTransport'] = [
                 'url' => '/hook/' . $this->WoIstIPSViewHookName(), 'token' => '', 'fragmentToken' => true, 'pollInterval' => 5000
@@ -151,7 +152,7 @@ class iCloudWoIst extends IPSModuleStrict
                 '{{BOOTSTRAP}}'      => $this->encode($bootstrap),
                 '{{LEAFLET_CSS}}'    => (string) file_get_contents(__DIR__ . '/../libs/vendor/leaflet/leaflet.css'),
                 '{{LEAFLET_JS}}'     => (string) file_get_contents(__DIR__ . '/../libs/vendor/leaflet/leaflet.js'),
-                '{{RESPONSIVE_CSS}}' => $this->ResponsiveVisualizationCSS('#woist-app', 'woist-map'),
+                '{{RESPONSIVE_CSS}}' => $this->ResponsiveVisualizationCSS('#woist-app', 'woist-map', true),
                 '{{DESIGN_CSS}}'     => $this->WoIstDesignCSS($ipsView)
             ]
         ]);
@@ -246,8 +247,8 @@ class iCloudWoIst extends IPSModuleStrict
                 'error'           => is_string($data['error'] ?? null) ? $data['error'] : '', 'updatedAt' => $updated,
                 'staleAfter'      => max(60, min(86400, $this->ReadPropertyInteger('StaleAfter'))), 'devices' => $devices],
             'labels'  => $labels,
-            'options' => ['design'  => $this->WoIstDesign(false), 'tileUrl' => $this->configurationValid() ? $this->ReadPropertyString('TileURL') : '',
-                'attribution'       => $this->configurationValid() ? $this->ReadPropertyString('TileAttribution') : '', 'maxZoom' => 19]
+            'options' => [...$this->ResponsiveVisualizationLayoutOptions(), 'design' => $this->WoIstDesign(false), 'tileUrl' => $this->configurationValid() ? $this->ReadPropertyString('TileURL') : '',
+                'attribution'                                                        => $this->configurationValid() ? $this->ReadPropertyString('TileAttribution') : '', 'maxZoom' => 19]
         ];
     }
 
