@@ -28,8 +28,13 @@ trait WoIstIPSViewTransport
                 $this->SendPlainTextResponse(405, 'Method not allowed.');
                 return;
             }
+            $html = $this->renderIPSViewHTTPShell();
+            if ($html === '') {
+                $this->SendPlainTextResponse(503, 'Map document unavailable.');
+                return;
+            }
             header('Referrer-Policy: origin');
-            $this->SendResponse(200, 'text/html', $this->renderIPSViewHTTPShell());
+            $this->SendResponse(200, 'text/html', $html);
             return;
         }
         if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {

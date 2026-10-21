@@ -27,3 +27,13 @@ start(environment);
 assert.equal(message.textContent, configuration.error);
 assert.equal(message.hidden, false, 'Missing server origin produces an actionable message.');
 console.log('WoIst HTTP page loader contracts passed.');
+
+const relative = {...configuration, url: '/hook/map/page'};
+assert.equal(pageURL(relative, opaque, {location: opaque, document: {referrer: location.origin + '/#view'}}), configuration.url + '#token=' + token);
+assert.equal(pageURL(relative, opaque, {location: {...opaque, ancestorOrigins: [location.origin]}}), configuration.url + '#token=' + token);
+assert.equal(pageURL(configuration, opaque, {location: opaque, document: {referrer: 'https://other.invalid/'}}), configuration.url + '#token=' + token, 'Explicit configuration takes precedence over inferred origins.');
+elements['woist-loader-config'].textContent = JSON.stringify(relative);
+message.hidden = true;
+start({...environment, document: {...environment.document, referrer: location.origin + '/#view'}});
+assert.equal(frame.src, configuration.url + '#token=' + token, 'An embedded data document must launch from its HTTP referrer without a configured URL.');
+assert.equal(message.hidden, true);

@@ -38,6 +38,40 @@ foreach ([true, false, true] as $enabled) {
 $modules['{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}']['Class'] = iCloudWoIst::class;
 $metadata->setValue(null, $modules);
 
+// Symcon's WebHook class is evaluated with a synthetic filename. The module's
+// explicit asset directory must keep rendering independent of that filename.
+eval('class RuntimeContextMap extends iCloudWoIst {}');
+$modules['{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}']['Class'] = RuntimeContextMap::class;
+$metadata->setValue(null, $modules);
+$runtimeID = IPS_CreateInstance('{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}');
+$runtimeMap = IPS\InstanceManager::getInstanceInterface($runtimeID);
+$check(str_contains($runtimeMap->GetVisualizationTile(), 'woist-app'), 'Synthetic reflection filenames must not prevent asset loading.');
+$modules['{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}']['Class'] = iCloudWoIst::class;
+$metadata->setValue(null, $modules);
+
+class MissingAssetMap extends iCloudWoIst
+{
+    protected function VisualizationAsset(string $filename): string
+    {
+        return '';
+    }
+}
+$modules['{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}']['Class'] = MissingAssetMap::class;
+$metadata->setValue(null, $modules);
+$missingID = IPS_CreateInstance('{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}');
+IPS_ConnectInstance($missingID, $firstAccount);
+IPS_SetProperty($missingID, 'EnableIPSView', true);
+IPS_ApplyChanges($missingID);
+$missingMap = IPS\InstanceManager::getInstanceInterface($missingID);
+(new ReflectionMethod($missingMap, 'ConfigureWoIstIPSViewTransport'))->invoke($missingMap);
+$_SERVER = ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/hook/SymconiCloudWoIst' . $missingID . '/page'];
+ob_start();
+(new ReflectionMethod($missingMap, 'ProcessHookData'))->invoke($missingMap);
+$missingHTML = ob_get_clean();
+$check(http_response_code() === 503 && $missingHTML === 'Map document unavailable.', 'Missing page assets must return 503 instead of an empty successful document.');
+$modules['{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}']['Class'] = iCloudWoIst::class;
+$metadata->setValue(null, $modules);
+
 // Keep the genuine map instance and kernel routing; only Apple transport is synthetic.
 $firstBoundary->result = $envelope;
 $mapID = IPS_CreateInstance('{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}');

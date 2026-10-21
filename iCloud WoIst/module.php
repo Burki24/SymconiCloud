@@ -98,7 +98,7 @@ class iCloudWoIst extends IPSModuleStrict
     {
         $this->ConfigureWoIstIPSViewTransport();
         $options = $this->WoIstIPSViewTransportOptions();
-        return strtr($this->VisualizationAsset('ipsview.html'), ['{{LOADER_SCRIPT}}' => $this->VisualizationAsset('ipsview-loader.js'), '{{LOADER_CONFIG}}' => $this->encode([
+        return strtr($this->VisualizationAsset('ipsview.html'), ['{{LOADER_SCRIPT}}' => $this->VisualizationHTTPOriginScript() . "\n" . $this->VisualizationAsset('ipsview-loader.js'), '{{LOADER_CONFIG}}' => $this->encode([
             'url'   => isset($options['url']) ? $options['url'] . '/page' : '',
             'token' => $options['token'] ?? '',
             'title' => $this->Translate('WoIst'),
@@ -129,6 +129,12 @@ class iCloudWoIst extends IPSModuleStrict
             'RefreshDevices'     => $this->RefreshDevices(),
             default              => throw new InvalidArgumentException('Unsupported map action.')
         };
+    }
+
+    /** Symcon WebHooks evaluate classes with a synthetic reflection filename. */
+    protected function VisualizationAssetDirectory(): string
+    {
+        return __DIR__ . '/visualization';
     }
 
     private function renderPage(bool $ipsView, array $bootstrap): string
