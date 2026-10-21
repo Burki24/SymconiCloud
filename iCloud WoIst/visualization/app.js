@@ -55,6 +55,22 @@
         } catch (_) { return null; }
     }
 
+    // The public HTTP page receives its bearer only in the navigation fragment.
+    // Remove it from the document URL before any map or state request starts.
+    function consumeFragmentToken(configuration, environment) {
+        if (!configuration || configuration.fragmentToken !== true) return configuration;
+        const result = Object.assign({}, configuration, {token: ''});
+        try {
+            const url = new URL(environment.location.href);
+            if (!/^https?:$/.test(url.protocol)) return result;
+            const match = /^#token=([a-f0-9]{64})$/i.exec(url.hash);
+            url.hash = '';
+            environment.history.replaceState(null, '', url.pathname + url.search);
+            if (match) result.token = match[1];
+        } catch (_) { /* Fail closed if the credential cannot be removed. */ }
+        return result;
+    }
+
     // Only the cached map envelope is read. Tokens stay in a request header and
     // opaque IPSView frames require an explicitly configured endpoint origin.
     function createIPSViewTransport(configuration, environment, receive, status) {
@@ -149,7 +165,7 @@
         return transport;
     }
 
-    const api = {validLocation, ageSeconds, isStale, parseState, transportURL, createIPSViewTransport};
+    const api = {validLocation, ageSeconds, isStale, parseState, transportURL, consumeFragmentToken, createIPSViewTransport};
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (!global.document) return;
 
@@ -345,6 +361,8 @@
     function start() {
         let bootstrap = {};
         try { bootstrap = JSON.parse(el('woist-bootstrap').textContent); } catch (_) { /* Show empty state. */ }
+        const transportConfiguration = bootstrap.mode === 'ipsview'
+            ? consumeFragmentToken((bootstrap.options || {}).ipsViewTransport, global) : null;
         labels = Object.assign({}, fallback, bootstrap.labels || {});
         state = parseState(bootstrap.state) || state;
         configureDesign((bootstrap.options || {}).design);
@@ -386,7 +404,7 @@
         render();
         global.setInterval(render, 30000);
         if (bootstrap.mode === 'ipsview') {
-            createIPSViewTransport((bootstrap.options || {}).ipsViewTransport, global, global.handleMessage, (key) => {
+            createIPSViewTransport(transportConfiguration, global, global.handleMessage, (key) => {
                 el('transport-message').textContent = key ? text(key) : '';
                 el('transport-message').hidden = !key;
             }).start();

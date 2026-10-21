@@ -85,6 +85,18 @@ try {
 } catch (InvalidArgumentException) {
 }
 
+$hook = new ReflectionMethod($map, 'ProcessHookData');
+$callHook = static function (string $method = 'POST', ?string $provided = null, ?string $path = null) use ($map, $mapID, $hook): array
+{
+    $_SERVER = ['REQUEST_METHOD' => $method, 'REQUEST_URI' => $path ?? '/hook/SymconiCloudWoIst' . $mapID];
+    if ($provided !== null) {
+        $_SERVER['HTTP_X_WOIST_TOKEN'] = $provided;
+    }
+    ob_start();
+    $hook->invoke($map);
+    return [http_response_code(), ob_get_clean()];
+};
+
 // Optional IPSView output uses the same account cache and managed WebContent lifecycle.
 IPS_DisconnectInstance($mapID);
 IPS_ConnectInstance($mapID, $firstAccount);
@@ -95,17 +107,17 @@ IPS_SetProperty($mapID, 'EnableIPSView', true);
 IPS_ApplyChanges($mapID);
 $outputID = IPS_GetObjectIDByIdent('IPSViewWoIst', $mapID);
 $html = GetValueString($outputID);
-$check(str_contains($html, '"mode":"ipsview"') && str_contains($html, 'woist-app'), 'IPSView must create a standalone rendered page.');
-$check(str_contains($html, '--symc-background'), 'IPSView must embed a complete standalone visual theme.');
+$check(str_contains($html, '/page') && !str_contains($html, 'leaflet'), 'IPSView must create a small loader for the real HTTP map page.');
+[$pageStatus, $pageHTML] = $callHook('GET', null, '/hook/SymconiCloudWoIst' . $mapID . '/page');
+$check($pageStatus === 200 && str_contains($pageHTML, '"mode":"ipsview"') && str_contains($pageHTML, '--symc-background'), 'The HTTP page must embed the complete standalone map and theme.');
 $check(IPS_GetVariable($outputID)['VariableType'] === VARIABLETYPE_STRING, 'IPSView output must be a String WebContent variable.');
 $check(!str_contains($html, '{{') && !str_contains($html, 'synthetic-secret-session'), 'IPSView must resolve templates and exclude account secrets.');
 $check(array_unique($firstBoundary->commands) === ['GetDevices'], 'Enabling and rendering IPSView must only read the account cache.');
 $literalData = $envelope;
 $literalData['devices'][0]['name'] = '{{MODULE_SCRIPT}} {{UNKNOWN}}';
 $firstBoundary->result = $literalData;
-foreach ([$map->GetVisualizationTile(), $map->GetIPSViewHTML()] as $literalPage) {
-    $check(str_contains($literalPage, '"name":"{{MODULE_SCRIPT}} {{UNKNOWN}}"'), 'Literal template-like device names must remain data in both rendering modes.');
-}
+$check(str_contains($map->GetVisualizationTile(), '"name":"{{MODULE_SCRIPT}} {{UNKNOWN}}"'), 'Literal template-like device names must remain data in the native tile.');
+$check(!str_contains($map->GetIPSViewHTML(), '{{MODULE_SCRIPT}}'), 'The persistent IPSView loader must never embed device names.');
 $firstBoundary->result = $envelope;
 $map->RequestAction('IPSViewHTMLRegenerateVariables', '');
 $check(IPS_GetObjectIDByIdent('IPSViewWoIst', $mapID) === $outputID, 'HTML regeneration must preserve its output variable.');
@@ -120,7 +132,7 @@ IPS_SetProperty($mapID, 'IPSViewUseTileDesign', false);
 IPS_SetProperty($mapID, 'IPSViewMarkerSize', 13);
 IPS_SetProperty($mapID, 'TileMarkerSize', 7);
 IPS_ApplyChanges($mapID);
-$check(str_contains($map->GetIPSViewHTML(), '"markerSize":13'), 'IPSView must render its independent design.');
+$check(str_contains($callHook('GET', null, '/hook/SymconiCloudWoIst' . $mapID . '/page')[1], '"markerSize":13'), 'The HTTP page must render its independent IPSView design.');
 $check(str_contains($map->GetVisualizationTile(), '"markerSize":7'), 'Native tile must retain its own design.');
 $map->CopyTileDesignToIPSView();
 $check(IPS_GetProperty($mapID, 'IPSViewMarkerSize') === 7 && IPS_GetProperty($mapID, 'IPSViewUseTileDesign') === false, 'Copy action must snapshot saved Tile settings into independent IPSView design.');
@@ -138,17 +150,6 @@ $readAttribute = new ReflectionMethod($map, 'ReadAttributeString');
 $token = $readAttribute->invoke($map, 'IPSViewTransportToken');
 $check(strlen($token) === 64 && ctype_xdigit($token), 'IPSView must have a cryptographically random per-instance token.');
 $check(!str_contains($map->GetState(), $token) && !str_contains($map->GetVisualizationTile(), $token), 'Native SDK state and Tile must never expose the standalone transport token.');
-$hook = new ReflectionMethod($map, 'ProcessHookData');
-$callHook = static function (string $method = 'POST', ?string $provided = null, ?string $path = null) use ($map, $mapID, $hook): array
-{
-    $_SERVER = ['REQUEST_METHOD' => $method, 'REQUEST_URI' => $path ?? '/hook/SymconiCloudWoIst' . $mapID];
-    if ($provided !== null) {
-        $_SERVER['HTTP_X_WOIST_TOKEN'] = $provided;
-    }
-    ob_start();
-    $hook->invoke($map);
-    return [http_response_code(), ob_get_clean()];
-};
 $firstBoundary->commands = [];
 $stableHtml = GetValueString($outputID);
 $map->ReceiveData(json_encode(['DataID' => '{FCE7780F-9520-4E52-92F3-60034FFAED6D}'] + $notification, JSON_THROW_ON_ERROR));
@@ -160,6 +161,28 @@ $check(GetValueString($outputID) === $stableHtml && $firstBoundary->commands ===
 $check($callHook('OPTIONS')[0] === 204 && $callHook('OPTIONS')[1] === '', 'CORS preflight must return no device state.');
 $check($callHook('POST')[0] === 403 && $callHook('POST', 'invalid')[0] === 403, 'Missing and incorrect transport tokens must be rejected.');
 $check($callHook('GET', $token)[0] === 405 && $callHook('POST', $token, '/hook/SymconiCloudWoIst' . $mapID . '/extra')[0] === 404, 'Only POST on the exact instance hook is allowed.');
+// A public shell has no private bootstrap and accepts neither credentials in URLs nor extra routes.
+$provider = IPS_GetProperty($mapID, 'TileURL');
+$attribution = IPS_GetProperty($mapID, 'TileAttribution');
+IPS_SetProperty($mapID, 'TileURL', 'https://tiles.example.invalid/{z}/{x}/{y}.png?key=synthetic-provider-secret');
+IPS_SetProperty($mapID, 'TileAttribution', 'synthetic-private-attribution');
+IPS_ApplyChanges($mapID);
+$firstBoundary->commands = [];
+[$pageStatus, $pageHTML] = $callHook('GET', null, '/hook/SymconiCloudWoIst' . $mapID . '/page');
+$check($pageStatus === 200 && str_contains($pageHTML, '"fragmentToken":true') && str_contains($pageHTML, '"tileUrl":""'), 'Public HTTP shell must wait for fragment authentication before loading provider tiles.');
+foreach ([$token, 'Synthetic IPSView update', 'synthetic-provider-secret', 'synthetic-private-attribution', '51.25'] as $privateValue) {
+    $check(!str_contains($pageHTML, $privateValue), 'Public HTTP shell must never embed account data, provider credentials or bearer tokens.');
+}
+$check($firstBoundary->commands === [], 'Rendering the public HTTP page must not read the account cache.');
+$pagePath = '/hook/SymconiCloudWoIst' . $mapID . '/page';
+$check($callHook('POST', $token, $pagePath)[0] === 405, 'Public HTTP shell allows GET only.');
+foreach ([$pagePath . '?token=' . $token, $pagePath . '/' . $token, $pagePath . '/extra', $pagePath . '/', '/hook/SymconiCloudWoIst' . $mapID . '?token=' . $token] as $invalidPath) {
+    $check($callHook('GET', null, $invalidPath)[0] === 404, 'Query credentials and non-exact page paths must be rejected.');
+}
+IPS_SetProperty($mapID, 'TileURL', $provider);
+IPS_SetProperty($mapID, 'TileAttribution', $attribution);
+IPS_ApplyChanges($mapID);
+$stableHtml = GetValueString($outputID);
 $map->Update();
 $map->RefreshDevices();
 $check(GetValueString($outputID) === $stableHtml, 'Cache updates and explicit Apple refresh must preserve the IPSView document.');
@@ -177,7 +200,7 @@ foreach (['https://user@example.invalid', 'https://example.invalid/path', 'https
 }
 IPS_SetProperty($mapID, 'IPSViewServerURL', 'https://symcon.example.invalid:3777');
 IPS_ApplyChanges($mapID);
-$check(str_contains($map->GetIPSViewHTML(), 'https://symcon.example.invalid:3777/hook/SymconiCloudWoIst'), 'Configured origins must resolve the IPSView endpoint explicitly.');
+$check(str_contains(str_replace('\\/', '/', $map->GetIPSViewHTML()), 'https://symcon.example.invalid:3777/hook/SymconiCloudWoIst'), 'Configured origins must resolve the IPSView endpoint explicitly.');
 $otherMapID = IPS_CreateInstance('{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}');
 IPS_ConnectInstance($otherMapID, $secondAccount);
 IPS_SetProperty($otherMapID, 'EnableIPSView', true);

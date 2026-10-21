@@ -1,7 +1,24 @@
 'use strict';
 
 const assert = require('node:assert/strict');
-const {transportURL, createIPSViewTransport} = require('../iCloud WoIst/visualization/app.js');
+const {transportURL, consumeFragmentToken, createIPSViewTransport} = require('../iCloud WoIst/visualization/app.js');
+
+const fragmentToken = 'a'.repeat(64);
+let sanitizedURL;
+const fragmentConfiguration = {url: '/hook/map', token: '', fragmentToken: true};
+const fragmentEnvironment = {
+    location: {href: 'https://symcon.example.invalid/hook/map/page#token=' + fragmentToken},
+    history: {replaceState(_state, _unused, url) { sanitizedURL = url; }}
+};
+assert.equal(consumeFragmentToken(fragmentConfiguration, fragmentEnvironment).token, fragmentToken);
+assert.equal(sanitizedURL, '/hook/map/page', 'The navigation fragment is erased before the credential is used.');
+assert.equal(fragmentConfiguration.token, '', 'The public bootstrap remains free of credentials.');
+for (const hash of ['', '#token=bad', '#token=' + fragmentToken + '&other=1']) {
+    const result = consumeFragmentToken(fragmentConfiguration, {...fragmentEnvironment, location: {href: 'https://symcon.example.invalid/page' + hash}});
+    assert.equal(result.token, '', 'Missing or malformed fragments cannot authorize reads.');
+}
+assert.equal(consumeFragmentToken(fragmentConfiguration, {...fragmentEnvironment, history: {replaceState() { throw new Error('Opaque sandbox'); }}}).token, '', 'A page unable to erase its fragment fails closed.');
+assert.equal(consumeFragmentToken(fragmentConfiguration, {...fragmentEnvironment, location: {href: 'data:text/html,test#token=' + fragmentToken}}).token, '', 'Only a genuine HTTP(S) page consumes the bearer.');
 
 const origin = {protocol: 'https:', origin: 'https://symcon.example.invalid:3777'};
 assert.equal(transportURL('/hook/map', origin), 'https://symcon.example.invalid:3777/hook/map');

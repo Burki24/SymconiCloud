@@ -7,17 +7,29 @@ namespace SymconiCloud;
 /** Read-only, per-instance transport for the persistent IPSView map document. */
 trait WoIstIPSViewTransport
 {
-    /** Serves only the sanitized cached wrapper; never calls the account or Apple. */
+    /** Serves a public HTTP shell or authenticated sanitized cache; never queries the account. */
     protected function ProcessHookData(): void
     {
         header('Access-Control-Allow-Origin: *');
-        header('Access-Control-Allow-Methods: POST, OPTIONS');
+        header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
         header('Access-Control-Allow-Headers: Content-Type, X-WoIst-Token');
         $path = '/hook/' . $this->WoIstIPSViewHookName();
-        if (($_SERVER['REQUEST_URI'] ?? '') !== $path || !$this->IsIPSViewHTMLPageEnabled()
+        $uri = $_SERVER['REQUEST_URI'] ?? '';
+        $page = $uri === $path . '/page';
+        if (($uri !== $path && !$page) || !$this->IsIPSViewHTMLPageEnabled()
             || !$this->WoIstIPSViewServerURLValid() || !$this->HasParent()
             || $this->ReadAttributeInteger('IPSViewTransportConnection') !== IPS_GetInstance($this->InstanceID)['ConnectionID']) {
             $this->SendPlainTextResponse(404, 'Not available.');
+            return;
+        }
+        if ($page) {
+            if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
+                header('Allow: GET');
+                $this->SendPlainTextResponse(405, 'Method not allowed.');
+                return;
+            }
+            header('Referrer-Policy: origin');
+            $this->SendResponse(200, 'text/html', $this->renderIPSViewHTTPShell());
             return;
         }
         if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {

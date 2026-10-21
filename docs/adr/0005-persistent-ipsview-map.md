@@ -1,6 +1,6 @@
 # 0005: Stabile IPSView-Karte mit getrennten Zustandsdaten
 
-Datum: 2026-10-21. Status: angenommen. Ersetzt die Datenübertragung aus ADR 0004.
+Datum: 2026-10-21. Status: angenommen; HTTP(S)-Seiteneinbettung durch ADR 0006 ergänzt. Ersetzt die Datenübertragung aus ADR 0004.
 
 ## Anlass
 

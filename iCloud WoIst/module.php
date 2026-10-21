@@ -96,9 +96,14 @@ class iCloudWoIst extends IPSModuleStrict
     /** @return string Standalone HTML shell; data updates are delivered separately through the cache endpoint. */
     public function GetIPSViewHTML(): string
     {
-        $bootstrap = $this->bootstrap($this->request('GetDevices'));
-        $this->PublishWoIstIPSViewState($bootstrap);
-        return $this->renderPage(true, $bootstrap);
+        $this->ConfigureWoIstIPSViewTransport();
+        $options = $this->WoIstIPSViewTransportOptions();
+        return strtr($this->VisualizationAsset('ipsview.html'), ['{{LOADER_SCRIPT}}' => $this->VisualizationAsset('ipsview-loader.js'), '{{LOADER_CONFIG}}' => $this->encode([
+            'url'   => isset($options['url']) ? $options['url'] . '/page' : '',
+            'token' => $options['token'] ?? '',
+            'title' => $this->Translate('WoIst'),
+            'error' => $this->Translate('Configure the Symcon server URL for IPSView live updates.')
+        ])]);
     }
 
     /** @param string $JSONString Normalized account notification. @return string Empty acknowledgement. */
@@ -131,7 +136,9 @@ class iCloudWoIst extends IPSModuleStrict
         $bootstrap['mode'] = $ipsView ? 'ipsview' : 'symcon';
         $bootstrap['options']['design'] = $this->WoIstDesign($ipsView);
         if ($ipsView && $this->IsIPSViewHTMLPageEnabled()) {
-            $bootstrap['options']['ipsViewTransport'] = $this->WoIstIPSViewTransportOptions();
+            $bootstrap['options']['ipsViewTransport'] = [
+                'url' => '/hook/' . $this->WoIstIPSViewHookName(), 'token' => '', 'fragmentToken' => true, 'pollInterval' => 5000
+            ];
         }
         return $this->RenderVisualizationHTMLPage($ipsView, [
             'title'              => $this->Translate('WoIst'),
@@ -148,6 +155,14 @@ class iCloudWoIst extends IPSModuleStrict
                 '{{DESIGN_CSS}}'     => $this->WoIstDesignCSS($ipsView)
             ]
         ]);
+    }
+
+    /** Public HTTP shell contains no account data, provider credentials or transport token. */
+    private function renderIPSViewHTTPShell(): string
+    {
+        $bootstrap = $this->bootstrap($this->unavailable());
+        $bootstrap['options'] = ['tileUrl' => '', 'attribution' => '', 'maxZoom' => 19];
+        return $this->renderPage(true, $bootstrap);
     }
 
     private function request(string $command): array
