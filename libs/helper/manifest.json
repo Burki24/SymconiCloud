@@ -27,10 +27,16 @@
             "source_sha": "d13d726f8df24a5ad6e3d659242f407731a10567"
         },
         "VisualizationAssetHelper": {
-            "version": "1.0.0",
-            "sha256": "1693b2399bcf95d270a6d9a01df6534caad906497bd4ba9489916a951abaffcc",
+            "version": "1.0.1",
+            "sha256": "ef3adcd38be489ea129bf2e95ad15d32673879e90bf4da8f1272fbf958a0513c",
             "path": "libs/helper/VisualizationAssetHelper.php",
-            "source_sha": "d13d726f8df24a5ad6e3d659242f407731a10567"
+            "source_sha": "a724b8954e32a97c3446a78939a3108d4aaa5996",
+            "assets": [
+                {
+                    "path": "libs/helper/visualization/http-origin.js",
+                    "sha256": "2ae76879f0597414bc60511d9d36c93f1993aec336cb711067ee8925d560be58"
+                }
+            ]
         },
         "VisualizationThemeHelper": {
             "version": "1.1.0",
@@ -39,16 +45,16 @@
             "source_sha": "d13d726f8df24a5ad6e3d659242f407731a10567"
         },
         "ResponsiveVisualizationHelper": {
-            "version": "1.0.0",
-            "sha256": "d48656a9d03da7e2332321d8a0d448fd1f558a5f0dbab808a5622e0ab7dd8afe",
+            "version": "1.0.1",
+            "sha256": "9b8f708fe4de4271310a50c1ac2f09166ba731f540eb829f46ad15b805f9f220",
             "path": "libs/helper/ResponsiveVisualizationHelper.php",
-            "source_sha": "7b3bdd2634666c863061e084a68838baaa44295e"
+            "source_sha": "a724b8954e32a97c3446a78939a3108d4aaa5996"
         },
         "IPSViewHTMLPageHelper": {
-            "version": "1.5.1",
-            "sha256": "33e3e1d1a663a2a174b10c1ab66feb93fc95fb788fc80151fb810099c883f49d",
+            "version": "1.5.2",
+            "sha256": "cc29a1f8225dcdbc6c420b3f35851b7d5fb066567728aa34296261b8ae8fc86f",
             "path": "libs/helper/IPSViewHTMLPageHelper.php",
-            "source_sha": "d13d726f8df24a5ad6e3d659242f407731a10567",
+            "source_sha": "a724b8954e32a97c3446a78939a3108d4aaa5996",
             "assets": [
                 {
                     "path": "libs/helper/translations/IPSViewHTMLPageHelper.json",
@@ -65,10 +71,16 @@
                 },
                 {
                     "name": "VisualizationAssetHelper",
-                    "version": "1.0.0",
-                    "sha256": "1693b2399bcf95d270a6d9a01df6534caad906497bd4ba9489916a951abaffcc",
+                    "version": "1.0.1",
+                    "sha256": "ef3adcd38be489ea129bf2e95ad15d32673879e90bf4da8f1272fbf958a0513c",
                     "path": "libs/helper/VisualizationAssetHelper.php",
-                    "source_sha": "d13d726f8df24a5ad6e3d659242f407731a10567"
+                    "source_sha": "a724b8954e32a97c3446a78939a3108d4aaa5996",
+                    "assets": [
+                        {
+                            "path": "libs/helper/visualization/http-origin.js",
+                            "sha256": "2ae76879f0597414bc60511d9d36c93f1993aec336cb711067ee8925d560be58"
+                        }
+                    ]
                 }
             ]
         },
