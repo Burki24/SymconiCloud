@@ -6,7 +6,7 @@ require_once __DIR__ . '/../libs/helper/ConfigurationFormHelper.php';
 require_once __DIR__ . '/../libs/helper/DataFlowHelper.php';
 require_once __DIR__ . '/../libs/helper/ParentConnectionHelper.php';
 
-class iCloudWoIstConfigurator extends IPSModuleStrict
+class iCloudConfigurator extends IPSModuleStrict
 {
     use \Burki24\SymconModuleHelper\ConfigurationFormHelper;
     use \Burki24\SymconModuleHelper\DataFlowHelper;
@@ -21,7 +21,7 @@ class iCloudWoIstConfigurator extends IPSModuleStrict
     public function ApplyChanges(): void
     {
         parent::ApplyChanges();
-        $this->SetStatus($this->HasParent() ? IS_INACTIVE : 201);
+        $this->updateForm($this->request('GetDevices'));
     }
 
     /** @return string SDK parent descriptor allowing connections to shared accounts. */

@@ -53,7 +53,7 @@ foreach (glob($root . '/*/module.json') as $file) {
 $assert(count($modules) === 3 && isset($modules[2], $modules[3], $modules[4]), 'Account splitter, device and configurator required');
 $assert($modules[2]['parentRequirements'] === [], 'HTTPS account needs no artificial I/O parent');
 foreach ([3, 4] as $type) {
-    $assert(str_contains($modules[$type]['name'], 'WoIst'), 'Service module name must include WoIst');
+    $assert(!str_contains($modules[$type]['name'], 'WoIst'), 'WoIst is reserved for the future map module');
     $assert($modules[$type]['parentRequirements'] === $modules[2]['implemented'], 'Upstream data contract');
     $assert($modules[$type]['implemented'] === $modules[2]['childRequirements'], 'Downstream data contract');
 }
@@ -66,6 +66,7 @@ foreach ($subscriptions as $name => $subscription) {
 }
 $workflow = file_get_contents($root . '/.github/workflows/tests.yml');
 $assert(str_contains($workflow, 'Burki24/Symcon_ModuleCI/php-tests@v1.0.0') && str_contains($workflow, "php-version: '8.5'") && str_contains($workflow, 'bcmath'), 'Pinned shared CI and dependencies');
+$assert(str_contains($workflow, 'test-command: php tests/run.php') && str_contains(file_get_contents($root . '/tests/run.php'), "'sdk-contracts.php'"), 'CI must run the documented SDK contract tests');
 $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS));
 foreach ($iterator as $file) {
     $relative = str_replace('\\', '/', substr($file->getPathname(), strlen($root) + 1));

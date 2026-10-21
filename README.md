@@ -1,8 +1,8 @@
 # SymconiCloud
 
-SymconiCloud verbindet Apple-iCloud-Dienste mit IP-Symcon. Der erste Dienst ist **WoIst**: Apple-Anmeldung mit Zwei-Faktor-Bestätigung, lesender Abruf der verfügbaren Geräte und Anzeige der von Apple gelieferten Geräte-, Akku- und Standortdaten.
+SymconiCloud verbindet Apple-iCloud-Dienste mit IP-Symcon. Die Library bietet Apple-Anmeldung mit Zwei-Faktor-Bestätigung, einen Gerätekonfigurator und **iCloud Gerät** zur Anzeige der von Apple gelieferten Geräte-, Akku- und Standortdaten.
 
-Die Library ist für spätere Dienste erweiterbar. Aktuell sind ausschließlich die hier beschriebenen WoIst-Funktionen enthalten. Kalender, Kontakte, Fotos und iCloud Drive sind nicht enthalten.
+**WoIst** ist für ein separates Kartenmodul vorgesehen, das die Positionen der gelisteten Geräte darstellen wird. Diese Karte ist noch nicht enthalten. Kalender, Kontakte, Fotos und iCloud Drive sind ebenfalls nicht enthalten.
 
 ## Voraussetzungen
 
@@ -11,15 +11,15 @@ Die Library ist für spätere Dienste erweiterbar. Aktuell sind ausschließlich 
 - Das reguläre Apple-Account-Passwort; anwendungsspezifische CalDAV-Passwörter funktionieren hier nicht.
 - HTTPS-Verbindung zu Apple. Unterstützt wird der globale iCloud-Dienst; der chinesische iCloud-Dienst und Hardware-Sicherheitsschlüssel/SMS als alternative 2FA-Verfahren sind derzeit nicht implementiert.
 
-Die Anbindung verwendet Apples Web-Endpunkte. Apple stellt dafür keine zugesicherte öffentliche WoIst-Entwicklerschnittstelle bereit; Änderungen bei Apple können erneute Anmeldung oder Anpassungen erfordern. Dieser erste Entwicklungsstand ist noch nicht mit einem echten Apple-Konto abgenommen.
+Die Anbindung verwendet Apples Web-Endpunkte. Apple stellt dafür keine zugesicherte öffentliche WoIst-Entwicklerschnittstelle bereit; Änderungen bei Apple können erneute Anmeldung oder Anpassungen erfordern. Die Library befindet sich in der Testphase.
 
 ## Installation und Einrichtung
 
 1. `https://github.com/Burki24/SymconiCloud` in der Modulverwaltung als Bibliothek hinzufügen. Die erste Entwicklung liegt auf `dev`.
 2. [iCloud Account](iCloud%20Account/README.md) als **iCloud Konto** anlegen, aktivieren, Zugangsdaten speichern und **Anmelden** wählen.
 3. Den Code vom vertrauenswürdigen Apple-Gerät unter **Zwei-Faktor-Authentifizierung** eingeben und bestätigen. Nach erfolgreicher Anmeldung wird die Geräteliste abgerufen.
-4. [iCloud WoIst Configurator](iCloud%20WoIst%20Configurator/README.md) anlegen und mit diesem Konto verbinden.
-5. Geräte über den Konfigurator als [iCloud WoIst Device](iCloud%20WoIst%20Device/README.md) anlegen.
+4. [iCloud Configurator](iCloud%20Configurator/README.md) anlegen und mit diesem Konto verbinden.
+5. Geräte über den Konfigurator als [iCloud Device](iCloud%20Device/README.md) anlegen.
 
 Ein Konto kann mehrere Geräte bedienen; mehrere Apple-Konten verwenden getrennte Kontoinstanzen. Das Konto speichert Sitzung und Gerätecache über Symcon-Neustarts hinweg. Passwörter und Sitzungstokens gehören zu den vertraulichen Instanzdaten; Symcon-Konfiguration und Backups entsprechend schützen.
 

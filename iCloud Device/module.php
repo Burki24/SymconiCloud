@@ -7,7 +7,7 @@ require_once __DIR__ . '/../libs/helper/DataFlowHelper.php';
 require_once __DIR__ . '/../libs/helper/ParentConnectionHelper.php';
 require_once __DIR__ . '/../libs/helper/VariablePresentationHelper.php';
 
-class iCloudWoIstDevice extends IPSModuleStrict
+class iCloudDevice extends IPSModuleStrict
 {
     use \Burki24\SymconModuleHelper\ConfigurationFormHelper;
     use \Burki24\SymconModuleHelper\DataFlowHelper;

@@ -27,3 +27,4 @@ jobs:
         with:
           php-version: '8.5'
           php-extensions: curl, bcmath, dom
+          test-command: php tests/run.php

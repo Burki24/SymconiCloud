@@ -1,6 +1,6 @@
-# iCloud WoIst Configurator
+# iCloud Configurator / iCloud Konfigurator
 
-Der Konfigurator legt lesende WoIst-Geräteinstanzen aus der gespeicherten Geräteliste eines iCloud-Kontos an. Voraussetzung ist Symcon 9 und ein eingerichtetes iCloud-Konto aus dieser Library.
+Der Konfigurator legt lesende iCloud-Geräteinstanzen aus der gespeicherten Geräteliste eines iCloud-Kontos an. Voraussetzung ist Symcon 9 und ein eingerichtetes iCloud-Konto aus dieser Library.
 
 ## Einrichtung und Bedienung
 
@@ -12,8 +12,8 @@ Das Öffnen des Formulars und **Gespeicherte Liste neu laden** lesen ausschließ
 
 | Funktion | Rückgabe | Wirkung |
 | --- | --- | --- |
-| `ICWC_Reload(int $InstanceID)` | bool | Gespeicherte Liste lesen und Formular aktualisieren |
-| `ICWC_RefreshDevices(int $InstanceID)` | bool | Geräte bei Apple über das verbundene Konto aktualisieren |
+| `ICDC_Reload(int $InstanceID)` | bool | Gespeicherte Liste lesen und Formular aktualisieren |
+| `ICDC_RefreshDevices(int $InstanceID)` | bool | Geräte bei Apple über das verbundene Konto aktualisieren |
 
 `false` bedeutet fehlende Kontoverbindung oder nicht verfügbare Kontodaten. Die Instanz besitzt keine Statusvariablen.
 

@@ -5,7 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/stubs/autoload.php';
 
 /** Synthetic account boundary; child modules and kernel data flow remain real. */
-class WoIstFixtureAccount extends IPSModuleStrict
+class DeviceFixtureAccount extends IPSModuleStrict
 {
     /** @var array<string, mixed> */
     public array $result = ['success' => false, 'state' => 'signedOut', 'updatedAt' => 0, 'devices' => [], 'error' => 'Sign in required.'];
@@ -47,7 +47,7 @@ IPS\ModuleLoader::loadLibrary(dirname(__DIR__) . '/library.json');
 $metadata = new ReflectionProperty(IPS\ModuleLoader::class, 'modules');
 $modules = $metadata->getValue();
 $check(isset($modules[$accountModule]), 'The real library must include its account module.');
-$modules[$accountModule]['Class'] = WoIstFixtureAccount::class;
+$modules[$accountModule]['Class'] = DeviceFixtureAccount::class;
 $metadata->setValue(null, $modules);
 
 $firstAccount = IPS_CreateInstance($accountModule);
@@ -76,6 +76,7 @@ $secondDevice = $createDevice($secondAccount);
 $configurator = IPS_CreateInstance($configuratorModule);
 IPS_ConnectInstance($configurator, $firstAccount);
 IPS_ApplyChanges($configurator);
+$check(IPS_GetInstance($configurator)['InstanceStatus'] === IS_ACTIVE, 'ApplyChanges must keep a configurator with an authenticated cache active.');
 $configuratorInterface = IPS\InstanceManager::getInstanceInterface($configurator);
 // Official SDK contract: an object with connect/moduleIDs, not a GUID list.
 // Direct IPS_ConnectInstance calls in the stubs do not validate the console wizard contract.
@@ -92,9 +93,9 @@ $check(count($rows) === 1 && $rows[0]['instanceID'] === $firstDevice, 'Same devi
 $check($rows[0]['instanceID'] !== $secondDevice, 'Physical account connection is part of device identity.');
 $check($rows[0]['create']['moduleID'] === $deviceModule && $rows[0]['create']['configuration'] === ['DeviceID' => 'synthetic-device'], 'Creation recipe must create only a device using the configurator parent.');
 $check($firstBoundary->commands === ['GetDevices'], 'Opening the form must issue only a cache read.');
-$check(ICWC_Reload($configurator), 'Reload must accept a populated authenticated cache.');
+$check(ICDC_Reload($configurator), 'Reload must accept a populated authenticated cache.');
 $check($firstBoundary->commands === ['GetDevices', 'GetDevices'], 'Reload must not start an Apple refresh.');
-$check(ICWC_RefreshDevices($configurator), 'Explicit refresh must return its account result.');
+$check(ICDC_RefreshDevices($configurator), 'Explicit refresh must return its account result.');
 $check(end($firstBoundary->commands) === 'RefreshDevices', 'Explicit refresh must send its dedicated command.');
 
 $check($value($firstDevice, 'DataAvailable') === true && $value($firstDevice, 'Online') === true, 'Successful cache read must populate availability.');
@@ -131,7 +132,7 @@ $check(IPS_GetInstance($configurator)['InstanceStatus'] === 202, 'Unexpected Dat
 
 $firstBoundary->result = $envelope;
 $firstBoundary->result['devices'] = [];
-$check(!ICWD_Update($firstDevice) && IPS_GetInstance($firstDevice)['InstanceStatus'] === 203, 'Missing device must become unavailable.');
+$check(!ICID_Update($firstDevice) && IPS_GetInstance($firstDevice)['InstanceStatus'] === 203, 'Missing device must become unavailable.');
 IPS_SetProperty($firstDevice, 'DeviceID', 'different-synthetic-device');
 IPS_ApplyChanges($firstDevice);
 $check($value($firstDevice, 'Latitude') === 0.0 && $value($firstDevice, 'LocationTimestamp') === 0, 'Changing identity must not preserve another device location.');

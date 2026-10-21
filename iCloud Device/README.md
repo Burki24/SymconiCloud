@@ -1,6 +1,6 @@
-# iCloud WoIst Device
+# iCloud Device / iCloud Gerät
 
-Eine Instanz zeigt ein Apple-Gerät aus der WoIst-Geräteliste an. Voraussetzung ist Symcon 9 und ein angemeldetes iCloud-Konto dieser Library. Geräte vorzugsweise über den zugehörigen WoIst-Konfigurator anlegen.
+Eine Instanz zeigt die Geräte-, Akku- und Standortdaten eines Apple-Gerätes aus dem Kontocache an. Voraussetzung ist Symcon 9 und ein angemeldetes iCloud-Konto dieser Library. Geräte vorzugsweise über den iCloud-Konfigurator anlegen. Eine Karte ist nicht Bestandteil dieser Geräteinstanz; dafür ist das spätere Modul WoIst vorgesehen.
 
 ## Konfiguration
 
@@ -30,7 +30,7 @@ Bei fehlendem Standort bleiben die letzten gültigen Koordinaten und deren Zeit 
 
 ## Öffentliche Funktion
 
-`ICWD_Update(int $InstanceID): bool` liest das Gerät aus dem Kontocache. `true` bedeutet, dass das Gerät in einer erfolgreich abgerufenen Liste vorhanden ist. Die Funktion und **Gespeicherte Kontodaten lesen** starten keinen Netzwerkabruf. Für neue Apple-Daten die Geräteabfrage im Konto oder Konfigurator verwenden.
+`ICID_Update(int $InstanceID): bool` liest das Gerät aus dem Kontocache. `true` bedeutet, dass das Gerät in einer erfolgreich abgerufenen Liste vorhanden ist. Die Funktion und **Gespeicherte Kontodaten lesen** starten keinen Netzwerkabruf. Für neue Apple-Daten die Geräteabfrage im Konto oder Konfigurator verwenden.
 
 ## Lizenz
 

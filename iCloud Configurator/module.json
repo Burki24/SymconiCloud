@@ -1,10 +1,10 @@
 {
     "id": "{E9D7CB55-7E98-46BF-BC8D-6D384870D9AC}",
-    "name": "iCloud WoIst Configurator",
+    "name": "iCloud Configurator",
     "type": 4,
     "vendor": "Apple",
     "aliases": [
-        "iCloud WoIst Konfigurator"
+        "iCloud Konfigurator"
     ],
     "parentRequirements": [
         "{1E60F0BE-03E4-4AA4-A1CE-AA838725A4E2}"
@@ -13,6 +13,6 @@
     "implemented": [
         "{FCE7780F-9520-4E52-92F3-60034FFAED6D}"
     ],
-    "prefix": "ICWC",
-    "url": "https://github.com/Burki24/SymconiCloud/blob/main/iCloud%20WoIst%20Configurator/README.md"
+    "prefix": "ICDC",
+    "url": "https://github.com/Burki24/SymconiCloud/blob/main/iCloud%20Configurator/README.md"
 }
