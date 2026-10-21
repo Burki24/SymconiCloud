@@ -5,6 +5,39 @@ declare(strict_types=1);
 ob_start();
 require_once __DIR__ . '/modules.php';
 
+// RegisterHook is a volatile SDK registration; it must exist before output is enabled.
+// https://www.symcon.de/de/service/dokumentation/entwicklerbereich/sdk-tools/sdk-php/module/registerhook/
+class HookLifecycleMap extends iCloudWoIst
+{
+    public array $registeredHooks = [];
+
+    protected function RegisterHook(string $HookPath): bool
+    {
+        $this->registeredHooks[$HookPath] = true;
+        return true;
+    }
+
+    protected function UnregisterHook(string $HookPath): bool
+    {
+        unset($this->registeredHooks[$HookPath]);
+        return true;
+    }
+}
+$modules = $metadata->getValue();
+$modules['{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}']['Class'] = HookLifecycleMap::class;
+$metadata->setValue(null, $modules);
+$lifecycleID = IPS_CreateInstance('{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}');
+$lifecycle = IPS\InstanceManager::getInstanceInterface($lifecycleID);
+$check(isset($lifecycle->registeredHooks['SymconiCloudWoIst' . $lifecycleID]), 'Create must register the hook even with IPSView disabled.');
+$configureTransport = new ReflectionMethod($lifecycle, 'ConfigureWoIstIPSViewTransport');
+foreach ([true, false, true] as $enabled) {
+    IPS_SetProperty($lifecycleID, 'EnableIPSView', $enabled);
+    $configureTransport->invoke($lifecycle);
+    $check(isset($lifecycle->registeredHooks['SymconiCloudWoIst' . $lifecycleID]), 'Output toggles must retain the registered hook.');
+}
+$modules['{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}']['Class'] = iCloudWoIst::class;
+$metadata->setValue(null, $modules);
+
 // Keep the genuine map instance and kernel routing; only Apple transport is synthetic.
 $firstBoundary->result = $envelope;
 $mapID = IPS_CreateInstance('{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}');
@@ -154,6 +187,7 @@ IPS_ApplyChanges($mapID);
 $check(IPS_GetObjectIDByIdent('IPSViewWoIst', $mapID) === $outputID && GetValueString($outputID) === $lastHtml, 'Disabling optional output must retain its variable and content.');
 $map->ReceiveData(json_encode(['DataID' => '{FCE7780F-9520-4E52-92F3-60034FFAED6D}'] + $notification, JSON_THROW_ON_ERROR));
 $check(GetValueString($outputID) === $lastHtml, 'Disabled IPSView output must stop updating retained content.');
+$check($callHook('GET', null, '/hook/SymconiCloudWoIst' . $mapID . '/page')[0] === 404, 'Disabled output must reject the page even while the hook remains registered.');
 
 // The standalone document receives data through a read-only authenticated cache endpoint.
 IPS_SetProperty($mapID, 'EnableIPSView', true);

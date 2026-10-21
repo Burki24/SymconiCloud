@@ -62,3 +62,7 @@ Das Modul erzeugt keine Gerätevariablen; die optionale IPSView-HTML-Variable di
 ## Lizenz
 
 Eigenes Modul: [PolyForm Noncommercial License 1.0.0](../LICENSE). Leaflet 1.9.4: BSD-2-Clause, siehe [Leaflet-Lizenz](../libs/vendor/leaflet/LICENSE). Kartendaten: [© OpenStreetMap contributors](https://www.openstreetmap.org/copyright).
+
+Der interne WebHook `SymconiCloudWoIst<Instanz-ID>` wird beim Laden der Instanz unabhängig vom IPSView-Schalter registriert und nach jedem Symcon-Neustart erneut angelegt. Bei deaktivierter IPSView-Ausgabe liefert er 404; vorhandene Zugriffstokens werden ungültig. Nach einem Update auf diese Registrierung muss die Modulinstanz neu geladen werden, beispielsweise durch einen Symcon-Neustart.
+
+Eine Server-IP wird nicht grundsätzlich benötigt: In einer HTTP(S)-Seite auf demselben Server verwendet die Einbindung automatisch den aktuellen Ursprung. Native IPSView-Apps und `data:`-/`about:`-Einbettungen besitzen keinen verwendbaren HTTP(S)-Ursprung; dort ist die vom Anzeigegerät erreichbare Serveradresse erforderlich. Das kann auch ein DNS-Name oder eine HTTPS-Adresse über einen Reverse-Proxy sein. Eine automatisch ermittelte lokale IP wäre außerhalb des lokalen Netzes unter Umständen nicht erreichbar.

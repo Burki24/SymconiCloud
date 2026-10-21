@@ -60,8 +60,10 @@ trait WoIstIPSViewTransport
         $this->RegisterAttributeString('IPSViewTransportToken', '');
         $this->RegisterAttributeString('IPSViewTransportState', '');
         $this->RegisterAttributeInteger('IPSViewTransportConnection', 0);
-        if ($this->IsIPSViewHTMLPageEnabled() && $this->WoIstIPSViewServerURLValid()) {
-            $this->RegisterHook($this->WoIstIPSViewHookName());
+        // Volatile hooks belong to Create and must survive output toggles.
+        // ProcessHookData enforces activation and authorization independently.
+        if (!$this->RegisterHook($this->WoIstIPSViewHookName())) {
+            throw new \RuntimeException('Could not register the WoIst WebHook.');
         }
     }
 
@@ -88,7 +90,6 @@ trait WoIstIPSViewTransport
         $connection = IPS_GetInstance($this->InstanceID)['ConnectionID'];
         $enabled = $this->IsIPSViewHTMLPageEnabled() && $this->WoIstIPSViewServerURLValid();
         if (!$enabled) {
-            $this->UnregisterHook($this->WoIstIPSViewHookName());
             $this->WriteAttributeString('IPSViewTransportToken', '');
             $this->WriteAttributeString('IPSViewTransportState', '');
         } else {
@@ -97,7 +98,6 @@ trait WoIstIPSViewTransport
                 $this->WriteAttributeString('IPSViewTransportToken', bin2hex(random_bytes(32)));
                 $this->WriteAttributeString('IPSViewTransportState', '');
             }
-            $this->RegisterHook($this->WoIstIPSViewHookName());
         }
         $this->WriteAttributeInteger('IPSViewTransportConnection', $connection);
     }
