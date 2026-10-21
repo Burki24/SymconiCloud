@@ -30,7 +30,7 @@ class ContractConfigurator extends iCloudDeviceConfigurator
     }
 }
 
-/** Validates the simple function-call scripts used by this project's buttons without eval. */
+/** Validates restricted form callbacks and their optional documented MESSAGE return without eval. */
 function validateButtonScript(string|array $script, array $scope, array $module): array
 {
     $script = is_array($script) ? implode("\n", $script) : $script;
@@ -38,6 +38,14 @@ function validateButtonScript(string|array $script, array $scope, array $module)
     $calls = [];
     while ($tokens !== []) {
         $function = array_shift($tokens);
+        if (is_array($function) && $function[0] === T_RETURN) {
+            $message = array_shift($tokens);
+            if ($calls === [] || !is_array($message) || $message[0] !== T_CONSTANT_ENCAPSED_STRING
+                || !str_starts_with(substr($message[1], 1, -1), 'MESSAGE:') || array_shift($tokens) !== ';' || $tokens !== []) {
+                throw new RuntimeException('A form return must terminate successful calls with a literal MESSAGE response.');
+            }
+            break;
+        }
         if (!is_array($function) || $function[0] !== T_STRING || array_shift($tokens) !== '(') {
             throw new RuntimeException('Unsupported button script; extend the contract validator explicitly.');
         }
@@ -90,7 +98,7 @@ function validateButtonScript(string|array $script, array $scope, array $module)
                 continue;
             }
             $type = (string) $parameter->getType();
-            if (($type === 'int' && !is_int($arguments[$index])) || ($type === 'string' && !is_string($arguments[$index]))) {
+            if (($type === 'int' && !is_int($arguments[$index])) || ($type === 'string' && !is_string($arguments[$index])) || ($type === 'bool' && !is_bool($arguments[$index]))) {
                 throw new RuntimeException('Incorrect callback argument type.');
             }
         }
@@ -139,18 +147,25 @@ foreach (glob($root . '/*/module.json') as $file) {
 foreach ($knownModules as $moduleID => $folder) {
     $module = json_decode(file_get_contents($folder . '/module.json'), true, 512, JSON_THROW_ON_ERROR);
     $instanceID = IPS_CreateInstance($moduleID);
-    $form = json_decode(file_get_contents($folder . '/form.json'), true, 512, JSON_THROW_ON_ERROR);
+    if ($module['prefix'] === 'ICWI') {
+        IPS_SetProperty($instanceID, 'EnableIPSView', true);
+        IPS_ApplyChanges($instanceID);
+    }
+    $form = json_decode(IPS_GetConfigurationForm($instanceID), true, 512, JSON_THROW_ON_ERROR);
+    $defaults = json_decode(IPS_GetConfiguration($instanceID), true, 512, JSON_THROW_ON_ERROR);
     foreach (['elements', 'actions'] as $section) {
         $scope = ['id' => $instanceID];
         $buttons = [];
-        $collect = static function (array $items) use (&$collect, &$scope, &$buttons): void
+        $collect = static function (array $items) use (&$collect, &$scope, &$buttons, $defaults): void
         {
             foreach ($items as $item) {
                 if (isset($item['name'])) {
-                    $scope[$item['name']] = ($item['type'] ?? '') === 'PasswordTextBox' ? '123456' : '';
+                    $scope[$item['name']] = $defaults[$item['name']] ?? (($item['type'] ?? '') === 'PasswordTextBox' ? '123456' : '');
                 }
-                if (($item['type'] ?? '') === 'Button') {
-                    $buttons[] = $item;
+                foreach (['onClick', 'onChange'] as $event) {
+                    if (isset($item[$event])) {
+                        $buttons[] = ['script' => $item[$event], 'item' => $item];
+                    }
                 }
                 if (isset($item['items'])) {
                     $collect($item['items']);
@@ -158,10 +173,11 @@ foreach ($knownModules as $moduleID => $folder) {
             }
         };
         $collect($form[$section] ?? []);
-        foreach ($buttons as $button) {
+        foreach ($buttons as $callback) {
+            $button = $callback['item'];
             $check(is_string($button['caption'] ?? null), 'Button caption must be a string.');
             $check(!isset($button['confirm']) || is_string($button['confirm']), 'Button confirmation must be a string.');
-            foreach (validateButtonScript($button['onClick'], $scope, $module) as [$function, $arguments]) {
+            foreach (validateButtonScript($callback['script'], $scope, $module) as [$function, $arguments]) {
                 // The account is disabled; children have no parent. These real
                 // callbacks exercise action routing without any Apple transport.
                 $function(...$arguments);
@@ -196,6 +212,10 @@ $check(IPS_GetProperty($created, 'DeviceID') === 'synthetic-device', 'Creation m
 $check($value($created, 'BatteryLevel') === 42.0, 'Created device must consume the intended account cache.');
 
 $deviceMeta = json_decode(file_get_contents($knownModules[$deviceModule] . '/module.json'), true);
+$check(count(validateButtonScript("IPS_RequestAction(\$id, 'Update', ''); return 'MESSAGE:Updated';", ['id' => $firstDevice], $deviceMeta)) === 1, 'Helper MESSAGE callbacks must retain their actual action.');
+$expectFailure(fn () => validateButtonScript("return 'MESSAGE:Skipped';", ['id' => $firstDevice], $deviceMeta));
+$expectFailure(fn () => validateButtonScript("ICID_Update(\$id); return 'NOT_A_MESSAGE';", ['id' => $firstDevice], $deviceMeta));
+$expectFailure(fn () => validateButtonScript("ICID_Update(\$id); return 'MESSAGE:Updated'; ICID_Update(\$id);", ['id' => $firstDevice], $deviceMeta));
 $expectFailure(fn () => validateButtonScript('ICID_Missing($id);', ['id' => $firstDevice], $deviceMeta));
 $expectFailure(fn () => validateButtonScript('ICID_Update($id, 1);', ['id' => $firstDevice], $deviceMeta));
 $expectFailure(fn () => validateButtonScript('ICID_Update($Code);', ['id' => $firstDevice], $deviceMeta));

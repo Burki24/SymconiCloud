@@ -7,7 +7,7 @@
         current: 'Current location', offline: 'Offline', battery: 'Battery', updated: 'Updated',
         accuracy: 'Accuracy', mapUnavailable: 'Map unavailable. Device data remains available below.',
         loadError: 'Some map tiles could not be loaded. Check the internet connection.',
-        refreshing: 'Refreshing…', cacheError: 'Account unavailable. Cached locations may be out of date.',
+        refreshing: 'Refreshingâ€¦', cacheError: 'Account unavailable. Cached locations may be out of date.',
         ago: 'ago', unknown: 'Unknown'
     };
 
@@ -48,6 +48,7 @@
 
     let state = {success: false, devices: []};
     let labels = fallback;
+    let design = {};
     let map = null;
     let tiles = null;
     let tileConfiguration = '';
@@ -82,7 +83,7 @@
         if (device.online === false) lines.push(text('offline'));
         if (typeof device.batteryLevel === 'number' && Number.isFinite(device.batteryLevel)) lines.push(text('battery') + ': ' + Math.round(device.batteryLevel * 100) + '%');
         if (validLocation(device.location)) {
-            lines.push(text(isStale(device.location, state, now()) ? 'stale' : 'current') + ' · ' + ageText(device.location.timestamp));
+            lines.push(text(isStale(device.location, state, now()) ? 'stale' : 'current') + ' Â· ' + ageText(device.location.timestamp));
             if (typeof device.location.horizontalAccuracy === 'number' && device.location.horizontalAccuracy >= 0) lines.push(text('accuracy') + ': ' + Math.round(device.location.horizontalAccuracy) + ' m');
         } else lines.push(text('noLocation'));
         return lines;
@@ -104,7 +105,7 @@
             marker.openPopup();
             const radius = device.location.horizontalAccuracy;
             if (typeof radius === 'number' && Number.isFinite(radius) && radius > 0) {
-                accuracy = global.L.circle(marker.getLatLng(), {radius, color: '#168d80', weight: 1, fillOpacity: 0.08, interactive: false}).addTo(map);
+                accuracy = global.L.circle(marker.getLatLng(), {radius, color: design.currentColor || '#168d80', weight: 1, fillOpacity: 0.08, interactive: false}).addTo(map);
             }
         }
         global.document.querySelectorAll('.device').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.id === selected)));
@@ -132,10 +133,30 @@
             maxZoom: options.maxZoom || 19,
             attribution: options.tileUrl && !options.tileUrl.startsWith('https://tile.openstreetmap.org/')
                 ? escapeHTML(options.attribution || '')
-                : '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a>'
+                : '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">Â© OpenStreetMap contributors</a>'
         }).addTo(map);
         el('map-message').hidden = true;
         tiles.on('tileerror', () => { el('map-message').textContent = text('loadError'); el('map-message').hidden = false; });
+    }
+
+    function configureDesign(options) {
+        if (!options || typeof options !== 'object') return;
+        design = options;
+        const root = global.document.documentElement;
+        if (root && root.style) {
+            for (const [key, variable, minimum, maximum] of [['height', '--woist-height', 240, 1200], ['fontSize', '--woist-font-size', 10, 28]]) {
+                if (Number.isFinite(design[key])) root.style.setProperty(variable, Math.max(minimum, Math.min(maximum, design[key])) + 'px');
+            }
+            for (const [key, variable] of [['currentColor', '--woist-current'], ['staleColor', '--woist-stale']]) {
+                if (/^#[0-9a-f]{6}$/i.test(design[key])) root.style.setProperty(variable, design[key]);
+            }
+        }
+        for (const [key, id] of [['showTitle', 'woist-heading'], ['showDevices', 'woist-devices'], ['showControls', 'woist-controls']]) {
+            if (el(id) && typeof design[key] === 'boolean') el(id).hidden = !design[key];
+        }
+        const workspace = global.document.querySelector && global.document.querySelector('.workspace');
+        if (workspace) workspace.style.gridTemplateColumns = design.showDevices === false ? 'minmax(0, 1fr)' : '';
+        if (map) map.invalidateSize();
     }
 
     function render() {
@@ -168,7 +189,7 @@
             el('device-list').appendChild(item);
             if (located && layer) {
                 const marker = global.L.circleMarker([device.location.latitude, device.location.longitude], {
-                    radius: 9, color: '#ffffff', weight: 2, fillColor: stale ? '#b47722' : '#168d80', fillOpacity: 0.95
+                    radius: design.markerSize || 9, color: '#ffffff', weight: 2, fillColor: stale ? (design.staleColor || '#b47722') : (design.currentColor || '#168d80'), fillOpacity: 0.95
                 }).addTo(layer).bindPopup(popup(device));
                 marker.on('click', () => selectDevice(device, false));
                 markers.set(device.id, marker);
@@ -187,7 +208,7 @@
         if (!next) return;
         const envelope = typeof value === 'string' ? JSON.parse(value) : value;
         if (envelope.labels) labels = Object.assign({}, fallback, envelope.labels);
-        if (envelope.options) configureTiles(envelope.options);
+        if (envelope.options) { configureTiles(envelope.options); configureDesign(envelope.options.design); }
         state = next;
         if (refreshTimer) global.clearTimeout(refreshTimer);
         if (ready) {
@@ -202,6 +223,8 @@
         try { bootstrap = JSON.parse(el('woist-bootstrap').textContent); } catch (_) { /* Show empty state. */ }
         labels = Object.assign({}, fallback, bootstrap.labels || {});
         state = parseState(bootstrap.state) || state;
+        configureDesign((bootstrap.options || {}).design);
+        if (bootstrap.mode === 'ipsview') el('refresh').hidden = true;
         ['title', 'refresh', 'fit'].forEach((key) => { el(key).textContent = text(key); });
         el('devices-title').textContent = text('devices');
         el('map').setAttribute('aria-label', text('title'));

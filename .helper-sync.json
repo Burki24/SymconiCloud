@@ -24,6 +24,12 @@
         },
         "ResponsiveVisualizationHelper": {
             "target": "libs/helper/ResponsiveVisualizationHelper.php"
+        },
+        "IPSViewHTMLPageHelper": {
+            "target": "libs/helper/IPSViewHTMLPageHelper.php"
+        },
+        "HelperTranslationHelper": {
+            "target": "libs/helper/HelperTranslationHelper.php"
         }
     }
 }

@@ -10,6 +10,16 @@ WoIst zeigt die Positionen der Geräte eines iCloud-Kontos gemeinsam auf einer i
 
 Die Karte erhält neue Daten automatisch vom Konto. **Bei Apple aktualisieren** löst eine ausdrückliche Geräteabfrage über das Konto aus und beachtet dessen Anmeldestatus und Wartezeiten. Das Öffnen der Karte oder des Formulars liest nur den Kontocache und löst keine Apple-Anmeldung aus.
 
+## Kachel- und IPSView-Designer
+
+Im **Kachel-Designer** lassen sich Kartenhöhe, Schriftgröße, Radius und Farben der Standortmarkierungen sowie Überschrift, Geräteliste und Bedienelemente einstellen. Einstellungen anschließend übernehmen. Die Kartenhöhe gilt auch auf schmalen Bildschirmen; die Geräteliste rückt dort unter die Karte.
+
+Für IPSView im **IPSView-Designer** die Ausgabe aktivieren und die Konfiguration übernehmen. Das Modul erzeugt die String-Variable **WoIst für IPSView** (`IPSViewWoIst`) mit HTML-Inhalt. Diese Variable in IPSView als WebContent einbinden. Standardmäßig gilt **Kachel-Design verwenden**. Für unabhängige Gestaltung diese Option deaktivieren oder **Gespeichertes Kachel-Design kopieren und unabhängig bearbeiten** wählen. Die Kopieraktion übernimmt die bereits gespeicherten Kachel-Einstellungen, speichert die IPSView-Einstellungen und lädt das Formular neu.
+
+Die IPSView-Ausgabe wird bei neuen Kontodaten aktualisiert. Dabei kann der WebContent neu geladen werden und sein Kartenausschnitt zurückgesetzt werden. Auswahl und Zoomen sind lokal möglich; die Apple-Aktualisierung erfolgt im Konto oder in der nativen Kachel. IPSView besitzt keinen eigenen Anmeldezugang und keinen öffentlichen Daten-Endpunkt.
+
+Beim Deaktivieren bleibt die HTML-Variable mit ihrem letzten Inhalt erhalten und wird nicht weiter aktualisiert. Sie kann über die dann angebotene Löschfunktion des Ausgabe-Helpers entfernt werden. Die gespeicherte HTML-Ausgabe enthält Gerätebezeichnungen und Standortdaten; die üblichen Symcon-Zugriffsrechte und der Schutz von Backups gelten auch für diese Variable.
+
 ## Daten und Aktualität
 
 Die Karte verwendet die von Apple zuletzt gelieferten Koordinaten. Aktuelle und ältere Positionen sind unterschiedlich markiert. Zu jeder Position werden Zeitpunkt und, soweit verfügbar, Genauigkeit angezeigt. Geräte ohne Position bleiben in der Liste sichtbar, erhalten aber keinen erfundenen Kartenpunkt. Offline-Geräte können eine letzte bekannte Position besitzen.
@@ -36,7 +46,7 @@ Ein eigener Apple-Maps-Hintergrund ist nicht enthalten. Apple MapKit JS benötig
 | `ICWI_RefreshDevices(int $InstanceID)` | bool | Einmalige ausdrückliche Abfrage über das Konto |
 | `ICWI_GetState(int $InstanceID)` | string | JSON mit Kartendaten, Beschriftungen und Kartenoptionen aus dem Cache |
 
-Das Modul erzeugt keine Gerätevariablen. Status 201 bezeichnet ein fehlendes Konto, 202 nicht verfügbare Kontodaten und 203 eine ungültige Kartenkonfiguration. Alte Positionen können bei einem Kontofehler weiterhin zur Einordnung angezeigt werden.
+Das Modul erzeugt keine Gerätevariablen; die optionale IPSView-HTML-Variable dient nur der Darstellung. Status 201 bezeichnet ein fehlendes Konto, 202 nicht verfügbare Kontodaten und 203 eine ungültige Kartenkonfiguration. Alte Positionen können bei einem Kontofehler weiterhin zur Einordnung angezeigt werden.
 
 ## Lizenz
 

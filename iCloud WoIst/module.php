@@ -8,6 +8,8 @@ require_once __DIR__ . '/../libs/helper/ParentConnectionHelper.php';
 require_once __DIR__ . '/../libs/helper/VisualizationAssetHelper.php';
 require_once __DIR__ . '/../libs/helper/VisualizationThemeHelper.php';
 require_once __DIR__ . '/../libs/helper/ResponsiveVisualizationHelper.php';
+require_once __DIR__ . '/../libs/helper/IPSViewHTMLPageHelper.php';
+require_once __DIR__ . '/../libs/WoIstDesign.php';
 
 /** One account's device positions, rendered through the authenticated HTML SDK. */
 class iCloudWoIst extends IPSModuleStrict
@@ -18,6 +20,8 @@ class iCloudWoIst extends IPSModuleStrict
     use \Burki24\SymconModuleHelper\VisualizationAssetHelper;
     use \Burki24\SymconModuleHelper\VisualizationThemeHelper;
     use \Burki24\SymconModuleHelper\ResponsiveVisualizationHelper;
+    use \Burki24\SymconModuleHelper\IPSViewHTMLPageHelper;
+    use \SymconiCloud\WoIstDesign;
 
     private const ACCOUNT_MODULE = '{10BF9A03-98A3-495A-B0FA-A4FA0B1002D5}';
     private const REQUEST_DATA = '{1E60F0BE-03E4-4AA4-A1CE-AA838725A4E2}';
@@ -27,9 +31,11 @@ class iCloudWoIst extends IPSModuleStrict
     public function Create(): void
     {
         parent::Create();
+        $this->RegisterIPSViewHTMLPageProperties();
+        $this->RegisterWoIstDesignProperties();
         $this->RegisterPropertyInteger('StaleAfter', 900);
         $this->RegisterPropertyString('TileURL', 'https://tile.openstreetmap.org/{z}/{x}/{y}.png');
-        $this->RegisterPropertyString('TileAttribution', '© OpenStreetMap contributors');
+        $this->RegisterPropertyString('TileAttribution', 'Â© OpenStreetMap contributors');
         $this->SetVisualizationType(1);
     }
 
@@ -38,6 +44,7 @@ class iCloudWoIst extends IPSModuleStrict
     {
         parent::ApplyChanges();
         $this->SetVisualizationType(1);
+        $this->MaintainIPSViewHTMLVariable('IPSViewWoIst', $this->Translate('WoIst for IPSView'), 100, '', false);
         $this->Update();
     }
 
@@ -50,7 +57,7 @@ class iCloudWoIst extends IPSModuleStrict
     /** @return string Static map settings without any Apple request. */
     public function GetConfigurationForm(): string
     {
-        return $this->EncodeConfigurationForm($this->LoadConfigurationForm());
+        return $this->EncodeConfigurationForm($this->WoIstDesignForm($this->LoadConfigurationForm()));
     }
 
     /** @return bool True if an authenticated cached account inventory was available. */
@@ -74,15 +81,13 @@ class iCloudWoIst extends IPSModuleStrict
     /** @return string Initial HTML tile with bundled assets and escaped device data. */
     public function GetVisualizationTile(): string
     {
-        return strtr($this->VisualizationAsset('index.html'), [
-            '{{BOOTSTRAP}}'      => $this->GetState(),
-            '{{LEAFLET_CSS}}'    => (string) file_get_contents(__DIR__ . '/../libs/vendor/leaflet/leaflet.css'),
-            '{{LEAFLET_JS}}'     => (string) file_get_contents(__DIR__ . '/../libs/vendor/leaflet/leaflet.js'),
-            '{{THEME_CSS}}'      => $this->VisualizationThemeCSS(),
-            '{{RESPONSIVE_CSS}}' => $this->ResponsiveVisualizationCSS('#woist-app', 'woist-map'),
-            '{{MODULE_CSS}}'     => $this->VisualizationAsset('style.css'),
-            '{{MODULE_JS}}'      => $this->VisualizationAsset('app.js')
-        ]);
+        return $this->renderPage(false, $this->bootstrap($this->request('GetDevices')));
+    }
+
+    /** @return string Standalone HTML output refreshed by the managed WebContent variable. */
+    public function GetIPSViewHTML(): string
+    {
+        return $this->renderPage(true, $this->bootstrap($this->request('GetDevices')));
     }
 
     /** @param string $JSONString Normalized account notification. @return string Empty acknowledgement. */
@@ -100,11 +105,35 @@ class iCloudWoIst extends IPSModuleStrict
     /** @param string $Ident Allowlisted HTML-SDK/form action. @param mixed $Value Unused action payload. */
     public function RequestAction(string $Ident, mixed $Value): void
     {
+        if ($this->HandleIPSViewHTMLPageAction($Ident, $Value)) {
+            return;
+        }
         match ($Ident) {
             'GetState', 'Update' => $this->Update(),
             'RefreshDevices'     => $this->RefreshDevices(),
             default              => throw new InvalidArgumentException('Unsupported map action.')
         };
+    }
+
+    private function renderPage(bool $ipsView, array $bootstrap): string
+    {
+        $bootstrap['mode'] = $ipsView ? 'ipsview' : 'symcon';
+        $bootstrap['options']['design'] = $this->WoIstDesign($ipsView);
+        return $this->RenderVisualizationHTMLPage($ipsView, [
+            'title'              => $this->Translate('WoIst'),
+            'visualizationTheme' => $this->VisualizationThemeCSS(),
+            'ipsViewStyle'       => $this->VisualizationThemeCSS(),
+            'state'              => $bootstrap['state'],
+            'translations'       => $bootstrap['labels'],
+            'options'            => $bootstrap['options'],
+            'replacements'       => [
+                '{{BOOTSTRAP}}'      => $this->encode($bootstrap),
+                '{{LEAFLET_CSS}}'    => (string) file_get_contents(__DIR__ . '/../libs/vendor/leaflet/leaflet.css'),
+                '{{LEAFLET_JS}}'     => (string) file_get_contents(__DIR__ . '/../libs/vendor/leaflet/leaflet.js'),
+                '{{RESPONSIVE_CSS}}' => $this->ResponsiveVisualizationCSS('#woist-app', 'woist-map'),
+                '{{DESIGN_CSS}}'     => $this->WoIstDesignCSS($ipsView)
+            ]
+        ]);
     }
 
     private function request(string $command): array
@@ -133,6 +162,13 @@ class iCloudWoIst extends IPSModuleStrict
         $state = $bootstrap['state'];
         $this->SetStatus(!$this->configurationValid() ? 203 : (!$this->HasParent() ? 201 : ($state['success'] ? IS_ACTIVE : 202)));
         $this->UpdateVisualizationValue($this->encode($bootstrap));
+        if ($this->IsIPSViewHTMLPageEnabled()) {
+            $html = $this->renderPage(true, $bootstrap);
+            $variableID = $this->IPSViewHTMLVariableID('IPSViewWoIst');
+            if ($variableID > 0 && GetValueString($variableID) !== $html) {
+                $this->UpdateIPSViewHTMLVariable('IPSViewWoIst', $html);
+            }
+        }
         return $state['success'];
     }
 
@@ -175,7 +211,7 @@ class iCloudWoIst extends IPSModuleStrict
             'noDevices'  => 'No devices available.', 'noLocation' => 'No position available', 'stale' => 'Last known position',
             'current'    => 'Recent position', 'offline' => 'Offline', 'battery' => 'Battery', 'updated' => 'Account updated',
             'accuracy'   => 'Accuracy', 'mapUnavailable' => 'Map tiles unavailable. Device data is still shown.',
-            'loadError'  => 'The map could not be loaded.', 'refreshing' => 'Refreshing…',
+            'loadError'  => 'The map could not be loaded.', 'refreshing' => 'Refreshingâ€¦',
             'cacheError' => 'Account unavailable. Positions shown are last known.', 'ago' => 'ago', 'unknown' => 'Unknown'
         ] as $key => $text) {
             $labels[$key] = $this->Translate($text);
@@ -185,7 +221,7 @@ class iCloudWoIst extends IPSModuleStrict
                 'error'           => is_string($data['error'] ?? null) ? $data['error'] : '', 'updatedAt' => $updated,
                 'staleAfter'      => max(60, min(86400, $this->ReadPropertyInteger('StaleAfter'))), 'devices' => $devices],
             'labels'  => $labels,
-            'options' => ['tileUrl' => $this->configurationValid() ? $this->ReadPropertyString('TileURL') : '',
+            'options' => ['design'  => $this->WoIstDesign(false), 'tileUrl' => $this->configurationValid() ? $this->ReadPropertyString('TileURL') : '',
                 'attribution'       => $this->configurationValid() ? $this->ReadPropertyString('TileAttribution') : '', 'maxZoom' => 19]
         ];
     }

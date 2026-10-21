@@ -84,4 +84,49 @@ try {
 } catch (InvalidArgumentException) {
 }
 
+// Optional IPSView output uses the same account cache and managed WebContent lifecycle.
+IPS_DisconnectInstance($mapID);
+IPS_ConnectInstance($mapID, $firstAccount);
+$firstBoundary->result = $envelope;
+$firstBoundary->commands = [];
+$check(@IPS_GetObjectIDByIdent('IPSViewWoIst', $mapID) === false, 'IPSView output must remain opt-in.');
+IPS_SetProperty($mapID, 'EnableIPSView', true);
+IPS_ApplyChanges($mapID);
+$outputID = IPS_GetObjectIDByIdent('IPSViewWoIst', $mapID);
+$html = GetValueString($outputID);
+$check(str_contains($html, '"mode":"ipsview"') && str_contains($html, 'woist-app'), 'IPSView must create a standalone rendered page.');
+$check(str_contains($html, '--symc-background'), 'IPSView must embed a complete standalone visual theme.');
+$check(IPS_GetVariable($outputID)['VariableType'] === VARIABLETYPE_STRING, 'IPSView output must be a String WebContent variable.');
+$check(!str_contains($html, '{{') && !str_contains($html, 'synthetic-secret-session'), 'IPSView must resolve templates and exclude account secrets.');
+$check(array_unique($firstBoundary->commands) === ['GetDevices'], 'Enabling and rendering IPSView must only read the account cache.');
+$literalData = $envelope;
+$literalData['devices'][0]['name'] = '{{MODULE_SCRIPT}} {{UNKNOWN}}';
+$firstBoundary->result = $literalData;
+foreach ([$map->GetVisualizationTile(), $map->GetIPSViewHTML()] as $literalPage) {
+    $check(str_contains($literalPage, '"name":"{{MODULE_SCRIPT}} {{UNKNOWN}}"'), 'Literal template-like device names must remain data in both rendering modes.');
+}
+$firstBoundary->result = $envelope;
+$map->RequestAction('IPSViewHTMLRegenerateVariables', '');
+$check(IPS_GetObjectIDByIdent('IPSViewWoIst', $mapID) === $outputID, 'HTML regeneration must preserve its output variable.');
+$notification = $envelope;
+$notification['devices'][0]['name'] = 'Synthetic IPSView update';
+$firstBoundary->commands = [];
+$map->ReceiveData(json_encode(['DataID' => '{FCE7780F-9520-4E52-92F3-60034FFAED6D}'] + $notification, JSON_THROW_ON_ERROR));
+$check(str_contains(GetValueString($outputID), 'Synthetic IPSView update'), 'Account notifications must update IPSView output.');
+$check($firstBoundary->commands === [], 'Publishing received IPSView data must not request the account again.');
+IPS_SetProperty($mapID, 'IPSViewUseTileDesign', false);
+IPS_SetProperty($mapID, 'IPSViewMarkerSize', 13);
+IPS_SetProperty($mapID, 'TileMarkerSize', 7);
+IPS_ApplyChanges($mapID);
+$check(str_contains($map->GetIPSViewHTML(), '"markerSize":13'), 'IPSView must render its independent design.');
+$check(str_contains($map->GetVisualizationTile(), '"markerSize":7'), 'Native tile must retain its own design.');
+$map->CopyTileDesignToIPSView();
+$check(IPS_GetProperty($mapID, 'IPSViewMarkerSize') === 7 && IPS_GetProperty($mapID, 'IPSViewUseTileDesign') === false, 'Copy action must snapshot saved Tile settings into independent IPSView design.');
+$lastHtml = GetValueString($outputID);
+IPS_SetProperty($mapID, 'EnableIPSView', false);
+IPS_ApplyChanges($mapID);
+$check(IPS_GetObjectIDByIdent('IPSViewWoIst', $mapID) === $outputID && GetValueString($outputID) === $lastHtml, 'Disabling optional output must retain its variable and content.');
+$map->ReceiveData(json_encode(['DataID' => '{FCE7780F-9520-4E52-92F3-60034FFAED6D}'] + $notification, JSON_THROW_ON_ERROR));
+$check(GetValueString($outputID) === $lastHtml, 'Disabled IPSView output must stop updating retained content.');
+
 echo "Map integration checks passed.\n";

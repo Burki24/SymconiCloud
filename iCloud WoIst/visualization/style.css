@@ -1,6 +1,7 @@
 * { box-sizing: border-box; }
+html { font-size: var(--woist-font-size, 14px); }
 html, body { margin: 0; min-height: 100%; background: var(--symc-background); color: var(--symc-text); }
-#woist-app { padding: var(--symc-responsive-padding, 12px); }
+#woist-app { font-size: var(--woist-font-size, 14px); padding: var(--symc-responsive-padding, 12px); }
 .toolbar, .controls { display: flex; align-items: center; gap: 10px; }
 .toolbar { justify-content: space-between; flex-wrap: wrap; margin-bottom: 12px; }
 h1 { font-size: 1.15rem; margin: 0; }
@@ -12,12 +13,12 @@ button:hover { background: var(--symc-surface-hover); }
 button:disabled { opacity: 0.5; cursor: default; }
 .message { padding: 10px 12px; background: var(--symc-warning-soft); border-inline-start: 3px solid var(--symc-warning); border-radius: 4px; margin: 0 0 12px; }
 .workspace { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 12px; }
-#map { height: clamp(320px, 68vh, 760px); min-width: 0; border: 1px solid var(--symc-border); border-radius: var(--symc-radius-medium); background: var(--symc-surface); }
+#map { height: var(--woist-height, 480px); min-width: 0; border: 1px solid var(--symc-border); border-radius: var(--symc-radius-medium); background: var(--symc-surface); }
 aside { min-width: 0; max-height: 760px; overflow: auto; padding: 12px; background: var(--symc-surface); border-radius: var(--symc-radius-medium); }
 ul { list-style: none; padding: 0; margin: 0; }
 li + li { margin-top: 8px; }
-.device { display: block; width: 100%; text-align: start; background: var(--symc-background); border-inline-start: 4px solid #168d80; }
-.device.stale { border-inline-start-color: #b47722; }
+.device { display: block; width: 100%; text-align: start; background: var(--symc-background); border-inline-start: 4px solid var(--woist-current, #168d80); }
+.device.stale { border-inline-start-color: var(--woist-stale, #b47722); }
 .device.unlocated { border-inline-start-color: #858b94; }
 .device[aria-pressed="true"] { outline: 2px solid var(--symc-accent); outline-offset: 1px; }
 .device-name { font-weight: 600; overflow-wrap: anywhere; }
@@ -28,7 +29,9 @@ li + li { margin-top: 8px; }
 .popup-title { font-weight: 600; margin-bottom: 5px; }
 @container woist-map (max-width: 700px) {
     .workspace { grid-template-columns: minmax(0, 1fr); }
-    #map { height: 52vh; min-height: 280px; }
+    #map { height: var(--woist-height, 480px); min-height: 240px; }
     aside { max-height: 260px; }
     .controls { flex-wrap: wrap; }
 }
+
+[hidden] { display: none !important; }

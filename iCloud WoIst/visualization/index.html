@@ -1,30 +1,34 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{HTML_LANGUAGE}}" class="{{HTML_CLASSES}}">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="{{VIEWPORT_CONTENT}}">
     <meta name="referrer" content="origin">
-    <title>iCloud WoIst</title>
+    <title>{{DOCUMENT_TITLE}}</title>
+    <style>html { font-size: {{ROOT_FONT_SIZE}}; }</style>
     <style>{{LEAFLET_CSS}}</style>
-    <style>{{THEME_CSS}}</style>
+    <style>{{VISUALIZATION_THEME}}</style>
     <style>{{RESPONSIVE_CSS}}</style>
-    <style>{{MODULE_CSS}}</style>
+    <style>{{MODULE_STYLE}}</style>
+    <style>{{IPSVIEW_STYLE}}</style>
+    <style id="woist-design">{{DESIGN_CSS}}</style>
 </head>
 <body>
     <main id="woist-app">
         <header class="toolbar">
-            <div><h1 id="title">iCloud WoIst</h1><p id="updated" aria-live="polite"></p></div>
-            <div class="controls"><button id="fit" type="button">Show all</button><button id="refresh" type="button" disabled>Refresh devices</button></div>
+            <div id="woist-heading"><h1 id="title">iCloud WoIst</h1><p id="updated" aria-live="polite"></p></div>
+            <div id="woist-controls" class="controls"><button id="fit" type="button">Show all</button><button id="refresh" type="button" disabled>Refresh devices</button></div>
         </header>
         <p id="account-message" class="message" role="status" hidden></p>
         <p id="map-message" class="message" role="status" hidden></p>
         <div class="workspace">
             <section id="map" aria-label="Device locations"></section>
-            <aside><h2 id="devices-title">Devices</h2><p id="empty" hidden></p><ul id="device-list"></ul></aside>
+            <aside id="woist-devices"><h2 id="devices-title">Devices</h2><p id="empty" hidden></p><ul id="device-list"></ul></aside>
         </div>
     </main>
     <script id="woist-bootstrap" type="application/json">{{BOOTSTRAP}}</script>
+    <script>window.SymconVisualization = {{BOOTSTRAP_JSON}};</script>
     <script>{{LEAFLET_JS}}</script>
-    <script>{{MODULE_JS}}</script>
+    <script>{{MODULE_SCRIPT}}</script>
 </body>
 </html>

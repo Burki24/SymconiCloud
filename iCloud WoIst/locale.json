@@ -28,7 +28,21 @@
             "Refreshing…": "Wird aktualisiert…",
             "Account unavailable. Positions shown are last known.": "Konto nicht verfügbar. Angezeigte Positionen sind zuletzt bekannte Standorte.",
             "ago": "zuvor",
-            "Unknown": "Unbekannt"
+            "Unknown": "Unbekannt",
+            "Tile designer": "Kachel-Designer",
+            "IPSView designer": "IPSView-Designer",
+            "Use Tile design": "Kachel-Design verwenden",
+            "Independent settings apply when Use Tile design is disabled.": "Eigene Einstellungen gelten, wenn Kachel-Design verwenden deaktiviert ist.",
+            "Copy saved Tile design and edit independently": "Gespeichertes Kachel-Design kopieren und unabhängig bearbeiten",
+            "Map height in pixels": "Kartenhöhe in Pixeln",
+            "Font size in pixels": "Schriftgröße in Pixeln",
+            "Marker radius in pixels": "Markierungsradius in Pixeln",
+            "Current position color": "Farbe aktueller Positionen",
+            "Last known position color": "Farbe letzter bekannter Positionen",
+            "Show heading": "Überschrift anzeigen",
+            "Show device list": "Geräteliste anzeigen",
+            "Show map controls": "Kartenbedienung anzeigen",
+            "WoIst for IPSView": "WoIst für IPSView"
         }
     }
 }
