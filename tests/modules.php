@@ -77,6 +77,14 @@ $configurator = IPS_CreateInstance($configuratorModule);
 IPS_ConnectInstance($configurator, $firstAccount);
 IPS_ApplyChanges($configurator);
 $configuratorInterface = IPS\InstanceManager::getInstanceInterface($configurator);
+// Official SDK contract: an object with connect/moduleIDs, not a GUID list.
+// Direct IPS_ConnectInstance calls in the stubs do not validate the console wizard contract.
+foreach ([$configuratorInterface, IPS\InstanceManager::getInstanceInterface($firstDevice)] as $child) {
+    $parents = json_decode($child->GetCompatibleParents(), false, 512, JSON_THROW_ON_ERROR);
+    $check($parents instanceof stdClass, 'Parent selection requires a JSON object, not a GUID list.');
+    $check(($parents->type ?? '') === 'connect', 'Parent selection must allow sharing an existing account.');
+    $check(($parents->moduleIDs ?? []) === [$accountModule], 'Parent selection must reference the account module.');
+}
 $firstBoundary->commands = [];
 $form = json_decode(IPS_GetConfigurationForm($configurator), true, 512, JSON_THROW_ON_ERROR);
 $rows = $form['elements'][0]['values'];

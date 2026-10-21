@@ -48,10 +48,10 @@ class iCloudWoIstDevice extends IPSModuleStrict
         $this->Update();
     }
 
-    /** @return string JSON list of supported account modules. */
+    /** @return string SDK parent descriptor allowing connections to shared accounts. */
     public function GetCompatibleParents(): string
     {
-        return json_encode([self::ACCOUNT_MODULE], JSON_THROW_ON_ERROR);
+        return json_encode(['type' => 'connect', 'moduleIDs' => [self::ACCOUNT_MODULE]], JSON_THROW_ON_ERROR);
     }
 
     /** @return string Form without any external request. */
