@@ -141,14 +141,14 @@
                     "version": "1.0.0",
                     "sha256": "d3deee581eca9f8eb11e9adce060170227a2dc836ee898bd134f93d27604f639",
                     "path": "libs/helper/HelperTranslationHelper.php",
-                    "source_sha": ""
+                    "source_sha": "5685186d4968bdbc1878b6c424c19b1d748e0c86"
                 },
                 {
                     "name": "VisualizationAssetHelper",
                     "version": "1.0.1",
                     "sha256": "ef3adcd38be489ea129bf2e95ad15d32673879e90bf4da8f1272fbf958a0513c",
                     "path": "libs/helper/VisualizationAssetHelper.php",
-                    "source_sha": "",
+                    "source_sha": "5685186d4968bdbc1878b6c424c19b1d748e0c86",
                     "assets": [
                         {
                             "path": "libs/helper/visualization/http-origin.js",
