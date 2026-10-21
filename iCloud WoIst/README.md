@@ -30,6 +30,20 @@ Der WebHook akzeptiert ausschließlich lesende, mit einem eigenen zufälligen Zu
 
 Beim Deaktivieren bleibt die HTML-Variable mit ihrem letzten Inhalt erhalten und wird nicht weiter aktualisiert. Sie kann über die dann angebotene Löschfunktion des Ausgabe-Helpers entfernt werden. Die gespeicherte HTML-Einbindung enthält den lesenden Zugriffstoken; die üblichen Symcon-Zugriffsrechte und der Schutz von Backups gelten auch für diese Variable. Die native Kachel verwendet weiterhin das Symcon-HTML-SDK.
 
+## OpenFreeMap in beiden Designern
+
+Sowohl **Kachel-Designer → OpenFreeMap** als auch **IPSView-Designer → OpenFreeMap** besitzen ein eigenes Kartenprofil:
+
+- **Kartendarstellung:** Designer-Darstellung übernehmen, Hell oder Dunkel. Die Automatik folgt dem tatsächlichen Hintergrund der jeweiligen Ausgabe und reagiert auf Theme-Wechsel.
+- **Heller/dunkler Kartenstil:** Liberty, Bright, Positron, Fiord oder Dark. Standard sind Liberty für helle und Dark für dunkle Ansichten.
+- **Eigene Stil-URL:** Optional eine HTTPS-Adresse zu einer MapLibre-Stil-JSON, getrennt für Hell und Dunkel. Eine eigene URL ersetzt die jeweilige Stil-Auswahl. Die Datei muss aus dem Browser erreichbar sein und passende CORS-Freigaben besitzen. Eigene Stile können etwa mit [Maputnik](https://maputnik.github.io/) erstellt werden.
+- **Kartendetails:** Beschriftungen, Sehenswürdigkeiten/Orte, Gebäude und Verwaltungsgrenzen unabhängig anzeigen; Namen lokal, deutsch oder englisch darstellen. Fehlende Übersetzungen fallen auf vorhandene Namen zurück.
+- **Eigene Kartenfarben:** Aktivieren und anschließend getrennte helle/dunkle Farben für Land, Wasser, Grünflächen, Straßen, Gebäude und Beschriftungen wählen. Ohne diese Option gelten die Originalfarben des gewählten Stils. Die Anpassungen wirken auf passende Vektorebenen; die Quellenangabe bleibt sichtbar.
+
+**Kachel-Design verwenden** übernimmt auch das OpenFreeMap-Profil. Die Kopierfunktion kopiert alle Karten-, Farb- und Detailoptionen in das unabhängige IPSView-Profil. Daten-, Stil-, Farb- und Theme-Wechsel erhalten Zoom, Kartenausschnitt, Geräteauswahl und ein geöffnetes Gerätepopup.
+
+Die OpenFreeMap-Vektorkarte wird mit lokal gebündeltem MapLibre und Leaflet dargestellt. Ein Browser beziehungsweise WebView mit WebGL-Unterstützung wird benötigt.
+
 ## Daten und Aktualität
 
 Die Karte verwendet die von Apple zuletzt gelieferten Koordinaten. Aktuelle und ältere Positionen sind unterschiedlich markiert. Zu jeder Position werden Zeitpunkt und, soweit verfügbar, Genauigkeit angezeigt. Geräte ohne Position bleiben in der Liste sichtbar, erhalten aber keinen erfundenen Kartenpunkt. Offline-Geräte können eine letzte bekannte Position besitzen.
@@ -41,11 +55,9 @@ Ein aktueller Kontoabruf bedeutet nicht automatisch eine aktuelle Gerätepositio
 | Eigenschaft | Standard | Bedeutung |
 | --- | --- | --- |
 | `StaleAfter` | 900 | Positionen nach dieser Anzahl Sekunden als älter markieren; 60 bis 86400 |
-| `TileURL` | `https://tile.openstreetmap.org/{z}/{x}/{y}.png` | HTTPS-URL des Kartenanbieters mit den drei Platzhaltern |
-| `TileAttribution` | © OpenStreetMap contributors | Sichtbare Quellenangabe des Kartenanbieters |
 | `IPSViewServerURL` | leer | Aus IPSView erreichbare HTTP(S)-Server-Adresse ohne Pfad; leer nutzt die eigene HTTP(S)-Seitenadresse |
 
-OpenStreetMap ist der Standardhintergrund. Die Kartendarstellung benötigt Internetzugriff im verwendeten Browser. Dieser lädt die Kacheln für den sichtbaren Kartenausschnitt beim Anbieter; der Anbieter erhält damit IP-Adresse und angefragte Kartenregion. Gerätenamen, Apple-Zugangsdaten und Tokens werden nicht an ihn gesendet. Bei eigenem Kartenanbieter dessen Bedingungen und Quellenangaben beachten. Leaflet wird lokal mit der Library ausgeliefert; es wird kein JavaScript von einem CDN nachgeladen.
+OpenFreeMap ist der Kartenanbieter; die Kartendaten stammen von OpenStreetMap. Internetzugriff im Browser ist erforderlich. Der Anbieter erhält IP-Adresse und angefragte Kartenregion, aber keine Gerätenamen, Apple-Zugangsdaten oder Zugriffstokens. Leaflet, MapLibre und die Anbindung werden lokal mit der Library ausgeliefert; JavaScript wird nicht von einem CDN geladen. Die OpenFreeMap- und OpenStreetMap-Quellenangaben bleiben sichtbar. Die bisherigen Rasterkachel-Einstellungen werden durch die OpenFreeMap-Profile ersetzt.
 
 Ein eigener Apple-Maps-Hintergrund ist nicht enthalten. Apple MapKit JS benötigt einen separaten Maps-Token aus einem Apple-Developer-Account; die iCloud-Anmeldung ersetzt diesen nicht.
 

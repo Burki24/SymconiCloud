@@ -89,6 +89,15 @@ $firstBoundary->commands = [];
 $initial = $state();
 $check($initial['options']['tileHeaderVisible'] === true && $initial['options']['tileHeaderInset'] === 58, 'Native tiles must reserve the Symcon title by default.');
 $check($initial['options']['design']['height'] === 0, 'New map designs must fit the viewport automatically.');
+$check($initial['options']['openFreeMap']['theme'] === 'auto' && $initial['options']['openFreeMap']['lightStyle'] === 'liberty', 'OpenFreeMap must follow the designer theme by default.');
+$form = json_decode($map->GetConfigurationForm(), true, 512, JSON_THROW_ON_ERROR);
+$mapMenus = array_filter($form['elements'], static fn ($item): bool => in_array($item['caption'] ?? '', ['Tile designer', 'IPSView designer'], true));
+$check(count($mapMenus) === 2, 'Both designers must exist.');
+foreach ($mapMenus as $panel) {
+    $sections = array_filter($panel['items'], static fn ($item): bool => ($item['caption'] ?? '') === 'OpenFreeMap');
+    $check(count($sections) === 1, 'Every designer needs its own OpenFreeMap menu.');
+}
+
 // Official stubs predate the Symcon 9.1 title field; supply it without modifying vendor sources.
 $objectsProperty = new ReflectionProperty(IPS\ObjectManager::class, 'objects');
 $objects = $objectsProperty->getValue();
@@ -104,6 +113,7 @@ $check($map->Update(), 'Cache update must succeed.');
 $map->RequestAction('GetState', '');
 $tile = $map->GetVisualizationTile();
 $check(!str_contains($tile, '{{BOOTSTRAP}}') && str_contains($tile, 'woist-app'), 'HTML tile must embed its bootstrap and local assets.');
+$check(strlen($tile) < 1048576, 'The native tile must stay below the Symcon output-buffer limit.');
 $check(array_unique($firstBoundary->commands) === ['GetDevices'], 'Opening, rendering and SDK cache actions must never refresh Apple.');
 $messages = $map->getMessages();
 $last = end($messages);
@@ -138,7 +148,7 @@ $check(IPS_GetInstance($mapID)['InstanceStatus'] === 202, 'Malformed account not
 $map->ReceiveData(json_encode(['DataID' => '{00000000-0000-0000-0000-000000000000}'] + $envelope, JSON_THROW_ON_ERROR));
 $check(IPS_GetInstance($mapID)['InstanceStatus'] === 202, 'Notifications from an unexpected data interface must fail closed.');
 
-foreach (['StaleAfter' => 0, 'TileURL' => 'http://example.invalid/{z}/{x}/{y}.png', 'TileAttribution' => ''] as $property => $invalid) {
+foreach (['StaleAfter' => 0] as $property => $invalid) {
     $old = IPS_GetProperty($mapID, $property);
     IPS_SetProperty($mapID, $property, $invalid);
     $firstBoundary->commands = [];
@@ -209,11 +219,16 @@ $check(GetValueString($outputID) === $html, 'Data notifications must never rewri
 $check($firstBoundary->commands === [], 'Publishing received IPSView data must not request the account again.');
 IPS_SetProperty($mapID, 'IPSViewUseTileDesign', false);
 IPS_SetProperty($mapID, 'IPSViewMarkerSize', 13);
+IPS_SetProperty($mapID, 'IPSViewMapTheme', 'dark');
+IPS_SetProperty($mapID, 'TileMapTheme', 'light');
+IPS_SetProperty($mapID, 'TileMapLightWaterColor', 0x123456);
 IPS_SetProperty($mapID, 'TileMarkerSize', 7);
 IPS_ApplyChanges($mapID);
 $check(str_contains($callHook('GET', null, '/hook/SymconiCloudWoIst' . $mapID . '/page')[1], '"markerSize":13'), 'The HTTP page must render its independent IPSView design.');
 $check(str_contains($map->GetVisualizationTile(), '"markerSize":7'), 'Native tile must retain its own design.');
+$check(json_decode($callHook('POST', (new ReflectionMethod($map, 'ReadAttributeString'))->invoke($map, 'IPSViewTransportToken'))[1], true)['options']['openFreeMap']['theme'] === 'dark', 'IPSView map design must be independent.');
 $map->CopyTileDesignToIPSView();
+$check(IPS_GetProperty($mapID, 'IPSViewMapTheme') === 'light' && IPS_GetProperty($mapID, 'IPSViewMapLightWaterColor') === 0x123456, 'Copying the designer must include the whole map profile.');
 $check(IPS_GetProperty($mapID, 'IPSViewMarkerSize') === 7 && IPS_GetProperty($mapID, 'IPSViewUseTileDesign') === false, 'Copy action must snapshot saved Tile settings into independent IPSView design.');
 $lastHtml = GetValueString($outputID);
 IPS_SetProperty($mapID, 'EnableIPSView', false);
@@ -240,16 +255,18 @@ $check(!str_contains($body, $token) && $payload['options']['design']['markerSize
 $check(GetValueString($outputID) === $stableHtml && $firstBoundary->commands === [], 'Polling and notifications must neither rewrite HTML nor contact the account.');
 $check($callHook('OPTIONS')[0] === 204 && $callHook('OPTIONS')[1] === '', 'CORS preflight must return no device state.');
 $check($callHook('POST')[0] === 403 && $callHook('POST', 'invalid')[0] === 403, 'Missing and incorrect transport tokens must be rejected.');
+[$rendererStatus, $rendererBytes] = $callHook('GET', null, '/hook/SymconiCloudWoIst' . $mapID . '/assets/maplibre-gl.js');
+$check($rendererStatus === 200 && strlen($rendererBytes) < 1048576 && hash('sha256', gzdecode($rendererBytes)) === hash_file('sha256', dirname(__DIR__) . '/libs/helper/maps/vendor/maplibre-gl.js'), 'The renderer must be compressed, immutable vendor code below the output limit.');
 $check($callHook('GET', $token)[0] === 405 && $callHook('POST', $token, '/hook/SymconiCloudWoIst' . $mapID . '/extra')[0] === 404, 'Only POST on the exact instance hook is allowed.');
 // A public shell has no private bootstrap and accepts neither credentials in URLs nor extra routes.
-$provider = IPS_GetProperty($mapID, 'TileURL');
-$attribution = IPS_GetProperty($mapID, 'TileAttribution');
-IPS_SetProperty($mapID, 'TileURL', 'https://tiles.example.invalid/{z}/{x}/{y}.png?key=synthetic-provider-secret');
-IPS_SetProperty($mapID, 'TileAttribution', 'synthetic-private-attribution');
+$provider = IPS_GetProperty($mapID, 'IPSViewMapLightStyleURL');
+$attribution = IPS_GetProperty($mapID, 'IPSViewMapDarkStyleURL');
+IPS_SetProperty($mapID, 'IPSViewMapLightStyleURL', 'https://styles.example.invalid/map.json?key=synthetic-provider-secret');
+IPS_SetProperty($mapID, 'IPSViewMapDarkStyleURL', 'https://styles.example.invalid/map.json?key=synthetic-private-attribution');
 IPS_ApplyChanges($mapID);
 $firstBoundary->commands = [];
 [$pageStatus, $pageHTML] = $callHook('GET', null, '/hook/SymconiCloudWoIst' . $mapID . '/page');
-$check($pageStatus === 200 && str_contains($pageHTML, '"fragmentToken":true') && str_contains($pageHTML, '"tileUrl":""'), 'Public HTTP shell must wait for fragment authentication before loading provider tiles.');
+$check($pageStatus === 200 && str_contains($pageHTML, '"fragmentToken":true') && str_contains($pageHTML, '"openFreeMap":null'), 'Public HTTP shell must wait for fragment authentication before loading provider tiles.');
 foreach ([$token, 'Synthetic IPSView update', 'synthetic-provider-secret', 'synthetic-private-attribution', '51.25'] as $privateValue) {
     $check(!str_contains($pageHTML, $privateValue), 'Public HTTP shell must never embed account data, provider credentials or bearer tokens.');
 }
@@ -259,8 +276,8 @@ $check($callHook('POST', $token, $pagePath)[0] === 405, 'Public HTTP shell allow
 foreach ([$pagePath . '?token=' . $token, $pagePath . '/' . $token, $pagePath . '/extra', $pagePath . '/', '/hook/SymconiCloudWoIst' . $mapID . '?token=' . $token] as $invalidPath) {
     $check($callHook('GET', null, $invalidPath)[0] === 404, 'Query credentials and non-exact page paths must be rejected.');
 }
-IPS_SetProperty($mapID, 'TileURL', $provider);
-IPS_SetProperty($mapID, 'TileAttribution', $attribution);
+IPS_SetProperty($mapID, 'IPSViewMapLightStyleURL', $provider);
+IPS_SetProperty($mapID, 'IPSViewMapDarkStyleURL', $attribution);
 IPS_ApplyChanges($mapID);
 $stableHtml = GetValueString($outputID);
 $map->Update();

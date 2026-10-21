@@ -25,6 +25,7 @@ trait WoIstDesign
             IPS_SetProperty($this->InstanceID, 'IPSView' . $name, is_bool($default)
                 ? $this->ReadPropertyBoolean('Tile' . $name) : $this->ReadPropertyInteger('Tile' . $name));
         }
+        $this->CopyOpenFreeMapProperties('Tile', 'IPSView');
         IPS_SetProperty($this->InstanceID, 'IPSViewUseTileDesign', false);
         IPS_ApplyChanges($this->InstanceID);
         $this->ReloadForm();
@@ -33,7 +34,7 @@ trait WoIstDesign
     /** Updates editor availability without saving settings or querying Apple. */
     public function UpdateIPSViewDesignAvailability(bool $UseTileDesign): void
     {
-        foreach (self::MAP_DESIGN as $name => $_) {
+        foreach (array_merge(array_keys(self::MAP_DESIGN), $this->OpenFreeMapPropertyNames()) as $name) {
             $this->UpdateFormField('IPSView' . $name, 'enabled', !$UseTileDesign);
         }
     }
@@ -42,6 +43,7 @@ trait WoIstDesign
     {
         $this->RegisterPropertyBoolean('IPSViewUseTileDesign', true);
         foreach (['Tile', 'IPSView'] as $prefix) {
+            $this->RegisterOpenFreeMapProperties($prefix);
             foreach (self::MAP_DESIGN as $name => [$default]) {
                 if (is_bool($default)) {
                     $this->RegisterPropertyBoolean($prefix . $name, $default);
@@ -77,9 +79,15 @@ trait WoIstDesign
                 }
                 $items[] = $item;
             }
+            $items[] = $this->OpenFreeMapFormSection($prefix, $prefix !== 'IPSView' || !$this->ReadPropertyBoolean('IPSViewUseTileDesign'));
             $form['elements'][] = ['type' => 'ExpansionPanel', 'caption' => $caption, 'items' => $items];
         }
         return $form;
+    }
+
+    private function WoIstOpenFreeMap(bool $ipsView): array
+    {
+        return $this->ReadOpenFreeMapDesign($ipsView && !$this->ReadPropertyBoolean('IPSViewUseTileDesign') ? 'IPSView' : 'Tile');
     }
 
     private function WoIstDesign(bool $ipsView): array

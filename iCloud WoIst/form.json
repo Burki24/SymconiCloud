@@ -8,16 +8,6 @@
             "maximum": 86400
         },
         {
-            "type": "ValidationTextBox",
-            "name": "TileURL",
-            "caption": "HTTPS map tile URL with {z}, {x}, {y}"
-        },
-        {
-            "type": "ValidationTextBox",
-            "name": "TileAttribution",
-            "caption": "Map attribution"
-        },
-        {
             "type": "Label",
             "caption": "Map tiles are loaded by your browser. Device names and account credentials are not sent to the tile provider."
         },

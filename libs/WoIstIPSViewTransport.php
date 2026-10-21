@@ -16,6 +16,19 @@ trait WoIstIPSViewTransport
         $path = '/hook/' . $this->WoIstIPSViewHookName();
         $uri = $_SERVER['REQUEST_URI'] ?? '';
         $page = $uri === $path . '/page';
+        // The renderer is public library code, usable by native tiles even
+        // when the optional IPSView output is disabled. No cache data is read.
+        if ($uri === $path . '/assets/maplibre-gl.js') {
+            if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
+                header('Allow: GET');
+                $this->SendPlainTextResponse(405, 'Method not allowed.');
+                return;
+            }
+            header('Content-Encoding: gzip');
+            $this->SendResponse(200, 'application/javascript', $this->OpenFreeMapRendererAsset());
+            return;
+        }
+
         if (($uri !== $path && !$page) || !$this->IsIPSViewHTMLPageEnabled()
             || !$this->WoIstIPSViewServerURLValid() || !$this->HasParent()
             || $this->ReadAttributeInteger('IPSViewTransportConnection') !== IPS_GetInstance($this->InstanceID)['ConnectionID']) {
@@ -128,6 +141,7 @@ trait WoIstIPSViewTransport
         $bootstrap['mode'] = 'ipsview';
         $bootstrap['options'] = array_replace($bootstrap['options'], $this->ResponsiveVisualizationLayoutOptions(false));
         $bootstrap['options']['design'] = $this->WoIstDesign(true);
+        $bootstrap['options']['openFreeMap'] = $this->WoIstOpenFreeMap(true);
         $this->WriteAttributeString('IPSViewTransportState', $this->encode($bootstrap));
     }
 }

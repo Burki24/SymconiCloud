@@ -9,6 +9,7 @@ require_once __DIR__ . '/../libs/helper/VisualizationAssetHelper.php';
 require_once __DIR__ . '/../libs/helper/VisualizationThemeHelper.php';
 require_once __DIR__ . '/../libs/helper/ResponsiveVisualizationHelper.php';
 require_once __DIR__ . '/../libs/helper/IPSViewHTMLPageHelper.php';
+require_once __DIR__ . '/../libs/helper/OpenFreeMapHelper.php';
 require_once __DIR__ . '/../libs/WoIstDesign.php';
 require_once __DIR__ . '/../libs/WoIstIPSViewTransport.php';
 require_once __DIR__ . '/../libs/helper/HttpResponseHelper.php';
@@ -23,6 +24,7 @@ class iCloudWoIst extends IPSModuleStrict
     use \Burki24\SymconModuleHelper\VisualizationThemeHelper;
     use \Burki24\SymconModuleHelper\ResponsiveVisualizationHelper;
     use \Burki24\SymconModuleHelper\IPSViewHTMLPageHelper;
+    use \Burki24\SymconModuleHelper\OpenFreeMapHelper;
     use \SymconiCloud\WoIstDesign;
     use \SymconiCloud\WoIstIPSViewTransport;
     use \Burki24\SymconModuleHelper\HttpResponseHelper;
@@ -137,9 +139,11 @@ class iCloudWoIst extends IPSModuleStrict
         return __DIR__ . '/visualization';
     }
 
-    private function renderPage(bool $ipsView, array $bootstrap): string
+    private function renderPage(bool $ipsView, array $bootstrap, bool $publicShell = false): string
     {
+        $assets = $this->OpenFreeMapAssets('/hook/' . $this->WoIstIPSViewHookName() . '/assets/maplibre-gl.js');
         $bootstrap['mode'] = $ipsView ? 'ipsview' : 'symcon';
+        $bootstrap['options']['openFreeMap'] = $publicShell ? null : $this->WoIstOpenFreeMap($ipsView);
         $bootstrap['options']['design'] = $this->WoIstDesign($ipsView);
         $bootstrap['options'] = array_replace($bootstrap['options'], $this->ResponsiveVisualizationLayoutOptions(!$ipsView));
         if ($ipsView && $this->IsIPSViewHTMLPageEnabled()) {
@@ -156,6 +160,8 @@ class iCloudWoIst extends IPSModuleStrict
             'options'            => $bootstrap['options'],
             'replacements'       => [
                 '{{BOOTSTRAP}}'      => $this->encode($bootstrap),
+                '{{VECTOR_CSS}}'     => $assets['css'],
+                '{{VECTOR_JS}}'      => $assets['script'],
                 '{{LEAFLET_CSS}}'    => (string) file_get_contents(__DIR__ . '/../libs/vendor/leaflet/leaflet.css'),
                 '{{LEAFLET_JS}}'     => (string) file_get_contents(__DIR__ . '/../libs/vendor/leaflet/leaflet.js'),
                 '{{RESPONSIVE_CSS}}' => $this->ResponsiveVisualizationCSS('#woist-app', 'woist-map', true),
@@ -168,8 +174,8 @@ class iCloudWoIst extends IPSModuleStrict
     private function renderIPSViewHTTPShell(): string
     {
         $bootstrap = $this->bootstrap($this->unavailable());
-        $bootstrap['options'] = ['tileUrl' => '', 'attribution' => '', 'maxZoom' => 19];
-        return $this->renderPage(true, $bootstrap);
+        $bootstrap['options'] = ['maxZoom' => 19];
+        return $this->renderPage(true, $bootstrap, true);
     }
 
     private function request(string $command): array
@@ -253,8 +259,7 @@ class iCloudWoIst extends IPSModuleStrict
                 'error'           => is_string($data['error'] ?? null) ? $data['error'] : '', 'updatedAt' => $updated,
                 'staleAfter'      => max(60, min(86400, $this->ReadPropertyInteger('StaleAfter'))), 'devices' => $devices],
             'labels'  => $labels,
-            'options' => [...$this->ResponsiveVisualizationLayoutOptions(), 'design' => $this->WoIstDesign(false), 'tileUrl' => $this->configurationValid() ? $this->ReadPropertyString('TileURL') : '',
-                'attribution'                                                        => $this->configurationValid() ? $this->ReadPropertyString('TileAttribution') : '', 'maxZoom' => 19]
+            'options' => [...$this->ResponsiveVisualizationLayoutOptions(), 'design' => $this->WoIstDesign(false), 'openFreeMap' => $this->WoIstOpenFreeMap(false), 'maxZoom' => 19]
         ];
     }
 
@@ -265,13 +270,7 @@ class iCloudWoIst extends IPSModuleStrict
 
     private function configurationValid(): bool
     {
-        $url = $this->ReadPropertyString('TileURL');
-        $parts = parse_url($url);
-        return $this->ReadPropertyInteger('StaleAfter') >= 60 && $this->ReadPropertyInteger('StaleAfter') <= 86400
-            && is_array($parts) && ($parts['scheme'] ?? '') === 'https' && !empty($parts['host'])
-            && !isset($parts['user']) && !isset($parts['pass']) && !isset($parts['fragment'])
-            && !preg_match('/[\x00-\x20\x7f]/', $url) && str_contains($url, '{z}') && str_contains($url, '{x}') && str_contains($url, '{y}')
-            && trim($this->ReadPropertyString('TileAttribution')) !== '';
+        return $this->ReadPropertyInteger('StaleAfter') >= 60 && $this->ReadPropertyInteger('StaleAfter') <= 86400;
     }
 
     private function unavailable(string $error = 'Account data unavailable.'): array

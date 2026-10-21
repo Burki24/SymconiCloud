@@ -6,7 +6,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const source = fs.readFileSync(path.join(__dirname, '../iCloud WoIst/visualization/app.js'), 'utf8');
 const api = require('../iCloud WoIst/visualization/app.js');
-assert.ok(source.includes('\u00a9 OpenStreetMap contributors'), 'Map attribution must preserve its UTF-8 copyright sign.');
+assert.ok(fs.readFileSync(path.join(__dirname, '../libs/helper/maps/openfreemap.js'), 'utf8').includes('OpenStreetMap contributors'), 'The vector map must include attribution.');
 assert.ok(source.includes(' \u00b7 '), 'Device details must preserve their UTF-8 separator.');
 
 assert.equal(api.validLocation({latitude: 0, longitude: 0}), true, 'Zero coordinates are valid locations.');
@@ -50,6 +50,7 @@ const layer = {addTo() { return this; }, removeLayer(marker) { markers.splice(ma
 const window = {
     document: {readyState: 'complete', documentElement: documentRoot, querySelector(selector) { return selector === '.workspace' ? workspace : null; }, getElementById(id) { return elements[id]; }, createElement() { return new Element(); }, querySelectorAll() { return elements['device-list'].children.map((item) => item.children[0]); }},
     requestAction(name) { requests.push(name); }, fetch() { throw new Error('Native tile must not poll.'); }, addEventListener() {}, setInterval() {}, setTimeout() { return 1; }, clearTimeout() {},
+    SymconOpenFreeMap: {createController() { const controller = {updates: [], update(value) { if (value) this.updates.push(value); }}; tileProviders.push(controller); return controller; }},
     L: {
         map(_id, options) { assert.equal(options.trackResize, false, 'Only the view-preserving resize handler controls Leaflet resizing.'); return map; }, tileLayer(url, options) { tileProviders.push({url, options}); return {addTo() { return this; }, on() { return this; }}; }, layerGroup() { return layer; }, latLngBounds(value) { return value; },
         circleMarker(position, options) {
@@ -96,12 +97,12 @@ elements.refresh.events.click();
 assert.deepEqual(requests, ['GetState', 'RefreshDevices'], 'Only an explicit click refreshes Apple data.');
 elements.fit.events.click();
 assert.equal(fits, 2, 'Show all explicitly fits current devices.');
-window.handleMessage({state: {success: true, devices: []}, options: {tileUrl: 'https://example.invalid/{z}/{x}/{y}.png', attribution: '<img src=x onerror=alert(1)>'}});
-assert.equal(tileProviders.length, 2, 'Provider settings update an already open tile.');
-assert.equal(tileProviders[1].options.attribution, '&lt;img src=x onerror=alert(1)&gt;', 'Provider attribution is escaped text.');
+window.handleMessage({state: {success: true, devices: []}, options: {openFreeMap: {theme: 'dark', customColors: true, darkWaterColor: '#123456'}}});
+assert.equal(tileProviders.length, 1, 'Map settings update the existing vector layer.');
+assert.equal(tileProviders[0].updates.at(-1).theme, 'dark', 'Map design reaches the central controller.');
 assert.equal(markers.length, 0, 'Empty state removes old device pins.');
-window.handleMessage({state: {success: false, devices: []}, options: {tileUrl: '', attribution: ''}});
-assert.equal(tileProviders.length, 2, 'Invalid provider settings never silently load a default provider.');
+window.handleMessage({state: {success: false, devices: []}, options: {openFreeMap: null}});
+assert.equal(tileProviders.length, 1, 'Missing map settings do not recreate the map layer.');
 window.handleMessage({state: {success: true, devices: [
     {id: 'current', name: 'Current', location: {latitude: 1, longitude: 2, timestamp, isOld: false}},
     {id: 'old', name: 'Old', location: {latitude: 3, longitude: 4, timestamp, isOld: true}}

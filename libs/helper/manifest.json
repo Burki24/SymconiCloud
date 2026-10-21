@@ -27,17 +27,10 @@
             "source_sha": "d13d726f8df24a5ad6e3d659242f407731a10567"
         },
         "VisualizationAssetHelper": {
-<<<<<<< Updated upstream
             "version": "1.0.1",
             "sha256": "ef3adcd38be489ea129bf2e95ad15d32673879e90bf4da8f1272fbf958a0513c",
             "path": "libs/helper/VisualizationAssetHelper.php",
             "source_sha": "a724b8954e32a97c3446a78939a3108d4aaa5996",
-=======
-            "version": "1.0.0",
-            "sha256": "e0c83656659f0264b63075bee155c04d16fb39da4540f1bcfb8e860bbaef1b9e",
-            "path": "libs/helper/VisualizationAssetHelper.php",
-            "source_sha": "0513ba0476bd09ffb689454ef781f9dd8fa203e5",
->>>>>>> Stashed changes
             "assets": [
                 {
                     "path": "libs/helper/visualization/http-origin.js",
@@ -78,17 +71,10 @@
                 },
                 {
                     "name": "VisualizationAssetHelper",
-<<<<<<< Updated upstream
                     "version": "1.0.1",
                     "sha256": "ef3adcd38be489ea129bf2e95ad15d32673879e90bf4da8f1272fbf958a0513c",
                     "path": "libs/helper/VisualizationAssetHelper.php",
                     "source_sha": "a724b8954e32a97c3446a78939a3108d4aaa5996",
-=======
-                    "version": "1.0.0",
-                    "sha256": "e0c83656659f0264b63075bee155c04d16fb39da4540f1bcfb8e860bbaef1b9e",
-                    "path": "libs/helper/VisualizationAssetHelper.php",
-                    "source_sha": "0513ba0476bd09ffb689454ef781f9dd8fa203e5",
->>>>>>> Stashed changes
                     "assets": [
                         {
                             "path": "libs/helper/visualization/http-origin.js",
@@ -109,6 +95,46 @@
             "sha256": "be4fae4c23f757ab462237d8e74d2a9dca1b504937ed4d4b51c7ff76004cf1cd",
             "path": "libs/helper/HttpResponseHelper.php",
             "source_sha": "7b3bdd2634666c863061e084a68838baaa44295e"
+        },
+        "OpenFreeMapHelper": {
+            "version": "1.0.0",
+            "sha256": "8cf7b0ebd38d1499c02a240be3a368ab46eb518ccce63741bb0cb23af441c47e",
+            "path": "libs/helper/OpenFreeMapHelper.php",
+            "source_sha": "a724b8954e32a97c3446a78939a3108d4aaa5996",
+            "assets": [
+                {
+                    "path": "libs/helper/maps/openfreemap.js",
+                    "sha256": "7fd0dd8555aa360df75fe5bd705d79b90caed7bb031b6ffebe2fd6f1e81f8daa"
+                },
+                {
+                    "path": "libs/helper/maps/vendor/BRIDGE-LICENSE",
+                    "sha256": "eaa721ba158cbeff47ad53b1035dfc26ff744df66662c93ff715c9885197ebf3"
+                },
+                {
+                    "path": "libs/helper/maps/vendor/leaflet-maplibre-gl.js",
+                    "sha256": "1e6cf8cb3eb5fd909879aa1bf36a383fb506c9a5b2dbbfababce65a294dd1fcb"
+                },
+                {
+                    "path": "libs/helper/maps/vendor/maplibre-gl.css",
+                    "sha256": "ab1e70d59ec40465bae7e7030da2f3ccf28133fd502e62bd598eefbadfd7a732"
+                },
+                {
+                    "path": "libs/helper/maps/vendor/maplibre-gl.js",
+                    "sha256": "45a9b07a9189ce56054c620a947ccf41e291e58c95e9b61533b740aaa65ee5cb"
+                },
+                {
+                    "path": "libs/helper/maps/vendor/MAPLIBRE-LICENSE.txt",
+                    "sha256": "ee5fc05a0677eaf69601d2c7db0d9ecd6cc27c3abc1d0733bc9ed34707cf8ef2"
+                },
+                {
+                    "path": "libs/helper/maps/vendor/NOTICE.json",
+                    "sha256": "7ca96c1b37e965261d9e51db1bd0de8ddcea4706f6b41bb85c0471958f09d114"
+                },
+                {
+                    "path": "libs/helper/translations/OpenFreeMapHelper.json",
+                    "sha256": "96f0af1be8c6e65b43e900638f9a67147331096f43db2980a0508289f5c6d5c0"
+                }
+            ]
         }
     }
 }

@@ -72,7 +72,7 @@
     }
 
     // Only the cached map envelope is read. Tokens stay in a request header and
-    // opaque IPSView frames require an explicitly configured endpoint origin.
+    // the standalone map document resolves its endpoint on the Symcon HTTP origin.
     function createIPSViewTransport(configuration, environment, receive, status) {
         const url = transportURL(configuration && configuration.url, environment.location || {});
         const token = configuration && configuration.token;
@@ -173,8 +173,9 @@
     let labels = fallback;
     let design = {};
     let map = null;
-    let tiles = null;
-    let tileConfiguration = '';
+    let vectorController = null;
+    let vectorInitialization = null;
+    let vectorOptions = null;
     let layer = null;
     let accuracy = null;
     let selected = null;
@@ -245,23 +246,23 @@
 
     function configureTiles(options) {
         if (!map) return;
-        const configuration = JSON.stringify([options.tileUrl, options.attribution, options.maxZoom]);
-        if (configuration === tileConfiguration) return;
-        tileConfiguration = configuration;
-        if (tiles) { map.removeLayer(tiles); tiles = null; }
-        if (options.tileUrl === '') {
-            el('map-message').textContent = text('mapUnavailable');
-            el('map-message').hidden = false;
-            return;
-        }
-        tiles = global.L.tileLayer(options.tileUrl || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: options.maxZoom || 19,
-            attribution: options.tileUrl && !options.tileUrl.startsWith('https://tile.openstreetmap.org/')
-                ? escapeHTML(options.attribution || '')
-                : '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a>'
-        }).addTo(map);
-        el('map-message').hidden = true;
-        tiles.on('tileerror', () => { el('map-message').textContent = text('loadError'); el('map-message').hidden = false; });
+        vectorOptions = options.openFreeMap || vectorOptions;
+        const status = (message) => {
+            el('map-message').textContent = message ? text(message) : '';
+            el('map-message').hidden = !message;
+        };
+        const initialize = () => {
+            vectorController = global.SymconOpenFreeMap.createController(map, global, status);
+            vectorController.update(vectorOptions);
+        };
+        try {
+            if (vectorController) vectorController.update(vectorOptions);
+            else if (!vectorInitialization) {
+                if (global.SymconVectorAssetsReady) {
+                    vectorInitialization = global.SymconVectorAssetsReady.then(initialize).catch(() => status('mapUnavailable'));
+                } else initialize();
+            }
+        } catch (_) { status('mapUnavailable'); }
     }
 
     function configureTileHeader(options) {
