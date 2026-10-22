@@ -375,10 +375,10 @@
             ]
         },
         "ReverseGeocodingHelper": {
-            "version": "1.0.0",
-            "sha256": "cf39389d8e3919917370fd029e9755296ffe6354b34a7cf49c90d343dc6d6054",
+            "version": "1.1.0",
+            "sha256": "a1511ade232cb44bd923d1edddac171e9006fe60a37bd250e8c63aed96bc5e67",
             "path": "libs/helper/ReverseGeocodingHelper.php",
-            "source_sha": "",
+            "source_sha": "980f8a29b3f5c46b49f85b4ff8e56116dd2bc3d2",
             "dependencies": [
                 {
                     "name": "PersistentJsonCacheHelper",

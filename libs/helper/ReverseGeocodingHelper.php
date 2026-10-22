@@ -12,7 +12,7 @@ require_once __DIR__ . '/PersistentJsonCacheHelper.php';
  * performs I/O. ResolveNominatimAddress must run in a serialized background worker.
  * No Apple credentials or device identifiers are accepted or transmitted.
  *
- * @version 1.0.0
+ * @version 1.1.0
  */
 trait ReverseGeocodingHelper
 {
@@ -94,8 +94,8 @@ trait ReverseGeocodingHelper
      * Resolves one position, reusing cache. Provider failures return '' and impose
      * a five-minute server cooldown; uncovered coordinates are cached for one hour.
      * At most 512 entries are retained. Call only after explicit user opt-in.
-     * Zoom 0..18 limits address detail. Coarse results require structured address fields;
-     * they never reuse an unfiltered display_name containing a precise house number.
+     * Zoom 0..18 limits address detail. Structured address fields use the same compact
+     * street/house, postcode/place, country layout as Geoapify, without raw-text fallback.
      *
      * @throws \InvalidArgumentException On invalid server, coordinate, language or zoom.
      */
@@ -120,11 +120,11 @@ trait ReverseGeocodingHelper
                 throw new \UnexpectedValueException('Geocoding response unavailable.');
             }
             $data = json_decode($body, true, 32, JSON_THROW_ON_ERROR);
-            if (!is_array($data) || (!is_string($data['display_name'] ?? null) && !is_string($data['error'] ?? null))) {
+            if (!is_array($data) || (!is_array($data['address'] ?? null) && !is_string($data['error'] ?? null))) {
                 throw new \UnexpectedValueException('Invalid geocoding result.');
             }
-            if (($response['status'] ?? 0) === 200 && is_string($data['display_name'] ?? null)) {
-                $address = $zoom === 18 ? trim($data['display_name']) : $this->NominatimCoarseAddress($data['address'] ?? null, $zoom);
+            if (($response['status'] ?? 0) === 200 && is_array($data['address'] ?? null)) {
+                $address = $this->CompactReverseGeocodingAddress($data['address'], $zoom);
                 if (strlen($address) > 2048 || preg_match('//u', $address) !== 1 || preg_match('/[\x00-\x1f\x7f]/', $address)) {
                     throw new \UnexpectedValueException('Invalid address text.');
                 }
@@ -248,12 +248,11 @@ trait ReverseGeocodingHelper
                     throw new \UnexpectedValueException('Invalid Geoapify address.');
                 }
                 $parts = [];
-                foreach (['street' => 'road', 'suburb' => 'suburb', 'district' => 'city_district', 'city' => 'city',
-                    'county'       => 'county', 'state' => 'state', 'postcode' => 'postcode', 'country' => 'country'] as $from => $to) {
+                foreach (['housenumber' => 'house_number', 'street' => 'road', 'suburb' => 'suburb', 'district' => 'city_district', 'city' => 'city',
+                    'county'            => 'county', 'state' => 'state', 'postcode' => 'postcode', 'country' => 'country'] as $from => $to) {
                     $parts[$to] = $result[$from] ?? null;
                 }
-                $address = $zoom === 18 && is_string($result['formatted'] ?? null)
-                    ? trim($result['formatted']) : $this->NominatimCoarseAddress($parts, min($zoom, 17));
+                $address = $this->CompactReverseGeocodingAddress($parts, $zoom);
                 if (strlen($address) > 2048 || preg_match('//u', $address) !== 1 || preg_match('/[\x00-\x1f\x7f]/', $address)) {
                     throw new \UnexpectedValueException('Invalid address text.');
                 }
@@ -352,42 +351,53 @@ trait ReverseGeocodingHelper
             throw new \InvalidArgumentException('Invalid geocoding coordinate, language or zoom.');
         }
         $scope = hash('sha256', $server . '|' . strtolower($language) . ($credentialScope === '' ? '' : '|' . $credentialScope));
-        return [$scope, hash('sha256', 'detail-v1|' . $scope . '|' . $zoom . '|' . number_format($latitude, 6, '.', '') . '|' . number_format($longitude, 6, '.', ''))];
+        return [$scope, hash('sha256', 'compact-v1|' . $scope . '|' . $zoom . '|' . number_format($latitude, 6, '.', '') . '|' . number_format($longitude, 6, '.', ''))];
     }
 
-    /** Restricts coarse provider data even when the server ignores the requested zoom. */
-    private function NominatimCoarseAddress(mixed $address, int $zoom): string
+    /**
+     * Common compact layout from normalized provider fields. Never parses a provider's
+     * display_name/formatted text. House numbers require building detail; administrative
+     * hierarchies are reduced to one place fallback when no city/village is available.
+     */
+    private function CompactReverseGeocodingAddress(mixed $address, int $zoom): string
     {
         if (!is_array($address)) {
             return '';
         }
-        $fields = [];
-        if ($zoom >= 16) {
-            $fields = ['road', 'pedestrian', 'residential', 'footway', 'path', 'cycleway', 'square'];
-        }
-        if ($zoom >= 12) {
-            $fields = array_merge($fields, ['neighbourhood', 'quarter', 'suburb', 'city_district', 'borough']);
-        }
-        if ($zoom >= 10) {
-            $fields = array_merge($fields, ['village', 'town', 'municipality', 'city']);
-        }
-        if ($zoom >= 8) {
-            $fields = array_merge($fields, ['county', 'state_district']);
-        }
-        if ($zoom >= 5) {
-            $fields[] = 'state';
-        }
-        if ($zoom >= 12) {
-            $fields[] = 'postcode';
-        }
-        $fields[] = 'country';
-        $parts = [];
-        foreach ($fields as $field) {
-            if (is_string($address[$field] ?? null) && trim($address[$field]) !== '') {
-                $parts[] = trim($address[$field]);
+        $first = static function (array $fields) use ($address): string
+        {
+            foreach ($fields as $field) {
+                $value = $address[$field] ?? null;
+                if (!is_string($value) || trim($value) === '') {
+                    continue;
+                }
+                if (strlen($value) > 2048 || preg_match('//u', $value) !== 1 || preg_match('/[\x00-\x1f\x7f]/', $value)) {
+                    throw new \UnexpectedValueException('Invalid address component.');
+                }
+                return preg_replace('/\s+/u', ' ', trim($value));
             }
+            return '';
+        };
+        $street = $zoom >= 16 ? $first(['road', 'pedestrian', 'residential', 'footway', 'path', 'cycleway', 'square']) : '';
+        if ($zoom === 18 && $street !== '') {
+            $street = trim($street . ' ' . $first(['house_number']));
         }
-        return implode(', ', array_unique($parts));
+        $area = $zoom >= 12 ? $first(['neighbourhood', 'quarter', 'suburb', 'city_district', 'borough']) : '';
+        $place = $zoom >= 10 ? $first(['city', 'town', 'village', 'municipality', 'hamlet']) : '';
+        if ($place === '') {
+            $place = $area;
+        }
+        if ($place === '' && $zoom >= 8) {
+            $place = $first(['county', 'state_district']);
+        }
+        if ($place === '' && $zoom >= 5) {
+            $place = $first(['state']);
+        }
+        $postcode = $zoom >= 12 ? $first(['postcode']) : '';
+        $area = $zoom >= 12 && $zoom < 16 && $area !== $place ? $area : '';
+        $postalPlace = trim($postcode . ' ' . $place);
+        $country = $first(['country']);
+        return implode(', ', array_unique(array_filter([$street, $area, $postalPlace, $country], static fn (string $part): bool => $part !== '')));
     }
 
     /** @return array<string,mixed> Corrupt local cache is recoverable without affecting the visualization. */
