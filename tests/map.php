@@ -112,6 +112,7 @@ $check($initial['state']['devices'][0]['batteryLevel'] === 0.42, 'Map must prese
 $check($map->Update(), 'Cache update must succeed.');
 $map->RequestAction('GetState', '');
 $tile = $map->GetVisualizationTile();
+$check(str_contains($tile, '"viewStateKey":"ICWI:' . $mapID . ':' . IPS_GetInstance($mapID)['ConnectionID'] . '"'), 'Native view state must be scoped to the map instance and its account connection.');
 $check(!str_contains($tile, '{{BOOTSTRAP}}') && str_contains($tile, 'woist-app'), 'HTML tile must embed its bootstrap and local assets.');
 $check(strlen($tile) < 1048576, 'The native tile must stay below the Symcon output-buffer limit.');
 $check(array_unique($firstBoundary->commands) === ['GetDevices'], 'Opening, rendering and SDK cache actions must never refresh Apple.');

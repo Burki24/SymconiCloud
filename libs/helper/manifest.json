@@ -100,11 +100,11 @@
             "version": "1.0.0",
             "sha256": "8cf7b0ebd38d1499c02a240be3a368ab46eb518ccce63741bb0cb23af441c47e",
             "path": "libs/helper/OpenFreeMapHelper.php",
-            "source_sha": "a724b8954e32a97c3446a78939a3108d4aaa5996",
+            "source_sha": "c81483186b6f9c22949906b0e6804a72ec824a69",
             "assets": [
                 {
                     "path": "libs/helper/maps/openfreemap.js",
-                    "sha256": "7fd0dd8555aa360df75fe5bd705d79b90caed7bb031b6ffebe2fd6f1e81f8daa"
+                    "sha256": "ac4d48003881a2cb1f242e748a50129247ed809ec59618bc5c83930993e7f5a8"
                 },
                 {
                     "path": "libs/helper/maps/vendor/BRIDGE-LICENSE",

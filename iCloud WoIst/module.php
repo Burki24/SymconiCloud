@@ -143,6 +143,9 @@ class iCloudWoIst extends IPSModuleStrict
     {
         $assets = $this->OpenFreeMapAssets('/hook/' . $this->WoIstIPSViewHookName() . '/assets/maplibre-gl.js');
         $bootstrap['mode'] = $ipsView ? 'ipsview' : 'symcon';
+        if (!$ipsView) {
+            $bootstrap['options']['viewStateKey'] = 'ICWI:' . $this->InstanceID . ':' . IPS_GetInstance($this->InstanceID)['ConnectionID'];
+        }
         $bootstrap['options']['openFreeMap'] = $publicShell ? null : $this->WoIstOpenFreeMap($ipsView);
         $bootstrap['options']['design'] = $this->WoIstDesign($ipsView);
         $bootstrap['options'] = array_replace($bootstrap['options'], $this->ResponsiveVisualizationLayoutOptions(!$ipsView));

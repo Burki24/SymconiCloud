@@ -195,7 +195,46 @@
         };
     }
 
-    const api = {styleURL, darkMode, prepareStyle, createController, loadRenderer};
+    // A native host may replace the complete iframe on reconnect. Keep only
+    // validated view data in this tab's storage, never an SDK URL or credential.
+    function createViewState(key, environment) {
+        let storageKey = null;
+        try {
+            if (typeof key === 'string' && key.length > 0 && key.length <= 256) {
+                const query = new URLSearchParams((environment.location || {}).search || '');
+                storageKey = 'burki24:map-view:v1:' + JSON.stringify([key, query.get('visuID') || '', query.get('visuUsername') || '']);
+            }
+        } catch (_) { /* An unavailable origin must not prevent the map loading. */ }
+        const now = () => (environment.Date || Date).now();
+        const valid = value => value && Array.isArray(value.center) && value.center.length === 2
+            && value.center.every(Number.isFinite) && Math.abs(value.center[0]) <= 90 && Math.abs(value.center[1]) <= 180
+            && Number.isFinite(value.zoom) && value.zoom >= 0 && value.zoom <= 30
+            && (value.selected === null || (typeof value.selected === 'string' && value.selected.length > 0 && value.selected.length <= 512))
+            && typeof value.popup === 'boolean';
+        return {
+            read() {
+                try {
+                    if (!storageKey) return null;
+                    const raw = environment.sessionStorage.getItem(storageKey);
+                    if (!raw || raw.length > 4096) return null;
+                    const envelope = JSON.parse(raw);
+                    if (envelope.version !== 1 || !Number.isFinite(envelope.time) || envelope.time > now()
+                        || now() - envelope.time > 4 * 60 * 60 * 1000 || !valid(envelope.value)) return null;
+                    const value = envelope.value;
+                    return {center: value.center, zoom: value.zoom, selected: value.selected, popup: value.popup};
+                } catch (_) { return null; }
+            },
+            write(value) {
+                try {
+                    if (!storageKey || !valid(value)) return;
+                    const clean = {center: value.center, zoom: value.zoom, selected: value.selected, popup: value.popup};
+                    environment.sessionStorage.setItem(storageKey, JSON.stringify({version: 1, time: now(), value: clean}));
+                } catch (_) { /* Sandboxing, quotas and disabled storage leave the live map usable. */ }
+            }
+        };
+    }
+
+    const api = {styleURL, darkMode, prepareStyle, createController, loadRenderer, createViewState};
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     global.SymconOpenFreeMap = api;
 }(typeof window === 'undefined' ? globalThis : window));

@@ -158,4 +158,40 @@ map.invalidateSize = function (options) { invalidate(options); this.center = [99
 resizeCallback();
 assert.equal(map.center, centerBeforeResize, 'Resizing restores the exact center after Leaflet invalidates its projection.');
 assert.equal(map.zoom, zoomBeforeResize);
-console.log('WoIst UI contracts passed.');
+// Reconstruct the application exactly as a native host does after reconnect.
+const sessionValues = new Map();
+window.sessionStorage = {getItem(key) { return sessionValues.get(key) || null; }, setItem(key, value) { sessionValues.set(key, value); }};
+window.location = {search: '?visuID=10000&visuUsername=synthetic'};
+window.SymconOpenFreeMap.createViewState = require('../libs/helper/maps/openfreemap.js').createViewState;
+map.getCenter = function () { return {lat: this.center[0], lng: this.center[1]}; };
+map.invalidateSize = invalidate;
+delete window.ResizeObserver;
+const restart = (key, available = true) => {
+    elements['woist-bootstrap'].textContent = JSON.stringify({mode: 'symcon', options: {viewStateKey: key}, state: {success: available, devices: available ? [
+        {id: 'synthetic-a', name: 'Synthetic', location: {latitude: 1, longitude: 2, timestamp}}
+    ] : []}});
+    markers.length = 0;
+    map.events = {};
+    vm.runInNewContext(source, {window, Date, Map, Set, Promise, console});
+};
+restart('ICWI:100:200');
+elements['device-list'].children[0].children[0].events.click();
+map.setView([52.25, 13.5], 12);
+map.events.moveend();
+const fitsBeforeReconnect = fits;
+restart('ICWI:100:200');
+assert.deepEqual(Array.from(map.center), [52.25, 13.5], 'A reconstructed native iframe restores the camera center.');
+assert.equal(map.zoom, 12, 'A reconstructed native iframe restores the zoom.');
+assert.equal(fits, fitsBeforeReconnect, 'Restoration prevents initial fitBounds from replacing the saved view.');
+assert.equal(elements['device-list'].children[0].children[0].attrs['aria-pressed'], 'true');
+assert.equal(markers[0].opened, true, 'The selected device and its popup survive iframe reconstruction.');
+restart('ICWI:100:200', false);
+window.handleMessage({state: {success: true, devices: [{id: 'synthetic-a', location: {latitude: 1, longitude: 2, timestamp}}]}});
+assert.equal(elements['device-list'].children[0].children[0].attrs['aria-pressed'], 'true', 'A delayed valid inventory still restores the pending selection.');
+assert.equal(markers[0].opened, true);
+window.handleMessage({state: {success: true, devices: []}});
+restart('ICWI:100:200');
+assert.equal(elements['device-list'].children[0].children[0].attrs['aria-pressed'], 'false', 'A removed device cannot resurrect an old selection.');
+restart('ICWI:100:201');
+assert.deepEqual(Array.from(map.center), [20, 0], 'Another account connection starts with its own view.');
+console.log('WoIst UI and native iframe reconstruction contracts passed.');

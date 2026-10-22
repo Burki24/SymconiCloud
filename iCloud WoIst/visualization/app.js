@@ -184,6 +184,9 @@
     let outputMode = '';
     let resizing = false;
     let refreshTimer;
+    let viewMemory = null;
+    let viewPersistenceReady = false;
+    let pendingViewSelection = null;
     const markers = new Map();
     const el = (id) => global.document.getElementById(id);
     const text = (key) => labels[key] || fallback[key] || key;
@@ -235,6 +238,16 @@
             }
         }
         global.document.querySelectorAll('.device').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.id === selected)));
+        saveView();
+    }
+
+    function saveView() {
+        if (!viewMemory || !viewPersistenceReady || !map || state.success === false) return;
+        const center = map.getCenter();
+        const location = typeof center.wrap === 'function' ? center.wrap() : center;
+        const marker = markers.get(selected);
+        viewMemory.write({center: [location.lat, location.lng], zoom: map.getZoom(), selected,
+            popup: Boolean(marker && marker.isPopupOpen && marker.isPopupOpen())});
     }
 
     function fit() {
@@ -368,6 +381,13 @@
             const device = devices.find((entry) => entry.id === selected);
             if (device) selectDevice(device, false, Boolean(reopenPopup));
         }
+        if (pendingViewSelection && state.success !== false) {
+            const restored = pendingViewSelection;
+            pendingViewSelection = null;
+            const device = devices.find(entry => entry.id === restored.selected);
+            if (device) selectDevice(device, false, restored.popup);
+        }
+        saveView();
     }
 
     global.handleMessage = function (value) {
@@ -391,6 +411,11 @@
         const transportConfiguration = bootstrap.mode === 'ipsview'
             ? consumeFragmentToken((bootstrap.options || {}).ipsViewTransport, global) : null;
         outputMode = bootstrap.mode || '';
+        if (outputMode === 'symcon' && global.SymconOpenFreeMap && global.SymconOpenFreeMap.createViewState) {
+            viewMemory = global.SymconOpenFreeMap.createViewState((bootstrap.options || {}).viewStateKey, global);
+        }
+        const restoredView = viewMemory && viewMemory.read();
+        pendingViewSelection = restoredView;
         configureTileHeader(bootstrap.options || {});
         labels = Object.assign({}, fallback, bootstrap.labels || {});
         state = parseState(bootstrap.state) || state;
@@ -401,7 +426,8 @@
         el('map').setAttribute('aria-label', text('title'));
         try {
             if (!global.L) throw new Error('Leaflet unavailable');
-            map = global.L.map('map', {trackResize: false}).setView([20, 0], 2);
+            map = global.L.map('map', {trackResize: false}).setView(restoredView ? restoredView.center : [20, 0], restoredView ? restoredView.zoom : 2);
+            if (restoredView) fitted = true;
             map.on('movestart', () => { if (!resizing) fitted = true; });
             configureTiles(bootstrap.options || {});
             layer = global.L.layerGroup().addTo(map);
@@ -431,6 +457,12 @@
             try { Promise.resolve(global.requestAction('RefreshDevices', '')).catch(failed); } catch (_) { failed(); }
         });
         render();
+        viewPersistenceReady = true;
+        if (map) {
+            for (const event of ['moveend', 'zoomend', 'popupopen', 'popupclose']) map.on(event, saveView);
+        }
+        global.addEventListener('pagehide', saveView);
+        saveView();
         global.setInterval(render, 30000);
         if (bootstrap.mode === 'ipsview') {
             createIPSViewTransport(transportConfiguration, global, global.handleMessage, (key) => {
