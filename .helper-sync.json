@@ -36,6 +36,12 @@
         },
         "OpenFreeMapHelper": {
             "target": "libs/helper/OpenFreeMapHelper.php"
+        },
+        "VisualizationThemeConfigurationHelper": {
+            "target": "libs/helper/VisualizationThemeConfigurationHelper.php"
+        },
+        "IPSViewStyleConfigurationHelper": {
+            "target": "libs/helper/IPSViewStyleConfigurationHelper.php"
         }
     }
 }

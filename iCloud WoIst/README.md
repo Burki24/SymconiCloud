@@ -82,3 +82,13 @@ Der interne WebHook `SymconiCloudWoIst<Instanz-ID>` wird beim Laden der Instanz 
 Eine Server-IP wird nicht grundsätzlich benötigt: In einer HTTP(S)-Seite auf demselben Server verwendet die Einbindung automatisch den aktuellen Ursprung. Bei `data:`-/`about:`-Einbettungen verwendet die Ausgabe automatisch den verfügbaren HTTP(S)-Ursprung des einbettenden Kontexts. Native IPSView-Apps ohne solche Browserinformationen benötigen die vom Anzeigegerät erreichbare Serveradresse. Das kann auch ein DNS-Name oder eine HTTPS-Adresse über einen Reverse-Proxy sein. Eine automatisch ermittelte lokale IP wäre außerhalb des lokalen Netzes unter Umständen nicht erreichbar.
 
 Die HTTP-Kartenseite lädt ihre Assets über den zentralen Verzeichnisvertrag mit dem tatsächlichen Modulpfad. Können erforderliche Dateien nicht geladen werden, meldet sie HTTP 503 statt einer leeren erfolgreichen Antwort. Datenupdates verwenden weiterhin dieselbe Seite und erhalten die Kartenansicht.
+
+### Farben und IPSView-Stil
+
+Der Kachel-Designer enthält den zentralen Bereich **Kachelfarben** für Text, Überschriften, Hintergrund, Akzent und Statusfarben. Ohne eigene Farben folgt die Ausgabe weiterhin dem nativen Symcon-Design einschließlich Hell-/Dunkelwechsel.
+
+Im IPSView-Designer bietet **IPSView-Stil** die zentralen Stilquellen: eigene Einstellungen, eine IPSView-Mediendatei, ein Stilprofil sowie helle, dunkle und weitere vorgegebene Farbpaletten. Einstellbar sind unter anderem Ansicht und Seitenhintergrund, aktive/inaktive Bedienelemente und Texte, Akzent- und Statusfarben, Popups, Transparenz, Schrift, Schriftgröße/-skalierung, Rahmen und Schatten. Die erweiterten nativen Farben zeigen die für Kartenbedienelemente und Popups relevanten Familien. Nicht jede Rolle wird von jeder Kartenkomponente benötigt.
+
+**Karteneinstellungen der Kachel verwenden** und die Kopieraktion betreffen Kartenlayout, Positionsmarker und OpenFreeMap-Profil. Die IPSView-Farbgestaltung und Typografie bleiben davon unabhängig; ihre Schriftgröße wird über den zentralen IPSView-Stil eingestellt. Die frühere Property `IPSViewFontSize` bleibt registriert, wird aber durch die zentrale IPSView-Typografie abgelöst. Eine gewählte Medien-Stilquelle wird bei Medienänderungen neu eingelesen. Einstellungen nach dem Bearbeiten übernehmen; bei einer geänderten Stilquelle das Formular neu öffnen, um deren passende Bearbeitungsfelder zu sehen.
+
+Farbänderungen werden in die bestehende Karte übertragen. Zoom, Kartenausschnitt und Geräteauswahl werden dabei nicht zurückgesetzt. OpenFreeMap besitzt weiterhin einen eigenen Menüpunkt in beiden Designern und folgt im Automatikmodus der wirksamen Hintergrundhelligkeit.

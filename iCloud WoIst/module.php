@@ -6,7 +6,8 @@ require_once __DIR__ . '/../libs/helper/ConfigurationFormHelper.php';
 require_once __DIR__ . '/../libs/helper/DataFlowHelper.php';
 require_once __DIR__ . '/../libs/helper/ParentConnectionHelper.php';
 require_once __DIR__ . '/../libs/helper/VisualizationAssetHelper.php';
-require_once __DIR__ . '/../libs/helper/VisualizationThemeHelper.php';
+require_once __DIR__ . '/../libs/helper/VisualizationThemeConfigurationHelper.php';
+require_once __DIR__ . '/../libs/helper/IPSViewStyleConfigurationHelper.php';
 require_once __DIR__ . '/../libs/helper/ResponsiveVisualizationHelper.php';
 require_once __DIR__ . '/../libs/helper/IPSViewHTMLPageHelper.php';
 require_once __DIR__ . '/../libs/helper/OpenFreeMapHelper.php';
@@ -21,7 +22,8 @@ class iCloudWoIst extends IPSModuleStrict
     use \Burki24\SymconModuleHelper\DataFlowHelper;
     use \Burki24\SymconModuleHelper\ParentConnectionHelper;
     use \Burki24\SymconModuleHelper\VisualizationAssetHelper;
-    use \Burki24\SymconModuleHelper\VisualizationThemeHelper;
+    use \Burki24\SymconModuleHelper\VisualizationThemeConfigurationHelper;
+    use \Burki24\SymconModuleHelper\IPSViewStyleConfigurationHelper;
     use \Burki24\SymconModuleHelper\ResponsiveVisualizationHelper;
     use \Burki24\SymconModuleHelper\IPSViewHTMLPageHelper;
     use \Burki24\SymconModuleHelper\OpenFreeMapHelper;
@@ -40,6 +42,8 @@ class iCloudWoIst extends IPSModuleStrict
         $this->RegisterIPSViewHTMLPageProperties();
         $this->RegisterWoIstIPSViewTransport();
         $this->RegisterWoIstDesignProperties();
+        $this->RegisterVisualizationThemeProperties();
+        $this->RegisterIPSViewStyleProperties();
         $this->RegisterPropertyInteger('StaleAfter', 900);
         $this->RegisterPropertyString('TileURL', 'https://tile.openstreetmap.org/{z}/{x}/{y}.png');
         $this->RegisterPropertyString('TileAttribution', '© OpenStreetMap contributors');
@@ -51,11 +55,21 @@ class iCloudWoIst extends IPSModuleStrict
     {
         parent::ApplyChanges();
         $this->SetVisualizationType(1);
+        $this->RegisterIPSViewStyleMediaMessages();
         $this->MaintainIPSViewHTMLVariable('IPSViewWoIst', $this->Translate('WoIst for IPSView'), 100, '', false);
         $this->ConfigureWoIstIPSViewTransport();
         $this->Update();
         if ($this->IsIPSViewHTMLPageEnabled()) {
             $this->RegenerateIPSViewHTMLPages();
+        }
+    }
+
+    /** Refreshes the active IPSView media style without replacing the map page. */
+    public function MessageSink(int $TimeStamp, int $SenderID, int $Message, array $Data): void
+    {
+        parent::MessageSink($TimeStamp, $SenderID, $Message, $Data);
+        if ($this->IsIPSViewStyleMediaUpdate($SenderID, $Message)) {
+            $this->Update();
         }
     }
 
@@ -157,7 +171,7 @@ class iCloudWoIst extends IPSModuleStrict
         return $this->RenderVisualizationHTMLPage($ipsView, [
             'title'              => $this->Translate('WoIst'),
             'visualizationTheme' => $this->VisualizationThemeCSS(),
-            'ipsViewStyle'       => $this->VisualizationThemeCSS(),
+            'ipsViewStyle'       => $this->WoIstThemeCSS(true),
             'state'              => $bootstrap['state'],
             'translations'       => $bootstrap['labels'],
             'options'            => $bootstrap['options'],

@@ -30,7 +30,7 @@ class Element {
     addEventListener(name, action) { this.events[name] = action; }
 }
 
-const elements = Object.fromEntries(['woist-heading', 'woist-devices', 'woist-controls', 'woist-bootstrap', 'title', 'updated', 'fit', 'refresh', 'devices-title', 'device-list', 'empty', 'account-message', 'transport-message', 'map-message', 'map'].map((id) => [id, new Element()]));
+const elements = Object.fromEntries(['woist-theme', 'woist-heading', 'woist-devices', 'woist-controls', 'woist-bootstrap', 'title', 'updated', 'fit', 'refresh', 'devices-title', 'device-list', 'empty', 'account-message', 'transport-message', 'map-message', 'map'].map((id) => [id, new Element()]));
 const timestamp = Math.floor(Date.now() / 1000);
 const maliciousName = '<img src=x onerror=alert(1)>';
 elements['woist-bootstrap'].textContent = JSON.stringify({mode: 'symcon', options: {tileHeaderVisible: true, tileHeaderInset: 58}, state: {success: true, updatedAt: timestamp, staleAfter: 900, devices: [
@@ -195,3 +195,10 @@ assert.equal(elements['device-list'].children[0].children[0].attrs['aria-pressed
 restart('ICWI:100:201');
 assert.deepEqual(Array.from(map.center), [20, 0], 'Another account connection starts with its own view.');
 console.log('WoIst UI and native iframe reconstruction contracts passed.');
+
+const cameraBeforeTheme = {center: map.center, zoom: map.zoom};
+const fitsBeforeTheme = fits;
+window.handleMessage({state: {success: true, devices: []}, options: {design: {themeCSS: ':root{--symc-text:#123456;}'}}});
+assert.equal(elements['woist-theme'].textContent, ':root{--symc-text:#123456;}', 'Designer colors update the existing stylesheet.');
+assert.deepEqual({center: map.center, zoom: map.zoom}, cameraBeforeTheme, 'Theme updates retain the camera.');
+assert.equal(fits, fitsBeforeTheme, 'Theme updates do not fit all devices again.');

@@ -47,7 +47,11 @@
             "Use the reachable HTTP(S) server origin without a path. Required when IPSView does not provide an HTTP(S) page origin.": "Erreichbare HTTP(S)-Server-Adresse ohne Pfad verwenden. Erforderlich, wenn IPSView keine HTTP(S)-Seitenadresse bereitstellt.",
             "Live updates unavailable. Retrying…": "Live-Aktualisierung nicht verfügbar. Erneuter Versuch folgt…",
             "Configure the Symcon server URL for IPSView live updates.": "Für die Live-Aktualisierung die Symcon-Server-URL für IPSView eintragen.",
-            "Fallback map height in pixels (0 = automatic)": "Fallback-Kartenhöhe in Pixeln (0 = automatisch)"
+            "Fallback map height in pixels (0 = automatic)": "Fallback-Kartenhöhe in Pixeln (0 = automatisch)",
+            "Tile colors": "Kachelfarben",
+            "IPSView style": "IPSView-Stil",
+            "Use Tile map settings": "Karteneinstellungen der Kachel verwenden",
+            "Map settings can follow Tile; IPSView colors and typography are configured independently.": "Karteneinstellungen können der Kachel folgen; IPSView-Farben und Schrift werden unabhängig davon eingestellt."
         }
     }
 }

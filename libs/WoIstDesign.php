@@ -34,9 +34,15 @@ trait WoIstDesign
     /** Updates editor availability without saving settings or querying Apple. */
     public function UpdateIPSViewDesignAvailability(bool $UseTileDesign): void
     {
-        foreach (array_merge(array_keys(self::MAP_DESIGN), $this->OpenFreeMapPropertyNames()) as $name) {
+        foreach (array_merge(array_diff(array_keys(self::MAP_DESIGN), ['FontSize']), $this->OpenFreeMapPropertyNames()) as $name) {
             $this->UpdateFormField('IPSView' . $name, 'enabled', !$UseTileDesign);
         }
+    }
+
+    /** Only native color families used by the map's controls and popups are shown. */
+    protected function IPSViewStyleNativeFamilyNames(): array
+    {
+        return ['base', 'association', 'shadowGrid', 'dialog'];
     }
 
     private function RegisterWoIstDesignProperties(): void
@@ -62,12 +68,17 @@ trait WoIstDesign
                 $items = $this->IPSViewHTMLPageFormItems();
                 $items[] = ['type' => 'ValidationTextBox', 'name' => 'IPSViewServerURL', 'caption' => 'Symcon server URL for IPSView (optional)'];
                 $items[] = ['type' => 'Label', 'caption' => 'Use the reachable HTTP(S) server origin without a path. Required when IPSView does not provide an HTTP(S) page origin.'];
-                $items[] = ['type' => 'CheckBox', 'name' => 'IPSViewUseTileDesign', 'caption' => 'Use Tile design',
+                $items[] = ['type' => 'CheckBox', 'name' => 'IPSViewUseTileDesign', 'caption' => 'Use Tile map settings',
                     'onChange'     => 'ICWI_UpdateIPSViewDesignAvailability($id, $IPSViewUseTileDesign);'];
-                $items[] = ['type' => 'Label', 'caption' => 'Independent settings apply when Use Tile design is disabled.'];
+                $items[] = ['type' => 'Label', 'caption' => 'Map settings can follow Tile; IPSView colors and typography are configured independently.'];
                 $items[] = ['type' => 'Button', 'caption' => 'Copy saved Tile design and edit independently', 'onClick' => 'ICWI_CopyTileDesignToIPSView($id);'];
             }
+            $items[] = ['type' => 'ExpansionPanel', 'caption' => $prefix === 'IPSView' ? 'IPSView style' : 'Tile colors',
+                'items'        => $prefix === 'IPSView' ? $this->IPSViewStyleFormItems() : $this->VisualizationThemeFormItems()];
             foreach (self::MAP_DESIGN as $name => [$default, $minimum, $maximum, $label]) {
+                if ($prefix === 'IPSView' && $name === 'FontSize') {
+                    continue;
+                }
                 $item = ['type' => is_bool($default) ? 'CheckBox' : (str_ends_with($name, 'Color') ? 'SelectColor' : 'NumberSpinner'),
                     'name'      => $prefix . $name, 'caption' => $label];
                 if ($prefix === 'IPSView') {
@@ -102,7 +113,18 @@ trait WoIstDesign
             }
             $design[lcfirst($name)] = $value;
         }
+        $design['themeCSS'] = $this->WoIstThemeCSS($ipsView);
+        if ($ipsView) {
+            // Typography is owned by the central IPSView style, independently of map geometry.
+            $design['fontSize'] = (float) rtrim($this->IPSViewStyleRootFontSize(), 'px');
+        }
         return $design;
+    }
+
+    private function WoIstThemeCSS(bool $ipsView): string
+    {
+        return $ipsView ? $this->VisualizationBaseThemeCSS() . "\n" . $this->IPSViewStyleCSSVariables(':root')
+            : $this->VisualizationThemeCSS();
     }
 
     private function WoIstDesignCSS(bool $ipsView): string

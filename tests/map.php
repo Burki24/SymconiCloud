@@ -311,5 +311,66 @@ IPS_SetProperty($mapID, 'EnableIPSView', false);
 IPS_ApplyChanges($mapID);
 $check($readAttribute->invoke($map, 'IPSViewTransportToken') === '' && $readAttribute->invoke($map, 'IPSViewTransportState') === '' && $callHook('POST', $newToken)[0] === 404, 'Disabling IPSView must revoke tokens and clear its device cache.');
 $_SERVER = [];
+// Designer completeness and rendered style transport use the real module and canonical helpers.
+$styleMapID = IPS_CreateInstance('{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}');
+IPS_ConnectInstance($styleMapID, $firstAccount);
+$styleMap = IPS\InstanceManager::getInstanceInterface($styleMapID);
+$flatten = static function (array $items) use (&$flatten): array
+{
+    $fields = [];
+    foreach ($items as $item) {
+        if (isset($item['name'])) {
+            $fields[$item['name']] = $item;
+        }
+        foreach (['items', 'edit'] as $key) {
+            if (isset($item[$key])) {
+                $fields += $flatten($item[$key]);
+            }
+        }
+    }
+    return $fields;
+};
+$styleForm = json_decode($styleMap->GetConfigurationForm(), true, 512, JSON_THROW_ON_ERROR);
+$fields = $flatten($styleForm['elements']);
+foreach (['VisualizationThemeUseCustomColors', 'VisualizationThemeTextColor', 'VisualizationThemeBackgroundColor',
+    'IPSViewStyleSource', 'IPSViewStyleMediaID', 'IPSViewStyleProfileMediaID', 'IPSViewStyleViewBackgroundColor',
+    'IPSViewStyleTextColor', 'IPSViewStyleTextActiveColor', 'IPSViewStylePopupBackgroundColor',
+    'IPSViewStyleTransparentBackground', 'IPSViewStyleFontFamily', 'IPSViewStyleFontScale',
+    'IPSViewStyleNativeFamily_base'] as $field) {
+    $check(isset($fields[$field]), 'The shared designer field must be exposed: ' . $field);
+}
+$check(!isset($fields['IPSViewStyleNativeFamily_slider']), 'Unrelated native control families must not clutter a map designer.');
+IPS_SetProperty($styleMapID, 'VisualizationThemeUseCustomColors', true);
+IPS_SetProperty($styleMapID, 'VisualizationThemeBackgroundColor', 0x123456);
+IPS_SetProperty($styleMapID, 'IPSViewStyleViewBackgroundColor', 0x654321);
+IPS_SetProperty($styleMapID, 'IPSViewStyleBaseFontSize', 24);
+IPS_SetProperty($styleMapID, 'IPSViewStyleFontScale', 125);
+IPS_SetProperty($styleMapID, 'EnableIPSView', true);
+IPS_ApplyChanges($styleMapID);
+$tileStyle = json_decode($styleMap->GetState(), true)['options']['design'];
+$check(str_contains($tileStyle['themeCSS'], '#123456'), 'Native custom colors must reach published tile data.');
+$ipsState = json_decode($readAttribute->invoke($styleMap, 'IPSViewTransportState'), true);
+$ipsStyle = $ipsState['options']['design'];
+$check(str_contains($ipsStyle['themeCSS'], '101, 67, 33') || str_contains($ipsStyle['themeCSS'], '#654321'), 'IPSView must publish its independent view background even when map settings follow Tile.');
+$check((float) $ipsStyle['fontSize'] === 30.0 && $tileStyle['fontSize'] === 14, 'Only IPSView typography follows the central base size and font scale.');
+IPS_SetProperty($styleMapID, 'IPSViewStyleSource', 3);
+IPS_ApplyChanges($styleMapID);
+$darkStyle = json_decode($readAttribute->invoke($styleMap, 'IPSViewTransportState'), true)['options']['design'];
+$check($darkStyle['themeCSS'] !== $ipsStyle['themeCSS'], 'A central dark preset must change the published IPSView style.');
+$check(json_decode($styleMap->GetState(), true)['options']['design']['themeCSS'] === $tileStyle['themeCSS'], 'IPSView source changes must not affect the native tile theme.');
+$styleMediaID = IPS_CreateMedia(0);
+IPS_SetMediaContent($styleMediaID, base64_encode(json_encode(['ColorView' => ['A' => 255, 'R' => 17, 'G' => 34, 'B' => 51], 'DefaultFontSize' => 18])));
+IPS_SetProperty($styleMapID, 'IPSViewStyleSource', 1);
+IPS_SetProperty($styleMapID, 'IPSViewStyleMediaID', $styleMediaID);
+IPS_ApplyChanges($styleMapID);
+$mediaBefore = json_decode($readAttribute->invoke($styleMap, 'IPSViewTransportState'), true)['options']['design']['themeCSS'];
+$unchangedLoader = $styleMap->GetIPSViewHTML();
+IPS_SetMediaContent($styleMediaID, base64_encode(json_encode(['ColorView' => ['A' => 255, 'R' => 68, 'G' => 85, 'B' => 102], 'DefaultFontSize' => 20])));
+$styleMap->MessageSink(time(), $styleMediaID, MM_UPDATE, []);
+$mediaAfter = json_decode($readAttribute->invoke($styleMap, 'IPSViewTransportState'), true)['options']['design']['themeCSS'];
+$check($mediaAfter !== $mediaBefore, 'A selected media update must republish the resolved style.');
+$check($styleMap->GetIPSViewHTML() === $unchangedLoader, 'Style changes must retain the persistent IPSView loader.');
+$check(str_contains($styleMap->GetVisualizationTile(), 'id="woist-theme"'), 'Theme updates need one dedicated stylesheet in the existing map document.');
+
 echo "Map integration checks passed.\n";
 ob_end_flush();

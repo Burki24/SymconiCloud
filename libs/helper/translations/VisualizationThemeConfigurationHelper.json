@@ -1,0 +1,49 @@
+{
+    "schema": 1,
+    "translations": {
+        "description.native": {
+            "en": "The tile follows the native Symcon content, card and accent colors. When custom colors are enabled, only values changed from their defaults are fixed; all unchanged roles continue to follow Symcon.",
+            "de": "Die Kachel folgt den nativen Symcon-Farben für Inhalt, Karte und Akzent. Bei aktivierten eigenen Farben werden nur vom Standard abweichende Werte festgelegt; alle unveränderten Rollen folgen weiterhin Symcon."
+        },
+        "field.custom_colors": {
+            "en": "Use custom tile colors",
+            "de": "Eigene Kachelfarben verwenden"
+        },
+        "color.text": {
+            "en": "Primary text",
+            "de": "Primärer Text"
+        },
+        "color.heading": {
+            "en": "Headings",
+            "de": "Überschriften"
+        },
+        "color.subheading": {
+            "en": "Subheadings and secondary text",
+            "de": "Unterüberschriften und Sekundärtext"
+        },
+        "color.background": {
+            "en": "Background",
+            "de": "Hintergrund"
+        },
+        "color.accent": {
+            "en": "Accent",
+            "de": "Akzent"
+        },
+        "color.information": {
+            "en": "Information",
+            "de": "Information"
+        },
+        "color.success": {
+            "en": "Success",
+            "de": "Erfolg"
+        },
+        "color.warning": {
+            "en": "Warning",
+            "de": "Warnung"
+        },
+        "color.danger": {
+            "en": "Error and danger",
+            "de": "Fehler und Gefahr"
+        }
+    }
+}

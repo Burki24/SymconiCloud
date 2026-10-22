@@ -304,9 +304,11 @@
         const layout = (value) => JSON.stringify([value.height, value.fontSize, value.showTitle, value.showDevices, value.showControls]);
         const layoutChanged = layout(design) !== layout(options);
         design = options;
+        const theme = el('woist-theme');
+        if (theme && typeof design.themeCSS === 'string' && theme.textContent !== design.themeCSS) theme.textContent = design.themeCSS;
         const root = global.document.documentElement;
         if (root && root.style) {
-            for (const [key, variable, minimum, maximum] of [['height', '--woist-height', 0, 1200], ['fontSize', '--woist-font-size', 10, 28]]) {
+            for (const [key, variable, minimum, maximum] of [['height', '--woist-height', 0, 1200], ['fontSize', '--woist-font-size', outputMode === 'ipsview' ? 8 : 10, outputMode === 'ipsview' ? 64 : 28]]) {
                 if (Number.isFinite(design[key])) root.style.setProperty(variable, (key === 'height' && design[key] === 0 ? 480 : Math.max(minimum, Math.min(maximum, design[key]))) + 'px');
             }
             for (const [key, variable] of [['currentColor', '--woist-current'], ['staleColor', '--woist-stale']]) {
@@ -395,7 +397,7 @@
         if (!next) return;
         const envelope = typeof value === 'string' ? JSON.parse(value) : value;
         if (envelope.labels) labels = Object.assign({}, fallback, envelope.labels);
-        if (envelope.options) { configureTileHeader(envelope.options); configureTiles(envelope.options); configureDesign(envelope.options.design); }
+        if (envelope.options) { configureTileHeader(envelope.options); configureDesign(envelope.options.design); configureTiles(envelope.options); }
         state = next;
         if (refreshTimer) global.clearTimeout(refreshTimer);
         if (ready) {

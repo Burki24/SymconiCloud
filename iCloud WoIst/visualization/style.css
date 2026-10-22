@@ -7,7 +7,7 @@ html, body { background: var(--symc-background); color: var(--symc-text); }
 h1 { font-size: 1.15rem; margin: 0; }
 h2 { font-size: 1rem; margin: 0 0 12px; }
 p { margin: 6px 0; }
-#updated, .device-meta, .popup-detail { color: var(--symc-muted); font-size: 0.82rem; }
+#updated, .device-meta, .popup-detail { color: var(--symc-subheading, var(--symc-muted)); font-size: 0.82rem; }
 button { min-height: var(--symc-responsive-touch-target, 44px); border: 1px solid var(--symc-border); border-radius: var(--symc-radius-small); background: var(--symc-surface); color: var(--symc-text); padding: 8px 12px; cursor: pointer; }
 button:hover { background: var(--symc-surface-hover); }
 button:disabled { opacity: 0.5; cursor: default; }
@@ -41,3 +41,51 @@ li + li { margin-top: 8px; }
 }
 
 [hidden] { display: none !important; }
+
+/* WoIst components consume the central IPSView roles; map feature colors stay independent. */
+html.ipsview-mode {
+    --symc-background: var(--ipsview-role-view-background);
+    --symc-text: var(--ipsview-role-text-primary);
+    --symc-heading: var(--ipsview-role-text-label);
+    --symc-muted: var(--ipsview-role-text-inactive);
+    --symc-subheading: var(--ipsview-role-text-inactive);
+    --symc-surface: var(--ipsview-role-control-background);
+    --symc-surface-hover: var(--ipsview-role-control-active-background);
+    --symc-border: var(--ipsview-role-border);
+    --symc-accent: var(--ipsview-role-accent);
+    --symc-warning: var(--ipsview-role-warning);
+    --symc-warning-soft: var(--ipsview-role-warning-soft);
+    --symc-radius-small: var(--ipsview-role-radius);
+    --symc-radius-medium: var(--ipsview-role-radius);
+    font-style: var(--ipsview-role-font-style);
+    font-weight: var(--ipsview-role-font-weight);
+}
+h1, h2 { color: var(--symc-heading, var(--symc-text)); }
+html.ipsview-mode button, html.ipsview-mode #map {
+    border-width: var(--ipsview-role-border-width);
+}
+html.ipsview-mode .device { background: var(--ipsview-role-page-background); }
+html.ipsview-mode .device[aria-pressed="true"] {
+    background: var(--ipsview-role-control-active-background);
+    color: var(--ipsview-role-text-active);
+}
+html.ipsview-mode button:disabled { opacity: var(--ipsview-role-disabled-opacity); }
+html.ipsview-mode .leaflet-popup-content-wrapper, html.ipsview-mode .leaflet-popup-tip {
+    background: var(--ipsview-role-popup-background);
+    color: var(--ipsview-role-text-primary);
+    border: var(--ipsview-role-border-width) solid var(--ipsview-role-popup-border);
+    box-shadow: var(--ipsview-role-popup-shadow);
+}
+html.ipsview-mode .leaflet-control-zoom a {
+    background: var(--ipsview-role-control-background);
+    color: var(--ipsview-role-icon);
+    border-color: var(--ipsview-role-line);
+}
+
+html.ipsview-mode #map { box-shadow: var(--ipsview-role-shadow); }
+html.ipsview-mode .device.unlocated {
+    color: var(--ipsview-role-text-inactive);
+    background: var(--ipsview-role-control-inactive-background);
+    border-inline-start-color: var(--ipsview-role-text-inactive);
+}
+html.ipsview-mode .message { border-inline-start-width: var(--ipsview-role-line-width); }
