@@ -114,7 +114,7 @@ class iCloudWoIst extends IPSModuleStrict
     {
         $this->ConfigureWoIstIPSViewTransport();
         $options = $this->WoIstIPSViewTransportOptions();
-        return strtr($this->VisualizationAsset('ipsview.html'), ['{{LOADER_SCRIPT}}' => $this->VisualizationHTTPOriginScript() . "\n" . $this->VisualizationAsset('ipsview-loader.js'), '{{LOADER_CONFIG}}' => $this->encode([
+        return strtr($this->VisualizationAsset('ipsview.html'), ['{{LOADER_SCRIPT}}' => $this->VisualizationInteractionScript() . "\n" . $this->VisualizationHTTPOriginScript() . "\n" . $this->VisualizationAsset('ipsview-loader.js'), '{{LOADER_CONFIG}}' => $this->encode([
             'url'   => isset($options['url']) ? $options['url'] . '/page' : '',
             'token' => $options['token'] ?? '',
             'title' => $this->Translate('WoIst'),

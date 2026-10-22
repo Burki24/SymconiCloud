@@ -429,6 +429,16 @@
         try {
             if (!global.L) throw new Error('Leaflet unavailable');
             map = global.L.map('map', {trackResize: false}).setView(restoredView ? restoredView.center : [20, 0], restoredView ? restoredView.zoom : 2);
+            if (bootstrap.mode === 'ipsview' && global.SymconVisualizationInteraction) {
+                map.scrollWheelZoom.disable();
+                global.SymconVisualizationInteraction.registerWheelRegion(el('map'), (event) => {
+                    if (!event.deltaY) return false;
+                    const box = el('map').getBoundingClientRect();
+                    const change = Math.sign(event.deltaY) * Math.min(3, Math.max(1, Math.round(Math.abs(event.deltaY) / 120)));
+                    map.setZoomAround(global.L.point(event.clientX - box.left, event.clientY - box.top), map.getZoom() - change);
+                    return true;
+                });
+            }
             if (restoredView) fitted = true;
             map.on('movestart', () => { if (!resizing) fitted = true; });
             configureTiles(bootstrap.options || {});

@@ -2,6 +2,8 @@
 
 ## Fixes
 
+- Gemeinsame Mausrad-, Scroll- und Frame-Unterstützung aus Symcon_ModuleHelper eingebunden; IPSView-Ereignisse mit umadressiertem Ziel werden zentral behandelt.
+
 - WoIst bindet die zentralen Kachelfarben und den vollständigen IPSView-Stileditor einschließlich Stilquellen, Transparenz und Typografie ein. Die Farbrollen wirken auf die Kartenoberfläche und werden ohne Neuladen aktualisiert; beide Helper-Pakete einschließlich ihrer Abhängigkeiten und Ressourcen sind für den automatischen Sync abonniert.
 
 - Die native WoIst-Kachel stellt nach einem iframe-Neuaufbau bei Wiederverbindung Zoom, Kartenausschnitt, Geräteauswahl und Popup aus dem zentralen OpenFreeMap-Sitzungsspeicher wieder her. Entfernte Geräte werden nicht erneut ausgewählt; gesperrter Browser-Speicher verhindert die Kartenanzeige nicht.
