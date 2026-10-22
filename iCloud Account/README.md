@@ -34,6 +34,16 @@ Kinder erhalten nur normalisierte Gerätedaten. Bei Abfragefehlern bleibt der le
 
 Der JSON-Cache enthält `success`, `state`, `updatedAt` (Unix-Sekunden), `devices` und `error`. Geräte enthalten `id`, `name`, `model`, `deviceClass`, `deviceStatus`, `batteryLevel` (0 bis 1 oder null), `batteryStatus` und `location` (Koordinaten, Genauigkeit, Unix-Zeitpunkt, Alterskennzeichnung oder null). Zugangsdaten, Cookies und Tokens werden nicht ausgegeben. Die Geräte-ID zusammen mit der Kontoverbindung bestimmt die Gerätezuordnung.
 
+Zusätzlich enthält jedes Gerät `modelIdentifier` (technische Modellkennung
+oder null) und `details` mit den optionalen booleschen Feldern `lowPowerMode`,
+`locationEnabled`, `locationCapable`, `isLocating`, `lostModeEnabled`,
+`lostModeCapable`, `activationLocked` und `fmlyShare`. Fehlende oder ungültige
+Werte sind null, nicht false. Bei vorhandenem Standort ergänzen
+`location.isInaccurate` und `location.finished` Apples Kennzeichnungen, ebenfalls
+als Boolean oder null. Bestehende Cachefelder und Abfrageintervalle bleiben
+unverändert. Rohantworten, Befehlsdaten und zusätzliche Kennungen werden nicht
+an Kinder weitergereicht.
+
 ## Lizenz
 
 PolyForm Noncommercial License 1.0.0; siehe [LICENSE](../LICENSE).

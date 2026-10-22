@@ -1,5 +1,53 @@
 # Entwicklungsstand
 
+## Zusätzliche Geräteangaben: MCP-Befund und Umsetzung (2026-10-23)
+
+Auf dem angeschlossenen Windows-Testsystem wurde per MCP eine lesende
+Geräteabfrage über die vorhandene Kontositzung erfolgreich ausgeführt. Die
+kurzzeitige Diagnose erfasste ausschließlich Feldnamen, Datentypen und deren
+Häufigkeit, keine Feldwerte, Gerätenamen, IDs, Koordinaten oder Zugangsdaten.
+Die acht Statusfelder `lowPowerMode`, `locationEnabled`, `locationCapable`,
+`isLocating`, `lostModeEnabled`, `lostModeCapable`, `activationLocked` und
+`fmlyShare` waren in der geprüften Antwort jeweils als Boolean vorhanden;
+`rawDeviceModel` war ein String. Bei vorhandenen Positionen lieferte Apple
+zusätzlich `isInaccurate` und `locationFinished` als Boolean. Dieser Befund ist
+eine Momentaufnahme der angeschlossenen Geräte, keine allgemeine
+Verfügbarkeitsgarantie für alle Apple-Geräte.
+
+Die temporäre Diagnoseänderung an AppleClient wurde nach dem Abruf vollständig
+zurückgesetzt; die identische ursprüngliche SHA-256-Prüfsumme und das Entfernen
+der temporären Datei wurden per MCP bestätigt. Es erfolgten weder eine neue
+Apple-Anmeldung noch Gerätebefehle oder eine aktive Neuortung.
+
+Der lokale Implementierungsstand übernimmt diese Angaben über eine feste
+Allowlist. Acht optionale Gerätekennzeichnungen liegen im Kontocache unter
+`details`, die Standortkennzeichnungen unter `location.isInaccurate` und
+`location.finished`, die technische Modellkennung unter `modelIdentifier`.
+Die Geräteinstanz ergänzt zehn ausschließlich lesbare Integer-Statusvariablen
+mit **-1 = Nicht verfügbar**, **0 = Nein**, **1 = Ja** sowie `ModelIdentifier`
+als Text mit **Nicht verfügbar** bei fehlender Angabe. Die Darstellung verwendet
+den vorhandenen zentralen `VariablePresentationHelper::OptionsPresentation`;
+Helper-Dateien und Verteilungspaket werden nicht geändert.
+
+Fehlende oder ungültige Angaben, Kontofehler, entfernte Geräte und Wechsel der
+Gerätezuordnung lassen keine alten optionalen Werte stehen. Alte Kontocaches
+bleiben kompatibel und liefern zunächst unbekannte Zusatzangaben. Bestehende
+Variablen, Idents, Adressregeln und Abfrageintervalle bleiben erhalten. Es gibt
+keine zusätzlichen Gerätetimer oder HTTP-Abfragen. Nach dem Update die
+Geräteinstanzkonfiguration übernehmen; neue Apple-Felder erscheinen mit dem
+nächsten erfolgreichen Kontoabruf.
+
+Synthetische Regressionen prüfen den Weg vom Apple-Transport über die
+Normalisierung und den Kontodatenfluss bis zu den Gerätevariablen, echte
+Boolean-Werte gegenüber fehlenden/ungültigen Werten, alte Caches, Wiederaufnahme,
+Instanzlebenszyklus, stabile Variablen-IDs und ausschließlich lesbare native
+Darstellungen. Die vollständige Offline-Suite unter PHP 8.5.10 einschließlich
+der neuen Verträge und der bestehenden Karten-/Adressprüfungen, die offizielle
+StylePHP-JSON-Prüfung und php-cs-fixer im Prüfmodus liefen erfolgreich.
+Die MCP-Prüfung belegt die gelieferten Quellfelder und die
+Wiederherstellung der Diagnose; die neuen Gerätevariablen wurden damit noch
+nicht auf dem laufenden System installiert oder praktisch abgenommen.
+
 ## Einheitliche kompakte Adressen (2026-10-23)
 
 Der zentrale ReverseGeocodingHelper normalisiert beide Anbieter auf dieselben

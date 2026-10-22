@@ -54,6 +54,36 @@ Alle Variablen sind ausschließlich lesbar.
 | `Accuracy` | float | Standortgenauigkeit in Metern |
 | `LocationTimestamp` | int | Unix-Zeit des Standorts |
 | `LastUpdate` | int | Unix-Zeit des letzten erfolgreichen Geräteabrufs |
+| `LowPowerMode` | int | Stromsparmodus laut Apple |
+| `LocationEnabled`, `LocationCapable` | int | Ortung aktiviert / vom Gerät unterstützt |
+| `IsLocating` | int | Ortung läuft laut Apple |
+| `LostModeEnabled`, `LostModeCapable` | int | Verloren-Modus aktiviert / vom Gerät unterstützt |
+| `ActivationLocked` | int | Aktivierungssperre laut Apple |
+| `FamilyShared` | int | Kennzeichnung der Familienfreigabe laut Apple |
+| `LocationIsInaccurate` | int | Vorhandener Standort von Apple ausdrücklich als ungenau gekennzeichnet |
+| `LocationFinished` | int | Ortung für den vorhandenen Standort laut Apple abgeschlossen |
+| `ModelIdentifier` | string | Technische Modellkennung oder **Nicht verfügbar** |
+
+Die zehn zusätzlichen Statusvariablen verwenden drei klar unterscheidbare Werte:
+**-1 = Nicht verfügbar**, **0 = Nein**, **1 = Ja**. Für Skripte ausdrücklich
+auf `0` oder `1` prüfen; eine Umwandlung in Boolean würde `-1` falsch auswerten.
+Fehlende, leere oder ungültige Angaben werden nicht als Nein interpretiert.
+Die Anzeige übernimmt die von Apple gelieferten Kennzeichnungen; insbesondere
+belegt ein fehlender Wert weder Unterstützung noch Aktivierung einer Funktion.
+`LocationIsInaccurate` ist Apples zusätzliche Kennzeichnung und ersetzt nicht
+die metrische `Accuracy` oder die Genauigkeitsregeln der Adressauflösung.
+
+Nach dem Update die Geräteinstanzkonfiguration übernehmen. Alte Kontocaches
+bleiben lesbar; die neuen Angaben zeigen zunächst **Nicht verfügbar**, bis die
+nächste erfolgreiche Geräteabfrage im Konto die zusätzlichen Felder liefert.
+Die Geräteinstanz selbst startet dafür keinen Netzwerkabruf und bietet keine
+Aktionen zum Sperren, Löschen oder Aktivieren des Verloren-Modus an.
+
+Anders als die bisherigen historischen Koordinaten werden die neuen
+Statusangaben und die technische Modellkennung bei fehlenden Daten, abgelaufener
+Kontositzung, entferntem Gerät oder Wechsel der Gerätezuordnung unmittelbar
+auf **Nicht verfügbar** gesetzt. Fehlt nur die Position, bleiben die übrigen
+Geräteangaben nutzbar; nur die beiden zusätzlichen Standortstatus sind unbekannt.
 
 Bei fehlendem Standort bleiben die letzten gültigen Koordinaten und deren Zeit erhalten. `LocationAvailable` zeigt dann `false`. Bei fehlendem Akkustand bleibt ebenfalls der letzte Wert erhalten; `BatteryAvailable` zeigt dessen Nichtverfügbarkeit an. Bei Kontofehlern oder einem nicht mehr gelisteten Gerät werden Verfügbarkeitsanzeigen und Online auf `false` gesetzt; alte Werte und Zeitstempel bleiben zur Einordnung erhalten. Ein Wechsel der Geräte-ID oder Kontoverbindung setzt die bisherigen Gerätewerte zurück.
 

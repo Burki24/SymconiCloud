@@ -18,6 +18,12 @@ class iCloudDevice extends IPSModuleStrict
     private const REQUEST_DATA = '{1E60F0BE-03E4-4AA4-A1CE-AA838725A4E2}';
     private const NOTIFICATION_DATA = '{FCE7780F-9520-4E52-92F3-60034FFAED6D}';
     private const MAP_MODULE = '{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}';
+    private const OPTIONAL_FLAGS = [
+        'LowPowerMode'     => 'lowPowerMode', 'LocationEnabled' => 'locationEnabled',
+        'LocationCapable'  => 'locationCapable', 'IsLocating' => 'isLocating',
+        'LostModeEnabled'  => 'lostModeEnabled', 'LostModeCapable' => 'lostModeCapable',
+        'ActivationLocked' => 'activationLocked', 'FamilyShared' => 'fmlyShare'
+    ];
 
     /** Registers immutable device identity configuration. */
     public function Create(): void
@@ -45,6 +51,7 @@ class iCloudDevice extends IPSModuleStrict
             foreach (['DeviceName', 'Model', 'DeviceClass', 'BatteryStatus', 'Address'] as $ident) {
                 $this->SetValue($ident, '');
             }
+            $this->applyDetails([]);
             $this->WriteAttributeString('SourceIdentity', $identity);
         }
         $this->Update();
@@ -141,6 +148,7 @@ class iCloudDevice extends IPSModuleStrict
                 $this->SetValue('LocationTimestamp', max(0, (int) ($location['timestamp'] ?? 0)));
             }
             $this->SetValue('Address', $valid ? $this->readAddress((float) $location['latitude'], (float) $location['longitude']) : '');
+            $this->applyDetails($device, $valid);
             $this->SetValue('LastUpdate', (int) $data['updatedAt']);
             $this->SetValue('DataAvailable', true);
             $this->WriteAttributeString('LastError', '');
@@ -158,6 +166,7 @@ class iCloudDevice extends IPSModuleStrict
         }
         $this->SetValue('LocationIsOld', true);
         $this->SetValue('Address', '');
+        $this->applyDetails([]);
         $this->WriteAttributeString('LastError', $this->Translate($error === '' ? 'Account data unavailable.' : $error));
         $this->SetStatus($status);
     }
@@ -180,6 +189,36 @@ class iCloudDevice extends IPSModuleStrict
             $this->RegisterVariableInteger($ident, $this->Translate($ident), $this->DateTimePresentation(), $position++);
         }
         $this->RegisterVariableString('Address', $this->Translate('Address'), $this->TextPresentation(true), $position++);
+        $options = [
+            ['Value' => -1, 'Caption' => $this->Translate('Not available')],
+            ['Value' => 0, 'Caption' => $this->Translate('No')],
+            ['Value' => 1, 'Caption' => $this->Translate('Yes')]
+        ];
+        foreach (array_merge(array_keys(self::OPTIONAL_FLAGS), ['LocationIsInaccurate', 'LocationFinished']) as $ident) {
+            if ($this->RegisterVariableInteger($ident, $this->Translate($ident), $this->OptionsPresentation($options), $position++)) {
+                $this->SetValue($ident, -1);
+            }
+        }
+        if ($this->RegisterVariableString('ModelIdentifier', $this->Translate('ModelIdentifier'), $this->TextPresentation(), $position++)) {
+            $this->SetValue('ModelIdentifier', $this->Translate('Not available'));
+        }
+    }
+
+    /** Missing optional fields are unknown, never a retained or inferred false. */
+    private function applyDetails(array $device, bool $locationAvailable = false): void
+    {
+        $flags = [];
+        foreach (self::OPTIONAL_FLAGS as $ident => $field) {
+            $flags[$ident] = $device['details'][$field] ?? null;
+        }
+        $flags['LocationIsInaccurate'] = $locationAvailable ? ($device['location']['isInaccurate'] ?? null) : null;
+        $flags['LocationFinished'] = $locationAvailable ? ($device['location']['finished'] ?? null) : null;
+        foreach ($flags as $ident => $value) {
+            $this->SetValue($ident, is_bool($value) ? (int) $value : -1);
+        }
+        $model = $device['modelIdentifier'] ?? null;
+        $this->SetValue('ModelIdentifier', is_string($model) && preg_match('/\A[^\x00-\x1F\x7F]{1,128}\z/uD', $model) === 1
+            ? $model : $this->Translate('Not available'));
     }
 
     /** Reads one account-scoped WoIst cache; no device-level HTTP or polling. */

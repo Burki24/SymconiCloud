@@ -254,6 +254,12 @@ final class AppleClient
 
     private static function normalizeDevice(array $device): array
     {
+        $details = [];
+        foreach (['lowPowerMode', 'locationEnabled', 'locationCapable', 'isLocating', 'lostModeEnabled', 'lostModeCapable', 'activationLocked', 'fmlyShare'] as $field) {
+            $details[$field] = is_bool($device[$field] ?? null) ? $device[$field] : null;
+        }
+        $modelIdentifier = is_string($device['rawDeviceModel'] ?? null) ? trim($device['rawDeviceModel']) : '';
+        $modelIdentifier = preg_match('/\A[^\x00-\x1F\x7F]{1,128}\z/uD', $modelIdentifier) === 1 ? $modelIdentifier : null;
         $battery = $device['batteryLevel'] ?? null;
         $battery = is_numeric($battery) && is_finite((float) $battery) && (float) $battery >= 0 && (float) $battery <= 1 ? (float) $battery : null;
         $location = null;
@@ -265,18 +271,22 @@ final class AppleClient
             $location = [
                 'latitude'           => (float) $raw['latitude'], 'longitude' => (float) $raw['longitude'],
                 'horizontalAccuracy' => is_numeric($accuracy) && is_finite((float) $accuracy) && (float) $accuracy >= 0 ? (float) $accuracy : null,
-                'timestamp'          => (int) ((float) $raw['timeStamp'] / 1000), 'isOld' => (bool) ($raw['isOld'] ?? false)
+                'timestamp'          => (int) ((float) $raw['timeStamp'] / 1000), 'isOld' => (bool) ($raw['isOld'] ?? false),
+                'isInaccurate'       => is_bool($raw['isInaccurate'] ?? null) ? $raw['isInaccurate'] : null,
+                'finished'           => is_bool($raw['locationFinished'] ?? null) ? $raw['locationFinished'] : null
             ];
         }
         return [
-            'id'            => $device['id'],
-            'name'          => is_string($device['name'] ?? null) ? $device['name'] : '',
-            'model'         => is_string($device['deviceDisplayName'] ?? null) ? $device['deviceDisplayName'] : '',
-            'deviceClass'   => is_string($device['deviceClass'] ?? null) ? $device['deviceClass'] : '',
-            'deviceStatus'  => is_numeric($device['deviceStatus'] ?? null) ? (int) $device['deviceStatus'] : 0,
-            'batteryLevel'  => $battery,
-            'batteryStatus' => is_string($device['batteryStatus'] ?? null) ? $device['batteryStatus'] : '',
-            'location'      => $location
+            'id'              => $device['id'],
+            'name'            => is_string($device['name'] ?? null) ? $device['name'] : '',
+            'model'           => is_string($device['deviceDisplayName'] ?? null) ? $device['deviceDisplayName'] : '',
+            'modelIdentifier' => $modelIdentifier,
+            'details'         => $details,
+            'deviceClass'     => is_string($device['deviceClass'] ?? null) ? $device['deviceClass'] : '',
+            'deviceStatus'    => is_numeric($device['deviceStatus'] ?? null) ? (int) $device['deviceStatus'] : 0,
+            'batteryLevel'    => $battery,
+            'batteryStatus'   => is_string($device['batteryStatus'] ?? null) ? $device['batteryStatus'] : '',
+            'location'        => $location
         ];
     }
 }
