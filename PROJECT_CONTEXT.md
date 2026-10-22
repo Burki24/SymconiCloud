@@ -4,8 +4,9 @@
 
 - WoIst besitzt eine standardmäßig deaktivierte Adressauflösung mit eigener
   HTTP(S)-Serverbasis und Sprache. Der konfigurierte Dienst muss bereits laufen;
-  der Nominatim-Fork enthält nur den Servercode. Keine Serverinstallation oder
-  Abfrage realer Gerätepositionen wurde ausgeführt.
+  der Nominatim-Fork enthält nur den Servercode. Die Implementierungsprüfungen
+  erfolgten ohne Serverinstallation oder Abfrage realer Gerätepositionen;
+  der anschließende Installations- und Praxisnachweis ist unten getrennt erfasst.
 - `ReverseGeocodingHelper` liegt kanonisch in Symcon_ModuleHelper und nutzt den
   bestehenden `PersistentJsonCacheHelper`. Beide Dateien sind unverändert
   eingebunden, manifestiert und über die neue Subscription automatisch verteilbar.
@@ -27,9 +28,161 @@
   wurde jeweils mit 440 → 220 Pixeln gemessen, ohne gleichzeitigen Kartenzoom.
   Schmale Ausgabe bei 430 Pixeln ohne horizontalen Überstand, keine JS-Fehler.
 - PHP 8.5.10: Modul- und Helper-Suiten, StylePHP/php-cs-fixer, Manifest-, Bundle-
-  und isolierte Verteilungsprüfungen erfolgreich. Live-Abnahme nach Benutzerupdate
-  mit eigenem Nominatim-Server sowie tatsächlicher Kachelvisualisierung und nativer
-  IPSView-App bleibt offen; die lokale Testeinbettung ersetzt diesen Nachweis nicht.
+  und isolierte Verteilungsprüfungen erfolgreich. Die Adressanzeige mit eigenem
+  Nominatim-Server wurde anschließend vom Benutzer bestätigt (siehe unten).
+  Eine getrennte vollständige Live-Abnahme der Adressfunktion in tatsächlicher
+  Kachelvisualisierung und nativer IPSView-App bleibt offen; die lokale
+  Testeinbettung ersetzt diesen Nachweis nicht.
+
+## Nominatim auf Raspberry Pi: Installation und Praxisnachweis am 22.10.2026
+
+Der Benutzer hat Nominatim ohne Docker auf demselben Raspberry Pi eingerichtet,
+auf dem bereits Symcon läuft. Die folgenden Ergebnisse beruhen auf seinen
+Terminalausgaben und der abschließenden Bestätigung samt Screenshot der
+Adressanzeige. Der Agent hat die Installation angeleitet, aber keine eigene
+SSH-/MCP-Prüfung oder Änderung am laufenden System vorgenommen. Private Hostnamen,
+Netzadressen, Gerätekennungen, Adressen, Koordinaten und Screenshots werden
+nicht in diesem Nachweis gespeichert. Die Loopback-URL unten ist generisch.
+
+### Plattform und Dienstaufteilung
+
+- Raspberry Pi 5 Model B, 4 GiB RAM, Debian 12 Bookworm, aarch64/64 Bit;
+  Root-Dateisystem auf einer microSD mit rund 59 GiB und rund 8,2 GiB Systemswap.
+- Nominatim 5.3.3 aus PyPI in `/srv/nominatim/venv`, mit
+  `--system-site-packages` für das über Debian bereitgestellte PyICU.
+  `pip check` meldete keine defekten Abhängigkeiten.
+- PostgreSQL 15.19, PostGIS 3.3 und osm2pgsql 1.8.0. Eigener Cluster
+  `15/nominatim` auf Port 5433; `listen_addresses = ''`, Verbindung nur über
+  den lokalen Unix-Socket. Der bei der Paketinstallation neu angelegte Cluster
+  `15/main` wurde gestoppt und auf manuellen Start gesetzt; das ist keine
+  allgemeine Anweisung, vorhandene PostgreSQL-Cluster anzuhalten.
+- Dienstbenutzer `nominatim`, Projektverzeichnis `/srv/nominatim/project` und
+  Downloadverzeichnis `/srv/nominatim/data`. Die gleichnamige Datenbankrolle
+  besitzt die für den Import benötigten Superuserrechte ausschließlich im
+  getrennten Cluster. Die API läuft als `www-data` mit der vom Import
+  eingerichteten lesenden Datenbankrolle und Peer-Authentifizierung.
+- Projektkonfiguration: `NOMINATIM_DATABASE_DSN` verwendet die Datenbank
+  `nominatim`, den Socket `/var/run/postgresql` und Port 5433;
+  `NOMINATIM_DATABASE_WEBUSER=www-data`, `NOMINATIM_IMPORT_STYLE=address`,
+  `NOMINATIM_DEFAULT_LANGUAGE=de` und `NOMINATIM_API_POOL_SIZE=2`.
+
+### Ressourcenlimits zum Schutz von Symcon
+
+Der cgroup-v2-Speichercontroller wurde über `cgroup_enable=memory` in der
+tatsächlich verwendeten `/boot/firmware/cmdline.txt` aktiviert und nach einem
+Neustart durch `memory` in `cgroup.controllers` bestätigt; Symcon war aktiv.
+Die Limits stehen in `/etc/systemd/system/nominatim.slice`. PostgreSQL,
+Importdienst und API werden gemeinsam dieser Slice zugeordnet, sodass die
+Grenzen für deren gesamten Verbrauch gelten.
+
+| Einstellung | Konfigurierter Wert / Bedeutung |
+| --- | --- |
+| `CPUQuota` | `100%`: insgesamt höchstens die Rechenzeit eines CPU-Kerns |
+| `CPUWeight` | `10` |
+| `MemoryHigh` | `2200M` |
+| `MemoryMax` | `2600M` = 2.726.297.600 Byte |
+| `MemorySwapMax` | `512M` = 536.870.912 Byte, nur für diese Slice |
+| `IOWeight` | `10` |
+| `IOReadBandwidthMax` | `/dev/mmcblk0 8M`, effektiv 8.000.000 Byte/s |
+| `IOWriteBandwidthMax` | `/dev/mmcblk0 2M`, effektiv 2.000.000 Byte/s |
+| Accounting | `CPUAccounting`, `MemoryAccounting`, `IOAccounting` aktiviert |
+| Dienstpriorität | `Nice=15`, `IOSchedulingClass=idle` für PostgreSQL, Import und API |
+
+`Slice=nominatim.slice` ist für PostgreSQL im Drop-in
+`/etc/systemd/system/postgresql@15-nominatim.service.d/resources.conf`
+hinterlegt. Die wirksamen cgroup-Werte für RAM, Swap, CPU und Datenträger wurden
+vor dem Import ausgelesen und bestätigt. Die Grenzen reduzieren die Belastung;
+sie garantieren wegen des gemeinsamen Datenträgers keine störungsfreie
+Symcon-Latenz.
+
+Die separate PostgreSQL-Konfiguration begrenzt zusätzlich `shared_buffers` auf
+128 MB, `effective_cache_size` auf 512 MB (Planerannahme, keine RAM-Reservierung),
+`work_mem` auf 4 MB, `maintenance_work_mem` auf 64 MB und `autovacuum_work_mem`
+auf 32 MB. `max_connections=20`, `autovacuum_max_workers=1`,
+`max_parallel_workers_per_gather=0`, `max_parallel_maintenance_workers=0` und
+`max_wal_size=512MB`. Autovacuum und die PostgreSQL-Dauerhaftigkeit wurden
+nicht abgeschaltet; der globale Symcon-Betrieb erhielt keine neuen Limits.
+
+### Import und Freiplatzschutz
+
+- Importquelle: Geofabrik `brandenburg-latest.osm.pbf`, einschließlich Berlin.
+  Die Datei-Prüfsumme wurde vor dem Import erfolgreich geprüft.
+- `nominatim-import.service` lief als `nominatim` im Projektverzeichnis mit
+  `OMP_NUM_THREADS=1` und folgendem Aufruf:
+
+  ```text
+  nominatim import --osm-file /srv/nominatim/data/brandenburg-latest.osm.pbf --threads 1 --osm2pgsql-cache 128 --reverse-only --no-updates
+  ```
+
+- `ExecStartPre` prüft über `/usr/local/sbin/nominatim-import-guard preflight`
+  die Prüfsumme und mindestens 20 GiB freien Platz. Der Import benötigt über
+  `Requires`/`After` PostgreSQL und `nominatim-disk-watch.timer`; die Überwachung
+  muss deshalb nicht separat von Hand gestartet werden.
+- Der Timer startet nach einer Sekunde und prüft ungefähr alle fünf Sekunden.
+  Unter 8 GiB freiem Platz würde der Guard Import und ausschließlich dessen
+  PostgreSQL-Cluster stoppen. Dieser Abbruchpfad wurde im erfolgreichen Lauf
+  nicht ausgelöst und nicht gesondert praktisch getestet.
+- Importbeginn 11:41:10, erfolgreiche Abschlussmeldung 18:00:19;
+  gemeldete Dauer 22.748,94 Sekunden, rund 6 Stunden 19 Minuten.
+  Rank 30 endete um 17:42:36; Interpolationen, ein separater Rank-0-Nachlauf
+  und Abschlussarbeiten folgten. Eine Rank-ETA ist keine Gesamtimport-ETA.
+- Fehlende optionale Wikipedia-/Wikidata-Zusatzdateien führten zum vorgesehenen
+  Standard-Ranking, nicht zu einem Importfehler. Der Importdienst wurde von
+  systemd erfolgreich deaktiviert; die Freiplatzüberwachung danach gestoppt.
+- `--no-updates` entfernt Strukturen für laufende OSM-Datenupdates. Der
+  Datenbestand wird in diesem Setup nicht per Replikation aktualisiert;
+  eine spätere Aktualisierung oder Gebietserweiterung benötigt einen geplanten
+  Neuimport. Apple-Standortaktualisierungen bleiben davon unabhängig.
+
+### Lokaler HTTP-Dienst und SymconiCloud-Anbindung
+
+`nominatim-api.service` verwendet die vorhandene virtuelle Umgebung mit Falcon
+und Gunicorn (Installationsvorgabe 25.1.0), `--worker-class asgi`, einen Worker,
+16 Worker-Verbindungen und `--timeout 120`. Arbeitsverzeichnis ist das
+Nominatim-Projekt, Dienstbenutzer `www-data`, `PrivateTmp=yes` und
+`PYTHONDONTWRITEBYTECODE=1`. Der Dienst benötigt den getrennten
+PostgreSQL-Cluster und verwendet dieselben Slice-/Prioritätsgrenzen.
+`Restart=on-failure` mit zehn Sekunden Abstand ist konfiguriert; der Dienst
+wurde für automatischen Start über `multi-user.target` eingerichtet.
+
+Gunicorn bindet ausschließlich `127.0.0.1:8088` und stellt HTTP direkt bereit.
+Eine zusätzliche Freigabe ins LAN, nginx oder Änderungen an Symcons Webports
+sind für diesen Aufbau nicht erforderlich. Die Prüfpunkte sind `/status` und
+`/reverse` mit `format=jsonv2`, `addressdetails=1` und `accept-language=de`.
+Separate HTTP-Testausgaben wurden im Gespräch nicht übermittelt; der Benutzer
+bestätigte anschließend die funktionierende Adressanzeige in WoIst.
+
+In **WoIst → Adressauflösung (Nominatim)** ist
+`EnableAddressResolution=true`, `NominatimServer=http://127.0.0.1:8088` und
+`AddressLanguage=de` vorgesehen; danach Konfiguration übernehmen. `/reverse`
+wird nicht in die Basis-URL eingetragen, sondern vom zentralen Helper ergänzt.
+Loopback funktioniert, weil die Auflösung serverseitig auf demselben Pi läuft;
+bei einem anderen Nominatim-Rechner wäre dessen erreichbare Basis-URL nötig.
+
+Der vorhandene `ReverseGeocodingHelper` mit `PersistentJsonCacheHelper` bleibt
+die zentrale Implementierung für HTTP und Cache. `WoIstGeocoding` steuert
+lediglich Opt-in, Hintergrundtimer und Veröffentlichung der Ergebnisse. Der
+Cache- und Aktualisierungsvertrag steht in
+[`iCloud WoIst/README.md`](iCloud%20WoIst/README.md#optionale-adressauflösung-mit-nominatim).
+Nominatim löst Adressen auf; die Kartendarstellung bleibt bei OpenFreeMap.
+
+### Nachweise und verbleibende Grenzen
+
+- `nominatim admin --check-database`: Verbindung, Versionsabgleich, Inhalt,
+  Tokenizer, Indexierungsstatus sowie vollständige und gültige Indizes jeweils
+  `OK`; optionale externe Daten erwartungsgemäß `not applicable`.
+- `nominatim reverse` für einen öffentlichen Referenzpunkt in Berlin lieferte
+  eine passende Adresse. Der Benutzer bestätigte nach HTTP-Einrichtung und
+  Modulkonfiguration zusätzlich die Adresse in der realen WoIst-Geräteliste.
+- Abschlussmessung: `pg_database_size` meldete `1474 MB` (rund 1,44 GiB),
+  Root-Dateisystem rund 25 GiB frei, RAM rund 2,9 GiB verfügbar, Systemswap
+  rund 50 MiB belegt und `systemctl is-active symcon` meldete `active`.
+- Kein unabhängiger neuer MCP-Nachweis für diese Installation. Autostart nach
+  Neustart, Ausfall-/Wiederanlauf der API, Freiplatz-Abbruch, spätere Neuimporte
+  sowie die neue Adressanzeige im Popup und getrennt in beiden echten
+  Visualisierungsclients wurden in diesem Lauf nicht zusätzlich abgenommen.
+  Die bisherigen Offline-Nachweise für Kamera-/Auswahlerhalt gelten weiterhin;
+  der Screenshot allein bestätigt diese Interaktionen nicht erneut.
 
 Zielplattform: Symcon 9.0 / PHP 8.5. Entwicklungsbranch: dev. Lizenz: PolyForm Noncommercial License 1.0.0. Version 0.1/build 0/date 0 bezeichnet ausschließlich den unveröffentlichten Ausgangsstand, keinen Release.
 
