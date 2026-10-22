@@ -18,7 +18,7 @@
         {
             "type": "ExpansionPanel",
             "name": "AddressResolution",
-            "caption": "Address resolution (Nominatim)",
+            "caption": "Address resolution",
             "items": [
                 {
                     "type": "CheckBox",
@@ -26,9 +26,42 @@
                     "caption": "Resolve device positions to addresses"
                 },
                 {
+                    "type": "Select",
+                    "name": "AddressProvider",
+                    "caption": "Address provider",
+                    "options": [
+                        {
+                            "caption": "Private Nominatim server",
+                            "value": "nominatim"
+                        },
+                        {
+                            "caption": "Geoapify (external service)",
+                            "value": "geoapify"
+                        }
+                    ]
+                },
+                {
                     "type": "ValidationTextBox",
                     "name": "NominatimServer",
                     "caption": "Private Nominatim server base URL"
+                },
+                {
+                    "type": "PasswordTextBox",
+                    "name": "GeoapifyAPIKey",
+                    "caption": "Geoapify API key"
+                },
+                {
+                    "type": "NumberSpinner",
+                    "name": "GeoapifyDailyLimit",
+                    "caption": "Geoapify daily request limit per instance (UTC; 0 = no new requests)",
+                    "minimum": 0,
+                    "maximum": 1000000
+                },
+                {
+                    "type": "Label",
+                    "name": "GeoapifyUsage",
+                    "caption": "",
+                    "visible": false
                 },
                 {
                     "type": "ValidationTextBox",
@@ -37,13 +70,13 @@
                 },
                 {
                     "type": "Label",
-                    "caption": "Optional: coordinates are sent only to the configured server. Use a running private Nominatim service, not a GitHub repository or the public OSM service."
+                    "caption": "Only the selected provider is used. Geoapify sends coordinates to an external service and requires your own API key. Daily limits apply per instance, including failed requests; shared keys require coordinated budgets. Nominatim uses your private server."
                 },
                 {
                     "type": "Label",
                     "name": "GeocodingConfigurationWarning",
                     "visible": false,
-                    "caption": "Address resolution is unavailable. Configure a private HTTP(S) server base URL and a valid language. The map remains available."
+                    "caption": "Address resolution is unavailable. Check the selected provider, its credentials or server URL, language and daily limit. The map remains available."
                 }
             ]
         }

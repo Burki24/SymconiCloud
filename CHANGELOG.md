@@ -2,6 +2,8 @@
 
 ## Neu
 
+- Geoapify steht als zweiter Adressanbieter neben dem eigenen Nominatim-Server zur Wahl. Eigener API-Key, einstellbares UTC-Tageslimit je WoIst-Instanz (Vorgabe 2.500), Verbrauchsanzeige und automatische Fortsetzung am nächsten Tag ergänzen die bisherigen Genauigkeitsregeln. Cachetreffer bleiben am Limit verfügbar; Quellenhinweise erscheinen in Kachel und IPSView. Bestehende Nominatim-Einstellungen bleiben erhalten.
+
 - Die Adressanzeige berücksichtigt die Standortgenauigkeit über den zentralen ReverseGeocodingHelper: Gebäude bis einschließlich 20 m, Straße bis 100 m, Gebiet bis 1000 m und sonst Ort. Ungenaue oder unbekannte Positionen erhalten in Geräteliste, Popup und Gerätevariable einen deutlichen Ungefähr-Hinweis. Alte präzise Cachetreffer werden bei schlechterer Genauigkeit sofort ausgeblendet.
 
 - iCloud-Geräteinstanzen erhalten die lesbare Variable **Adresse** aus dem vorhandenen WoIst-Adresscache, ohne zusätzliche Nominatim-Abfragen. Eine passende Karte am selben Konto wird automatisch verwendet; bei mehreren Karten lässt sich die Quelle auswählen. Nach dem Update die Geräteinstanzkonfiguration einmal übernehmen.

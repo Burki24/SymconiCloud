@@ -7,10 +7,10 @@ namespace Burki24\SymconModuleHelper;
 require_once __DIR__ . '/PersistentJsonCacheHelper.php';
 
 /**
- * Optional server-side Nominatim reverse geocoding with bounded persistent cache.
+ * Optional Nominatim/Geoapify reverse geocoding with bounded persistent cache.
  * Consumers own opt-in, scheduling and serialization. ReadNominatimAddress never
  * performs I/O. ResolveNominatimAddress must run in a serialized background worker.
- * No account credentials or device identifiers are accepted or transmitted.
+ * No Apple credentials or device identifiers are accepted or transmitted.
  *
  * @version 1.0.0
  */
@@ -22,6 +22,7 @@ trait ReverseGeocodingHelper
     protected function RegisterReverseGeocodingCache(): void
     {
         $this->RegisterPersistentJsonCache('ReverseGeocodingCache');
+        $this->RegisterPersistentJsonCache('GeoapifyDailyUsage');
     }
 
     /** Clears cached addresses and provider cooldowns, for example when disabling the feature. */
@@ -86,13 +87,7 @@ trait ReverseGeocodingHelper
     protected function ReadNominatimAddress(string $server, float $latitude, float $longitude, string $language = 'de', int $zoom = 18): ?string
     {
         [$scope, $key] = $this->NominatimCacheKeys($server, $latitude, $longitude, $language, $zoom);
-        $cache = $this->ReverseGeocodingCache();
-        $entry = $cache['entries'][$key] ?? null;
-        $now = $this->ReverseGeocodingNow();
-        if (is_array($entry) && ($entry['expires'] ?? 0) > $now && is_string($entry['address'] ?? null)) {
-            return $entry['address'];
-        }
-        return ($cache['cooldowns'][$scope] ?? 0) > $now ? '' : null;
+        return $this->ReadReverseGeocodingAddress($scope, $key);
     }
 
     /**
@@ -139,18 +134,143 @@ trait ReverseGeocodingHelper
             $address = '';
             $failed = true;
         }
-        $cache = $this->ReverseGeocodingCache();
-        $cache['entries'] = array_filter($cache['entries'] ?? [], static fn ($entry): bool => is_array($entry) && ($entry['expires'] ?? 0) > $now);
-        unset($cache['entries'][$key]);
-        $cache['entries'][$key] = ['address' => $address, 'expires' => $now + ($failed ? 300 : ($address === '' ? 3600 : 86400))];
-        $cache['entries'] = array_slice($cache['entries'], -512, null, true);
-        $cache['cooldowns'] = array_filter($cache['cooldowns'] ?? [], static fn ($until): bool => is_int($until) && $until > $now);
-        if ($failed) {
-            $cache['cooldowns'][$scope] = $now + 300;
-        }
-        $cache['cooldowns'] = array_slice($cache['cooldowns'], -16, null, true);
-        $this->WritePersistentJsonCache('ReverseGeocodingCache', $cache);
+        $this->StoreReverseGeocodingAddress($scope, $key, $address, $failed, $now);
         return $address;
+    }
+
+    /** Validates a Geoapify credential without exposing its value in exceptions. */
+    protected function NormalizeGeoapifyKey(string $apiKey): string
+    {
+        $apiKey = trim($apiKey);
+        if (!preg_match('/^[a-zA-Z0-9_-]{1,256}$/D', $apiKey)) {
+            throw new \InvalidArgumentException('A valid Geoapify API key is required.');
+        }
+        return $apiKey;
+    }
+
+    /** Geoapify uses two-letter languages; regional variants select their base language. */
+    protected function NormalizeGeoapifyLanguage(string $language): string
+    {
+        if (!preg_match('/^[a-zA-Z]{2}(?:-[a-zA-Z0-9]{2,8})?$/D', $language)) {
+            throw new \InvalidArgumentException('A two-letter Geoapify language is required.');
+        }
+        return strtolower(substr($language, 0, 2));
+    }
+
+    /**
+     * Cache-only Geoapify lookup. Same null/pending and empty/miss contract as Nominatim.
+     * Credentials are hashed in cache scopes and are never returned or persisted here.
+     */
+    protected function ReadGeoapifyAddress(string $apiKey, float $latitude, float $longitude, string $language = 'de', int $zoom = 18): ?string
+    {
+        $apiKey = $this->NormalizeGeoapifyKey($apiKey);
+        $language = $this->NormalizeGeoapifyLanguage($language);
+        [$scope, $key] = $this->NominatimCacheKeys('https://api.geoapify.com/v1/geocode', $latitude, $longitude, $language, $zoom, hash('sha256', $apiKey));
+        return $this->ReadReverseGeocodingAddress($scope, $key);
+    }
+
+    /**
+     * Persistent instance-local UTC request budget, independent of address-cache clearing.
+     * 0 disables new requests. Used includes failed HTTP attempts and survives key changes.
+     * Consumers must serialize ResolveGeoapifyAddress per instance. Shared keys across
+     * instances/systems require budgets whose sum fits the provider's account allowance.
+     *
+     * @return array{day:string,used:int,remaining:int,available:bool,nextReset:int}
+     */
+    protected function GeoapifyDailyUsage(int $dailyLimit): array
+    {
+        if ($dailyLimit < 0 || $dailyLimit > 1000000) {
+            throw new \InvalidArgumentException('Geoapify daily limit must be between 0 and 1000000.');
+        }
+        $now = $this->ReverseGeocodingNow();
+        $today = gmdate('Y-m-d', $now);
+        try {
+            $usage = $this->ReadPersistentJsonCache('GeoapifyDailyUsage');
+        } catch (\UnexpectedValueException) {
+            $usage = ['invalid' => true];
+        }
+        $valid = $usage === [] || (is_string($usage['day'] ?? null)
+            && preg_match('/^\d{4}-\d{2}-\d{2}$/D', $usage['day'])
+            && checkdate((int) substr($usage['day'], 5, 2), (int) substr($usage['day'], 8, 2), (int) substr($usage['day'], 0, 4))
+            && is_int($usage['used'] ?? null) && $usage['used'] >= 0);
+        $available = $valid && ($usage['day'] ?? $today) <= $today;
+        $used = !$available ? PHP_INT_MAX : (($usage['day'] ?? '') === $today ? $usage['used'] : 0);
+        return ['day'   => $today, 'used' => $used, 'remaining' => max(0, $dailyLimit - $used),
+            'available' => $available, 'nextReset' => $now - ($now % 86400) + 86400];
+    }
+
+    /**
+     * At most one counted HTTP request to the fixed Geoapify HTTPS endpoint.
+     * Uses the shared accuracy zoom and filters structured coarse results locally.
+     * Positive/negative TTLs and provider cooldowns match Nominatim. Cache hits are
+     * still available at the daily limit. No automatic switch to another provider.
+     */
+    protected function ResolveGeoapifyAddress(string $apiKey, float $latitude, float $longitude, string $language = 'de', int $zoom = 18, int $dailyLimit = 2500): string
+    {
+        $usage = $this->GeoapifyDailyUsage($dailyLimit);
+        $cached = $this->ReadGeoapifyAddress($apiKey, $latitude, $longitude, $language, $zoom);
+        if ($cached !== null) {
+            return $cached;
+        }
+        if ($usage['remaining'] === 0) {
+            if (!$usage['available']) {
+                $this->WritePersistentJsonCache('GeoapifyDailyUsage', ['day' => $usage['day'], 'used' => PHP_INT_MAX]);
+            }
+            return '';
+        }
+        $apiKey = $this->NormalizeGeoapifyKey($apiKey);
+        $language = $this->NormalizeGeoapifyLanguage($language);
+        [$scope, $key] = $this->NominatimCacheKeys('https://api.geoapify.com/v1/geocode', $latitude, $longitude, $language, $zoom, hash('sha256', $apiKey));
+        $url = 'https://api.geoapify.com/v1/geocode/reverse?' . http_build_query([
+            'lat'    => number_format($latitude, 6, '.', ''), 'lon' => number_format($longitude, 6, '.', ''),
+            'format' => 'json', 'lang' => $language, 'limit' => 1,
+            'type'   => $zoom === 18 ? 'building' : ($zoom >= 16 ? 'street' : ($zoom >= 12 ? 'locality' : 'city')),
+            'apiKey' => $apiKey
+        ], '', '&', PHP_QUERY_RFC3986);
+        // Reserve before I/O: even interrupted or failed requests consume the local budget.
+        $this->WritePersistentJsonCache('GeoapifyDailyUsage', ['day' => $usage['day'], 'used' => $usage['used'] + 1]);
+        $now = $this->ReverseGeocodingNow();
+        $address = '';
+        $failed = false;
+        try {
+            $response = $this->RequestGeoapify($url);
+            $body = $response['body'] ?? '';
+            if (($response['status'] ?? 0) !== 200 || !is_string($body) || strlen($body) > 65536) {
+                throw new \UnexpectedValueException('Geoapify response unavailable.');
+            }
+            $data = json_decode($body, true, 32, JSON_THROW_ON_ERROR);
+            if (!is_array($data) || !is_array($data['results'] ?? null) || !array_is_list($data['results'])) {
+                throw new \UnexpectedValueException('Invalid Geoapify response.');
+            }
+            if ($data['results'] !== []) {
+                $result = $data['results'][0];
+                if (!is_array($result)) {
+                    throw new \UnexpectedValueException('Invalid Geoapify address.');
+                }
+                $parts = [];
+                foreach (['street' => 'road', 'suburb' => 'suburb', 'district' => 'city_district', 'city' => 'city',
+                    'county'       => 'county', 'state' => 'state', 'postcode' => 'postcode', 'country' => 'country'] as $from => $to) {
+                    $parts[$to] = $result[$from] ?? null;
+                }
+                $address = $zoom === 18 && is_string($result['formatted'] ?? null)
+                    ? trim($result['formatted']) : $this->NominatimCoarseAddress($parts, min($zoom, 17));
+                if (strlen($address) > 2048 || preg_match('//u', $address) !== 1 || preg_match('/[\x00-\x1f\x7f]/', $address)) {
+                    throw new \UnexpectedValueException('Invalid address text.');
+                }
+            }
+        } catch (\Throwable) {
+            // Never expose provider bodies, request URLs, credentials or coordinates.
+            $address = '';
+            $failed = true;
+        }
+        $this->StoreReverseGeocodingAddress($scope, $key, $address, $failed, $now);
+        return $address;
+    }
+
+    /** Counted Geoapify transport seam; shares bounded TLS/redirect handling with Nominatim. */
+    protected function RequestGeoapify(string $url): array
+    {
+        return $this->RequestReverseGeocoding($url);
     }
 
     /** Clock seam for deterministic expiry tests. */
@@ -165,6 +285,38 @@ trait ReverseGeocodingHelper
      * @return array{status:int,body:string}
      */
     protected function RequestNominatim(string $url): array
+    {
+        return $this->RequestReverseGeocoding($url);
+    }
+
+    private function ReadReverseGeocodingAddress(string $scope, string $key): ?string
+    {
+        $cache = $this->ReverseGeocodingCache();
+        $entry = $cache['entries'][$key] ?? null;
+        $now = $this->ReverseGeocodingNow();
+        if (is_array($entry) && ($entry['expires'] ?? 0) > $now && is_string($entry['address'] ?? null)) {
+            return $entry['address'];
+        }
+        return ($cache['cooldowns'][$scope] ?? 0) > $now ? '' : null;
+    }
+
+    private function StoreReverseGeocodingAddress(string $scope, string $key, string $address, bool $failed, int $now): void
+    {
+        $cache = $this->ReverseGeocodingCache();
+        $cache['entries'] = array_filter($cache['entries'] ?? [], static fn ($entry): bool => is_array($entry) && ($entry['expires'] ?? 0) > $now);
+        unset($cache['entries'][$key]);
+        $cache['entries'][$key] = ['address' => $address, 'expires' => $now + ($failed ? 300 : ($address === '' ? 3600 : 86400))];
+        $cache['entries'] = array_slice($cache['entries'], -512, null, true);
+        $cache['cooldowns'] = array_filter($cache['cooldowns'] ?? [], static fn ($until): bool => is_int($until) && $until > $now);
+        if ($failed) {
+            $cache['cooldowns'][$scope] = $now + 300;
+        }
+        $cache['cooldowns'] = array_slice($cache['cooldowns'], -16, null, true);
+        $this->WritePersistentJsonCache('ReverseGeocodingCache', $cache);
+    }
+
+    /** Shared bounded HTTP implementation; request URLs must never be logged by callers. */
+    private function RequestReverseGeocoding(string $url): array
     {
         $handle = curl_init($url);
         $body = '';
@@ -192,14 +344,14 @@ trait ReverseGeocodingHelper
     }
 
     /** @return array{string,string} Namespace and coordinate key; raw locations are not used as attribute keys. */
-    private function NominatimCacheKeys(string $server, float $latitude, float $longitude, string $language, int $zoom): array
+    private function NominatimCacheKeys(string $server, float $latitude, float $longitude, string $language, int $zoom, string $credentialScope = ''): array
     {
         $server = $this->NormalizeNominatimServer($server);
         if (!is_finite($latitude) || !is_finite($longitude) || abs($latitude) > 90 || abs($longitude) > 180
             || !preg_match('/^[a-zA-Z]{2,3}(?:-[a-zA-Z0-9]{2,8})?$/D', $language) || $zoom < 0 || $zoom > 18) {
             throw new \InvalidArgumentException('Invalid geocoding coordinate, language or zoom.');
         }
-        $scope = hash('sha256', $server . '|' . strtolower($language));
+        $scope = hash('sha256', $server . '|' . strtolower($language) . ($credentialScope === '' ? '' : '|' . $credentialScope));
         return [$scope, hash('sha256', 'detail-v1|' . $scope . '|' . $zoom . '|' . number_format($latitude, 6, '.', '') . '|' . number_format($longitude, 6, '.', ''))];
     }
 

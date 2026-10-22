@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 // sdk-contracts.php also runs the shared module integration scenarios.
-// address-precision.php also runs the device-address and map-geocoding scenarios.
-foreach (['validate_structure.php', 'apple-client.php', 'account.php', 'sdk-contracts.php', 'map.php', 'address-precision.php'] as $test) {
+// geoapify.php also runs address precision, device address and map geocoding scenarios.
+foreach (['validate_structure.php', 'apple-client.php', 'account.php', 'sdk-contracts.php', 'map.php', 'geoapify.php'] as $test) {
     $process = proc_open([PHP_BINARY, __DIR__ . '/' . $test], [STDIN, STDOUT, STDERR], $pipes, dirname(__DIR__));
     if (!is_resource($process) || proc_close($process) !== 0) {
         exit(1);

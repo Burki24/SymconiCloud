@@ -10,6 +10,17 @@ class GeocodingFixtureMap extends iCloudWoIst
     public array $geocodingRequests = [];
     public array $geocodingResponse = ['status' => 200, 'body' => '{"display_name":"Example Street 7, Example Town"}'];
     public ?Closure $duringLookup = null;
+    public ?int $geocodingTime = null;
+
+    protected function ReverseGeocodingNow(): int
+    {
+        return $this->geocodingTime ?? time();
+    }
+
+    protected function RequestGeoapify(string $url): array
+    {
+        return $this->RequestNominatim($url);
+    }
 
     protected function RequestNominatim(string $url): array
     {

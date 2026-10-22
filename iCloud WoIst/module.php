@@ -97,6 +97,15 @@ class iCloudWoIst extends IPSModuleStrict
                     if (($item['name'] ?? '') === 'GeocodingConfigurationWarning') {
                         $item['visible'] = $this->ReadPropertyBoolean('EnableAddressResolution') && $this->WoIstGeocodingConfiguration() === null;
                     }
+                    if (($item['name'] ?? '') === 'GeoapifyUsage') {
+                        $item['visible'] = $this->ReadPropertyBoolean('EnableAddressResolution') && $this->ReadPropertyString('AddressProvider') === 'geoapify';
+                        $limit = $this->ReadPropertyInteger('GeoapifyDailyLimit');
+                        if ($limit >= 0 && $limit <= 1000000) {
+                            $usage = $this->GeoapifyDailyUsage($limit);
+                            $item['caption'] = $usage['available'] && $usage['used'] !== PHP_INT_MAX ? sprintf($this->Translate('Geoapify requests today (UTC): %d / %d'), $usage['used'], $limit)
+                                : $this->Translate('Geoapify usage counter unavailable. New requests are blocked until the next UTC day.');
+                        }
+                    }
                 }
                 unset($item);
             }
@@ -296,7 +305,8 @@ class iCloudWoIst extends IPSModuleStrict
         return [
             'state' => ['success' => $success, 'accountState' => is_string($data['state'] ?? null) ? $data['state'] : 'error',
                 'error'           => is_string($data['error'] ?? null) ? $data['error'] : '', 'updatedAt' => $updated,
-                'staleAfter'      => max(60, min(86400, $this->ReadPropertyInteger('StaleAfter'))), 'devices' => $devices],
+                'staleAfter'      => max(60, min(86400, $this->ReadPropertyInteger('StaleAfter'))), 'devices' => $devices,
+                'geocoding'       => $this->WoIstGeocodingStatus()],
             'labels'  => $labels,
             'options' => [...$this->ResponsiveVisualizationLayoutOptions(), 'design' => $this->WoIstDesign(false), 'openFreeMap' => $this->WoIstOpenFreeMap(false), 'maxZoom' => 19]
         ];

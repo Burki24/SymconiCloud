@@ -12,10 +12,17 @@ Beim Wechsel wird die vorherige Markierung zurückgesetzt. Die Hervorhebung blei
 
 Die Karte erhält neue Daten automatisch vom Konto. **Bei Apple aktualisieren** löst eine ausdrückliche Geräteabfrage über das Konto aus und beachtet dessen Anmeldestatus und Wartezeiten. Das Öffnen der Karte oder des Formulars liest nur den Kontocache und löst keine Apple-Anmeldung aus.
 
-## Optionale Adressauflösung mit Nominatim
+## Optionale Adressauflösung
 
-Im Abschnitt **Adressauflösung (Nominatim)** kann die Auflösung eingeschaltet
-werden. Sie ist standardmäßig deaktiviert. Als **Basis-URL** wird die HTTP(S)-URL
+Im Abschnitt **Adressauflösung** kann die Auflösung eingeschaltet und der
+**Adressanbieter** gewählt werden. Sie ist standardmäßig deaktiviert;
+**Eigener Nominatim-Server** bleibt auch für bestehende Instanzen die Vorgabe.
+Es wird ausschließlich der gewählte Anbieter verwendet, ohne automatischen
+Wechsel zu einem externen Dienst.
+
+### Eigener Nominatim-Server
+
+Als **Basis-URL** wird die HTTP(S)-URL
 eines laufenden eigenen Nominatim-Servers eingetragen, beispielsweise
 `http://nominatim.example:8080` oder `https://nominatim.example/osm` bei einem
 Reverse-Proxy mit Pfadpräfix. `/reverse` wird automatisch ergänzt. Ein GitHub-Fork
@@ -25,10 +32,44 @@ Der öffentliche Dienst `nominatim.openstreetmap.org` wird nicht unterstützt.
 Die Adresssprache ist standardmäßig `de`, alternativ beispielsweise `en` oder
 `de-DE`.
 
+### Geoapify ohne eigenen Server
+
+Bei [Geoapify](https://www.geoapify.com/) ein eigenes Konto und einen API-Key
+anlegen. Anschließend **Geoapify (externer Dienst)** auswählen, den Key in
+**Geoapify-API-Key** eintragen und übernehmen. Eine Nominatim-Serveradresse ist
+für diesen Anbieter nicht erforderlich. Der Key bleibt auf dem Symcon-Server
+und wird in der Oberfläche verdeckt eingegeben; er gehört nicht in Screenshots,
+Logs oder geteilte Konfigurationen. Symcon-Konfiguration und Backups schützen.
+
+Das **Geoapify-Tageslimit je Instanz** beträgt standardmäßig **2.500** und lässt
+sich von 0 bis 1.000.000 einstellen. `0` verhindert neue Abfragen. Gezählt werden
+tatsächliche HTTP-Versuche einschließlich Fehlern; Cachetreffer kosten kein
+Budget. Der Zähler bleibt bei Neustart, Deaktivieren, Cacheleerung und
+Schlüsselwechsel erhalten. Der Tageswechsel erfolgt um **00:00 UTC**, unabhängig
+von der lokalen Zeitzone. Ausstehende Abfragen werden dann automatisch wieder
+aufgenommen, sofern das Limit größer als null ist. Das Formular zeigt den
+Verbrauch beim Öffnen; bei ausgeschöpftem Budget erscheint ein Hinweis in der
+Karte. Bereits gespeicherte, noch gültige Adressen bleiben verfügbar.
+
+Das lokale Limit ersetzt keine Kontingentprüfung des Anbieters. Bei gemeinsamem
+Key die Budgets aller WoIst-Instanzen, Produktiv-/Testsysteme und anderer
+Anwendungen zusammen berücksichtigen. Der Anbieter kann eigene Grenzen und
+Tarifbedingungen ändern. HTTP-Fehler führen zu einer Wartezeit statt zu
+unbegrenzten Wiederholungen.
+
+Geoapify erhält Koordinaten, Sprache und den API-Key; Gerätenamen und
+Apple-Zugangsdaten werden nicht übertragen. Regionale Sprachcodes wie `de-DE`
+verwenden die Basissprache `de`. Kachel und IPSView zeigen die Quellenangaben
+**Powered by Geoapify** und **OpenStreetMap contributors**. Bei selbst gestalteten
+Ausgaben mit der Gerätevariable müssen die erforderlichen Quellenhinweise
+ebenfalls beibehalten werden.
+
+### Gemeinsames Verhalten beider Anbieter
+
 Die verbundenen [iCloud-Geräteinstanzen](../iCloud%20Device/README.md#adresse-aus-woist)
 können dieselben Cacheergebnisse als Variable **Adresse** übernehmen. Neue
 Adressresultate aktualisieren diese Instanzen automatisch; zusätzliche
-Nominatim-Abfragen pro Geräteinstanz sind nicht erforderlich. Bei mehreren
+Anbieterabfragen pro Geräteinstanz sind nicht erforderlich. Bei mehreren
 WoIst-Karten mit aktivierter Auflösung am selben Konto wird die gewünschte
 Quelle in der Geräteinstanz ausgewählt.
 
@@ -38,11 +79,11 @@ Die Auflösung erfolgt im Hintergrund mit höchstens einer Abfrage je zwei
 Sekunden pro WoIst-Instanz. Eine neue Adresse aktualisiert nur die Daten;
 Zoom, Kartenausschnitt, Geräteauswahl und Popup bleiben erhalten.
 
-Übertragen werden ausschließlich Koordinaten und Sprach-/Formatparameter an
-den eingetragenen Server. Apple-Zugangsdaten und Gerätekennungen bleiben in
+Übertragen werden Koordinaten und Sprach-/Formatparameter an den ausgewählten
+Anbieter, bei Geoapify zusätzlich dessen API-Key. Apple-Zugangsdaten und Gerätekennungen bleiben in
 Symcon. Erfolgreiche Adressen werden 24 Stunden persistent gespeichert,
 fehlende Treffer eine Stunde. Der zentrale Helper begrenzt den Cache auf
-512 Positionen; Server und Sprache sind getrennt. Bei einer neuen Position
+512 Adressresultate; Anbieter, Server beziehungsweise Key, Sprache und Detail sind getrennt. Bei einer neuen Position
 verschwindet die alte Adresse sofort. Netzwerk-/Antwortfehler lösen fünf Minuten
 Wartezeit aus; ein späteres Konto-/Kartenupdate stößt den nächsten Versuch an.
 Die Karte bleibt auch bei Serverausfällen nutzbar. Eine ungültige aktivierte
@@ -64,19 +105,19 @@ Alle Angaben oberhalb der Gebäudegrenze erhalten einen hervorgehobenen
 Hinweis. Bei schlechter werdender Genauigkeit verschwindet eine zuvor bekannte
 Hausadresse sofort; passende Angaben erscheinen nach der Hintergrundauflösung.
 Die Detailstufen haben getrennte Cacheeinträge. Bereits vor diesem Update
-gespeicherte Adressen werden schrittweise neu aufgelöst. Die Detailwahl für
-Nominatim verändert den Kartenzoom nicht.
+gespeicherte Adressen werden schrittweise neu aufgelöst. Die Detailstufe der
+Adressabfrage verändert den Kartenzoom nicht.
 
 Die angezeigte Adresse gehört zur angegebenen, gegebenenfalls älteren Position.
-Nominatim ermittelt das nächste geeignete OpenStreetMap-Objekt; eine genaue
+Der Anbieter ermittelt ein geeignetes nahegelegenes Objekt; eine genaue
 Hausnummer kann deshalb nicht zugesichert werden. Die OSM-Quellenangabe bleibt
-in der Karte sichtbar. Andere Geocoding-Anbieter sind derzeit nicht enthalten.
+in der Karte sichtbar. Weitere Anbieter außer Nominatim und Geoapify sind derzeit nicht enthalten.
 
 `ICWI_GetDeviceAddress(int $InstanceID, string $DeviceID, float $Latitude,
 float $Longitude): string` liest ausschließlich den Adresscache der Karte.
 Die Geräte-ID und beide Koordinaten müssen zur aktuell im angemeldeten
 Kontocache vorhandenen Position passen. Bei fehlendem Treffer oder deaktivierter
-Auflösung ist das Ergebnis leer. Der Aufruf startet weder eine Nominatim-Abfrage
+Auflösung ist das Ergebnis leer. Der Aufruf startet weder eine Anbieterabfrage
 noch eine Apple-Aktualisierung.
 
 ## Kachel- und IPSView-Designer

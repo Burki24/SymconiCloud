@@ -52,10 +52,14 @@ trait WoIstGeocoding
                     continue;
                 }
                 $zoom = $this->ReverseGeocodingPrecision($location['horizontalAccuracy'])['zoom'];
-                if ($this->ReadNominatimAddress($configuration['server'], $location['latitude'], $location['longitude'], $configuration['language'], $zoom) !== null) {
+                if ($this->WoIstReadAddress($configuration, $location, $zoom) !== null) {
                     continue;
                 }
-                $this->ResolveNominatimAddress($configuration['server'], $location['latitude'], $location['longitude'], $configuration['language'], $zoom);
+                if ($configuration['provider'] === 'geoapify') {
+                    $this->ResolveGeoapifyAddress($configuration['key'], $location['latitude'], $location['longitude'], $configuration['language'], $zoom, $configuration['limit']);
+                } else {
+                    $this->ResolveNominatimAddress($configuration['server'], $location['latitude'], $location['longitude'], $configuration['language'], $zoom);
+                }
                 if ($this->WoIstGeocodingConfiguration() !== $configuration) {
                     $this->ClearReverseGeocodingCache();
                 }
@@ -99,23 +103,36 @@ trait WoIstGeocoding
         $this->RegisterAttributeBoolean('AddressPropagationActive', false);
         $this->RegisterPropertyBoolean('EnableAddressResolution', false);
         $this->RegisterPropertyString('NominatimServer', '');
+        $this->RegisterPropertyString('AddressProvider', 'nominatim');
+        $this->RegisterPropertyString('GeoapifyAPIKey', '');
+        $this->RegisterPropertyInteger('GeoapifyDailyLimit', 2500);
         $this->RegisterPropertyString('AddressLanguage', 'de');
         $this->RegisterTimer('ResolveAddresses', 0, 'ICWI_ResolveAddresses($_IPS["TARGET"]);');
     }
 
-    /** @return array{server:string,language:string}|null Disabled or invalid configuration performs no lookup. */
+    /** @return array|null Valid selected provider only; credentials stay server-side. */
     private function WoIstGeocodingConfiguration(): ?array
     {
         if (!$this->ReadPropertyBoolean('EnableAddressResolution')) {
             return null;
         }
         try {
-            $server = $this->NormalizeNominatimServer($this->ReadPropertyString('NominatimServer'));
             $language = trim($this->ReadPropertyString('AddressLanguage'));
+            $provider = $this->ReadPropertyString('AddressProvider');
+            if ($provider === 'geoapify') {
+                $limit = $this->ReadPropertyInteger('GeoapifyDailyLimit');
+                $this->GeoapifyDailyUsage($limit);
+                return ['provider' => $provider, 'key' => $this->NormalizeGeoapifyKey($this->ReadPropertyString('GeoapifyAPIKey')),
+                    'language'     => $this->NormalizeGeoapifyLanguage($language), 'limit' => $limit];
+            }
+            if ($provider !== 'nominatim') {
+                return null;
+            }
+            $server = $this->NormalizeNominatimServer($this->ReadPropertyString('NominatimServer'));
             if (!preg_match('/^[a-zA-Z]{2,3}(?:-[a-zA-Z0-9]{2,8})?$/D', $language)) {
                 return null;
             }
-            return ['server' => $server, 'language' => $language];
+            return ['provider' => $provider, 'server' => $server, 'language' => $language];
         } catch (\InvalidArgumentException) {
             return null;
         }
@@ -129,7 +146,26 @@ trait WoIstGeocoding
             return '';
         }
         $zoom = $this->ReverseGeocodingPrecision($location['horizontalAccuracy'])['zoom'];
-        return $this->ReadNominatimAddress($configuration['server'], $location['latitude'], $location['longitude'], $configuration['language'], $zoom) ?? '';
+        return $this->WoIstReadAddress($configuration, $location, $zoom) ?? '';
+    }
+
+    private function WoIstReadAddress(array $configuration, array $location, int $zoom): ?string
+    {
+        return $configuration['provider'] === 'geoapify'
+            ? $this->ReadGeoapifyAddress($configuration['key'], $location['latitude'], $location['longitude'], $configuration['language'], $zoom)
+            : $this->ReadNominatimAddress($configuration['server'], $location['latitude'], $location['longitude'], $configuration['language'], $zoom);
+    }
+
+    /** Sanitized provider status; no key, endpoint or credential fingerprint enters HTML/JSON. */
+    private function WoIstGeocodingStatus(): array
+    {
+        $configuration = $this->WoIstGeocodingConfiguration();
+        if ($configuration === null || $configuration['provider'] !== 'geoapify') {
+            return ['provider' => $configuration['provider'] ?? '', 'notice' => ''];
+        }
+        $usage = $this->GeoapifyDailyUsage($configuration['limit']);
+        return ['provider' => 'geoapify', 'notice' => $usage['remaining'] > 0 ? ''
+            : $this->Translate('Geoapify daily limit reached. Cached addresses remain available. New requests resume on the next UTC day if the limit is above zero.')];
     }
 
     /** Translates the central accuracy policy without claiming an exact OSM match. */
@@ -161,12 +197,19 @@ trait WoIstGeocoding
         if ($configuration !== null && $state['success']) {
             foreach ($state['devices'] as $device) {
                 $location = $device['location'];
-                if ($location !== null && $this->ReadNominatimAddress($configuration['server'], $location['latitude'], $location['longitude'], $configuration['language'], $this->ReverseGeocodingPrecision($location['horizontalAccuracy'])['zoom']) === null) {
+                if ($location !== null && $this->WoIstReadAddress($configuration, $location, $this->ReverseGeocodingPrecision($location['horizontalAccuracy'])['zoom']) === null) {
                     $pending = true;
                     break;
                 }
             }
         }
-        $this->SetTimerInterval('ResolveAddresses', $pending ? 2000 : 0);
+        $interval = $pending ? 2000 : 0;
+        if ($pending && $configuration['provider'] === 'geoapify') {
+            $usage = $this->GeoapifyDailyUsage($configuration['limit']);
+            if ($usage['remaining'] === 0 && $usage['available']) {
+                $interval = $configuration['limit'] === 0 ? 0 : max(1000, ($usage['nextReset'] - $this->ReverseGeocodingNow()) * 1000);
+            }
+        }
+        $this->SetTimerInterval('ResolveAddresses', $interval);
     }
 }

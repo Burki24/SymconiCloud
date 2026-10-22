@@ -32,6 +32,8 @@ class Element {
 
 const elements = Object.fromEntries(['woist-theme', 'woist-heading', 'woist-devices', 'woist-controls', 'woist-bootstrap', 'title', 'updated', 'fit', 'refresh', 'devices-title', 'device-list', 'empty', 'account-message', 'transport-message', 'map-message', 'map'].map((id) => [id, new Element()]));
 const timestamp = Math.floor(Date.now() / 1000);
+elements['geocoding-message'] = new Element();
+elements['geocoding-attribution'] = new Element();
 const maliciousName = '<img src=x onerror=alert(1)>';
 const maliciousAddress = '<script>Example address</script>';
 const maliciousNotice = '<b>Approximate – area only</b>';
@@ -264,3 +266,13 @@ elements['device-list'].children[2].children[0].events.click();
 assert.deepEqual({center: map.center, zoom: map.zoom}, selectedCamera, 'Unlocated devices must not move the map.');
 assert.equal(selectionB.options.radius, 12, 'Selecting an unlocated device clears the old marker emphasis.');
 assert.equal(selectionB.opened, false);
+
+const geoCamera = {center: map.center, zoom: map.zoom};
+window.handleMessage({state: {success: true, devices: selectionDevices, geocoding: {provider: 'geoapify', notice: '<b>Daily limit reached</b>'}}});
+assert.equal(elements['geocoding-attribution'].hidden, false, 'Geoapify must show its fixed provider attribution.');
+assert.equal(elements['geocoding-message'].textContent, '<b>Daily limit reached</b>', 'Budget notices remain literal text.');
+assert.equal(elements['geocoding-message'].hidden, false);
+assert.deepEqual({center: map.center, zoom: map.zoom}, geoCamera, 'Quota updates preserve the camera.');
+window.handleMessage({state: {success: true, devices: selectionDevices, geocoding: {provider: 'nominatim', notice: ''}}});
+assert.equal(elements['geocoding-attribution'].hidden, true, 'Nominatim must not be attributed to Geoapify.');
+assert.equal(elements['geocoding-message'].hidden, true);

@@ -22,10 +22,12 @@
         <p id="account-message" class="message" role="status" hidden></p>
         <p id="transport-message" class="message" role="status" hidden></p>
         <p id="map-message" class="message" role="status" hidden></p>
+        <p id="geocoding-message" class="message" role="status" hidden></p>
         <div class="workspace">
             <section id="map" aria-label="Device locations"></section>
             <aside id="woist-devices"><h2 id="devices-title">Devices</h2><p id="empty" hidden></p><ul id="device-list"></ul></aside>
         </div>
+        <p id="geocoding-attribution" hidden><a href="https://www.geoapify.com/" target="_blank" rel="noopener noreferrer">Powered by Geoapify</a> · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a></p>
     </main>
     <script id="woist-bootstrap" type="application/json">{{BOOTSTRAP}}</script>
     <script>window.SymconVisualization = {{BOOTSTRAP_JSON}};</script>

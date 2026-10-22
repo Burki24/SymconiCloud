@@ -8,11 +8,13 @@ Eine Instanz zeigt die Geräte-, Akku- und Standortdaten eines Apple-Gerätes au
 
 ### Adresse aus WoIst
 
-Für die Variable **Adresse** muss in einer [WoIst-Karte](../iCloud%20WoIst/README.md#optionale-adressauflösung-mit-nominatim)
-am selben iCloud-Konto die Nominatim-Adressauflösung eingerichtet und aktiviert
+Für die Variable **Adresse** muss in einer [WoIst-Karte](../iCloud%20WoIst/README.md#optionale-adressauflösung)
+am selben iCloud-Konto die Adressauflösung mit Nominatim oder Geoapify eingerichtet und aktiviert
 sein. Die Geräteinstanz übernimmt ausschließlich die dort bereits aufgelöste
 Adresse; sie benötigt keine eigene Serveradresse und startet keine zusätzliche
-Nominatim-Abfrage oder einen eigenen Abfragetimer.
+Anbieterabfrage oder einen eigenen Abfragetimer. Bei Geoapify gelten Tagesbudget
+und Genauigkeitsregeln der ausgewählten WoIst-Instanz. Bei eigenen Anzeigen der
+Adressvariable die Quellenhinweise von Geoapify und OpenStreetMap beibehalten.
 
 **WoIst-Adressquelle (optional)** (`AddressSource`, Standard `0`) kann leer
 bleiben, wenn genau eine Karte mit aktivierter Adressauflösung an diesem Konto
@@ -57,10 +59,10 @@ Positionswechsel nicht von der vorherigen Position übernommen. Fehlende
 Positionen, Kontofehler, entfernte Geräte und das Deaktivieren der Auflösung
 leeren die Adresse bei der jeweiligen Aktualisierung. Eine veraltete, aber
 weiterhin verfügbare Position kann eine Adresse besitzen; deren Alter zeigt
-`LocationIsOld`. Die Adresse beschreibt das von Nominatim gefundene nahegelegene
+`LocationIsOld`. Die Adresse beschreibt das vom gewählten Anbieter gefundene nahegelegene
 OSM-Objekt und garantiert keine genaue Hausnummer.
 
-Die [Genauigkeitsregeln der WoIst-Adressauflösung](../iCloud%20WoIst/README.md#optionale-adressauflösung-mit-nominatim)
+Die [Genauigkeitsregeln der WoIst-Adressauflösung](../iCloud%20WoIst/README.md#optionale-adressauflösung)
 gelten auch für `Address`: Gebäude werden nur bis einschließlich 20 m angezeigt.
 Bei geringerer Genauigkeit enthält die Variable die gröbere Adresse mit dem
 Präfix **Ungefähr** und der jeweiligen Detailstufe. Unbekannte Genauigkeit wird

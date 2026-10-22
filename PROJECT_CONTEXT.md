@@ -1,5 +1,50 @@
 # Entwicklungsstand
 
+## Geoapify als zweiter Adressanbieter (2026-10-22)
+
+WoIst verwendet `AddressProvider=nominatim` als kompatible Vorgabe. Geoapify
+wird ausdrücklich mit `AddressProvider=geoapify` ausgewählt und benötigt die
+maskiert eingegebene Stringproperty `GeoapifyAPIKey`. Es gibt keinen automatischen
+Anbieterwechsel. Der zentrale ReverseGeocodingHelper besitzt Validierung,
+festen HTTPS-Endpunkt, begrenzten Transport, Detailfilterung, Cache und Budget;
+WoIst steuert Auswahl, Übersetzung und serialisierten Hintergrundtimer.
+
+`GeoapifyDailyLimit` erlaubt 0 bis 1.000.000 HTTP-Versuche je Instanz und UTC-Tag;
+Vorgabe 2.500, 0 sperrt neue Anfragen. Das persistente Attribut
+`GeoapifyDailyUsage` wird vor HTTP geschrieben und zählt auch Fehler.
+Neustart, Schlüsselwechsel und Adresscacheleerung setzen den Zähler nicht zurück.
+Andere Instanzen, Systeme und Anwendungen mit demselben Key müssen ihre Budgets
+auf das gemeinsame Anbieter-Kontingent abstimmen. Cachetreffer sind budgetfrei.
+Bei ausgeschöpftem Budget wartet ausstehende Arbeit auf den nächsten UTC-Tag.
+Beschädigte Zähler sperren neue Abfragen konservativ; HTTP-Fehler nutzen die
+bestehende fünfminütige Wartezeit. Die Karte bleibt währenddessen bedienbar.
+
+Die bisherigen Detailstufen (Gebäude bis einschließlich 20 m, Straße bis 100 m,
+Gebiet bis 1000 m, sonst Ort) gelten unverändert. Unbekannte Genauigkeit erlaubt
+nur den Ort. API-Anfragen verwenden building/street/locality/city; gröbere
+Antworten werden zusätzlich lokal gefiltert. Schlüssel-Fingerabdruck, Sprache,
+Position und Detail trennen Caches. Karten-HTML, Zustände und Adresscaches
+enthalten keine API-Keys. Die bestehende Gerätevariable liest denselben Cache.
+Kachel und IPSView zeigen feste Geoapify-/OSM-Quellenlinks und bei Bedarf den
+Tageslimit-Hinweis, ohne das Kartendokument zu ersetzen.
+
+Tests verwenden synthetische Schlüssel, Geräte und Anbieterantworten. Es wurde
+kein Konto angelegt, kein echter Geoapify-Aufruf ausgeführt und kein laufendes
+Symcon-System verändert. Die Einbindung nutzt das vorhandene Helper-Abonnement
+einschließlich PersistentJsonCacheHelper; neue Kartenressourcen sind nicht nötig.
+
+Die gezielten Integrationsprüfungen belegen die Übernahme in die Gerätevariable,
+Maskierung im Formular, Cache-/Budgettrennung, Fehlerzählung, UTC-Tageswechsel,
+Wiederaufnahme-Timer, Limit 0 und Schutz vor Key-Ausgabe in HTML/JSON. Die lokale
+Chromium-Prüfung mit 24 synthetischen Geräten und ersetzten Kartenstilen prüft
+Kachelausgabe und verschachtelte IPSView-HTTP-Testeinbettung: Quellenlinks und
+Tageslimit-Meldung, Adress-/Theme-Wechsel ohne Dokumentwechsel, Erhalt von
+Mittelpunkt, Zoom, Auswahl und Popup sowie echte Mausradaktionen für Kartenzoom
+und Listenscrollen in beiden Richtungen. Kleine Ansichten bis 320 × 240 Pixel
+bleiben innerhalb ihrer Fläche; die Budgetmeldung ist dort begrenzt und scrollbar.
+Die echte Symcon-Kachel bzw. native IPSView-App mit diesem neuen Stand sowie ein
+echter Geoapify-Key sind noch nicht praktisch abgenommen.
+
 ## Genauigkeitsabhängige Adressdetails (2026-10-22)
 
 Die zentrale Richtlinie `ReverseGeocodingPrecision` im ReverseGeocodingHelper
@@ -110,8 +155,8 @@ der vorherige Pi-Nachweis betrifft die bereits bestätigte Adressanzeige in WoIs
 
 Auf Benutzerwunsch wird die Einrichtung regelmäßiger OSM-Datenupdates auf einen
 späteren Arbeitsschritt verschoben. Aktuell hat die Weiterentwicklung des Moduls
-mit einem zweiten Weg zur Adressauflösung Vorrang; dessen Anbieter ist noch
-festzulegen. Es wurde kein Update-Timer eingerichtet oder aktiviert.
+mit Geoapify als zweitem Weg zur Adressauflösung Vorrang. Es wurde kein
+OSM-Update-Timer eingerichtet oder aktiviert.
 
 Der vorhandene Import mit `--no-updates` ist nicht für Replikationsupdates
 geeignet. Als spätere Umsetzung ist ein einmaliger Import in eine separate

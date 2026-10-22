@@ -8,6 +8,8 @@ h1 { font-size: 1.15rem; margin: 0; }
 h2 { font-size: 1rem; margin: 0 0 12px; }
 p { margin: 6px 0; }
 #updated, .device-meta, .popup-detail { color: var(--symc-subheading, var(--symc-muted)); font-size: 0.82rem; }
+#geocoding-attribution { flex: 0 0 auto; margin: 6px 0 0; font-size: 0.8rem; }
+#geocoding-attribution a { color: var(--symc-text); }
 .device-meta.address-warning, .popup-detail.address-warning {
     display: block;
     color: var(--symc-text);
@@ -44,6 +46,7 @@ li + li { margin-top: 8px; }
 }
 
 @media (max-height: 360px) {
+    #geocoding-message { max-height: 2.5rem; padding: 4px 6px; margin-bottom: 6px; font-size: 0.75rem; line-height: 1.25; }
     .toolbar { gap: 4px; margin-bottom: 6px; }
     #updated { display: none; }
     h1 { font-size: 1rem; }

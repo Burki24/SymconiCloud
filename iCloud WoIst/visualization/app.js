@@ -381,6 +381,12 @@
 
     function render() {
         if (!ready) return;
+        const geocoding = state.geocoding || {};
+        if (el('geocoding-attribution')) el('geocoding-attribution').hidden = geocoding.provider !== 'geoapify';
+        if (el('geocoding-message')) {
+            el('geocoding-message').textContent = typeof geocoding.notice === 'string' ? geocoding.notice : '';
+            el('geocoding-message').hidden = !el('geocoding-message').textContent;
+        }
         const selectedMarker = markers.get(selected);
         const reopenPopup = selectedMarker && typeof selectedMarker.isPopupOpen === 'function' && selectedMarker.isPopupOpen();
         const error = state.success === false ? (state.error || text('cacheError')) : '';
