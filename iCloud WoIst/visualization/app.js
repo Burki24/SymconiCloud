@@ -225,11 +225,32 @@
         return content;
     }
 
+    function markerStyle(device) {
+        const chosen = device.id === selected;
+        const stale = isStale(device.location, state, now());
+        return {
+            radius: (design.markerSize || 9) + (chosen ? 5 : 0),
+            color: '#ffffff', weight: chosen ? 4 : 2,
+            fillColor: stale ? (design.staleColor || '#b47722') : (design.currentColor || '#168d80'),
+            fillOpacity: chosen ? 1 : 0.95
+        };
+    }
+
     function selectDevice(device, focus, open = true) {
+        const previous = markers.get(selected);
+        if (selected !== device.id && previous && typeof previous.closePopup === 'function') previous.closePopup();
         selected = device.id;
+        for (const current of state.devices) {
+            const item = current && markers.get(current.id);
+            if (item) {
+                const style = markerStyle(current);
+                item.setStyle(style).setRadius(style.radius);
+            }
+        }
         if (accuracy && map) { map.removeLayer(accuracy); accuracy = null; }
         const marker = markers.get(device.id);
         if (marker && map) {
+            marker.bringToFront();
             if (focus) map.setView(marker.getLatLng(), Math.max(map.getZoom(), 15));
             if (open) marker.openPopup();
             const radius = device.location.horizontalAccuracy;
@@ -361,9 +382,7 @@
             el('device-list').appendChild(item);
             if (located && layer) {
                 const position = [device.location.latitude, device.location.longitude];
-                const style = {
-                    radius: design.markerSize || 9, color: '#ffffff', weight: 2, fillColor: stale ? (design.staleColor || '#b47722') : (design.currentColor || '#168d80'), fillOpacity: 0.95
-                };
+                const style = markerStyle(device);
                 const existing = markers.get(device.id);
                 if (existing) {
                     existing.setLatLng(position).setStyle(style).setRadius(style.radius).setPopupContent(popup(device));

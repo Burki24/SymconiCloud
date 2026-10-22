@@ -54,7 +54,7 @@ const window = {
     L: {
         map(_id, options) { assert.equal(options.trackResize, false, 'Only the view-preserving resize handler controls Leaflet resizing.'); return map; }, tileLayer(url, options) { tileProviders.push({url, options}); return {addTo() { return this; }, on() { return this; }}; }, layerGroup() { return layer; }, latLngBounds(value) { return value; },
         circleMarker(position, options) {
-            const marker = {position, options, addTo() { markers.push(this); return this; }, bindPopup(content, popupOptions) { this.popup = content; this.popupOptions = popupOptions; return this; }, setPopupContent(content) { this.popup = content; return this; }, setLatLng(value) { this.position = value; return this; }, setStyle(value) { this.options = value; return this; }, setRadius(value) { this.options.radius = value; return this; }, on() {}, getLatLng() { return this.position; }, openPopup() { this.opened = true; }, isPopupOpen() { return !!this.opened; }};
+            const marker = {position, options, addTo() { markers.push(this); return this; }, bindPopup(content, popupOptions) { this.popup = content; this.popupOptions = popupOptions; return this; }, setPopupContent(content) { this.popup = content; return this; }, setLatLng(value) { this.position = value; return this; }, setStyle(value) { this.options = value; return this; }, setRadius(value) { this.options.radius = value; return this; }, on() {}, getLatLng() { return this.position; }, bringToFront() { this.front = true; return this; }, closePopup() { this.opened = false; return this; }, openPopup() { this.opened = true; }, isPopupOpen() { return !!this.opened; }};
             return marker;
         }
     }
@@ -69,6 +69,9 @@ assert.equal(fits, 1);
 elements['device-list'].children[0].children[0].events.click();
 assert.equal(viewChanges, 2, 'Explicit device selection changes the viewport.');
 const selectedMarker = markers[0];
+assert.equal(selectedMarker.options.radius, 14, 'A selected device must have a visibly larger map marker.');
+assert.equal(selectedMarker.options.weight, 4, 'Selection must strengthen the marker outline.');
+assert.deepEqual(Array.from(map.center), [0, 0], 'List selection must center the map on the device, including zero coordinates.');
 assert.equal(selectedMarker.popupOptions.autoPan, false, 'Popup updates cannot pan an out-of-view selected marker into view.');
 const chosenView = {center: map.center, zoom: map.zoom};
 window.handleMessage(JSON.stringify({state: {success: false, error: 'Synthetic account failure', updatedAt: timestamp, devices: [{id: 'synthetic-a', name: maliciousName, location: {latitude: 1, longitude: 2, timestamp, isOld: false}}]}}));
@@ -80,6 +83,7 @@ assert.equal(fits, 1, 'Incoming updates preserve the chosen viewport.');
 assert.equal(markers[0], selectedMarker, 'Device updates retain the existing marker and popup.');
 assert.deepEqual(Array.from(markers[0].position), [1, 2], 'The selected marker receives its new coordinates.');
 assert.equal(markers[0].opened, true);
+assert.equal(markers[0].options.radius, 14, 'A selected marker stays highlighted after data updates.');
 assert.equal(elements['device-list'].children[0].children[0].attrs['aria-pressed'], 'true', 'Selection survives data updates.');
 assert.equal(viewChanges, 2, 'Updating the selected marker does not setView.');
 assert.deepEqual({center: map.center, zoom: map.zoom}, chosenView);
@@ -185,6 +189,7 @@ assert.equal(map.zoom, 12, 'A reconstructed native iframe restores the zoom.');
 assert.equal(fits, fitsBeforeReconnect, 'Restoration prevents initial fitBounds from replacing the saved view.');
 assert.equal(elements['device-list'].children[0].children[0].attrs['aria-pressed'], 'true');
 assert.equal(markers[0].opened, true, 'The selected device and its popup survive iframe reconstruction.');
+assert.equal(markers[0].options.radius, 14, 'The restored selection must also restore marker emphasis.');
 restart('ICWI:100:200', false);
 window.handleMessage({state: {success: true, devices: [{id: 'synthetic-a', location: {latitude: 1, longitude: 2, timestamp}}]}});
 assert.equal(elements['device-list'].children[0].children[0].attrs['aria-pressed'], 'true', 'A delayed valid inventory still restores the pending selection.');
@@ -202,3 +207,33 @@ window.handleMessage({state: {success: true, devices: []}, options: {design: {th
 assert.equal(elements['woist-theme'].textContent, ':root{--symc-text:#123456;}', 'Designer colors update the existing stylesheet.');
 assert.deepEqual({center: map.center, zoom: map.zoom}, cameraBeforeTheme, 'Theme updates retain the camera.');
 assert.equal(fits, fitsBeforeTheme, 'Theme updates do not fit all devices again.');
+
+const selectionDevices = [
+    {id: 'selection-a', location: {latitude: 10, longitude: 20, timestamp}},
+    {id: 'selection-b', location: {latitude: 30, longitude: 40, timestamp, isOld: true}},
+    {id: 'selection-missing', location: null}
+];
+window.handleMessage({state: {success: true, devices: selectionDevices}, options: {design: {markerSize: 12}}});
+const selectionA = markers[0], selectionB = markers[1];
+map.setView([0, 0], 18);
+elements['device-list'].children[0].children[0].events.click();
+assert.deepEqual(Array.from(map.center), [10, 20]);
+assert.equal(map.zoom, 18, 'Selecting a device must preserve an already closer zoom.');
+assert.equal(selectionA.options.radius, 17, 'Highlight size must follow the configured base size.');
+assert.equal(selectionA.front, true, 'The selected pin must be brought above overlapping pins.');
+elements['device-list'].children[1].children[0].events.click();
+assert.deepEqual(Array.from(map.center), [30, 40], 'Switching list selection must center the newly selected device.');
+assert.equal(selectionA.options.radius, 12, 'The previous pin returns to its configured size.');
+assert.equal(selectionA.options.weight, 2);
+assert.equal(selectionA.opened, false, 'The previous popup closes when selecting another device.');
+assert.equal(selectionB.options.radius, 17);
+assert.equal(selectionB.options.fillColor, '#b47722', 'Selection must retain the stale-location color.');
+const selectedCamera = {center: map.center, zoom: map.zoom};
+window.handleMessage({state: {success: true, devices: selectionDevices.map(device => device.id === 'selection-b'
+    ? {...device, location: {...device.location, latitude: 31}} : device)}});
+assert.deepEqual({center: map.center, zoom: map.zoom}, selectedCamera, 'A moving selected device must not recenter the user view on data updates.');
+assert.equal(selectionB.options.radius, 17);
+elements['device-list'].children[2].children[0].events.click();
+assert.deepEqual({center: map.center, zoom: map.zoom}, selectedCamera, 'Unlocated devices must not move the map.');
+assert.equal(selectionB.options.radius, 12, 'Selecting an unlocated device clears the old marker emphasis.');
+assert.equal(selectionB.opened, false);
