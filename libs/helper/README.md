@@ -20,7 +20,7 @@ The files in this directory are vendored from
 | `OpenFreeMapHelper.php` | 1.0.1 | `5dfa302d938e3d02e4ede6b85b4758c8eafc6bf10400b849c044361d92bab2dd` |
 | `ParentConnectionHelper.php` | 1.0.0 | `d4f01dee721aa32e64410979ca15b2795a0fcc59c0232c0ad69e4702d9ff573c` |
 | `ResponsiveVisualizationHelper.php` | 1.0.1 | `9b8f708fe4de4271310a50c1ac2f09166ba731f540eb829f46ad15b805f9f220` |
-| `ReverseGeocodingHelper.php` | 1.0.0 | `cf39389d8e3919917370fd029e9755296ffe6354b34a7cf49c90d343dc6d6054` |
+| `ReverseGeocodingHelper.php` | 1.1.0 | `a1511ade232cb44bd923d1edddac171e9006fe60a37bd250e8c63aed96bc5e67` |
 | `PersistentJsonCacheHelper.php` | 1.0.0 | `adbc7680abe814dc6c15a9cda1312cc30023073595052006662716bc0d65f2a4` |
 | `VariablePresentationHelper.php` | 2.0.0 | `ce620078e72bcbffed1adfdd02e8f64baf5f2b2e8e1531e3bb1ae7b32b390fb8` |
 | `VisualizationThemeConfigurationHelper.php` | 1.0.1 | `117b0f8f8a4d9c829115eabf15cf957d5c9e26cedf2954c996cbb1a36e115f01` |
