@@ -31,6 +31,26 @@ trait ReverseGeocodingHelper
     }
 
     /**
+     * Conservative maximum address detail from a reported horizontal radius in metres.
+     * These tiers are display policy, not a guarantee that an OSM address is exact.
+     * Missing, zero, negative or non-finite accuracy is unknown and uses city detail.
+     *
+     * @return array{zoom:int,level:string,approximate:bool,accuracy:?float}
+     */
+    protected function ReverseGeocodingPrecision(?float $accuracy): array
+    {
+        $known = $accuracy !== null && is_finite($accuracy) && $accuracy > 0;
+        [$zoom, $level] = match (true) {
+            !$known           => [10, 'unknown'],
+            $accuracy <= 20   => [18, 'building'],
+            $accuracy <= 100  => [17, 'street'],
+            $accuracy <= 1000 => [14, 'area'],
+            default           => [10, 'city']
+        };
+        return ['zoom' => $zoom, 'level' => $level, 'approximate' => $zoom !== 18, 'accuracy' => $known ? $accuracy : null];
+    }
+
+    /**
      * Validates a running private Nominatim base URL, optionally with a path prefix.
      * Public OSM Nominatim is excluded for private device tracking; GitHub URLs
      * identify source repositories, not running geocoding services.
@@ -58,13 +78,14 @@ trait ReverseGeocodingHelper
     /**
      * Returns a cached plain address, '' for a cached miss/cooldown, or null if pending.
      * Coordinates are rounded to six decimals; entries expire after 24 hours.
-     * Server and language are part of the key. No network or persistent writes.
+     * Server, language and requested zoom are part of the key. No network or persistent writes.
+     * Zoom defaults to 18 for existing callers; accuracy-aware consumers pass the policy zoom.
      *
-     * @throws \InvalidArgumentException On invalid server, coordinate or language.
+     * @throws \InvalidArgumentException On invalid server, coordinate, language or zoom.
      */
-    protected function ReadNominatimAddress(string $server, float $latitude, float $longitude, string $language = 'de'): ?string
+    protected function ReadNominatimAddress(string $server, float $latitude, float $longitude, string $language = 'de', int $zoom = 18): ?string
     {
-        [$scope, $key] = $this->NominatimCacheKeys($server, $latitude, $longitude, $language);
+        [$scope, $key] = $this->NominatimCacheKeys($server, $latitude, $longitude, $language, $zoom);
         $cache = $this->ReverseGeocodingCache();
         $entry = $cache['entries'][$key] ?? null;
         $now = $this->ReverseGeocodingNow();
@@ -78,19 +99,21 @@ trait ReverseGeocodingHelper
      * Resolves one position, reusing cache. Provider failures return '' and impose
      * a five-minute server cooldown; uncovered coordinates are cached for one hour.
      * At most 512 entries are retained. Call only after explicit user opt-in.
+     * Zoom 0..18 limits address detail. Coarse results require structured address fields;
+     * they never reuse an unfiltered display_name containing a precise house number.
      *
-     * @throws \InvalidArgumentException On invalid server, coordinate or language.
+     * @throws \InvalidArgumentException On invalid server, coordinate, language or zoom.
      */
-    protected function ResolveNominatimAddress(string $server, float $latitude, float $longitude, string $language = 'de'): string
+    protected function ResolveNominatimAddress(string $server, float $latitude, float $longitude, string $language = 'de', int $zoom = 18): string
     {
-        $cached = $this->ReadNominatimAddress($server, $latitude, $longitude, $language);
+        $cached = $this->ReadNominatimAddress($server, $latitude, $longitude, $language, $zoom);
         if ($cached !== null) {
             return $cached;
         }
-        [$scope, $key] = $this->NominatimCacheKeys($server, $latitude, $longitude, $language);
+        [$scope, $key] = $this->NominatimCacheKeys($server, $latitude, $longitude, $language, $zoom);
         $url = $this->NormalizeNominatimServer($server) . '/reverse?' . http_build_query([
             'lat'    => number_format($latitude, 6, '.', ''), 'lon' => number_format($longitude, 6, '.', ''),
-            'format' => 'jsonv2', 'addressdetails' => 1, 'accept-language' => $language
+            'format' => 'jsonv2', 'addressdetails' => 1, 'accept-language' => $language, 'zoom' => $zoom, 'layer' => 'address'
         ], '', '&', PHP_QUERY_RFC3986);
         $now = $this->ReverseGeocodingNow();
         $address = '';
@@ -106,7 +129,7 @@ trait ReverseGeocodingHelper
                 throw new \UnexpectedValueException('Invalid geocoding result.');
             }
             if (($response['status'] ?? 0) === 200 && is_string($data['display_name'] ?? null)) {
-                $address = trim($data['display_name']);
+                $address = $zoom === 18 ? trim($data['display_name']) : $this->NominatimCoarseAddress($data['address'] ?? null, $zoom);
                 if (strlen($address) > 2048 || preg_match('//u', $address) !== 1 || preg_match('/[\x00-\x1f\x7f]/', $address)) {
                     throw new \UnexpectedValueException('Invalid address text.');
                 }
@@ -169,15 +192,50 @@ trait ReverseGeocodingHelper
     }
 
     /** @return array{string,string} Namespace and coordinate key; raw locations are not used as attribute keys. */
-    private function NominatimCacheKeys(string $server, float $latitude, float $longitude, string $language): array
+    private function NominatimCacheKeys(string $server, float $latitude, float $longitude, string $language, int $zoom): array
     {
         $server = $this->NormalizeNominatimServer($server);
         if (!is_finite($latitude) || !is_finite($longitude) || abs($latitude) > 90 || abs($longitude) > 180
-            || !preg_match('/^[a-zA-Z]{2,3}(?:-[a-zA-Z0-9]{2,8})?$/D', $language)) {
-            throw new \InvalidArgumentException('Invalid geocoding coordinate or language.');
+            || !preg_match('/^[a-zA-Z]{2,3}(?:-[a-zA-Z0-9]{2,8})?$/D', $language) || $zoom < 0 || $zoom > 18) {
+            throw new \InvalidArgumentException('Invalid geocoding coordinate, language or zoom.');
         }
         $scope = hash('sha256', $server . '|' . strtolower($language));
-        return [$scope, hash('sha256', $scope . '|' . number_format($latitude, 6, '.', '') . '|' . number_format($longitude, 6, '.', ''))];
+        return [$scope, hash('sha256', 'detail-v1|' . $scope . '|' . $zoom . '|' . number_format($latitude, 6, '.', '') . '|' . number_format($longitude, 6, '.', ''))];
+    }
+
+    /** Restricts coarse provider data even when the server ignores the requested zoom. */
+    private function NominatimCoarseAddress(mixed $address, int $zoom): string
+    {
+        if (!is_array($address)) {
+            return '';
+        }
+        $fields = [];
+        if ($zoom >= 16) {
+            $fields = ['road', 'pedestrian', 'residential', 'footway', 'path', 'cycleway', 'square'];
+        }
+        if ($zoom >= 12) {
+            $fields = array_merge($fields, ['neighbourhood', 'quarter', 'suburb', 'city_district', 'borough']);
+        }
+        if ($zoom >= 10) {
+            $fields = array_merge($fields, ['village', 'town', 'municipality', 'city']);
+        }
+        if ($zoom >= 8) {
+            $fields = array_merge($fields, ['county', 'state_district']);
+        }
+        if ($zoom >= 5) {
+            $fields[] = 'state';
+        }
+        if ($zoom >= 12) {
+            $fields[] = 'postcode';
+        }
+        $fields[] = 'country';
+        $parts = [];
+        foreach ($fields as $field) {
+            if (is_string($address[$field] ?? null) && trim($address[$field]) !== '') {
+                $parts[] = trim($address[$field]);
+            }
+        }
+        return implode(', ', array_unique($parts));
     }
 
     /** @return array<string,mixed> Corrupt local cache is recoverable without affecting the visualization. */

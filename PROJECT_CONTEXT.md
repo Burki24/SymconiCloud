@@ -1,5 +1,38 @@
 # Entwicklungsstand
 
+## Genauigkeitsabhängige Adressdetails (2026-10-22)
+
+Die zentrale Richtlinie `ReverseGeocodingPrecision` im ReverseGeocodingHelper
+erlaubt Gebäude bis einschließlich 20 m, Straßen bis 100 m, Gebiete bis 1000 m
+und darüber nur Ortsangaben. Fehlende, ungültige oder nicht positive Genauigkeit
+wird ausdrücklich als unbekannt behandelt und erlaubt ebenfalls nur den Ort.
+Diese Grenzen bestimmen die Anzeige und garantieren keine richtige Hausnummer.
+WoIst verwendet die zentrale Detailstufe für Cachelesen und Hintergrundabfragen;
+Nominatim erhält `zoom` und `layer=address`. Strukturierte Antworten werden
+zusätzlich auf erlaubte Felder beschränkt. Die Cache-Schlüssel sind nach Detail
+getrennt und versioniert; alte und zu präzise Treffer werden nicht übernommen.
+
+Liste und Popup zeigen gröbere Treffer als farblich hervorgehobenen, übersetzten
+Ungefähr-Hinweis. `ICWI_GetDeviceAddress` liefert denselben Hinweis als Präfix
+für die bestehende Gerätevariable. Beim Wechsel der Genauigkeit wird der
+Zustand neu aufgebaut; ein währenddessen eintreffendes Gebäude-Ergebnis kann
+keine gröbere aktuelle Position bedienen. Die vorhandenen Timer, Sperren und
+Benachrichtigungen bleiben erhalten. Zusätzliche Geräteabfragen gibt es nicht.
+
+Gezielte Helper-, Modul- und JavaScript-Verträge prüfen Grenzwerte einschließlich
+20/20,01 m, unbekannte Genauigkeit, Cachetrennung, veraltete Schlüssel,
+Detailfilterung und Genauigkeitswechsel während einer laufenden Abfrage.
+Die lokale Chromium-Prüfung verwendet 24 synthetische Geräte und ersetzte
+Kartenstile. Native Kachelausgabe und verschachtelte IPSView-HTTP-Testeinbettung
+behalten Mittelpunkt, Zoom, Auswahl, Popup und Dokument bei Adressupdates und
+Theme-Wechseln; der IPSView-Pfad empfängt die Änderung über seinen HTTP-Poll.
+Echte Mausradaktionen bestätigen Zoom und Listenscrollen in beiden Richtungen,
+ohne gegenseitige Beeinflussung. Hinweise wurden in Hell/Dunkel visuell geprüft.
+Die vollständigen Offline-Suiten liefen mit PHP 8.5.10 erfolgreich; Manifest,
+Übersetzungen und Abhängigkeitsbundles wurden zusätzlich validiert.
+Eine Prüfung des neuen Standes im echten IPSView-Client bzw. der nativen App
+erfordert dessen Installation und bleibt ein gesonderter Praxisnachweis.
+
 ## Adresse als Gerätevariable (2026-10-22)
 
 `iCloud Device` ergänzt die lesbare Stringvariable `Address` mit der zentralen

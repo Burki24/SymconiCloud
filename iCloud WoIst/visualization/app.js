@@ -235,7 +235,8 @@
         if (validLocation(device.location)) {
             lines.push(text(isStale(device.location, state, now()) ? 'stale' : 'current') + ' · ' + ageText(device.location.timestamp));
             if (typeof device.address === 'string' && device.address) lines.push(device.address);
-            if (typeof device.location.horizontalAccuracy === 'number' && device.location.horizontalAccuracy >= 0) lines.push(text('accuracy') + ': ' + Math.round(device.location.horizontalAccuracy) + ' m');
+            if (typeof device.addressNotice === 'string' && device.addressNotice) lines.push(device.addressNotice);
+            if (typeof device.location.horizontalAccuracy === 'number' && device.location.horizontalAccuracy > 0) lines.push(text('accuracy') + ': ' + Math.ceil(device.location.horizontalAccuracy) + ' m');
         } else lines.push(text('noLocation'));
         return lines;
     }
@@ -243,8 +244,15 @@
     function popup(device) {
         const content = node('div');
         content.appendChild(node('div', 'popup-title', device.name || text('unknown')));
-        details(device).forEach((line) => content.appendChild(node('div', 'popup-detail', line)));
+        details(device).forEach((line) => content.appendChild(detailNode(device, line, 'div', 'popup-detail')));
         return content;
+    }
+
+    function detailNode(device, line, tag, className) {
+        const warning = typeof device.addressNotice === 'string' && device.addressNotice !== '' && line === device.addressNotice;
+        const result = node(tag, className + (warning ? ' address-warning' : ''), line);
+        if (warning) result.setAttribute('role', 'note');
+        return result;
     }
 
     function markerStyle(device) {
@@ -397,7 +405,7 @@
             button.dataset.id = String(device.id);
             button.setAttribute('aria-pressed', String(selected === device.id));
             button.appendChild(node('span', 'device-name', device.name || text('unknown')));
-            details(device).forEach((line) => button.appendChild(node('span', 'device-meta', line)));
+            details(device).forEach((line) => button.appendChild(detailNode(device, line, 'span', 'device-meta')));
             button.addEventListener('click', () => selectDevice(device, true));
             const item = node('li');
             item.appendChild(button);

@@ -8,6 +8,17 @@ h1 { font-size: 1.15rem; margin: 0; }
 h2 { font-size: 1rem; margin: 0 0 12px; }
 p { margin: 6px 0; }
 #updated, .device-meta, .popup-detail { color: var(--symc-subheading, var(--symc-muted)); font-size: 0.82rem; }
+.device-meta.address-warning, .popup-detail.address-warning {
+    display: block;
+    color: var(--symc-text);
+    background: var(--symc-warning-soft, var(--symc-surface));
+    border-inline-start: 3px solid var(--symc-warning, currentColor);
+    border-radius: 4px;
+    font-weight: 600;
+    padding: 6px 8px;
+    margin-block: 6px;
+    overflow-wrap: anywhere;
+}
 button { min-height: var(--symc-responsive-touch-target, 44px); border: 1px solid var(--symc-border); border-radius: var(--symc-radius-small); background: var(--symc-surface); color: var(--symc-text); padding: 8px 12px; cursor: pointer; }
 button:hover { background: var(--symc-surface-hover); }
 button:disabled { opacity: 0.5; cursor: default; }

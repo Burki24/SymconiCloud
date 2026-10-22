@@ -268,7 +268,7 @@ class iCloudWoIst extends IPSModuleStrict
                 && is_int($raw['timestamp'] ?? null) && $raw['timestamp'] > 0 && $raw['timestamp'] <= time() + 300) {
                 $accuracy = $raw['horizontalAccuracy'] ?? null;
                 $location = ['latitude'  => (float) $raw['latitude'], 'longitude' => (float) $raw['longitude'],
-                    'horizontalAccuracy' => $this->finiteNumber($accuracy) && $accuracy >= 0 ? (float) $accuracy : null,
+                    'horizontalAccuracy' => $this->finiteNumber($accuracy) && $accuracy > 0 ? (float) $accuracy : null,
                     'timestamp'          => $raw['timestamp'], 'isOld' => ($raw['isOld'] ?? false) === true];
             }
             $battery = $device['batteryLevel'] ?? null;
@@ -277,7 +277,7 @@ class iCloudWoIst extends IPSModuleStrict
                 'model'        => is_string($device['model'] ?? null) ? $device['model'] : '',
                 'online'       => ($device['deviceStatus'] ?? 0) === 200,
                 'batteryLevel' => $this->finiteNumber($battery) && $battery >= 0 && $battery <= 1 ? (float) $battery : null,
-                'location'     => $location, 'address' => $this->WoIstCachedAddress($location)
+                'location'     => $location, 'address' => $this->WoIstCachedAddress($location), 'addressNotice' => $this->WoIstAddressNotice($location)
             ];
         }
         $labels = [];

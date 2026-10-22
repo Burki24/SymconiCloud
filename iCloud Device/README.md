@@ -60,6 +60,12 @@ weiterhin verfügbare Position kann eine Adresse besitzen; deren Alter zeigt
 `LocationIsOld`. Die Adresse beschreibt das von Nominatim gefundene nahegelegene
 OSM-Objekt und garantiert keine genaue Hausnummer.
 
+Die [Genauigkeitsregeln der WoIst-Adressauflösung](../iCloud%20WoIst/README.md#optionale-adressauflösung-mit-nominatim)
+gelten auch für `Address`: Gebäude werden nur bis einschließlich 20 m angezeigt.
+Bei geringerer Genauigkeit enthält die Variable die gröbere Adresse mit dem
+Präfix **Ungefähr** und der jeweiligen Detailstufe. Unbekannte Genauigkeit wird
+ausdrücklich benannt. Verbessert sich die Position, entfällt der Hinweis wieder.
+
 ## Öffentliche Funktion
 
 `ICID_Update(int $InstanceID): bool` liest das Gerät aus dem Kontocache. `true` bedeutet, dass das Gerät in einer erfolgreich abgerufenen Liste vorhanden ist. Die Funktion und **Gespeicherte Kontodaten lesen** starten keinen Netzwerkabruf. Für neue Apple-Daten die Geräteabfrage im Konto oder Konfigurator verwenden.

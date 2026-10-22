@@ -49,6 +49,24 @@ Die Karte bleibt auch bei Serverausfällen nutzbar. Eine ungültige aktivierte
 Konfiguration wird im Formular gemeldet. Deaktivieren und Übernehmen löscht
 den privaten Adresscache; Symcon-Konfiguration und Backups entsprechend schützen.
 
+Die von Apple gemeldete Standortgenauigkeit begrenzt die angezeigten Details:
+
+| Standortgenauigkeit | Maximale Adressdetails |
+| --- | --- |
+| Positiv und bis einschließlich 20 m | Gebäude einschließlich Hausnummer |
+| Über 20 bis einschließlich 100 m | Straße, ohne Hausnummer |
+| Über 100 bis einschließlich 1000 m | Gebiet/Ortsteil, ohne Straße und Hausnummer |
+| Über 1000 m | Ort |
+| Fehlend, ungültig oder 0 m | Ort; Genauigkeit ausdrücklich unbekannt |
+
+Alle Angaben oberhalb der Gebäudegrenze erhalten einen hervorgehobenen
+**Ungefähr**-Hinweis in Liste und Popup. Die Gerätevariable übernimmt denselben
+Hinweis. Bei schlechter werdender Genauigkeit verschwindet eine zuvor bekannte
+Hausadresse sofort; passende Angaben erscheinen nach der Hintergrundauflösung.
+Die Detailstufen haben getrennte Cacheeinträge. Bereits vor diesem Update
+gespeicherte Adressen werden schrittweise neu aufgelöst. Die Detailwahl für
+Nominatim verändert den Kartenzoom nicht.
+
 Die angezeigte Adresse gehört zur angegebenen, gegebenenfalls älteren Position.
 Nominatim ermittelt das nächste geeignete OpenStreetMap-Objekt; eine genaue
 Hausnummer kann deshalb nicht zugesichert werden. Die OSM-Quellenangabe bleibt

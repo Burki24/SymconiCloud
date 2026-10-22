@@ -18,7 +18,7 @@ trait WoIstGeocoding
             $location = $device['location'];
             if ($device['id'] === $DeviceID && $location !== null
                 && $location['latitude'] === $Latitude && $location['longitude'] === $Longitude) {
-                return $device['address'];
+                return $device['address'] === '' ? '' : ($device['addressNotice'] === '' ? '' : $device['addressNotice'] . ': ') . $device['address'];
             }
         }
         return '';
@@ -48,10 +48,14 @@ trait WoIstGeocoding
             }
             foreach ($state['devices'] as $device) {
                 $location = $device['location'];
-                if ($location === null || $this->ReadNominatimAddress($configuration['server'], $location['latitude'], $location['longitude'], $configuration['language']) !== null) {
+                if ($location === null) {
                     continue;
                 }
-                $this->ResolveNominatimAddress($configuration['server'], $location['latitude'], $location['longitude'], $configuration['language']);
+                $zoom = $this->ReverseGeocodingPrecision($location['horizontalAccuracy'])['zoom'];
+                if ($this->ReadNominatimAddress($configuration['server'], $location['latitude'], $location['longitude'], $configuration['language'], $zoom) !== null) {
+                    continue;
+                }
+                $this->ResolveNominatimAddress($configuration['server'], $location['latitude'], $location['longitude'], $configuration['language'], $zoom);
                 if ($this->WoIstGeocodingConfiguration() !== $configuration) {
                     $this->ClearReverseGeocodingCache();
                 }
@@ -124,7 +128,29 @@ trait WoIstGeocoding
         if ($location === null || $configuration === null) {
             return '';
         }
-        return $this->ReadNominatimAddress($configuration['server'], $location['latitude'], $location['longitude'], $configuration['language']) ?? '';
+        $zoom = $this->ReverseGeocodingPrecision($location['horizontalAccuracy'])['zoom'];
+        return $this->ReadNominatimAddress($configuration['server'], $location['latitude'], $location['longitude'], $configuration['language'], $zoom) ?? '';
+    }
+
+    /** Translates the central accuracy policy without claiming an exact OSM match. */
+    private function WoIstAddressNotice(?array $location): string
+    {
+        if ($location === null || $this->WoIstGeocodingConfiguration() === null) {
+            return '';
+        }
+        $precision = $this->ReverseGeocodingPrecision($location['horizontalAccuracy']);
+        if (!$precision['approximate']) {
+            return '';
+        }
+        if ($precision['level'] === 'unknown') {
+            return $this->Translate('Approximate – city only (location accuracy unknown)');
+        }
+        $level = $this->Translate(match ($precision['level']) {
+            'street' => 'street only',
+            'area'   => 'area only',
+            default  => 'city only'
+        });
+        return sprintf($this->Translate('Approximate – %s (location accuracy: about %s m)'), $level, (string) (int) ceil($precision['accuracy']));
     }
 
     /** Starts bounded background work only while authenticated positions have cache misses. */
@@ -135,7 +161,7 @@ trait WoIstGeocoding
         if ($configuration !== null && $state['success']) {
             foreach ($state['devices'] as $device) {
                 $location = $device['location'];
-                if ($location !== null && $this->ReadNominatimAddress($configuration['server'], $location['latitude'], $location['longitude'], $configuration['language']) === null) {
+                if ($location !== null && $this->ReadNominatimAddress($configuration['server'], $location['latitude'], $location['longitude'], $configuration['language'], $this->ReverseGeocodingPrecision($location['horizontalAccuracy'])['zoom']) === null) {
                     $pending = true;
                     break;
                 }

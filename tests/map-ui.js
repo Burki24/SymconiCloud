@@ -34,8 +34,9 @@ const elements = Object.fromEntries(['woist-theme', 'woist-heading', 'woist-devi
 const timestamp = Math.floor(Date.now() / 1000);
 const maliciousName = '<img src=x onerror=alert(1)>';
 const maliciousAddress = '<script>Example address</script>';
+const maliciousNotice = '<b>Approximate – area only</b>';
 elements['woist-bootstrap'].textContent = JSON.stringify({mode: 'symcon', options: {tileHeaderVisible: true, tileHeaderInset: 58}, state: {success: true, updatedAt: timestamp, staleAfter: 900, devices: [
-    {id: 'synthetic-a', name: maliciousName, address: maliciousAddress, location: {latitude: 0, longitude: 0, timestamp, isOld: false}},
+    {id: 'synthetic-a', name: maliciousName, address: maliciousAddress, addressNotice: maliciousNotice, location: {latitude: 0, longitude: 0, timestamp, isOld: false}},
     {id: 'synthetic-b', name: 'No location', location: null}
 ]}});
 const documentRoot = new Element();
@@ -67,6 +68,12 @@ assert.equal(markers.length, 1, 'Unavailable positions do not create a marker.')
 assert.equal(markers[0].popup.children[0].textContent, maliciousName, 'Untrusted names become DOM text.');
 assert.ok(markers[0].popup.children.some(line => line.textContent === maliciousAddress), 'Untrusted address becomes popup text.');
 assert.ok(elements['device-list'].children[0].children[0].children.some(line => line.textContent === maliciousAddress), 'Address is shown as plain list text.');
+for (const children of [markers[0].popup.children, elements['device-list'].children[0].children[0].children]) {
+    const warning = children.find(line => line.textContent === maliciousNotice);
+    assert.ok(warning.className.includes('address-warning'), 'An approximate result must have a distinct warning style.');
+    assert.equal(warning.attrs.role, 'note', 'The warning must also be exposed as an accessible note.');
+    assert.equal(warning.textContent, maliciousNotice, 'Quality notices must be literal text, never HTML.');
+}
 assert.equal(elements['device-list'].children[0].children[0].children[0].textContent, maliciousName);
 assert.equal(fits, 1);
 elements['device-list'].children[0].children[0].events.click();
@@ -242,6 +249,17 @@ assert.equal(selectionB.opened, true, 'Address arrival must preserve the open po
 assert.equal(elements['device-list'].children[1].children[0].attrs['aria-pressed'], 'true', 'Address arrival preserves device selection.');
 assert.deepEqual({center: map.center, zoom: map.zoom}, selectedCamera, 'Address arrival preserves zoom and camera.');
 assert.equal(selectionB.options.radius, 17);
+window.handleMessage({state: {success: true, devices: selectionDevices.map(device => device.id === 'selection-b'
+    ? {...device, address: 'Example Quarter, Example Town', addressNotice: 'Approximate – area only (about 368 m)'} : device)}});
+assert.ok(selectionB.popup.children.some(line => line.className.includes('address-warning')), 'A precision downgrade must add a popup warning in place.');
+assert.equal(elements['device-list'].children[1].children[0].attrs['aria-pressed'], 'true');
+assert.equal(selectionB.opened, true);
+assert.deepEqual({center: map.center, zoom: map.zoom}, selectedCamera, 'Precision changes must preserve camera, zoom and selection.');
+window.handleMessage({state: {success: true, devices: selectionDevices.map(device => device.id === 'selection-b'
+    ? {...device, address: '7, Example Street', addressNotice: ''} : device)}});
+assert.ok(!selectionB.popup.children.some(line => line.className.includes('address-warning')), 'Improved precision must remove the old warning.');
+assert.deepEqual({center: map.center, zoom: map.zoom}, selectedCamera);
+
 elements['device-list'].children[2].children[0].events.click();
 assert.deepEqual({center: map.center, zoom: map.zoom}, selectedCamera, 'Unlocated devices must not move the map.');
 assert.equal(selectionB.options.radius, 12, 'Selecting an unlocated device clears the old marker emphasis.');
