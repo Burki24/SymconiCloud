@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 // sdk-contracts.php also runs the shared module integration scenarios.
-foreach (['validate_structure.php', 'apple-client.php', 'account.php', 'sdk-contracts.php', 'map.php', 'map-geocoding.php'] as $test) {
+// device-address.php also runs the map-geocoding integration scenarios.
+foreach (['validate_structure.php', 'apple-client.php', 'account.php', 'sdk-contracts.php', 'map.php', 'device-address.php'] as $test) {
     $process = proc_open([PHP_BINARY, __DIR__ . '/' . $test], [STDIN, STDOUT, STDERR], $pipes, dirname(__DIR__));
     if (!is_resource($process) || proc_close($process) !== 0) {
         exit(1);

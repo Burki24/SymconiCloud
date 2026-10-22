@@ -1,10 +1,32 @@
 # iCloud Device / iCloud Gerät
 
-Eine Instanz zeigt die Geräte-, Akku- und Standortdaten eines Apple-Gerätes aus dem Kontocache an. Voraussetzung ist Symcon 9 und ein angemeldetes iCloud-Konto dieser Library. Geräte vorzugsweise über den iCloud-Geräte-Konfigurator anlegen. Eine Karte ist nicht Bestandteil dieser Geräteinstanz; dafür ist das spätere Modul WoIst vorgesehen.
+Eine Instanz zeigt die Geräte-, Akku- und Standortdaten eines Apple-Gerätes aus dem Kontocache an. Voraussetzung ist Symcon 9 und ein angemeldetes iCloud-Konto dieser Library. Geräte vorzugsweise über den iCloud-Geräte-Konfigurator anlegen. Eine Karte ist nicht Bestandteil dieser Geräteinstanz; dafür gibt es das Modul [WoIst](../iCloud%20WoIst/README.md).
 
 ## Konfiguration
 
 `DeviceID` enthält die unveränderte Apple-Geräte-ID; Standard ist leer. Die Instanz muss physisch mit dem richtigen iCloud-Konto verbunden sein. Ein leerer Identifikator oder fehlendes Konto führt zu einem inaktiven Zustand. Die Instanz liest ausschließlich gespeicherte Daten des Kontos und empfängt dessen Aktualisierungen. Sie startet selbst keine Apple-Anmeldung oder Netzwerkabfrage.
+
+### Adresse aus WoIst
+
+Für die Variable **Adresse** muss in einer [WoIst-Karte](../iCloud%20WoIst/README.md#optionale-adressauflösung-mit-nominatim)
+am selben iCloud-Konto die Nominatim-Adressauflösung eingerichtet und aktiviert
+sein. Die Geräteinstanz übernimmt ausschließlich die dort bereits aufgelöste
+Adresse; sie benötigt keine eigene Serveradresse und startet keine zusätzliche
+Nominatim-Abfrage oder einen eigenen Abfragetimer.
+
+**WoIst-Adressquelle (optional)** (`AddressSource`, Standard `0`) kann leer
+bleiben, wenn genau eine Karte mit aktivierter Adressauflösung an diesem Konto
+vorhanden ist. Bei mehreren solchen Karten die gewünschte Instanz ausdrücklich
+auswählen. Eine Quelle an einem anderen Konto wird nicht verwendet, auch wenn
+die Geräte-ID identisch ist. Eine ungültige Quelle beeinträchtigt die übrigen
+Gerätevariablen nicht.
+
+Nach dem Modulupdate die Geräteinstanzkonfiguration einmal übernehmen, damit
+die neue Variable angelegt wird. Vorhandene Cachetreffer erscheinen sofort;
+später aufgelöste Adressen werden von WoIst automatisch an die Geräteinstanz
+weitergegeben. Für die Übernahme ist keine Apple-Aktualisierung erforderlich.
+Nach dem Löschen oder Umverbinden einer Quelle wird deren Zuordnung beim
+nächsten Geräteupdate erneut geprüft.
 
 ## Variablen
 
@@ -22,11 +44,21 @@ Alle Variablen sind ausschließlich lesbar.
 | `LocationAvailable` | bool | Koordinaten in der letzten Antwort vorhanden |
 | `LocationIsOld` | bool | Standort von Apple als veraltet gemeldet oder aktuell nicht verfügbar |
 | `Latitude`, `Longitude` | float | Breitengrad / Längengrad in Grad |
+| `Address` | string | Aufgelöste Adresse der aktuell verfügbaren Geräteposition aus dem ausgewählten WoIst-Cache |
 | `Accuracy` | float | Standortgenauigkeit in Metern |
 | `LocationTimestamp` | int | Unix-Zeit des Standorts |
 | `LastUpdate` | int | Unix-Zeit des letzten erfolgreichen Geräteabrufs |
 
 Bei fehlendem Standort bleiben die letzten gültigen Koordinaten und deren Zeit erhalten. `LocationAvailable` zeigt dann `false`. Bei fehlendem Akkustand bleibt ebenfalls der letzte Wert erhalten; `BatteryAvailable` zeigt dessen Nichtverfügbarkeit an. Bei Kontofehlern oder einem nicht mehr gelisteten Gerät werden Verfügbarkeitsanzeigen und Online auf `false` gesetzt; alte Werte und Zeitstempel bleiben zur Einordnung erhalten. Ein Wechsel der Geräte-ID oder Kontoverbindung setzt die bisherigen Gerätewerte zurück.
+
+`Address` bleibt leer, wenn kein eindeutiger aktivierter Adresslieferant oder
+kein passender Cachetreffer vorhanden ist. Die Adresse wird bei einem
+Positionswechsel nicht von der vorherigen Position übernommen. Fehlende
+Positionen, Kontofehler, entfernte Geräte und das Deaktivieren der Auflösung
+leeren die Adresse bei der jeweiligen Aktualisierung. Eine veraltete, aber
+weiterhin verfügbare Position kann eine Adresse besitzen; deren Alter zeigt
+`LocationIsOld`. Die Adresse beschreibt das von Nominatim gefundene nahegelegene
+OSM-Objekt und garantiert keine genaue Hausnummer.
 
 ## Öffentliche Funktion
 

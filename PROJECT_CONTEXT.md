@@ -1,5 +1,44 @@
 # Entwicklungsstand
 
+## Adresse als Gerätevariable (2026-10-22)
+
+`iCloud Device` ergänzt die lesbare Stringvariable `Address` mit der zentralen
+mehrzeiligen `TextPresentation`. Die bisherige Reihenfolge und Identität der
+Gerätevariablen bleiben erhalten. `AddressSource=0` wählt genau eine WoIst-Karte
+mit aktivierter Adressauflösung am selben physischen Konto; eine ausdrücklich
+gesetzte Quelle wird auf Modultyp und Kontoverbindung geprüft. Bei mehreren
+automatischen Kandidaten wird keine beliebige Karte gewählt. Das Formular
+verwendet den dokumentierten `SelectInstance`-Vertrag mit `validModules`.
+
+Die neue cachelesende Funktion `ICWI_GetDeviceAddress` liefert eine Adresse nur
+bei authentifiziertem Inventar, passender Geräte-ID und identischen aktuellen
+Koordinaten. WoIst aktualisiert nach seiner Veröffentlichung die verbundenen
+Geräteinstanzen über deren bestehendes `ICID_Update`; der Rücklesepfad erzeugt
+keine weitere Veröffentlichung. Kein neuer Abfragetimer, HTTP-Client oder
+Adresscache wurde eingeführt. HTTP und Cache bleiben in den vorhandenen
+zentralen `ReverseGeocodingHelper`-/`PersistentJsonCacheHelper`-Bausteinen;
+Auswahl und Zuordnung von iCloud-Modulinstanzen bleiben modulspezifisch.
+
+Fehlende Position, Konto-/Inventarfehler, Identitätswechsel und nicht passende
+Quellen leeren die Adresse. Neue Koordinaten übernehmen keine Adresse von der
+vorherigen Position. Gelöschte oder umverbundene Quellen werden beim nächsten
+Geräteupdate erneut bewertet. Eine ungültige optionale Quelle schaltet die
+übrigen Gerätedaten nicht ab. Native App-/Kachelbedienung und das Verhalten
+der Karte bei Adressankunft verwenden unverändert die bestehenden Pfade.
+
+Die gezielte Integration unter `tests/device-address.php` verwendet die echten
+Modulinstanzen und zentralen Caches mit synthetischem Nominatim-Transport. Sie
+prüft automatische Übernahme nach Hintergrundauflösung, bereits gefüllte
+Caches, native Stringdarstellung ohne Action, Quellenmehrdeutigkeit, explizite
+Auswahl, Kontoisolation, Positions-/Identitätswechsel, Ausfälle und gelöschte
+Quellen ohne zusätzlichen Apple-/Nominatim-Abruf. Der gemeinsame CI-Einstieg
+führt diese Prüfung einschließlich der bisherigen Geocoding-Verträge aus.
+Nachweise unter PHP 8.5.10: vollständige Offline-Suite einschließlich PHP-/JS-
+Kartenverträgen, SDK-/Struktur-/Hash-/LF-Prüfung, offizielle StylePHP-JSON-Prüfung
+und php-cs-fixer mit den offiziellen Regeln im Prüfmodus erfolgreich.
+Die Live-Abnahme der neuen Gerätevariable nach Benutzerupdate bleibt offen;
+der vorherige Pi-Nachweis betrifft die bereits bestätigte Adressanzeige in WoIst.
+
 ## Optionale Nominatim-Adressauflösung (2026-10-22)
 
 - WoIst besitzt eine standardmäßig deaktivierte Adressauflösung mit eigener

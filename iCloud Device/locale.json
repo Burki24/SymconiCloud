@@ -2,6 +2,9 @@
     "translations": {
         "de": {
             "Device ID": "Geräte-ID",
+            "WoIst address source (optional)": "WoIst-Adressquelle (optional)",
+            "Without a selection, exactly one WoIst map with address resolution enabled on the same account is used. Multiple maps require an explicit selection.": "Ohne Auswahl wird genau eine WoIst-Karte mit aktivierter Adressauflösung am selben Konto verwendet. Bei mehreren Karten ist eine ausdrückliche Auswahl erforderlich.",
+            "Address": "Adresse",
             "Read account cache": "Gespeicherte Kontodaten lesen",
             "Select an account and device.": "Konto und Gerät auswählen.",
             "Account data unavailable.": "Kontodaten nicht verfügbar.",

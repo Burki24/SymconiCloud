@@ -25,6 +25,13 @@ Der öffentliche Dienst `nominatim.openstreetmap.org` wird nicht unterstützt.
 Die Adresssprache ist standardmäßig `de`, alternativ beispielsweise `en` oder
 `de-DE`.
 
+Die verbundenen [iCloud-Geräteinstanzen](../iCloud%20Device/README.md#adresse-aus-woist)
+können dieselben Cacheergebnisse als Variable **Adresse** übernehmen. Neue
+Adressresultate aktualisieren diese Instanzen automatisch; zusätzliche
+Nominatim-Abfragen pro Geräteinstanz sind nicht erforderlich. Bei mehreren
+WoIst-Karten mit aktivierter Auflösung am selben Konto wird die gewünschte
+Quelle in der Geräteinstanz ausgewählt.
+
 Nach dem Übernehmen erscheinen verfügbare Adressen nach und nach in der
 Geräteliste und im Geräte-Popup, sowohl in der Kachel als auch in IPSView.
 Die Auflösung erfolgt im Hintergrund mit höchstens einer Abfrage je zwei
@@ -46,6 +53,13 @@ Die angezeigte Adresse gehört zur angegebenen, gegebenenfalls älteren Position
 Nominatim ermittelt das nächste geeignete OpenStreetMap-Objekt; eine genaue
 Hausnummer kann deshalb nicht zugesichert werden. Die OSM-Quellenangabe bleibt
 in der Karte sichtbar. Andere Geocoding-Anbieter sind derzeit nicht enthalten.
+
+`ICWI_GetDeviceAddress(int $InstanceID, string $DeviceID, float $Latitude,
+float $Longitude): string` liest ausschließlich den Adresscache der Karte.
+Die Geräte-ID und beide Koordinaten müssen zur aktuell im angemeldeten
+Kontocache vorhandenen Position passen. Bei fehlendem Treffer oder deaktivierter
+Auflösung ist das Ergebnis leer. Der Aufruf startet weder eine Nominatim-Abfrage
+noch eine Apple-Aktualisierung.
 
 ## Kachel- und IPSView-Designer
 

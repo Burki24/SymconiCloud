@@ -4,6 +4,18 @@
             "type": "ValidationTextBox",
             "name": "DeviceID",
             "caption": "Device ID"
+        },
+        {
+            "type": "SelectInstance",
+            "name": "AddressSource",
+            "caption": "WoIst address source (optional)",
+            "validModules": [
+                "{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}"
+            ]
+        },
+        {
+            "type": "Label",
+            "caption": "Without a selection, exactly one WoIst map with address resolution enabled on the same account is used. Multiple maps require an explicit selection."
         }
     ],
     "actions": [

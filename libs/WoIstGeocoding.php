@@ -7,6 +7,23 @@ namespace SymconiCloud;
 /** WoIst-specific opt-in and background scheduling; HTTP and caching live centrally. */
 trait WoIstGeocoding
 {
+    /** @return string Cached address only for the device's current authenticated position. */
+    public function GetDeviceAddress(string $DeviceID, float $Latitude, float $Longitude): string
+    {
+        $state = $this->bootstrap($this->request('GetDevices'))['state'];
+        if (!$state['success']) {
+            return '';
+        }
+        foreach ($state['devices'] as $device) {
+            $location = $device['location'];
+            if ($device['id'] === $DeviceID && $location !== null
+                && $location['latitude'] === $Latitude && $location['longitude'] === $Longitude) {
+                return $device['address'];
+            }
+        }
+        return '';
+    }
+
     /**
      * Resolves at most one uncached coordinate. Display/poll callbacks never do HTTP.
      * A fresh account-cache read after I/O prevents old locations being republished.
@@ -46,10 +63,36 @@ trait WoIstGeocoding
             \IPS_SemaphoreLeave($lock);
         }
     }
+
+    /** Refreshes only sibling device caches after address or source-state changes. */
+    private function NotifyAddressDevices(): void
+    {
+        $enabled = $this->ReadPropertyBoolean('EnableAddressResolution');
+        $wasEnabled = $this->ReadAttributeBoolean('AddressPropagationActive');
+        $this->WriteAttributeBoolean('AddressPropagationActive', $enabled);
+        if (!$enabled && !$wasEnabled) {
+            return;
+        }
+        $parent = $this->GetParentID();
+        if ($parent <= 0) {
+            return;
+        }
+        foreach (\IPS_GetInstanceListByModuleID('{DEA72AD7-7877-4392-B64F-055B63D1E5C4}') as $instanceID) {
+            try {
+                $source = (int) \IPS_GetProperty($instanceID, 'AddressSource');
+                if ((int) \IPS_GetInstance($instanceID)['ConnectionID'] === $parent && ($source === 0 || $source === $this->InstanceID)) {
+                    \ICID_Update($instanceID);
+                }
+            } catch (\Throwable) {
+                // A removed or broken optional consumer cannot interrupt map updates.
+            }
+        }
+    }
     /** Registers optional settings and a dormant, documented Symcon timer. */
     private function RegisterWoIstGeocoding(): void
     {
         $this->RegisterReverseGeocodingCache();
+        $this->RegisterAttributeBoolean('AddressPropagationActive', false);
         $this->RegisterPropertyBoolean('EnableAddressResolution', false);
         $this->RegisterPropertyString('NominatimServer', '');
         $this->RegisterPropertyString('AddressLanguage', 'de');

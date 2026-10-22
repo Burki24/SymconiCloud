@@ -27,7 +27,9 @@ Ein Konto kann mehrere Geräte bedienen; mehrere Apple-Konten verwenden getrennt
 ## Verhalten
 
 WoIst kann Gerätepositionen optional über einen eigenen Nominatim-Server in
-Adressen auflösen und diese in Geräteliste und Popup anzeigen. Die Funktion
+Adressen auflösen und diese in Geräteliste und Popup anzeigen. Verbundene
+iCloud-Geräteinstanzen können dieselbe Adresse als Variable **Adresse** aus
+dem vorhandenen Cache übernehmen. Die Funktion
 ist standardmäßig aus; Serveradresse, Sprache, Datenschutz und Cache sind in
 der [WoIst-Anleitung](iCloud%20WoIst/README.md#optionale-adressauflösung-mit-nominatim)
 beschrieben.

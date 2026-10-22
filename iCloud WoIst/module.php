@@ -243,6 +243,7 @@ class iCloudWoIst extends IPSModuleStrict
         $this->UpdateVisualizationValue($this->encode($bootstrap));
         $this->PublishWoIstIPSViewState($bootstrap);
         $this->ScheduleWoIstGeocoding($state);
+        $this->NotifyAddressDevices();
         return $state['success'];
     }
 

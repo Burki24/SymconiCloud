@@ -17,12 +17,14 @@ class iCloudDevice extends IPSModuleStrict
     private const ACCOUNT_MODULE = '{10BF9A03-98A3-495A-B0FA-A4FA0B1002D5}';
     private const REQUEST_DATA = '{1E60F0BE-03E4-4AA4-A1CE-AA838725A4E2}';
     private const NOTIFICATION_DATA = '{FCE7780F-9520-4E52-92F3-60034FFAED6D}';
+    private const MAP_MODULE = '{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}';
 
     /** Registers immutable device identity configuration. */
     public function Create(): void
     {
         parent::Create();
         $this->RegisterPropertyString('DeviceID', '');
+        $this->RegisterPropertyInteger('AddressSource', 0);
         $this->RegisterAttributeString('LastError', '');
         $this->RegisterAttributeString('SourceIdentity', '');
     }
@@ -40,7 +42,7 @@ class iCloudDevice extends IPSModuleStrict
             foreach (['LastUpdate', 'LocationTimestamp', 'DeviceStatus'] as $ident) {
                 $this->SetValue($ident, 0);
             }
-            foreach (['DeviceName', 'Model', 'DeviceClass', 'BatteryStatus'] as $ident) {
+            foreach (['DeviceName', 'Model', 'DeviceClass', 'BatteryStatus', 'Address'] as $ident) {
                 $this->SetValue($ident, '');
             }
             $this->WriteAttributeString('SourceIdentity', $identity);
@@ -138,6 +140,7 @@ class iCloudDevice extends IPSModuleStrict
                 $this->SetValue('Accuracy', max(0.0, (float) ($location['horizontalAccuracy'] ?? 0)));
                 $this->SetValue('LocationTimestamp', max(0, (int) ($location['timestamp'] ?? 0)));
             }
+            $this->SetValue('Address', $valid ? $this->readAddress((float) $location['latitude'], (float) $location['longitude']) : '');
             $this->SetValue('LastUpdate', (int) $data['updatedAt']);
             $this->SetValue('DataAvailable', true);
             $this->WriteAttributeString('LastError', '');
@@ -154,6 +157,7 @@ class iCloudDevice extends IPSModuleStrict
             $this->SetValue($ident, false);
         }
         $this->SetValue('LocationIsOld', true);
+        $this->SetValue('Address', '');
         $this->WriteAttributeString('LastError', $this->Translate($error === '' ? 'Account data unavailable.' : $error));
         $this->SetStatus($status);
     }
@@ -175,5 +179,32 @@ class iCloudDevice extends IPSModuleStrict
         foreach (['LocationTimestamp', 'LastUpdate'] as $ident) {
             $this->RegisterVariableInteger($ident, $this->Translate($ident), $this->DateTimePresentation(), $position++);
         }
+        $this->RegisterVariableString('Address', $this->Translate('Address'), $this->TextPresentation(true), $position++);
+    }
+
+    /** Reads one account-scoped WoIst cache; no device-level HTTP or polling. */
+    private function readAddress(float $latitude, float $longitude): string
+    {
+        try {
+            $source = $this->ReadPropertyInteger('AddressSource');
+            $candidates = [];
+            foreach ($source === 0 ? IPS_GetInstanceListByModuleID(self::MAP_MODULE) : [$source] as $instanceID) {
+                if (!IPS_InstanceExists($instanceID)) {
+                    continue;
+                }
+                $instance = IPS_GetInstance($instanceID);
+                if (($instance['ModuleInfo']['ModuleID'] ?? '') === self::MAP_MODULE
+                    && (int) $instance['ConnectionID'] === $this->GetParentID()
+                    && IPS_GetProperty($instanceID, 'EnableAddressResolution')) {
+                    $candidates[] = $instanceID;
+                }
+            }
+            if (count($candidates) === 1) {
+                return ICWI_GetDeviceAddress($candidates[0], $this->ReadPropertyString('DeviceID'), $latitude, $longitude);
+            }
+        } catch (Throwable) {
+            // An unavailable optional address source must not disable device data.
+        }
+        return '';
     }
 }
