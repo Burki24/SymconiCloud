@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace SymconiCloud;
 
-/** Read-only, per-instance transport for the persistent IPSView map document. */
+/** Per-instance cache transport with one explicit, authenticated refresh operation. */
 trait WoIstIPSViewTransport
 {
-    /** Serves a public HTTP shell or authenticated sanitized cache; never queries the account. */
+    /** Serves public assets, authenticated cache data, or an explicitly requested account refresh. */
     protected function ProcessHookData(): void
     {
         header('Access-Control-Allow-Origin: *');
@@ -16,6 +16,7 @@ trait WoIstIPSViewTransport
         $path = '/hook/' . $this->WoIstIPSViewHookName();
         $uri = $_SERVER['REQUEST_URI'] ?? '';
         $page = $uri === $path . '/page';
+        $refresh = $uri === $path . '/refresh';
         // The renderer is public library code, usable by native tiles even
         // when the optional IPSView output is disabled. No cache data is read.
         if ($uri === $path . '/assets/maplibre-gl.js') {
@@ -29,7 +30,7 @@ trait WoIstIPSViewTransport
             return;
         }
 
-        if (($uri !== $path && !$page) || !$this->IsIPSViewHTMLPageEnabled()
+        if (($uri !== $path && !$page && !$refresh) || !$this->IsIPSViewHTMLPageEnabled()
             || !$this->WoIstIPSViewServerURLValid() || !$this->HasParent()
             || $this->ReadAttributeInteger('IPSViewTransportConnection') !== IPS_GetInstance($this->InstanceID)['ConnectionID']) {
             $this->SendPlainTextResponse(404, 'Not available.');
@@ -64,6 +65,11 @@ trait WoIstIPSViewTransport
         if ($token === '' || !is_string($provided) || !hash_equals($token, $provided)) {
             $this->SendPlainTextResponse(403, 'Access denied.');
             return;
+        }
+        if ($refresh) {
+            // RefreshDevices delegates authentication, serialization and cooldown
+            // to the existing account module; no generic remote action is exposed.
+            $this->RefreshDevices();
         }
         $state = $this->ReadAttributeString('IPSViewTransportState');
         if ($state === '') {

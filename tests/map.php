@@ -238,6 +238,7 @@ $check(IPS_GetObjectIDByIdent('IPSViewWoIst', $mapID) === $outputID && GetValueS
 $map->ReceiveData(json_encode(['DataID' => '{FCE7780F-9520-4E52-92F3-60034FFAED6D}'] + $notification, JSON_THROW_ON_ERROR));
 $check(GetValueString($outputID) === $lastHtml, 'Disabled IPSView output must stop updating retained content.');
 $check($callHook('GET', null, '/hook/SymconiCloudWoIst' . $mapID . '/page')[0] === 404, 'Disabled output must reject the page even while the hook remains registered.');
+$check($callHook('POST', null, '/hook/SymconiCloudWoIst' . $mapID . '/refresh')[0] === 404, 'Disabled output must not expose the refresh operation.');
 
 // The standalone document receives data through a read-only authenticated cache endpoint.
 IPS_SetProperty($mapID, 'EnableIPSView', true);
@@ -254,6 +255,23 @@ $payload = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
 $check($status === 200 && $payload['state']['devices'][0]['name'] === 'Synthetic IPSView update', 'Authenticated polling must deliver current notifications from the sanitized cache.');
 $check(!str_contains($body, $token) && $payload['options']['design']['markerSize'] === 7, 'State responses must preserve IPSView design and omit transport credentials.');
 $check(GetValueString($outputID) === $stableHtml && $firstBoundary->commands === [], 'Polling and notifications must neither rewrite HTML nor contact the account.');
+$refreshPath = '/hook/SymconiCloudWoIst' . $mapID . '/refresh';
+$check($callHook('POST', null, $refreshPath)[0] === 403, 'An explicit refresh requires the existing transport token.');
+$check($callHook('POST', 'invalid', $refreshPath)[0] === 403, 'An incorrect bearer must not trigger Apple refresh.');
+$check($callHook('GET', $token, $refreshPath)[0] === 405, 'GET must never trigger an account refresh.');
+$check($callHook('POST', $token, $refreshPath . '/extra')[0] === 404, 'Refresh accepts only its exact allowlisted path.');
+$check($firstBoundary->commands === [], 'Rejected refresh requests must not reach the account.');
+[$refreshStatus, $refreshBody] = $callHook('POST', $token, $refreshPath);
+$check($refreshStatus === 200 && $firstBoundary->commands === ['RefreshDevices'], 'One authenticated explicit POST must use the existing account refresh command exactly once.');
+$check(is_array(json_decode($refreshBody, true, 512, JSON_THROW_ON_ERROR)['state']['devices']), 'Refresh must return normalized map data.');
+$check(GetValueString($outputID) === $stableHtml, 'An IPSView refresh must not replace the embedded HTML page.');
+$beforeRefreshFailure = $firstBoundary->result;
+$firstBoundary->result = ['success' => false, 'state' => 'cooldown', 'updatedAt' => 0, 'devices' => [], 'error' => 'Synthetic cooldown'];
+[$cooldownStatus, $cooldownBody] = $callHook('POST', $token, $refreshPath);
+$cooldownState = json_decode($cooldownBody, true, 512, JSON_THROW_ON_ERROR)['state'];
+$check($cooldownStatus === 200 && !$cooldownState['success'] && $cooldownState['error'] === 'Synthetic cooldown', 'Account cooldown failures must reach IPSView through the existing sanitized state.');
+$firstBoundary->result = $beforeRefreshFailure;
+$firstBoundary->commands = [];
 $check($callHook('OPTIONS')[0] === 204 && $callHook('OPTIONS')[1] === '', 'CORS preflight must return no device state.');
 $check($callHook('POST')[0] === 403 && $callHook('POST', 'invalid')[0] === 403, 'Missing and incorrect transport tokens must be rejected.');
 [$rendererStatus, $rendererBytes] = $callHook('GET', null, '/hook/SymconiCloudWoIst' . $mapID . '/assets/maplibre-gl.js');
@@ -287,6 +305,7 @@ $check(GetValueString($outputID) === $stableHtml, 'Cache updates and explicit Ap
 IPS_DisconnectInstance($mapID);
 IPS_ConnectInstance($mapID, $secondAccount);
 $check($callHook('POST', $token)[0] === 404, 'Connection changes must immediately deny access to the prior account cache.');
+$check($callHook('POST', $token, $refreshPath)[0] === 404, 'A stale account connection must also reject explicit refresh.');
 IPS_ApplyChanges($mapID);
 $newToken = $readAttribute->invoke($map, 'IPSViewTransportToken');
 $check($newToken !== $token && $callHook('POST', $token)[0] === 403, 'Changing accounts must rotate standalone credentials.');

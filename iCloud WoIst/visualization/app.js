@@ -82,6 +82,7 @@
         let active = false;
         let epoch = 0;
         let failures = 0;
+        let refreshing = false;
         const valid = url && typeof token === 'string' && /^[a-f0-9]{64}$/i.test(token)
             && typeof environment.fetch === 'function' && typeof environment.AbortController === 'function';
         const hidden = () => environment.document && environment.document.hidden;
@@ -95,9 +96,9 @@
         function schedule(delay) {
             if (active && !hidden()) timer = environment.setTimeout(poll, delay);
         }
-        async function poll() {
+        async function poll(refresh = false) {
             timer = null;
-            if (!active || hidden()) return;
+            if (!active || hidden()) return false;
             const generation = epoch;
             const requestController = new environment.AbortController();
             controller = requestController;
@@ -105,7 +106,7 @@
             try {
                 const result = await Promise.race([
                     (async () => {
-                        const response = await environment.fetch(url, {
+                        const response = await environment.fetch(refresh ? url + '/refresh' : url, {
                             method: 'POST', headers: {'X-WoIst-Token': token}, credentials: 'omit',
                             mode: 'cors', cache: 'no-store', redirect: 'error', signal: requestController.signal
                         });
@@ -118,17 +119,19 @@
                         deadline = environment.setTimeout(() => {
                             requestController.abort();
                             reject(new Error('Transport timeout'));
-                        }, 10000);
+                        }, refresh ? 30000 : 10000);
                     })
                 ]);
-                if (!active || hidden() || generation !== epoch) return;
+                if (!active || hidden() || generation !== epoch) return false;
                 receive(result);
                 failures = 0;
                 status('');
+                return true;
             } catch (_) {
-                if (!active || hidden() || generation !== epoch) return;
+                if (!active || hidden() || generation !== epoch) return false;
                 failures++;
                 status('transportError');
+                return false;
             } finally {
                 environment.clearTimeout(deadline);
                 if (generation === epoch) {
@@ -143,6 +146,13 @@
         }
         function pagehide() { cancel(); }
         const transport = {
+            canRefresh: Boolean(valid),
+            async refresh() {
+                if (!active || hidden() || refreshing) return false;
+                cancel();
+                refreshing = true;
+                try { return await poll(true); } finally { refreshing = false; }
+            },
             start() {
                 if (active) return;
                 if (!valid) { status('transportConfiguration'); return; }
@@ -184,6 +194,8 @@
     let outputMode = '';
     let resizing = false;
     let refreshTimer;
+    let refreshPending = false;
+    let ipsViewTransport = null;
     let viewMemory = null;
     let viewPersistenceReady = false;
     let pendingViewSelection = null;
@@ -191,6 +203,15 @@
     const el = (id) => global.document.getElementById(id);
     const text = (key) => labels[key] || fallback[key] || key;
     const now = () => Date.now() / 1000;
+    const canRefresh = () => outputMode === 'ipsview'
+        ? Boolean(ipsViewTransport && ipsViewTransport.canRefresh) : typeof global.requestAction === 'function';
+
+    function finishRefresh() {
+        if (refreshTimer) global.clearTimeout(refreshTimer);
+        refreshPending = false;
+        el('refresh').disabled = !canRefresh();
+        el('refresh').textContent = text('refresh');
+    }
 
     function node(tag, className, value) {
         const element = global.document.createElement(tag);
@@ -418,11 +439,7 @@
         if (envelope.labels) labels = Object.assign({}, fallback, envelope.labels);
         if (envelope.options) { configureTileHeader(envelope.options); configureDesign(envelope.options.design); configureTiles(envelope.options); }
         state = next;
-        if (refreshTimer) global.clearTimeout(refreshTimer);
-        if (ready) {
-            el('refresh').disabled = typeof global.requestAction !== 'function';
-            el('refresh').textContent = text('refresh');
-        }
+        if (ready && (outputMode !== 'ipsview' || !refreshPending)) finishRefresh();
         render();
     };
 
@@ -441,7 +458,6 @@
         labels = Object.assign({}, fallback, bootstrap.labels || {});
         state = parseState(bootstrap.state) || state;
         configureDesign((bootstrap.options || {}).design);
-        if (bootstrap.mode === 'ipsview') el('refresh').hidden = true;
         ['title', 'refresh', 'fit'].forEach((key) => { el(key).textContent = text(key); });
         el('devices-title').textContent = text('devices');
         el('map').setAttribute('aria-label', text('title'));
@@ -470,21 +486,22 @@
         }
         ready = true;
         el('fit').addEventListener('click', fit);
-        el('refresh').disabled = typeof global.requestAction !== 'function';
+        el('refresh').disabled = !canRefresh();
         el('refresh').addEventListener('click', () => {
-            if (typeof global.requestAction !== 'function') return;
+            if (!canRefresh() || refreshPending) return;
+            refreshPending = true;
             el('refresh').disabled = true;
             el('refresh').textContent = text('refreshing');
-            refreshTimer = global.setTimeout(() => {
-                el('refresh').disabled = false;
-                el('refresh').textContent = text('refresh');
-            }, 30000);
+            if (outputMode !== 'ipsview') refreshTimer = global.setTimeout(finishRefresh, 30000);
             const failed = () => {
                 el('account-message').textContent = text('cacheError');
                 el('account-message').hidden = false;
-                el('refresh').disabled = false;
-                el('refresh').textContent = text('refresh');
+                finishRefresh();
             };
+            if (outputMode === 'ipsview') {
+                ipsViewTransport.refresh().then((success) => { if (success) finishRefresh(); else failed(); }).catch(failed);
+                return;
+            }
             try { Promise.resolve(global.requestAction('RefreshDevices', '')).catch(failed); } catch (_) { failed(); }
         });
         render();
@@ -496,10 +513,12 @@
         saveView();
         global.setInterval(render, 30000);
         if (bootstrap.mode === 'ipsview') {
-            createIPSViewTransport(transportConfiguration, global, global.handleMessage, (key) => {
+            ipsViewTransport = createIPSViewTransport(transportConfiguration, global, global.handleMessage, (key) => {
                 el('transport-message').textContent = key ? text(key) : '';
                 el('transport-message').hidden = !key;
-            }).start();
+            });
+            ipsViewTransport.start();
+            el('refresh').disabled = !canRefresh();
         } else if (typeof global.requestAction === 'function') {
             try { Promise.resolve(global.requestAction('GetState', '')).catch(() => {}); } catch (_) { /* Bootstrap remains usable. */ }
         }

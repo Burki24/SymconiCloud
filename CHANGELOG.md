@@ -2,6 +2,8 @@
 
 ## Fixes
 
+- **Bei Apple aktualisieren** steht auch in der IPSView-Karte zur Verfügung. Der feste, authentifizierte Aufruf nutzt die bestehende Kontoabfrage samt Wartezeit und aktualisiert die Daten ohne Neuladen oder Verlust der Kartenansicht.
+
 - Die WoIst-Geräteauswahl hebt den zugehörigen Kartenmarker mit größerem Punkt und stärkerem Rand hervor und bringt ihn vor überlappende Marker. Die Listenwahl zentriert die Karte auf das Gerät; Datenupdates erhalten die gewählte Ansicht und Hervorhebung.
 
 - Gemeinsame Mausrad-, Scroll- und Frame-Unterstützung aus Symcon_ModuleHelper eingebunden; IPSView-Ereignisse mit umadressiertem Ziel werden zentral behandelt.
