@@ -97,10 +97,10 @@
             "source_sha": "7b3bdd2634666c863061e084a68838baaa44295e"
         },
         "OpenFreeMapHelper": {
-            "version": "1.0.0",
-            "sha256": "8cf7b0ebd38d1499c02a240be3a368ab46eb518ccce63741bb0cb23af441c47e",
+            "version": "1.0.1",
+            "sha256": "5dfa302d938e3d02e4ede6b85b4758c8eafc6bf10400b849c044361d92bab2dd",
             "path": "libs/helper/OpenFreeMapHelper.php",
-            "source_sha": "c81483186b6f9c22949906b0e6804a72ec824a69",
+            "source_sha": "fb3102b210c305ea30d886b51f8c471fc266a9e0",
             "assets": [
                 {
                     "path": "libs/helper/maps/openfreemap.js",
