@@ -73,3 +73,18 @@ Zentralisierung ist auch im Referenz-Consumer SymconECharts durchgeführt: alle 
 OpenFreeMapHelper aus Symcon_ModuleHelper besitzt die unabhängigen Kartenprofile, übersetzten Formulare, Farb-/Sichtbarkeits-/Sprachtransformationen und den persistenten MapLibre-Controller. Leaflet bleibt für Geräte, Auswahl und Ansicht zuständig. MapLibre 5.24.0 und MapLibre-GL-Leaflet 0.1.4 sind unverändert und mit Lizenzen/Hashes im Helper-Bundle enthalten. Der Renderer wird über den öffentlichen gzip-Asset-Endpunkt geliefert; Inline-Ausgabe überschreitet Symcons 1-MB-Buffer. Die öffentliche Kartenseite enthält weiterhin keine privaten Stil-URLs oder Kontodaten.
 
 Live per MCP geprüft: beide Designer-Menüs registriert; native Kachel und IPSView-HTTP-Seite rendern OpenFreeMap. Bei Wechsel dunkel → hell, eigener Wasserfarbe und Cache-Update bleiben Leaflet-Ansicht, Geräteauswahl, Popup und ein einzelnes GL-Canvas erhalten. Temporäre Profileinstellungen wurden wiederhergestellt.
+
+## Praxisnachweis: native Live-Pushs am 22.10.2026
+
+Die WoIst-Karte wurde auf dem vom Benutzer freigegebenen angeschlossenen Symcon-System in der echten Kachelvisualisierung geprüft. Der Nachweis erfolgte im nativen `/visu/`-iframe der Kachel, nicht in der statischen MCP-Kachelvorschau und nicht über den IPSView-Pollingtransport. Damit ist die zuvor noch offene Praxisabnahme des normalen nativen Live-Push-Pfads für diesen Stand erbracht.
+
+Prüfablauf und Ergebnis:
+
+- Ein Gerät ausgewählt, Popup geöffnet, Zoom verändert und den Kartenausschnitt per Tastatur verschoben. Der Vergleichszustand wurde nach Abschluss der Kartenanimation erfasst; Zwischenstände während einer laufenden Verschiebeanimation sind kein belastbarer Beleg für einen Ansichtsverlust.
+- Eine vorübergehende Änderung von `TileCurrentColor` und anschließendes `ApplyChanges`/`ICWI_Update` aus dem vorhandenen Kontocache machten den Eingang des nativen Updates im bereits geöffneten iframe sichtbar. Danach wurde die ursprüngliche Farbe wiederhergestellt und der Cache erneut ohne Designänderung veröffentlicht.
+- Nach den nativen Pushs blieben Zoom, Kartenausschnitt, Geräteauswahl und geöffnetes Popup erhalten. Die iframe-Adresse blieb unverändert und es existierte weiterhin genau ein GL-Canvas; ein Seitenneuladen wurde nicht beobachtet.
+- Browserkonsole und Symcon-Protokoll meldeten im Prüfzeitraum keine Fehler; der Instanzstatus blieb aktiv. Die vollständige Instanzkonfiguration wurde abschließend mit dem Ausgangsstand verglichen und war wiederhergestellt.
+
+Für diesen Test wurden weder Apple-Anmeldung noch ein ausdrücklicher Geräteabruf bei Apple ausgelöst; die Testupdates nutzten den bestehenden Kontocache. Private Geräte-, Standort- und Zugangsdaten sowie Screenshots bleiben außerhalb der versionierten Dokumentation. Der Nachweis gilt für die geprüfte laufende Browser-Sitzung; Wiederverbindung, Serverneustart, Kontowechsel und entfernte Geräte wurden damit nicht zusätzlich abgenommen.
+
+Die vorausgehenden MCP-Prüfungen bestätigen zusätzlich Hell-/Dunkeldarstellung und lokale Bedienung in beiden Kachel-Themes sowie den Erhalt von Ansicht, Auswahl und Popup bei Cache-Updates und Themewechsel in IPSView. Browserprüfungen verwenden den zentral dokumentierten Ablauf aus `../SymconDevelopment/standards/SYMCON_ACCESS.md`: leeren Tab erstellen, navigieren, Ladeabschluss prüfen und erst danach Accessibility-/DOM-Abfragen ausführen. Die statische MCP-Kachelvorschau allein weist keine nativen Live-Pushs nach.
