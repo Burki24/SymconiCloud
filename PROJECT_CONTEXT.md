@@ -106,6 +106,30 @@ der vorherige Pi-Nachweis betrifft die bereits bestätigte Adressanzeige in WoIs
   Kachelvisualisierung und nativer IPSView-App bleibt offen; die lokale
   Testeinbettung ersetzt diesen Nachweis nicht.
 
+## Zurückgestellt: regelmäßige Nominatim-Datenupdates (2026-10-22)
+
+Auf Benutzerwunsch wird die Einrichtung regelmäßiger OSM-Datenupdates auf einen
+späteren Arbeitsschritt verschoben. Aktuell hat die Weiterentwicklung des Moduls
+mit einem zweiten Weg zur Adressauflösung Vorrang; dessen Anbieter ist noch
+festzulegen. Es wurde kein Update-Timer eingerichtet oder aktiviert.
+
+Der vorhandene Import mit `--no-updates` ist nicht für Replikationsupdates
+geeignet. Als spätere Umsetzung ist ein einmaliger Import in eine separate
+Datenbank ohne diese Option vorgeschlagen. Nach Prüfung und kontrollierter
+Umschaltung könnten regionale Geofabrik-Änderungen für Brandenburg einschließlich
+Berlin regelmäßig in kleinen Paketen übernommen werden. Die bisherige Datenbank
+soll während des Neuaufbaus verfügbar bleiben und zunächst als Rückfall dienen.
+
+Vor Umsetzung Speicherbedarf und freie Kapazität für beide Datenbanken prüfen.
+Die bestehenden CPU-, RAM-, Swap- und I/O-Limits müssen Symcon weiter Vorrang
+geben. Update-Läufe serialisieren, Datenrückstand und Fehler überwachen und
+die erste Aktualisierung unter Beobachtung durchführen. Der bisherige
+Freiplatz-Guard darf nicht unverändert verwendet werden, da er den gemeinsamen
+Nominatim-PostgreSQL-Cluster stoppt; die neue Überwachung soll gezielt den
+Schreibauftrag begrenzen. Auf der gemeinsamen microSD ist trotz Limits keine
+garantiert unveränderte Symcon-Latenz zugesagt. Zeitplan, Grenzwerte und ein
+möglicher SSD-Einsatz werden erst bei Wiederaufnahme festgelegt.
+
 ## Nominatim auf Raspberry Pi: Installation und Praxisnachweis am 22.10.2026
 
 Der Benutzer hat Nominatim ohne Docker auf demselben Raspberry Pi eingerichtet,
