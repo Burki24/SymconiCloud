@@ -21,7 +21,7 @@ $precision->geocodingResponse = ['status' => 200, 'body' => json_encode([
 ], JSON_THROW_ON_ERROR)];
 $precisionState = static fn (): array => json_decode($precision->GetState(), true, 512, JSON_THROW_ON_ERROR)['state']['devices'][0];
 $precision->ResolveAddresses();
-$check($value($precisionDevice, 'Address') === '7, Example Street, Example Quarter, Example Town, Example Country', 'At exactly 20 metres, building detail remains available.');
+$check($value($precisionDevice, 'Address') === 'Example Street 7, Example Town, Example Country', 'At exactly 20 metres, compact building detail remains available.');
 $check($precisionState()['addressNotice'] === '', 'Building-level results must not have a coarse warning.');
 
 foreach ([[20.01, 17, 'street only'], [100.0, 17, 'street only'], [100.01, 14, 'area only'], [368.0, 14, 'area only'], [1000.0, 14, 'area only'], [1000.01, 10, 'city only']] as [$radius, $zoom, $level]) {
@@ -61,7 +61,7 @@ foreach ([null, 0, -1, 'invalid'] as $unknown) {
 $check(count($precision->geocodingRequests) === 4, 'Unknown accuracy can reuse city-level data without another request.');
 $firstBoundary->result['devices'][0]['location']['horizontalAccuracy'] = 20.0;
 $firstBoundary->broadcast();
-$check($precisionState()['addressNotice'] === '' && str_starts_with($value($precisionDevice, 'Address'), '7, Example Street'), 'Improved accuracy must restore cached building detail and remove the warning.');
+$check($precisionState()['addressNotice'] === '' && str_starts_with($value($precisionDevice, 'Address'), 'Example Street 7'), 'Improved accuracy must restore cached building detail and remove the warning.');
 $check(count($precision->geocodingRequests) === 4, 'Improved accuracy reuses the matching detail cache.');
 
 // A result arriving after an accuracy-only change cannot publish stale detail.

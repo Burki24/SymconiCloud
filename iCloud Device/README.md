@@ -16,6 +16,10 @@ Anbieterabfrage oder einen eigenen Abfragetimer. Bei Geoapify gelten Tagesbudget
 und Genauigkeitsregeln der ausgewählten WoIst-Instanz. Bei eigenen Anzeigen der
 Adressvariable die Quellenhinweise von Geoapify und OpenStreetMap beibehalten.
 
+Beide Anbieter liefern die kompakte Darstellung **Straße Hausnummer, PLZ Ort,
+Land**. Die Gerätevariable übernimmt denselben Text wie die Karte, einschließlich
+der von der Standortgenauigkeit abhängigen Detailstufe und des Ungefähr-Hinweises.
+
 **WoIst-Adressquelle (optional)** (`AddressSource`, Standard `0`) kann leer
 bleiben, wenn genau eine Karte mit aktivierter Adressauflösung an diesem Konto
 vorhanden ist. Bei mehreren solchen Karten die gewünschte Instanz ausdrücklich

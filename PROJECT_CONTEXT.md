@@ -1,5 +1,43 @@
 # Entwicklungsstand
 
+## Einheitliche kompakte Adressen (2026-10-23)
+
+Der zentrale ReverseGeocodingHelper normalisiert beide Anbieter auf dieselben
+strukturierten Felder und formatiert Straße/Hausnummer, PLZ/Ort und Land.
+Freitext aus Nominatims `display_name` bzw. Geoapifys `formatted` wird nicht
+mehr übernommen oder zerlegt. Bei Gebäuden/Straßen entfallen zusätzliche
+Verwaltungsebenen. Gebietsangaben enthalten höchstens einen Ortsteil; bei
+fehlendem Ort werden nur zulässige Dorf-/Gemeinde-/Gebietsangaben verwendet.
+Leerwerte, doppelte Angaben und überzählige Leerzeichen werden bereinigt.
+
+Die bestehenden Grenzen bleiben unverändert: Gebäude bis einschließlich 20 m,
+Straße bis 100 m, Gebiet bis 1000 m, darüber oder bei unbekannter Genauigkeit
+nur Ort bzw. gröbere Angaben. Die Modultexte für Ungefähr und unbekannte
+Genauigkeit bleiben unverändert. Liste, Popup und Gerätevariable lesen die
+einheitliche serverseitige Darstellung; eine lokale UI-Formatierung gibt es nicht.
+
+Cache-Schlüssel verwenden `compact-v1` statt `detail-v1`. Frühere formatierte
+Strings werden nicht als neue Treffer ausgegeben, sondern unter den bestehenden
+Timer-, Cache- und Quotenregeln neu aufgelöst. Der Geoapify-Verbrauchszähler
+bleibt bestehen, auch bei bereits ausgeschöpftem Budget. Das vorhandene
+ReverseGeocodingHelper-Bundle und dessen Abhängigkeit bleiben der Verteilungsweg.
+
+Gezielte synthetische Tests vergleichen beide Anbieter über alle Detailstufen,
+Genauigkeitsgrenzen, fehlende/doppelte Bestandteile, ländliche Orte und die
+Cacheumstellung. Die Modulprüfung vergleicht Kachel-/IPSView-Zustand und echte
+Gerätevariablen beider Quellen. Es werden keine privaten Standortdaten oder
+echten Anbieterabfragen für diese Prüfungen verwendet.
+
+Die vollständigen Offline-Suiten liefen mit PHP 8.5.10 erfolgreich. Die lokale
+Chromium-Prüfung mit synthetischen Daten bestätigt die kompakte Adresse in
+Liste und Popup der Kachelausgabe sowie einer verschachtelten IPSView-HTTP-
+Testeinbettung. Genauigkeits- und Theme-Wechsel erhalten Zoom, geografischen
+Mittelpunkt, Geräteauswahl, Popup und Dokument. Echte Mausradaktionen bestätigen
+Kartenzoom und Listenscrollen in beiden Richtungen; kompakte Größen bis
+320 × 240 Pixel bleiben innerhalb ihrer Fläche. Der neue Formatierungsstand
+wurde nicht auf einem laufenden Symcon-System oder in der nativen IPSView-App
+installiert und dort nicht zusätzlich abgenommen.
+
 ## Geoapify als zweiter Adressanbieter (2026-10-22)
 
 WoIst verwendet `AddressProvider=nominatim` als kompatible Vorgabe. Geoapify

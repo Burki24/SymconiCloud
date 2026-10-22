@@ -66,7 +66,7 @@ $check($value($lateDevice, 'Address') === 'Example Street 7, Example Town', 'Aut
 $firstBoundary->result['devices'][0]['location']['longitude'] = 8.0;
 $firstBoundary->broadcast();
 $check($value($firstDevice, 'Longitude') === 8.0 && $value($firstDevice, 'Address') === '', 'New coordinates must never retain the old address.');
-$addressMapInterface->geocodingResponse = ['status' => 200, 'body' => '{"display_name":"New Example Street 8"}'];
+$addressMapInterface->geocodingResponse = ['status' => 200, 'body' => '{"display_name":"New Example Street 8","address":{"road":"New Example Street","house_number":"8"}}'];
 $addressMapInterface->ResolveAddresses();
 $check($value($firstDevice, 'Address') === 'New Example Street 8', 'A resolved moved position must update the variable.');
 
@@ -100,7 +100,7 @@ $firstBoundary->broadcast();
 IPS_SetProperty($addressMap, 'NominatimServer', 'https://changed-nominatim.example');
 IPS_ApplyChanges($addressMap);
 $check($value($firstDevice, 'Address') === '', 'Changing Nominatim servers must clear the device address from the previous provider.');
-$addressMapInterface->geocodingResponse = ['status' => 200, 'body' => '{"display_name":"Changed Provider Street"}'];
+$addressMapInterface->geocodingResponse = ['status' => 200, 'body' => '{"display_name":"Changed Provider Street","address":{"road":"Changed Provider Street"}}'];
 $addressMapInterface->ResolveAddresses();
 $check($value($firstDevice, 'Address') === 'Changed Provider Street', 'The selected new provider can refill the address.');
 IPS_SetProperty($addressMap, 'AddressLanguage', 'en');

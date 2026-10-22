@@ -66,6 +66,18 @@ ebenfalls beibehalten werden.
 
 ### Gemeinsames Verhalten beider Anbieter
 
+Beide Anbieter zeigen Adressen kompakt im selben Format an, beispielsweise
+**Beispielstraße 7a, 12345 Beispielstadt, Deutschland**. Zusätzliche Orts- und
+Verwaltungsebenen entfallen bei Gebäude-/Straßenangaben. Bei Gebietsangaben
+erscheint höchstens ein Ortsteil vor PLZ und Ort. Fehlende Bestandteile werden
+ausgelassen; auf dem Land kann ein Dorf oder eine Gemeinde den Ort ersetzen.
+Die Genauigkeitsgrenzen und der Ungefähr-Hinweis gelten weiterhin.
+
+Nach diesem Update werden bisherige Cachetexte schrittweise neu aufgelöst.
+Bis zum passenden neuen Ergebnis kann die Adresse vorübergehend leer sein.
+Das Geoapify-Tagesbudget bleibt erhalten; ist es ausgeschöpft, wartet die
+Auflösung neuer Cacheeinträge bis zum nächsten UTC-Tag.
+
 Die verbundenen [iCloud-Geräteinstanzen](../iCloud%20Device/README.md#adresse-aus-woist)
 können dieselben Cacheergebnisse als Variable **Adresse** übernehmen. Neue
 Adressresultate aktualisieren diese Instanzen automatisch; zusätzliche

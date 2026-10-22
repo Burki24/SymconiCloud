@@ -8,7 +8,7 @@ require_once __DIR__ . '/modules.php';
 class GeocodingFixtureMap extends iCloudWoIst
 {
     public array $geocodingRequests = [];
-    public array $geocodingResponse = ['status' => 200, 'body' => '{"display_name":"Example Street 7, Example Town"}'];
+    public array $geocodingResponse = ['status' => 200, 'body' => '{"display_name":"7, Example Street, Example Town","address":{"road":"Example Street","house_number":"7","city":"Example Town"}}'];
     public ?Closure $duringLookup = null;
     public ?int $geocodingTime = null;
 
@@ -94,7 +94,7 @@ $check($timerInterval->invoke($geocoding, 'ResolveAddresses') === 0, 'Failed pro
 IPS_SetProperty($geocodingID, 'NominatimServer', 'https://second-nominatim.example');
 IPS_ApplyChanges($geocodingID);
 $check($readGeocoding()['state']['devices'][1]['address'] === '', 'Changing provider must not reuse another server\'s address.');
-$geocoding->geocodingResponse = ['status' => 200, 'body' => '{"display_name":"Other Example Street"}'];
+$geocoding->geocodingResponse = ['status' => 200, 'body' => '{"display_name":"Other Example Street","address":{"road":"Other Example Street"}}'];
 $geocoding->duringLookup = static function () use ($geocodingID, $geocoding): void
 {
     IPS_SetProperty($geocodingID, 'EnableAddressResolution', false);
