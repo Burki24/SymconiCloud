@@ -42,6 +42,9 @@
         },
         "IPSViewStyleConfigurationHelper": {
             "target": "libs/helper/IPSViewStyleConfigurationHelper.php"
+        },
+        "ReverseGeocodingHelper": {
+            "target": "libs/helper/ReverseGeocodingHelper.php"
         }
     }
 }

@@ -33,6 +33,8 @@
 
 ## Neu
 
+- Optionale Nominatim-Adressauflösung mit konfigurierbarer eigener Serveradresse und Sprache. Der zentrale ReverseGeocodingHelper löst Positionen im Hintergrund auf und speichert Ergebnisse persistent mit begrenztem Cache und Fehlerwartezeit. Adressen erscheinen in Geräteliste und Popup von Kachel und IPSView, ohne die Kartenansicht oder Auswahl zurückzusetzen.
+
 - WoIst nutzt OpenFreeMap-Vektorkarten. Kachel- und IPSView-Designer besitzen eigene OpenFreeMap-Menüs mit Auto-/Hell-/Dunkelmodus, Kartenstilen, eigenen Stil-URLs, Kartendetails, Beschriftungssprache und getrennten Farbpaletten. Daten- und Designupdates erhalten die Kartenansicht und Geräteauswahl.
 
 - WoIst erhält einen Kachel- und IPSView-Designer für Größe, Standortfarben und sichtbare Elemente. Die optionale IPSView-HTML-Variable aktualisiert sich mit den Kontodaten; ihr Design kann von der Kachel übernommen oder unabhängig eingestellt werden.

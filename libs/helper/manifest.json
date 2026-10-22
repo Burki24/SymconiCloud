@@ -373,6 +373,21 @@
                     ]
                 }
             ]
+        },
+        "ReverseGeocodingHelper": {
+            "version": "1.0.0",
+            "sha256": "0f81508631f9e025f59b1e34a9b3f181f34195f865e1f47714ecc0a14547cc80",
+            "path": "libs/helper/ReverseGeocodingHelper.php",
+            "source_sha": "2a16a7cc4e2e0b8ba811652dde6a5a644260b6ea",
+            "dependencies": [
+                {
+                    "name": "PersistentJsonCacheHelper",
+                    "version": "1.0.0",
+                    "sha256": "adbc7680abe814dc6c15a9cda1312cc30023073595052006662716bc0d65f2a4",
+                    "path": "libs/helper/PersistentJsonCacheHelper.php",
+                    "source_sha": "2a16a7cc4e2e0b8ba811652dde6a5a644260b6ea"
+                }
+            ]
         }
     }
 }

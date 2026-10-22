@@ -33,8 +33,9 @@ class Element {
 const elements = Object.fromEntries(['woist-theme', 'woist-heading', 'woist-devices', 'woist-controls', 'woist-bootstrap', 'title', 'updated', 'fit', 'refresh', 'devices-title', 'device-list', 'empty', 'account-message', 'transport-message', 'map-message', 'map'].map((id) => [id, new Element()]));
 const timestamp = Math.floor(Date.now() / 1000);
 const maliciousName = '<img src=x onerror=alert(1)>';
+const maliciousAddress = '<script>Example address</script>';
 elements['woist-bootstrap'].textContent = JSON.stringify({mode: 'symcon', options: {tileHeaderVisible: true, tileHeaderInset: 58}, state: {success: true, updatedAt: timestamp, staleAfter: 900, devices: [
-    {id: 'synthetic-a', name: maliciousName, location: {latitude: 0, longitude: 0, timestamp, isOld: false}},
+    {id: 'synthetic-a', name: maliciousName, address: maliciousAddress, location: {latitude: 0, longitude: 0, timestamp, isOld: false}},
     {id: 'synthetic-b', name: 'No location', location: null}
 ]}});
 const documentRoot = new Element();
@@ -64,6 +65,8 @@ assert.equal(documentRoot.style['--symc-tile-header-inset'], '58px', 'Native con
 assert.deepEqual(requests, ['GetState'], 'Loading requests cached state only, never Apple refresh.');
 assert.equal(markers.length, 1, 'Unavailable positions do not create a marker.');
 assert.equal(markers[0].popup.children[0].textContent, maliciousName, 'Untrusted names become DOM text.');
+assert.ok(markers[0].popup.children.some(line => line.textContent === maliciousAddress), 'Untrusted address becomes popup text.');
+assert.ok(elements['device-list'].children[0].children[0].children.some(line => line.textContent === maliciousAddress), 'Address is shown as plain list text.');
 assert.equal(elements['device-list'].children[0].children[0].children[0].textContent, maliciousName);
 assert.equal(fits, 1);
 elements['device-list'].children[0].children[0].events.click();
@@ -232,6 +235,12 @@ const selectedCamera = {center: map.center, zoom: map.zoom};
 window.handleMessage({state: {success: true, devices: selectionDevices.map(device => device.id === 'selection-b'
     ? {...device, location: {...device.location, latitude: 31}} : device)}});
 assert.deepEqual({center: map.center, zoom: map.zoom}, selectedCamera, 'A moving selected device must not recenter the user view on data updates.');
+window.handleMessage({state: {success: true, devices: selectionDevices.map(device => device.id === 'selection-b'
+    ? {...device, address: 'Updated Example Street 8, Example Town'} : device)}});
+assert.ok(selectionB.popup.children.some(line => line.textContent === 'Updated Example Street 8, Example Town'), 'Resolved address updates the existing popup.');
+assert.equal(selectionB.opened, true, 'Address arrival must preserve the open popup.');
+assert.equal(elements['device-list'].children[1].children[0].attrs['aria-pressed'], 'true', 'Address arrival preserves device selection.');
+assert.deepEqual({center: map.center, zoom: map.zoom}, selectedCamera, 'Address arrival preserves zoom and camera.');
 assert.equal(selectionB.options.radius, 17);
 elements['device-list'].children[2].children[0].events.click();
 assert.deepEqual({center: map.center, zoom: map.zoom}, selectedCamera, 'Unlocated devices must not move the map.');

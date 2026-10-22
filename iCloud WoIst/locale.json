@@ -51,7 +51,13 @@
             "Tile colors": "Kachelfarben",
             "IPSView style": "IPSView-Stil",
             "Use Tile map settings": "Karteneinstellungen der Kachel verwenden",
-            "Map settings can follow Tile; IPSView colors and typography are configured independently.": "Karteneinstellungen können der Kachel folgen; IPSView-Farben und Schrift werden unabhängig davon eingestellt."
+            "Map settings can follow Tile; IPSView colors and typography are configured independently.": "Karteneinstellungen können der Kachel folgen; IPSView-Farben und Schrift werden unabhängig davon eingestellt.",
+            "Address resolution (Nominatim)": "Adressauflösung (Nominatim)",
+            "Resolve device positions to addresses": "Gerätepositionen in Adressen auflösen",
+            "Private Nominatim server base URL": "Basis-URL des eigenen Nominatim-Servers",
+            "Address language (e.g. de or en)": "Adresssprache (z. B. de oder en)",
+            "Optional: coordinates are sent only to the configured server. Use a running private Nominatim service, not a GitHub repository or the public OSM service.": "Optional: Koordinaten werden nur an den konfigurierten Server gesendet. Benötigt einen laufenden eigenen Nominatim-Dienst; ein GitHub-Repository oder der öffentliche OSM-Dienst ist dafür nicht geeignet.",
+            "Address resolution is unavailable. Configure a private HTTP(S) server base URL and a valid language. The map remains available.": "Adressauflösung nicht verfügbar. Bitte die HTTP(S)-Basis-URL eines eigenen Servers und eine gültige Sprache eintragen. Die Karte bleibt verfügbar."
         }
     }
 }

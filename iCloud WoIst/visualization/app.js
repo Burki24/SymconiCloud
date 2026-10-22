@@ -234,6 +234,7 @@
         if (typeof device.batteryLevel === 'number' && Number.isFinite(device.batteryLevel)) lines.push(text('battery') + ': ' + Math.round(device.batteryLevel * 100) + '%');
         if (validLocation(device.location)) {
             lines.push(text(isStale(device.location, state, now()) ? 'stale' : 'current') + ' · ' + ageText(device.location.timestamp));
+            if (typeof device.address === 'string' && device.address) lines.push(device.address);
             if (typeof device.location.horizontalAccuracy === 'number' && device.location.horizontalAccuracy >= 0) lines.push(text('accuracy') + ': ' + Math.round(device.location.horizontalAccuracy) + ' m');
         } else lines.push(text('noLocation'));
         return lines;

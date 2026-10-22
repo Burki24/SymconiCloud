@@ -14,6 +14,38 @@
         {
             "type": "Label",
             "caption": "Add this instance to the tile visualization. All devices of the connected account are shown; separate device instances are not required."
+        },
+        {
+            "type": "ExpansionPanel",
+            "name": "AddressResolution",
+            "caption": "Address resolution (Nominatim)",
+            "items": [
+                {
+                    "type": "CheckBox",
+                    "name": "EnableAddressResolution",
+                    "caption": "Resolve device positions to addresses"
+                },
+                {
+                    "type": "ValidationTextBox",
+                    "name": "NominatimServer",
+                    "caption": "Private Nominatim server base URL"
+                },
+                {
+                    "type": "ValidationTextBox",
+                    "name": "AddressLanguage",
+                    "caption": "Address language (e.g. de or en)"
+                },
+                {
+                    "type": "Label",
+                    "caption": "Optional: coordinates are sent only to the configured server. Use a running private Nominatim service, not a GitHub repository or the public OSM service."
+                },
+                {
+                    "type": "Label",
+                    "name": "GeocodingConfigurationWarning",
+                    "visible": false,
+                    "caption": "Address resolution is unavailable. Configure a private HTTP(S) server base URL and a valid language. The map remains available."
+                }
+            ]
         }
     ],
     "actions": [

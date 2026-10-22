@@ -14,6 +14,8 @@ require_once __DIR__ . '/../libs/helper/OpenFreeMapHelper.php';
 require_once __DIR__ . '/../libs/WoIstDesign.php';
 require_once __DIR__ . '/../libs/WoIstIPSViewTransport.php';
 require_once __DIR__ . '/../libs/helper/HttpResponseHelper.php';
+require_once __DIR__ . '/../libs/helper/ReverseGeocodingHelper.php';
+require_once __DIR__ . '/../libs/WoIstGeocoding.php';
 
 /** One account's device positions, rendered through the authenticated HTML SDK. */
 class iCloudWoIst extends IPSModuleStrict
@@ -30,6 +32,8 @@ class iCloudWoIst extends IPSModuleStrict
     use \SymconiCloud\WoIstDesign;
     use \SymconiCloud\WoIstIPSViewTransport;
     use \Burki24\SymconModuleHelper\HttpResponseHelper;
+    use \Burki24\SymconModuleHelper\ReverseGeocodingHelper;
+    use \SymconiCloud\WoIstGeocoding;
 
     private const ACCOUNT_MODULE = '{10BF9A03-98A3-495A-B0FA-A4FA0B1002D5}';
     private const REQUEST_DATA = '{1E60F0BE-03E4-4AA4-A1CE-AA838725A4E2}';
@@ -45,6 +49,7 @@ class iCloudWoIst extends IPSModuleStrict
         $this->RegisterVisualizationThemeProperties();
         $this->RegisterIPSViewStyleProperties();
         $this->RegisterPropertyInteger('StaleAfter', 900);
+        $this->RegisterWoIstGeocoding();
         $this->RegisterPropertyString('TileURL', 'https://tile.openstreetmap.org/{z}/{x}/{y}.png');
         $this->RegisterPropertyString('TileAttribution', '© OpenStreetMap contributors');
         $this->SetVisualizationType(1);
@@ -58,6 +63,9 @@ class iCloudWoIst extends IPSModuleStrict
         $this->RegisterIPSViewStyleMediaMessages();
         $this->MaintainIPSViewHTMLVariable('IPSViewWoIst', $this->Translate('WoIst for IPSView'), 100, '', false);
         $this->ConfigureWoIstIPSViewTransport();
+        if (!$this->ReadPropertyBoolean('EnableAddressResolution')) {
+            $this->ClearReverseGeocodingCache();
+        }
         $this->Update();
         if ($this->IsIPSViewHTMLPageEnabled()) {
             $this->RegenerateIPSViewHTMLPages();
@@ -82,7 +90,19 @@ class iCloudWoIst extends IPSModuleStrict
     /** @return string Static map settings without any Apple request. */
     public function GetConfigurationForm(): string
     {
-        return $this->EncodeConfigurationForm($this->WoIstDesignForm($this->LoadConfigurationForm()));
+        $form = $this->LoadConfigurationForm();
+        foreach ($form['elements'] as &$element) {
+            if (($element['name'] ?? '') === 'AddressResolution') {
+                foreach ($element['items'] as &$item) {
+                    if (($item['name'] ?? '') === 'GeocodingConfigurationWarning') {
+                        $item['visible'] = $this->ReadPropertyBoolean('EnableAddressResolution') && $this->WoIstGeocodingConfiguration() === null;
+                    }
+                }
+                unset($item);
+            }
+        }
+        unset($element);
+        return $this->EncodeConfigurationForm($this->WoIstDesignForm($form));
     }
 
     /** @return bool True if an authenticated cached account inventory was available. */
@@ -222,6 +242,7 @@ class iCloudWoIst extends IPSModuleStrict
         $this->SetStatus(!$this->configurationValid() ? 203 : (!$this->HasParent() ? 201 : ($state['success'] ? IS_ACTIVE : 202)));
         $this->UpdateVisualizationValue($this->encode($bootstrap));
         $this->PublishWoIstIPSViewState($bootstrap);
+        $this->ScheduleWoIstGeocoding($state);
         return $state['success'];
     }
 
@@ -255,7 +276,7 @@ class iCloudWoIst extends IPSModuleStrict
                 'model'        => is_string($device['model'] ?? null) ? $device['model'] : '',
                 'online'       => ($device['deviceStatus'] ?? 0) === 200,
                 'batteryLevel' => $this->finiteNumber($battery) && $battery >= 0 && $battery <= 1 ? (float) $battery : null,
-                'location'     => $location
+                'location'     => $location, 'address' => $this->WoIstCachedAddress($location)
             ];
         }
         $labels = [];

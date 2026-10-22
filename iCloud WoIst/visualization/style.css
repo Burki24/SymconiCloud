@@ -22,7 +22,7 @@ li + li { margin-top: 8px; }
 .device.unlocated { border-inline-start-color: #858b94; }
 .device[aria-pressed="true"] { outline: 2px solid var(--symc-accent); outline-offset: 1px; }
 .device-name { font-weight: 600; overflow-wrap: anywhere; }
-.device-meta { display: block; margin-top: 4px; line-height: 1.45; }
+.device-meta { display: block; margin-top: 4px; line-height: 1.45; overflow-wrap: anywhere; }
 .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--symc-background); color: var(--symc-text); }
 .leaflet-container { font-family: var(--symc-font-family); }
 .leaflet-popup-content { overflow-wrap: anywhere; }

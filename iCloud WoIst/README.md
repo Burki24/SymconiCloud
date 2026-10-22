@@ -12,6 +12,41 @@ Beim Wechsel wird die vorherige Markierung zurückgesetzt. Die Hervorhebung blei
 
 Die Karte erhält neue Daten automatisch vom Konto. **Bei Apple aktualisieren** löst eine ausdrückliche Geräteabfrage über das Konto aus und beachtet dessen Anmeldestatus und Wartezeiten. Das Öffnen der Karte oder des Formulars liest nur den Kontocache und löst keine Apple-Anmeldung aus.
 
+## Optionale Adressauflösung mit Nominatim
+
+Im Abschnitt **Adressauflösung (Nominatim)** kann die Auflösung eingeschaltet
+werden. Sie ist standardmäßig deaktiviert. Als **Basis-URL** wird die HTTP(S)-URL
+eines laufenden eigenen Nominatim-Servers eingetragen, beispielsweise
+`http://nominatim.example:8080` oder `https://nominatim.example/osm` bei einem
+Reverse-Proxy mit Pfadpräfix. `/reverse` wird automatisch ergänzt. Ein GitHub-Fork
+enthält den Servercode und ersetzt keinen eingerichteten Dienst mit importierten
+OSM-Daten. Zugangsdaten, Query und Fragment gehören nicht in dieses Feld.
+Der öffentliche Dienst `nominatim.openstreetmap.org` wird nicht unterstützt.
+Die Adresssprache ist standardmäßig `de`, alternativ beispielsweise `en` oder
+`de-DE`.
+
+Nach dem Übernehmen erscheinen verfügbare Adressen nach und nach in der
+Geräteliste und im Geräte-Popup, sowohl in der Kachel als auch in IPSView.
+Die Auflösung erfolgt im Hintergrund mit höchstens einer Abfrage je zwei
+Sekunden pro WoIst-Instanz. Eine neue Adresse aktualisiert nur die Daten;
+Zoom, Kartenausschnitt, Geräteauswahl und Popup bleiben erhalten.
+
+Übertragen werden ausschließlich Koordinaten und Sprach-/Formatparameter an
+den eingetragenen Server. Apple-Zugangsdaten und Gerätekennungen bleiben in
+Symcon. Erfolgreiche Adressen werden 24 Stunden persistent gespeichert,
+fehlende Treffer eine Stunde. Der zentrale Helper begrenzt den Cache auf
+512 Positionen; Server und Sprache sind getrennt. Bei einer neuen Position
+verschwindet die alte Adresse sofort. Netzwerk-/Antwortfehler lösen fünf Minuten
+Wartezeit aus; ein späteres Konto-/Kartenupdate stößt den nächsten Versuch an.
+Die Karte bleibt auch bei Serverausfällen nutzbar. Eine ungültige aktivierte
+Konfiguration wird im Formular gemeldet. Deaktivieren und Übernehmen löscht
+den privaten Adresscache; Symcon-Konfiguration und Backups entsprechend schützen.
+
+Die angezeigte Adresse gehört zur angegebenen, gegebenenfalls älteren Position.
+Nominatim ermittelt das nächste geeignete OpenStreetMap-Objekt; eine genaue
+Hausnummer kann deshalb nicht zugesichert werden. Die OSM-Quellenangabe bleibt
+in der Karte sichtbar. Andere Geocoding-Anbieter sind derzeit nicht enthalten.
+
 ## Kachel- und IPSView-Designer
 
 Im **Kachel-Designer** lassen sich Schriftgröße, Radius und Farben der Standortmarkierungen sowie Überschrift, Geräteliste und Bedienelemente einstellen. Einstellungen anschließend übernehmen. Karte und Geräteliste nutzen die verfügbare Breite und Höhe der Kachel. Auf schmalen Kacheln steht die Liste unter der Karte und scrollt innerhalb ihres Bereichs. Bei ausgeblendeter Liste nutzt die Karte die gesamte freie Fläche. Die bisherige Kartenhöhe dient nur noch als Fallback; die tatsächliche Kachelgröße hat Vorrang. Neue Instanzen verwenden dafür automatisch `0`.

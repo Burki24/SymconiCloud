@@ -1,5 +1,36 @@
 # Entwicklungsstand
 
+## Optionale Nominatim-Adressauflösung (2026-10-22)
+
+- WoIst besitzt eine standardmäßig deaktivierte Adressauflösung mit eigener
+  HTTP(S)-Serverbasis und Sprache. Der konfigurierte Dienst muss bereits laufen;
+  der Nominatim-Fork enthält nur den Servercode. Keine Serverinstallation oder
+  Abfrage realer Gerätepositionen wurde ausgeführt.
+- `ReverseGeocodingHelper` liegt kanonisch in Symcon_ModuleHelper und nutzt den
+  bestehenden `PersistentJsonCacheHelper`. Beide Dateien sind unverändert
+  eingebunden, manifestiert und über die neue Subscription automatisch verteilbar.
+- Formulare, native HTML-Ausgabe und authentifizierte Zustandsabrufe lesen nur
+  den Cache. Der separate Symcon-Timer verarbeitet maximal eine offene Position
+  pro Aufruf; er stoppt bei vollständig gefülltem Cache, ungültiger Konfiguration,
+  fehlender Anmeldung oder Serverwartezeit. Aktualisierungen nach Ablauf einer
+  Wartezeit/TTL starten offene Auflösungen erneut.
+- Offline-Nachweise: echte Modul-/Konto-Datenflussintegration, Cachepersistenz,
+  Positionswechsel einschließlich Änderung während HTTP, identische Positionen,
+  Providerwechsel, Deaktivierung während HTTP, gesperrter öffentlicher Endpunkt,
+  unbekannte Positionen, TTL, Fehlerwartezeit und Cachebegrenzung. Der reale
+  HTTP-Client wurde gegen einen lokalen synthetischen Dienst geprüft, einschließlich
+  User-Agent, fehlender Credentials/Cookies, Redirect-Sperre und Antwortlimit.
+- Lokale Browserprobe: gerenderte Kachel und verschachtelte IPSView-HTTP-Ausgabe
+  mit 24 synthetischen Geräten und lokal ersetztem Kartenstil. Adressankunft
+  aktualisiert Liste und offenes Popup bei unverändertem Zoom, Mittelpunkt und
+  gewähltem Gerät. Echte Mausradaktionen zoomen in beide Richtungen; Listen-Scroll
+  wurde jeweils mit 440 → 220 Pixeln gemessen, ohne gleichzeitigen Kartenzoom.
+  Schmale Ausgabe bei 430 Pixeln ohne horizontalen Überstand, keine JS-Fehler.
+- PHP 8.5.10: Modul- und Helper-Suiten, StylePHP/php-cs-fixer, Manifest-, Bundle-
+  und isolierte Verteilungsprüfungen erfolgreich. Live-Abnahme nach Benutzerupdate
+  mit eigenem Nominatim-Server sowie tatsächlicher Kachelvisualisierung und nativer
+  IPSView-App bleibt offen; die lokale Testeinbettung ersetzt diesen Nachweis nicht.
+
 Zielplattform: Symcon 9.0 / PHP 8.5. Entwicklungsbranch: dev. Lizenz: PolyForm Noncommercial License 1.0.0. Version 0.1/build 0/date 0 bezeichnet ausschließlich den unveröffentlichten Ausgangsstand, keinen Release.
 
 ## Prüfung

@@ -26,6 +26,12 @@ Ein Konto kann mehrere Geräte bedienen; mehrere Apple-Konten verwenden getrennt
 
 ## Verhalten
 
+WoIst kann Gerätepositionen optional über einen eigenen Nominatim-Server in
+Adressen auflösen und diese in Geräteliste und Popup anzeigen. Die Funktion
+ist standardmäßig aus; Serveradresse, Sprache, Datenschutz und Cache sind in
+der [WoIst-Anleitung](iCloud%20WoIst/README.md#optionale-adressauflösung-mit-nominatim)
+beschrieben.
+
 Das Konto aktualisiert die Geräteliste nach erfolgreicher Anmeldung standardmäßig alle 300 Sekunden. Das Öffnen von Formularen oder das Lesen von Gerätevariablen startet keine Apple-Anmeldung. Nach abgelaufener Sitzung meldet das Konto den erforderlichen Anmeldeschritt; es führt keine automatischen Passwort-Anmeldeschleifen aus.
 
 Die Abfrage fordert keine aktive Neuortung an. Apple kann deshalb ältere oder keine Standortdaten liefern. Gerätevariablen zeigen die Datenverfügbarkeit und den Standortzeitpunkt gesondert an. Tonwiedergabe, Verloren-Modus, Sperren und Löschen sind nicht verfügbar.
