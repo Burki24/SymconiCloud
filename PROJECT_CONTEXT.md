@@ -206,7 +206,7 @@ nicht abgeschaltet; der globale Symcon-Betrieb erhielt keine neuen Limits.
   eine spätere Aktualisierung oder Gebietserweiterung benötigt einen geplanten
   Neuimport. Apple-Standortaktualisierungen bleiben davon unabhängig.
 
-### Lokaler HTTP-Dienst und SymconiCloud-Anbindung
+### HTTP-Dienst und SymconiCloud-Anbindung
 
 `nominatim-api.service` verwendet die vorhandene virtuelle Umgebung mit Falcon
 und Gunicorn (Installationsvorgabe 25.1.0), `--worker-class asgi`, einen Worker,
@@ -217,12 +217,13 @@ PostgreSQL-Cluster und verwendet dieselben Slice-/Prioritätsgrenzen.
 `Restart=on-failure` mit zehn Sekunden Abstand ist konfiguriert; der Dienst
 wurde für automatischen Start über `multi-user.target` eingerichtet.
 
-Gunicorn bindet ausschließlich `127.0.0.1:8088` und stellt HTTP direkt bereit.
-Eine zusätzliche Freigabe ins LAN, nginx oder Änderungen an Symcons Webports
-sind für diesen Aufbau nicht erforderlich. Die Prüfpunkte sind `/status` und
-`/reverse` mit `format=jsonv2`, `addressdetails=1` und `accept-language=de`.
-Separate HTTP-Testausgaben wurden im Gespräch nicht übermittelt; der Benutzer
-bestätigte anschließend die funktionierende Adressanzeige in WoIst.
+Gunicorn stellte HTTP zunächst ausschließlich auf `127.0.0.1:8088` bereit.
+Für das auf demselben Pi laufende Symcon genügt dieser lokale Zugang; für das
+getrennte Testsystem wurde anschließend eine zusätzliche LAN-Bindung ergänzt
+(siehe unten). nginx oder Änderungen an Symcons Webports sind dafür nicht
+erforderlich. Die Prüfpunkte sind `/status` und `/reverse` mit `format=jsonv2`,
+`addressdetails=1` und `accept-language=de`. Der Benutzer bestätigte die
+funktionierende Adressanzeige in WoIst.
 
 In **WoIst → Adressauflösung (Nominatim)** ist
 `EnableAddressResolution=true`, `NominatimServer=http://127.0.0.1:8088` und
@@ -237,6 +238,45 @@ lediglich Opt-in, Hintergrundtimer und Veröffentlichung der Ergebnisse. Der
 Cache- und Aktualisierungsvertrag steht in
 [`iCloud WoIst/README.md`](iCloud%20WoIst/README.md#optionale-adressauflösung-mit-nominatim).
 Nominatim löst Adressen auf; die Kartendarstellung bleibt bei OpenFreeMap.
+
+### Zusätzliche LAN-Bindung und Testsystem (2026-10-22)
+
+Das getrennte Symcon-Testsystem verwendet denselben Nominatim-Dienst auf dem
+Pi. Die anfängliche Diagnose zeigte nur einen Listener auf `127.0.0.1:8088`:
+Der lokale `/status`-Abruf lieferte HTTP 200 mit `OK`, der Abruf über die
+LAN-Adresse scheiterte beim Verbindungsaufbau.
+
+In der bestehenden `ExecStart`-Zeile von
+`/etc/systemd/system/nominatim-api.service` wurde die Bindung erweitert:
+
+```text
+--bind 127.0.0.1:8088 --bind <Pi-LAN-IP>:8088
+```
+
+`<Pi-LAN-IP>` bezeichnet hier bewusst einen Platzhalter. Der lokale Listener
+bleibt bestehen; nur die zusätzliche Pi-LAN-Adresse wird gebunden. Die übrigen
+Startparameter und Ressourcenlimits bleiben unverändert. Nach Sicherung der
+Dienstdatei wurden `systemctl daemon-reload` und der Neustart ausschließlich
+von `nominatim-api.service` vorgesehen; Symcon und PostgreSQL benötigen dafür
+keinen Neustart. Der Datenbankzugang bleibt lokal über den Unix-Socket.
+
+Die WoIst-Konfiguration unterscheidet die beiden Systeme:
+
+| System | Nominatim-Basis-URL |
+| --- | --- |
+| Symcon auf dem Pi | `http://127.0.0.1:8088` |
+| Getrenntes Symcon-Testsystem | `http://<Pi-LAN-IP>:8088` |
+
+Adressauflösung aktivieren und die Konfiguration übernehmen; `/reverse` wird
+weiterhin vom zentralen Helper ergänzt. Die Anfragen erfolgen serverseitig
+vom jeweiligen Symcon-System, nicht vom Browser oder IPSView-Client. Beide
+Systeme verwenden ihre vorhandenen instanzlokalen Helper-Caches; eine zweite
+Nominatim-Installation oder ein weiterer OSM-Import ist nicht erforderlich.
+
+Der Benutzer bestätigte nach der Bindungsänderung den erfolgreichen Zugriff
+auch vom Testsystem. Dies ist ein Benutzer-Praxisnachweis; ein zusätzlicher
+unabhängiger MCP-Test wurde für die LAN-Erweiterung nicht durchgeführt.
+Reale interne Adressen und Hostnamen werden nicht im Repository festgehalten.
 
 ### Nachweise und verbleibende Grenzen
 
