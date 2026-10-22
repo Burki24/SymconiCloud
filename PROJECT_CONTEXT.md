@@ -35,8 +35,21 @@ Testeinbettung. Genauigkeits- und Theme-Wechsel erhalten Zoom, geografischen
 Mittelpunkt, Geräteauswahl, Popup und Dokument. Echte Mausradaktionen bestätigen
 Kartenzoom und Listenscrollen in beiden Richtungen; kompakte Größen bis
 320 × 240 Pixel bleiben innerhalb ihrer Fläche. Der neue Formatierungsstand
-wurde nicht auf einem laufenden Symcon-System oder in der nativen IPSView-App
-installiert und dort nicht zusätzlich abgenommen.
+wurde im Rahmen dieser lokalen Prüfungen vom Agenten nicht auf einem laufenden
+Symcon-System oder in der nativen IPSView-App installiert oder abgenommen.
+
+### Erfolgreiche Benutzer-Praxisabnahme (2026-10-23)
+
+Nach der Aktualisierung hat der Benutzer die kompakte Adressdarstellung für
+Nominatim und Geoapify erfolgreich geprüft und als passend bestätigt. Beide
+Anbieter liefern die gewünschte einheitliche, kurze Darstellung ohne die zuvor
+störende zusätzliche Verwaltungshierarchie.
+
+Dies ist ein vom Benutzer bestätigter Praxisnachweis, ergänzend zu den oben
+dokumentierten synthetischen Prüfungen. Die bestehenden Genauigkeitsregeln
+bleiben unverändert. Für diesen Dokumentationseintrag wurde keine zusätzliche
+Live-Prüfung durch den Agenten durchgeführt; private Adressen, Koordinaten,
+Gerätekennungen und Zugangsdaten werden nicht übernommen.
 
 ## Geoapify als zweiter Adressanbieter (2026-10-22)
 
