@@ -1,5 +1,50 @@
 # Entwicklungsstand
 
+## Lesbare Integer-Statusanzeigen: MCP-Nachweis und Korrektur (2026-10-23)
+
+Der Benutzer meldete Rohwerte wie `-1` anstelle lesbarer Texte bei den neuen
+Gerätestatusvariablen. Die MCP-Prüfung auf dem Windows-Testsystem bestätigte
+die Ursache: Bei einer Integer-Variable mit nativer Wertanzeige verwirft Symcon
+`OPTIONS`. Laut offiziellem SDK gilt dieser Parameter nur für Boolean und
+String; Integer benötigen `INTERVALS_ACTIVE` und konstante Beschriftungen in
+`INTERVALS`. Die bisherige synthetische Prüfung hatte lediglich die falsche
+Optionsstruktur bestätigt und wird durch diesen dokumentbasierten Vertrag ersetzt.
+
+Zusätzlich enthielt der Kontocache zunächst noch keine Zusatzfelder. Ein
+lesender Abruf über die bestehende Sitzung bestätigte danach die normalisierten
+Kennzeichnungen und die Übernahme von Nein-/Ja-Zuständen in Gerätevariablen.
+Eine neue Anmeldung oder aktive Neuortung war nicht nötig.
+
+Die Korrektur liegt zentral in `VariablePresentationHelper::IntegerOptionsPresentation`.
+Die Geräteinstanz verwendet diese neue Funktion. Integer-Zustände erhalten
+je Wert ein exaktes Intervall mit
+`ConstantActive=true` und `ConstantValue=Caption`. Boolean-/String-Optionen
+und die bisherige `OptionsPresentation`-API bleiben unverändert. Variablentyp,
+Idents und gespeicherte Werte werden nicht geändert; eine zusätzliche
+Modulimplementierung der Darstellung ist unnötig.
+
+Eine temporäre, anschließend gelöschte Integer-Testvariable auf dem echten
+Symcon-System bestätigte per MCP und `GetValueFormatted` ohne Warnungen:
+`-1` → **Nicht verfügbar**, `0` → **Nein**, `1` → **Ja**. Ein nicht definierter
+Wert `2` blieb unverändert als **2** sichtbar. Die native Intervallstruktur
+akzeptiert für Farben `ColorValue`; der in der abgerufenen SDK-Tabelle genannte
+Schlüssel `Color` wurde mit einer Warnung abgewiesen. Der Helper und die
+Regressionen verwenden deshalb den tatsächlich bestätigten Vertrag.
+
+Die neue Helper-Datei wird über das vorhandene Abonnement verteilt. Tests des
+erzeugten Pakets erfolgen in einer isolierten Kopie; im normalen Modul-Arbeitsbaum
+bleiben keine temporären Helper-Dateien oder Testmetadaten zurück, die einen
+späteren Pull blockieren könnten. Zuerst die zentrale Korrektur freigeben und
+verteilen lassen, dann den regulären Helper-Sync im Modul pullen und die
+Geräteinstanzkonfiguration erneut übernehmen. Die echten Gerätevariablen
+erhielten in dieser Prüfung keine dauerhaften benutzerdefinierten Darstellungen.
+
+Die vollständigen Helper- und Modulsuiten unter PHP 8.5.10, Paket-/Manifestprüfung,
+php-cs-fixer im Prüfmodus und der StylePHP-JSON-Check des Moduls bestanden.
+Auch der bisherige Modulstand einschließlich seiner unveränderten Tests bestand
+mit dem neuen Helper-Paket in der isolierten Umgebung: Der automatische Sync
+kann somit vor der Umstellung des Moduls auf die neue API geprüft werden.
+
 ## Zusätzliche Geräteangaben: MCP-Befund und Umsetzung (2026-10-23)
 
 Auf dem angeschlossenen Windows-Testsystem wurde per MCP eine lesende

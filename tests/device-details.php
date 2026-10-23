@@ -52,9 +52,11 @@ $check($value($detailDevice, 'ModelIdentifier') === 'SyntheticPhone1,2', 'Techni
 $id = IPS_GetObjectIDByIdent('LowPowerMode', $detailDevice);
 $presentation = IPS_GetVariablePresentation($id);
 $check($presentation['PRESENTATION'] === VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'Statuses must be read-only value presentations.');
-$options = json_decode($presentation['OPTIONS'], true, 512, JSON_THROW_ON_ERROR);
-$check(array_column($options, 'Value') === [-1, 0, 1], 'Unknown must be distinct from false and true.');
-$check(count(array_unique(array_column($options, 'Caption'))) === 3, 'All three states need distinct captions.');
+$check(!isset($presentation['OPTIONS']) && ($presentation['INTERVALS_ACTIVE'] ?? false), 'Integer variables require native intervals, not Boolean/String OPTIONS.');
+$intervals = json_decode($presentation['INTERVALS'], true, 512, JSON_THROW_ON_ERROR);
+$check(array_column($intervals, 'IntervalMinValue') === [-1, 0, 1] && array_column($intervals, 'IntervalMaxValue') === [-1, 0, 1], 'Unknown must be distinct from false and true.');
+$check(array_column($intervals, 'ConstantValue') === ['Not available', 'No', 'Yes'], 'All three states need visible text captions.');
+$check(array_column($intervals, 'ConstantActive') === [true, true, true], 'Constant captions must be enabled.');
 $check(IPS_GetVariable($id)['VariableType'] === VARIABLETYPE_INTEGER && !HasAction($id), 'Optional state must be integer without action.');
 $ids = IPS_GetChildrenIDs($detailDevice);
 IPS_ApplyChanges($detailDevice);

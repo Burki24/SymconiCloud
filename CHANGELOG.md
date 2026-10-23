@@ -12,6 +12,8 @@
 
 ## Fixes
 
+- Die zusätzlichen Integer-Statusvariablen des iCloud-Geräts zeigen **Nicht verfügbar**, **Nein** und **Ja** statt der Rohwerte -1, 0 und 1. Der zentrale VariablePresentationHelper verwendet dafür native Zahlenintervalle; Variablen-IDs, Typen und gespeicherte Werte bleiben erhalten.
+
 - Nominatim und Geoapify zeigen dieselbe kompakte Adressstruktur ohne zusätzliche Verwaltungshierarchie. Die Darstellung gilt für Geräteliste, Popup und Gerätevariable; Genauigkeitsgrenzen bleiben erhalten. Alte Cachetexte werden im Hintergrund neu aufgelöst und das Geoapify-Tagesbudget bleibt bestehen.
 
 - **Bei Apple aktualisieren** steht auch in der IPSView-Karte zur Verfügung. Der feste, authentifizierte Aufruf nutzt die bestehende Kontoabfrage samt Wartezeit und aktualisiert die Daten ohne Neuladen oder Verlust der Kartenansicht.

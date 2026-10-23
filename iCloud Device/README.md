@@ -73,6 +73,12 @@ belegt ein fehlender Wert weder Unterstützung noch Aktivierung einer Funktion.
 `LocationIsInaccurate` ist Apples zusätzliche Kennzeichnung und ersetzt nicht
 die metrische `Accuracy` oder die Genauigkeitsregeln der Adressauflösung.
 
+In Symcon erscheinen die lesbaren Texte **Nicht verfügbar**, **Nein** und **Ja**.
+Die numerischen Werte bleiben für Skripte und Archivierung erhalten. Die
+Darstellung verwendet den zentralen VariablePresentationHelper mit nativen
+Zahlenintervallen; nach dessen automatischer Verteilung die
+Geräteinstanzkonfiguration erneut übernehmen.
+
 Nach dem Update die Geräteinstanzkonfiguration übernehmen. Alte Kontocaches
 bleiben lesbar; die neuen Angaben zeigen zunächst **Nicht verfügbar**, bis die
 nächste erfolgreiche Geräteabfrage im Konto die zusätzlichen Felder liefert.

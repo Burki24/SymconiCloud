@@ -195,7 +195,7 @@ class iCloudDevice extends IPSModuleStrict
             ['Value' => 1, 'Caption' => $this->Translate('Yes')]
         ];
         foreach (array_merge(array_keys(self::OPTIONAL_FLAGS), ['LocationIsInaccurate', 'LocationFinished']) as $ident) {
-            if ($this->RegisterVariableInteger($ident, $this->Translate($ident), $this->OptionsPresentation($options), $position++)) {
+            if ($this->RegisterVariableInteger($ident, $this->Translate($ident), $this->IntegerOptionsPresentation($options), $position++)) {
                 $this->SetValue($ident, -1);
             }
         }
