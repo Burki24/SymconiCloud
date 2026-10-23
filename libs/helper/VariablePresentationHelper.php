@@ -14,7 +14,7 @@ use JsonException;
  * deliberately returns presentation arrays only and has no dependency on a
  * concrete module class, device model, transport or expose structure.
  *
- * @version 2.0.0
+ * @version 2.1.0
  */
 trait VariablePresentationHelper
 {
@@ -554,10 +554,10 @@ trait VariablePresentationHelper
     }
 
     /**
-     * Creates a read-only value presentation with an option list.
+     * Creates a read-only value presentation for Boolean or string options.
      *
-     * Useful for boolean/string states or enumerations that must not expose an
-     * action in the visualization.
+     * Integer variables must use IntegerOptionsPresentation: Symcon ignores
+     * OPTIONS for numeric value presentations. Existing serialization is unchanged.
      *
      * @param list<array<string,mixed>> $options Native option definitions.
      *
@@ -585,6 +585,53 @@ trait VariablePresentationHelper
             'SUFFIX'       => $suffix,
             'OPTIONS'      => $this->EncodePresentationData($options)
         ];
+    }
+
+    /**
+     * Creates read-only integer states using exact intervals and constant captions.
+     *
+     * @param list<array<string,mixed>> $options Unique integer Value/string Caption pairs, with optional icon/color overrides.
+     *
+     * @return array<string,mixed> Native numeric value presentation, without OPTIONS.
+     *
+     * @throws InvalidArgumentException If options are empty, values are not unique integers or captions are not strings.
+     * @throws JsonException            If interval data cannot be encoded.
+     */
+    protected function IntegerOptionsPresentation(
+        array $options,
+        string $icon = '',
+        int $color = -1,
+        string $prefix = '',
+        string $suffix = ''
+    ): array {
+        if ($options === []) {
+            throw new InvalidArgumentException('Integer state options must not be empty.');
+        }
+        $intervals = [];
+        $seen = [];
+        foreach ($options as $option) {
+            $value = $option['Value'] ?? null;
+            if (!is_int($value) || isset($seen[$value]) || !is_string($option['Caption'] ?? null)) {
+                throw new InvalidArgumentException('Integer states require unique integer values and string captions.');
+            }
+            $seen[$value] = true;
+            $intervals[] = [
+                'IntervalMinValue' => $value,
+                'IntervalMaxValue' => $value,
+                'ConstantActive'   => true,
+                'ConstantValue'    => $option['Caption'],
+                'ConversionFactor' => 1,
+                'PrefixActive'     => false,
+                'SuffixActive'     => false,
+                'DigitsActive'     => false,
+                'IconActive'       => $option['IconActive'] ?? false,
+                'IconValue'        => $option['IconValue'] ?? '',
+                'ColorActive'      => $option['ColorActive'] ?? false,
+                'ColorValue'       => $option['ColorValue'] ?? -1
+            ];
+        }
+        $values = array_keys($seen);
+        return $this->ValuePresentation(prefix: $prefix, suffix: $suffix, min: min($values), max: max($values), icon: $icon, color: $color, intervals: $intervals);
     }
 
     /**

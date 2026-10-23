@@ -22,7 +22,7 @@ The files in this directory are vendored from
 | `ResponsiveVisualizationHelper.php` | 1.0.1 | `9b8f708fe4de4271310a50c1ac2f09166ba731f540eb829f46ad15b805f9f220` |
 | `ReverseGeocodingHelper.php` | 1.1.0 | `a1511ade232cb44bd923d1edddac171e9006fe60a37bd250e8c63aed96bc5e67` |
 | `PersistentJsonCacheHelper.php` | 1.0.0 | `adbc7680abe814dc6c15a9cda1312cc30023073595052006662716bc0d65f2a4` |
-| `VariablePresentationHelper.php` | 2.0.0 | `ce620078e72bcbffed1adfdd02e8f64baf5f2b2e8e1531e3bb1ae7b32b390fb8` |
+| `VariablePresentationHelper.php` | 2.1.0 | `56f8b6c258db79b6f41e2f9930d88a37d719a599c3a2f317bc34b7f4746293fa` |
 | `VisualizationThemeConfigurationHelper.php` | 1.0.1 | `117b0f8f8a4d9c829115eabf15cf957d5c9e26cedf2954c996cbb1a36e115f01` |
 | `VisualizationThemeHelper.php` | 1.1.0 | `29fe61a7eccafeb8b2beb77fe3f7a4896f43b3eaace9ebe428a4fc8250fd9088` |
 
