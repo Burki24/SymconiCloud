@@ -10,7 +10,7 @@ use InvalidArgumentException;
  * Pure geofence evaluation with accuracy envelopes, hysteresis and sample confirmation.
  * State is supplied and persisted by the caller; no I/O or platform dependency.
  *
- * @version 1.1.0
+ * @version 1.2.0
  */
 trait GeofenceHelper
 {
@@ -37,7 +37,12 @@ trait GeofenceHelper
         return $states === [] || in_array(-1, $states, true) ? -1 : 0;
     }
 
-    /** @return list<array{id:string,name:string,latitude:float,longitude:float,radius:float}> */
+    /**
+     * Optional hysteresis/maxAccuracy/confirmSeconds override global settings.
+     * customGPS=false explicitly inherits all globals and ignores dormant values.
+     * Missing override fields inherit; legacy zones retain their normalized shape.
+     * @return list<array<string,mixed>>
+     */
     protected function NormalizeGeofenceZones(array $zones): array
     {
         if (!array_is_list($zones) || count($zones) < 1 || count($zones) > 64) {
@@ -54,10 +59,52 @@ trait GeofenceHelper
                 throw new InvalidArgumentException('Zones require unique IDs, names, valid coordinates and radii.');
             }
             $seen[$zone['id']] = true;
-            $result[] = ['id' => $zone['id'], 'name' => trim($zone['name']), 'latitude' => (float) $zone['latitude'],
-                'longitude'   => (float) $zone['longitude'], 'radius' => (float) $zone['radius']];
+            $normalized = ['id' => $zone['id'], 'name' => trim($zone['name']), 'latitude' => (float) $zone['latitude'],
+                'longitude'     => (float) $zone['longitude'], 'radius' => (float) $zone['radius']];
+            if (array_key_exists('customGPS', $zone) && !is_bool($zone['customGPS'])) {
+                throw new InvalidArgumentException('Invalid zone GPS inheritance flag.');
+            }
+            if (($zone['customGPS'] ?? true) !== false) {
+                foreach (['hysteresis' => [0, 10000], 'maxAccuracy' => [1, 10000], 'confirmSeconds' => [0, 3600]] as $key => [$min, $max]) {
+                    if (!array_key_exists($key, $zone) || $zone[$key] === null) {
+                        continue;
+                    }
+                    if (!$this->GeofenceNumber($zone[$key]) || $zone[$key] < $min || $zone[$key] > $max) {
+                        throw new InvalidArgumentException('Invalid zone GPS settings.');
+                    }
+                    $normalized[$key] = (float) $zone[$key];
+                }
+            }
+            $result[] = $normalized;
         }
         return $result;
+    }
+
+    /**
+     * Resolves and validates per-zone overrides without changing legacy zones.
+     * @return array<string,array<string,int|float>> Effective settings by zone ID.
+     * @throws InvalidArgumentException Invalid globals, overrides or radius/buffer.
+     */
+    protected function ResolveGeofenceZoneSettings(array $zones, array $settings = []): array
+    {
+        $settings += ['maxAge' => 900, 'maxAccuracy' => 100, 'hysteresis' => 25, 'confirmSeconds' => 30, 'maxSpeed' => 300];
+        if (count($settings) !== 5) {
+            throw new InvalidArgumentException('Invalid evaluation settings.');
+        }
+        foreach (['maxAge' => [30, 86400], 'maxAccuracy' => [1, 10000], 'hysteresis' => [0, 10000], 'confirmSeconds' => [0, 3600], 'maxSpeed' => [0, 2000]] as $key => [$min, $max]) {
+            if (!$this->GeofenceNumber($settings[$key]) || $settings[$key] < $min || $settings[$key] > $max) {
+                throw new InvalidArgumentException('Invalid evaluation settings.');
+            }
+        }
+        $resolved = [];
+        foreach ($this->NormalizeGeofenceZones($zones) as $zone) {
+            $effective = array_replace($settings, array_intersect_key($zone, array_flip(['hysteresis', 'maxAccuracy', 'confirmSeconds'])));
+            if ($zone['radius'] <= $effective['hysteresis']) {
+                throw new InvalidArgumentException('Zone radius must exceed hysteresis.');
+            }
+            $resolved[$zone['id']] = $effective;
+        }
+        return $resolved;
     }
 
     /** Great-circle distance on the mean-radius Earth, in metres. */
@@ -79,7 +126,8 @@ trait GeofenceHelper
         return array_replace(
             $empty,
             array_intersect_key($state, $empty),
-            ['zone' => null, 'since' => 0, 'candidate' => null, 'candidateSince' => 0, 'reason' => 'missing']
+            ['zone'           => null, 'since' => 0, 'candidate' => null, 'candidateSince' => 0, 'reason' => 'missing',
+                'qualityZone' => ($state['zone'] ?? '') !== '' && ($state['zone'] ?? null) !== null ? $state['zone'] : ($state['qualityZone'] ?? null)]
         );
     }
 
@@ -90,7 +138,7 @@ trait GeofenceHelper
      * Repeated samples may age or advance duration but never confirm transitions.
      * The caller must reset state when the source, zones or settings change.
      *
-     * @param array      $zones     One to 64 circular zones; see NormalizeGeofenceZones().
+     * @param array      $zones     One to 64 circular zones, with optional per-zone GPS overrides; see NormalizeGeofenceZones().
      * @param string     $reference Existing zone ID used for presence and centre distance.
      * @param array|null $location  Generic fix: latitude, longitude, accuracy, timestamp, optional isOld/isInaccurate.
      * @param array      $state     Previous returned state, or an empty array for a new source.
@@ -109,16 +157,7 @@ trait GeofenceHelper
         if (!isset($indexed[$reference]) || $now < 1 || count($settings) !== 5) {
             throw new InvalidArgumentException('Select a reference zone and valid evaluation settings.');
         }
-        foreach (['maxAge' => [30, 86400], 'maxAccuracy' => [1, 10000], 'hysteresis' => [0, 10000], 'confirmSeconds' => [0, 3600], 'maxSpeed' => [0, 2000]] as $key => [$min, $max]) {
-            if (!$this->GeofenceNumber($settings[$key]) || $settings[$key] < $min || $settings[$key] > $max) {
-                throw new InvalidArgumentException('Invalid evaluation settings.');
-            }
-        }
-        foreach ($zones as $zone) {
-            if ($zone['radius'] <= $settings['hysteresis']) {
-                throw new InvalidArgumentException('Zone radius must exceed hysteresis.');
-            }
-        }
+        $zoneSettings = $this->ResolveGeofenceZoneSettings($zones, $settings);
         $state = $this->GeofenceReadState($state, $indexed);
         if ($now < $state['evaluatedAt']) {
             $state = $this->GeofenceEmptyState();
@@ -142,13 +181,16 @@ trait GeofenceHelper
             return $unknown('stale');
         }
         $accuracy = $location['accuracy'] ?? null;
-        if (!$this->GeofenceNumber($accuracy) || $accuracy <= 0 || $accuracy > $settings['maxAccuracy']
+        $sourceZone = $state['zone'] !== null && $state['zone'] !== '' ? $state['zone'] : $state['qualityZone'];
+        if (!$this->GeofenceNumber($accuracy) || $accuracy <= 0
+            || ($sourceZone !== null && $accuracy > $zoneSettings[$sourceZone]['maxAccuracy'])
             || ($location['isInaccurate'] ?? false) !== false) {
             return $unknown('inaccurate');
         }
         if ($state['lastTimestamp'] > 0 && $timestamp - $state['lastTimestamp'] > $settings['maxAge']) {
             $state = $this->GeofenceEmptyState();
             $state['evaluatedAt'] = $now;
+            $state['qualityZone'] = $sourceZone;
         }
         $latitude = (float) $location['latitude'];
         $longitude = (float) $location['longitude'];
@@ -173,18 +215,31 @@ trait GeofenceHelper
         foreach ($zones as $zone) {
             $distance = $this->GeofenceDistanceMeters($latitude, $longitude, $zone['latitude'], $zone['longitude']);
             $distances[$zone['id']] = $distance;
-            $outside[$zone['id']] = $distance - $accuracy >= $zone['radius'] + $settings['hysteresis'];
-            if (($candidate === null || $zone['id'] === $reference) && $distance + $accuracy <= $zone['radius'] - $settings['hysteresis']) {
+            $effective = $zoneSettings[$zone['id']];
+            $outside[$zone['id']] = $distance - $accuracy >= $zone['radius'] + $effective['hysteresis'];
+            if (($candidate === null || $zone['id'] === $reference) && $accuracy <= $effective['maxAccuracy']
+                && $distance + $accuracy <= $zone['radius'] - $effective['hysteresis']) {
                 $candidate = $zone['id'];
             }
         }
         $distance = $distances[$reference];
+        // A reliable destination may use its own accuracy far from the reference.
+        // Near the reference, or without any established/qualified zone, its
+        // stricter quality requirement still prevents a false absence assertion.
+        if ($accuracy > $zoneSettings[$reference]['maxAccuracy']
+            && (!$outside[$reference] || ($candidate === null && $sourceZone === null))) {
+            return $unknown('inaccurate');
+        }
         if (!$newSample) {
             return $this->GeofenceResult($state, $reference, $now, $distance);
         }
         $state['lastTimestamp'] = $timestamp;
         $state['point'] = ['latitude' => $latitude, 'longitude' => $longitude, 'accuracy' => (float) $accuracy];
         $held = false;
+        if ($candidate !== $reference && $state['zone'] !== null && $state['zone'] !== '' && $candidate !== $state['zone'] && !$outside[$state['zone']]) {
+            $candidate = $state['zone'];
+            $held = true;
+        }
         if ($candidate !== $reference && !$outside[$reference] && $state['zone'] === $reference) {
             $candidate = $reference;
             $held = true;
@@ -207,7 +262,8 @@ trait GeofenceHelper
             $state['candidate'] = null;
             $state['candidateSince'] = 0;
             $state['reason'] = $held ? 'held' : 'valid';
-        } elseif ($state['zone'] === null || $settings['confirmSeconds'] == 0) {
+        } elseif (($state['zone'] === null && ($sourceZone === null || $sourceZone === $candidate))
+            || $this->GeofenceConfirmationSeconds($zoneSettings, $sourceZone, $candidate) == 0) {
             $state['zone'] = $candidate;
             $state['since'] = min($timestamp, $now);
             $state['candidate'] = null;
@@ -217,7 +273,7 @@ trait GeofenceHelper
             if ($state['candidate'] !== $candidate) {
                 $state['candidate'] = $candidate;
                 $state['candidateSince'] = $timestamp;
-            } elseif ($timestamp - $state['candidateSince'] >= $settings['confirmSeconds']) {
+            } elseif ($timestamp - $state['candidateSince'] >= $this->GeofenceConfirmationSeconds($zoneSettings, $sourceZone, $candidate)) {
                 $state['zone'] = $candidate;
                 $state['since'] = min($timestamp, $now);
                 $state['candidate'] = null;
@@ -225,7 +281,16 @@ trait GeofenceHelper
             }
             $state['reason'] = $state['candidate'] !== null ? 'pending' : 'valid';
         }
+        if ($state['zone'] !== null) {
+            $state['qualityZone'] = $state['zone'] !== '' ? $state['zone'] : null;
+        }
         return $this->GeofenceResult($state, $reference, $now, $distance);
+    }
+
+    /** Both departure and arrival must finish their confirmation interval. */
+    private function GeofenceConfirmationSeconds(array $settings, ?string $source, string $destination): float
+    {
+        return max((float) ($settings[$source ?? '']['confirmSeconds'] ?? 0), (float) ($settings[$destination]['confirmSeconds'] ?? 0));
     }
 
     private function GeofenceNumber(mixed $value): bool
@@ -241,16 +306,20 @@ trait GeofenceHelper
     private function GeofenceEmptyState(): array
     {
         return ['version'   => 1, 'zone' => null, 'since' => 0, 'candidate' => null, 'candidateSince' => 0,
-            'lastTimestamp' => 0, 'point' => null, 'evaluatedAt' => 0, 'reason' => 'missing'];
+            'lastTimestamp' => 0, 'point' => null, 'evaluatedAt' => 0, 'reason' => 'missing', 'qualityZone' => null];
     }
 
     private function GeofenceReadState(array $state, array $zones): array
     {
         $empty = $this->GeofenceEmptyState();
+        $state += ['qualityZone' => null];
         if (($state['version'] ?? null) !== 1 || array_diff_key($empty, $state) !== []) {
             return $empty;
         }
-        foreach (['zone', 'candidate'] as $key) {
+        foreach (['zone', 'candidate', 'qualityZone'] as $key) {
+            if ($key === 'qualityZone' && $state[$key] === '') {
+                return $empty;
+            }
             if ($state[$key] !== null && (!is_string($state[$key]) || ($state[$key] !== '' && !isset($zones[$state[$key]])))) {
                 return $empty;
             }
