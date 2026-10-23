@@ -388,6 +388,12 @@
                     "source_sha": "2a16a7cc4e2e0b8ba811652dde6a5a644260b6ea"
                 }
             ]
+        },
+        "GeofenceHelper": {
+            "version": "1.0.0",
+            "sha256": "9b725d525347d440c12536328ab120ebaa2012344451998328ea374724b6fd03",
+            "path": "libs/helper/GeofenceHelper.php",
+            "source_sha": "4633b08eb2b79c7be0ccc9528c01bd0fbd259e99"
         }
     }
 }

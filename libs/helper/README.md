@@ -7,6 +7,7 @@ The files in this directory are vendored from
 | --- | --- | --- |
 | `ConfigurationFormHelper.php` | 1.0.1 | `bd45f15a1c2f6e2800eff51eefeb3094f5745a3469434d6a57b98d54f30d363f` |
 | `DataFlowHelper.php` | 1.0.0 | `4c25828b283367692d0db1631d2b7d71ba6012883798bc5ffddb8f2d551d6dfb` |
+| `GeofenceHelper.php` | 1.0.0 | `9b725d525347d440c12536328ab120ebaa2012344451998328ea374724b6fd03` |
 | `HelperTranslationHelper.php` | 1.0.0 | `d3deee581eca9f8eb11e9adce060170227a2dc836ee898bd134f93d27604f639` |
 | `HttpResponseHelper.php` | 1.1.0 | `be4fae4c23f757ab462237d8e74d2a9dca1b504937ed4d4b51c7ff76004cf1cd` |
 | `IPSViewHTMLPageHelper.php` | 1.5.3 | `e03d0bf8118c550026a84b271ce17a6c48f489cf5c33b50da0e9c41daa653a2a` |
