@@ -6,6 +6,8 @@ declare(strict_types=1);
 // https://www.symcon.de/de/service/dokumentation/entwicklerbereich/sdk-tools/sdk-php/konfigurationsformulare/button/
 // https://www.symcon.de/de/service/dokumentation/entwicklerbereich/sdk-tools/sdk-php/konfigurationsformulare/configurator/
 // https://www.symcon.de/de/service/dokumentation/entwicklerbereich/sdk-tools/sdk-php/module/updateformfield/
+// https://www.symcon.de/en/service/documentation/developer-area/sdk-tools/sdk-php/configuration-forms/list/
+// https://www.symcon.de/en/service/documentation/developer-area/sdk-tools/sdk-php/configuration-forms/numberspinner/
 require __DIR__ . '/modules.php';
 
 /** Enforces the documented UpdateFormField wire contract missing from the stubs. */
@@ -64,6 +66,15 @@ function validateButtonScript(string|array $script, array $scope, array $module)
             } elseif ($token[0] === T_CONSTANT_ENCAPSED_STRING) {
                 $arguments[] = $token[1][0] === '"' ? json_decode($token[1], true, 512, JSON_THROW_ON_ERROR)
                     : str_replace(["\\'", '\\\\'], ["'", '\\'], substr($token[1], 1, -1));
+            } elseif ($token[0] === T_STRING && $token[1] === 'json_encode') {
+                $open = array_shift($tokens);
+                $variable = array_shift($tokens);
+                $close = array_shift($tokens);
+                if ($open !== '(' || !is_array($variable) || $variable[0] !== T_VARIABLE || $close !== ')'
+                    || !array_key_exists(substr($variable[1], 1), $scope)) {
+                    throw new RuntimeException('Only JSON encoding a known form field is supported.');
+                }
+                $arguments[] = json_encode($scope[substr($variable[1], 1)], JSON_THROW_ON_ERROR);
             } elseif ($token[0] === T_LNUMBER) {
                 $arguments[] = (int) $token[1];
             } else {
@@ -161,8 +172,11 @@ foreach ($knownModules as $moduleID => $folder) {
             foreach ($items as $item) {
                 if (isset($item['name'])) {
                     $scope[$item['name']] = $defaults[$item['name']] ?? (($item['type'] ?? '') === 'PasswordTextBox' ? '123456' : '');
+                    if (($item['type'] ?? '') === 'List') {
+                        $scope[$item['name']] = json_decode($scope[$item['name']], true, 512, JSON_THROW_ON_ERROR);
+                    }
                 }
-                foreach (['onClick', 'onChange'] as $event) {
+                foreach (['onClick', 'onChange', 'onAdd', 'onEdit', 'onDelete'] as $event) {
                     if (isset($item[$event])) {
                         $buttons[] = ['script' => $item[$event], 'item' => $item];
                     }
@@ -222,6 +236,8 @@ $expectFailure(fn () => validateButtonScript('ICID_Missing($id);', ['id' => $fir
 $expectFailure(fn () => validateButtonScript('ICID_Update($id, 1);', ['id' => $firstDevice], $deviceMeta));
 $expectFailure(fn () => validateButtonScript('ICID_Update($Code);', ['id' => $firstDevice], $deviceMeta));
 $expectFailure(fn () => validateButtonScript("ICID_Update('invalid-instance');", ['id' => $firstDevice], $deviceMeta));
+$expectFailure(fn () => validateButtonScript('ICID_Update(json_encode($Missing));', ['id' => $firstDevice], $deviceMeta));
+$expectFailure(fn () => validateButtonScript('ICID_Update(file_get_contents($id));', ['id' => $firstDevice], $deviceMeta));
 $expectFailure(fn () => validateCreationRecipe((object) ['moduleID' => $deviceModule, 'configuration' => '{"DeviceID":"synthetic-device"}'], $knownModules));
 $expectFailure(fn () => validateCreationRecipe((object) ['moduleID' => $deviceModule, 'configuration' => (object) ['Unknown' => 'x']], $knownModules));
 $expectFailure(fn () => validateCreationRecipe((object) ['moduleID' => $deviceModule, 'configuration' => (object) ['DeviceID' => 123]], $knownModules));

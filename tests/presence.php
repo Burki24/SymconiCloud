@@ -7,6 +7,7 @@ require_once __DIR__ . '/modules.php';
 class PresenceFixture extends iCloudPresence
 {
     public int $clock = 1700000100;
+    public array $fieldUpdates = [];
 
     public function timerInterval(): int
     {
@@ -18,6 +19,17 @@ class PresenceFixture extends iCloudPresence
         $this->WriteAttributeInteger('LayoutVersion', 0);
         $this->WriteAttributeString('EvaluationState', json_encode($state, JSON_THROW_ON_ERROR));
         $this->WriteAttributeString('SourceIdentity', $identity);
+    }
+
+    protected function UpdateFormField(string $Field, string $Parameter, mixed $Value): bool
+    {
+        if ($Parameter === 'columns.4.edit') {
+            if (!is_string($Value) || !is_object(json_decode($Value, false, 512, JSON_THROW_ON_ERROR))) {
+                throw new RuntimeException('A list editor update must be a JSON-encoded object.');
+            }
+        }
+        $this->fieldUpdates[$Field][$Parameter] = $Value;
+        return true;
     }
 
     protected function LoadConfigurationForm(): array

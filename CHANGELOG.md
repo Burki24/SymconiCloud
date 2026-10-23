@@ -30,6 +30,12 @@
 
 ## Fixes
 
+- Das Anwesenheitsformular verhindert gleich große oder kleinere Zonenradien
+  gegenüber dem Grenzpuffer durch voneinander abhängige Eingabegrenzen.
+  Änderungen an der Zonenliste und am Puffer werden vor dem Übernehmen
+  berücksichtigt. Ungültige gespeicherte Kombinationen benennen die betroffene
+  Zone und beide Werte, ohne Einstellungen automatisch zu verändern.
+
 - Die zusätzlichen Integer-Statusvariablen des iCloud-Geräts zeigen **Nicht verfügbar**, **Nein** und **Ja** statt der Rohwerte -1, 0 und 1. Der zentrale VariablePresentationHelper verwendet dafür native Zahlenintervalle; Variablen-IDs, Typen und gespeicherte Werte bleiben erhalten.
 
 - Nominatim und Geoapify zeigen dieselbe kompakte Adressstruktur ohne zusätzliche Verwaltungshierarchie. Die Darstellung gilt für Geräteliste, Popup und Gerätevariable; Genauigkeitsgrenzen bleiben erhalten. Alte Cachetexte werden im Hintergrund neu aufgelöst und das Geoapify-Tagesbudget bleibt bestehen.

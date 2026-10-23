@@ -109,7 +109,8 @@ class iCloudPresence extends IPSModuleStrict
                     'maxSpeed'        => $this->ReadPropertyInteger('MaxSpeed')];
                 $this->EvaluateGeofence($zones, $reference, null, [], $this->PresenceNow(), $settings);
             } catch (Throwable) {
-                $this->unavailable($members, 'Check the zones, reference zone and GPS settings.', 201);
+                $limits = $this->zoneFormLimits($this->ReadPropertyString('Zones'), $this->ReadPropertyInteger('Hysteresis'));
+                $this->unavailable($members, $limits['message'] !== '' ? $limits['message'] : 'Check the zones, reference zone and GPS settings.', 201);
                 return false;
             }
             $identity = hash('sha256', json_encode([$this->GetParentID(), $zones, $reference, $settings], JSON_THROW_ON_ERROR));
@@ -179,8 +180,23 @@ class iCloudPresence extends IPSModuleStrict
             // No authentication, external request or configuration write while opening the form.
         }
         $form['elements'][1]['columns'][0]['edit']['options'] = $options;
+        $limits = $this->zoneFormLimits($this->ReadPropertyString('Zones'), $this->ReadPropertyInteger('Hysteresis'));
+        $form['elements'][3]['columns'][4]['edit']['minimum'] = $limits['minimum'];
+        $form['elements'][5]['items'][2]['maximum'] = $limits['maximum'];
+        $form['elements'][7]['caption'] = $limits['message'];
+        $form['elements'][7]['visible'] = $limits['message'] !== '';
         $form['actions'][0]['caption'] = $this->ReadAttributeString('LastError');
         return $this->EncodeConfigurationForm($form);
+    }
+
+    /** Updates only the open form using unsaved list and spinner values. */
+    public function ValidateZoneSettings(string $Zones, int $Hysteresis): void
+    {
+        $limits = $this->zoneFormLimits($Zones, $Hysteresis);
+        $this->UpdateFormField('Zones', 'columns.4.edit', json_encode(['type' => 'NumberSpinner', 'minimum' => $limits['minimum'], 'maximum' => 1000000], JSON_THROW_ON_ERROR));
+        $this->UpdateFormField('Hysteresis', 'maximum', $limits['maximum']);
+        $this->UpdateFormField('ZoneSettingsError', 'caption', $limits['message']);
+        $this->UpdateFormField('ZoneSettingsError', 'visible', $limits['message'] !== '');
     }
 
     /** Returns a stable member variable ident for scripts without exposing IDs in variable names. */
@@ -201,6 +217,24 @@ class iCloudPresence extends IPSModuleStrict
     protected function ReadPresenceCache(): array
     {
         return json_decode($this->SendDataToParent($this->EncodeDataFlowMessage(self::REQUEST_DATA, ['Command' => 'GetDevices'])), true, 512, JSON_THROW_ON_ERROR);
+    }
+
+    /** UI limits for the geofence helper's strict radius/buffer contract. */
+    private function zoneFormLimits(string $json, int $buffer): array
+    {
+        $limits = ['minimum' => max(1, min(10000, $buffer) + 1), 'maximum' => 10000, 'message' => ''];
+        try {
+            $zones = $this->NormalizeGeofenceZones(json_decode($json, true, 512, JSON_THROW_ON_ERROR));
+        } catch (Throwable) {
+            return $limits;
+        }
+        foreach ($zones as $zone) {
+            $limits['maximum'] = min($limits['maximum'], (int) ceil($zone['radius']) - 1);
+            if ($zone['radius'] <= $buffer && $limits['message'] === '') {
+                $limits['message'] = sprintf($this->Translate('Zone "%s": radius (%s m) must be greater than the boundary buffer (%s m). Increase the radius or reduce the buffer.'), $zone['name'], (string) $zone['radius'], (string) $buffer);
+            }
+        }
+        return $limits;
     }
 
     private function selectedMembers(): array

@@ -15,6 +15,7 @@
             "Maximum location age (seconds)": "Maximales Standortalter (Sekunden)",
             "Maximum location uncertainty (m)": "Maximale Standortungenauigkeit (m)",
             "Zone boundary buffer (m)": "Puffer an Zonengrenzen (m)",
+            "Zone \"%s\": radius (%s m) must be greater than the boundary buffer (%s m). Increase the radius or reduce the buffer.": "Zone \"%s\": Der Radius (%s m) muss größer als der Grenzpuffer (%s m) sein. Radius vergrößern oder Puffer verkleinern.",
             "Zone change confirmation (seconds)": "Bestätigungszeit für Zonenwechsel (Sekunden)",
             "Maximum plausible speed (km/h; 0 disables)": "Maximale plausible Geschwindigkeit (km/h; 0 deaktiviert)",
             "Mark exactly one reference zone. Presence refers to this zone. Use stable unique zone IDs. The reference zone takes priority; otherwise the first matching zone wins.": "Genau eine Referenzzone markieren. Auf diese Zone bezieht sich die Anwesenheit. Stabile, eindeutige Zonen-IDs verwenden. Die Referenzzone hat Vorrang; sonst gilt die erste eindeutig passende Zone.",

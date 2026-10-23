@@ -117,6 +117,14 @@ Zuordnung erhalten; ohne Vorgeschichte lautet das Ergebnis Unbekannt. Die erste
 klare Position wird sofort angenommen. Anschließende Wechsel brauchen neue,
 zeitlich getrennte Positionen. Wiederholte Cache-Abfragen bestätigen keinen Wechsel.
 
+Das Formular begrenzt den Grenzpuffer auf einen Wert unterhalb des kleinsten
+Zonenradius und den Zonenradius auf einen Wert oberhalb des Grenzpuffers.
+Die Grenzen werden auch bei noch nicht übernommenen Änderungen der Zonenliste
+und des Puffers aktualisiert. Ungültige gespeicherte Kombinationen zeigen die
+betroffene Zone mit Radius und Puffer sowie einen Korrekturhinweis. Werte werden
+nicht automatisch geändert. Auch Skriptänderungen werden bei der Auswertung
+unabhängig vom Formular geprüft.
+
 Fehlende, ungenaue, von Apple als alt oder ungenau markierte, überalterte oder
 unplausible Positionen führen je Gerät zu Unbekannt. Datenverlust unterbricht
 den Aufenthalt. Erst eine neue verlässliche Position ermöglicht die Wiederaufnahme;

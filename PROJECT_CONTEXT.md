@@ -1,5 +1,43 @@
 # Entwicklungsstand
 
+## Anwesenheit: Formulargrenzen und erneute Laufzeitprüfung (2026-10-23)
+
+Die fachliche Bedingung `radius > hysteresis` bleibt im zentralen GeofenceHelper
+verbindlich. Das Modul verwendet weiterhin den ConfigurationFormHelper für das
+dynamische Formular. Modulbezogene Eingabegrenzen begrenzen den Radius-Editor
+auf `buffer + 1` und den ganzzahligen Puffer auf einen Wert unter dem kleinsten
+Radius aller Zonen. Die dokumentierten List-Ereignisse `onAdd`, `onEdit` und
+`onDelete` sowie `NumberSpinner.onChange` verwenden die noch nicht übernommenen
+Formularwerte. Komplexe Editor-Updates werden JSON-codiert übergeben. Die
+Formularprüfung persistiert keine Properties und liest keinen Kontocache.
+Bei ungültigen gespeicherten Kombinationen nennt der Fehlertext Zone und Werte;
+die unabhängige Laufzeitprüfung bleibt aktiv und hält den Timer angehalten.
+
+Gezielte Regressionen prüfen Gleichheit, die kleinste Neben-/Referenzzone,
+ungespeicherte Änderungen, Warnung und Korrektur, leere bzw. fehlerhafte Listen,
+JSON-Updates, unveränderte Properties/Variablen-IDs und ausbleibende Kontoaufrufe.
+Die dokumentbasierten CI-Vertragsprüfungen berücksichtigen zusätzlich die drei
+List-Ereignisse und die JSON-Serialisierung bekannter Formularfelder.
+
+Die erneute lesende MCP-Prüfung der installierten Anwesenheitsgruppe ergab
+Status 102 bei zwei ausgewählten Geräten, einer gemeinsamen Referenzzone und
+29 Variablen. Der Benutzer hatte den Grenzpuffer auf 9 m bei 10 m Radius und
+15 m maximaler Ungenauigkeit korrigiert. Der 15-Sekunden-Timer aktualisierte die
+Werte; beide Entfernungen stimmten mit einer unabhängigen Großkreisberechnung
+aus dem Kontocache überein. Ein zuverlässig abwesendes und ein im Grenzbereich
+unbekanntes Gerät ergaben korrekt eine unbekannte Gesamtanwesenheit mit den
+passenden Zählern. Bei beiden Geräten waren Aufenthalt und Beginn 0 und als
+nicht verfügbar gekennzeichnet. Ein fortlaufender positiver Aufenthalt ließ
+sich in dieser realen Konstellation daher nicht prüfen.
+
+Konfiguration und alle 29 Variablen-IDs blieben während der erneuten Prüfung
+unverändert. Die zuvor erfassten Einzelgeräteinstanzen waren nicht mehr vorhanden;
+eine ID-Migration vom früheren Einzelgerätebestand kann dieser Lauf somit nicht
+bestätigen. Die neu ergänzte Formularabsicherung wurde lokal geprüft und noch
+nicht auf das angeschlossene System installiert. Ein nativer Bediennachweis
+dieser neuen Grenzen bleibt bis zum regulären Modulupdate offen. Es wurden weder
+Einstellungen geändert noch zusätzliche Apple-Abfragen ausgelöst.
+
 ## Anwesenheitsgruppen: mehrere Geräte und gemeinsame Zonen (2026-10-23)
 
 Die Anwesenheitsinstanz wurde auf eine Gruppe mit mehreren Geräten desselben
