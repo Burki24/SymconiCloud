@@ -73,7 +73,28 @@
             "SelectedCount": "Ausgewählte Geräte",
             "PresentCount": "Anwesende Geräte",
             "AbsentCount": "Abwesende Geräte",
-            "UnknownCount": "Geräte mit unbekannter Anwesenheit"
+            "UnknownCount": "Geräte mit unbekannter Anwesenheit",
+            "Picture (optional)": "Bild (optional)",
+            "Presence for IPSView": "Anwesenheit für IPSView",
+            "Distance to reference zone": "Entfernung zur Referenzzone",
+            "Stay": "Aufenthalt",
+            "%d present · %d absent · %d unknown": "%d anwesend · %d abwesend · %d unbekannt",
+            "Tile designer": "Kacheldesigner",
+            "IPSView designer": "IPSView-Designer",
+            "Layout and content": "Layout und Inhalt",
+            "Colors": "Farben",
+            "Colors and typography": "Farben und Schrift",
+            "Font size in pixels": "Schriftgröße in Pixeln",
+            "Show device pictures": "Gerätebilder anzeigen",
+            "Show details": "Details anzeigen",
+            "Picture size in pixels": "Bildgröße in Pixeln",
+            "Corner radius in pixels": "Eckenradius in Pixeln",
+            "Spacing in pixels": "Abstand in Pixeln",
+            "Symcon server URL for IPSView (optional)": "Symcon-Server-URL für IPSView (optional)",
+            "Normally the server address is detected automatically. Only enter an HTTP(S) origin without a path if the client cannot provide it.": "Normalerweise wird die Serveradresse automatisch erkannt. Nur dann einen HTTP(S)-Ursprung ohne Pfad eintragen, wenn der Client keinen bereitstellt.",
+            "Live updates unavailable. Retrying...": "Live-Aktualisierungen nicht verfügbar. Neuer Versuch…",
+            "No devices selected.": "Keine Geräte ausgewählt.",
+            "Optional pictures: select a Symcon image medium per device. Use PNG, JPEG, GIF or WebP, at most 128 KiB and 1024 x 1024 pixels. Invalid pictures use initials.": "Optionale Bilder: Je Gerät ein Symcon-Bildmedium auswählen. PNG, JPEG, GIF oder WebP mit höchstens 128 KiB und 1024 × 1024 Pixeln verwenden. Ungültige Bilder werden durch Initialen ersetzt."
         }
     }
 }

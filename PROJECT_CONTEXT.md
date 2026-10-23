@@ -1,5 +1,62 @@
 # Entwicklungsstand
 
+## Kompakte Anwesenheitswidgets (2026-10-23)
+
+Native HTML-Kachel und optionale IPSView-WebContent-Variable zeigen
+Gesamtanwesenheit und ausgewählte Einzelgeräte, ohne vollständige Dashboardseite.
+Ein optionales Bildmedium ergänzt jede `Devices`-Zeile; fehlende/ungültige Bilder
+verwenden Initialen. Zonen, GPS-Zustände und bestehende Variablenkennungen bleiben.
+
+Darstellung, Bildprüfung, Cachetransport und unabhängige Designer liegen im
+librarylokalen Trait `libs/PresenceWidget.php`; Ressourcen beim Anwesenheitsmodul. Bestehende Helper liefern Theme, IPSView-Farben,
+Schriften, Interaktionen und Reservierung des Kacheltitels. Das Modul liefert
+bereits ausgewertete Werte, keine Koordinaten oder Apple-Kennungen. IPSView-
+Datenupdates schreiben die HTML-Variable nicht neu.
+
+Die Widget-Tests einschließlich Bildvalidierung und JavaScript-Laufzeit liegen
+in SymconiCloud. Die Verlagerung entfernt kein Verhalten und keine Testabdeckung.
+Die unveränderten zentralen Basishelper werden weiterhin regulär verteilt.
+
+MCP: getrennte temporäre Library mit zwölf synthetischen Geräten (Anwesend,
+Abwesend, Unbekannt) und lokalem Testbild. Kachelvorschau in Hell/Dunkel, responsive
+Abmessungen, Bild/Initialen und Mausrad in beide Richtungen erfolgreich.
+IPSView-Testeinbettung bei 360 × 320 Pixeln: echter Cache-Datenwechsel ohne Neuladen.
+Sichtbarer Status wechselte, eingebetteter Bootstrap blieb unverändert, Auswahl und
+Scrollposition blieben erhalten. Der zentrale Dunkelstil wurde ohne Dokumentwechsel
+übernommen. Bei unterbrochenem Cache-Zugriff erschien ein Hinweis, während Auswahl
+und Scrollposition erhalten blieben.
+
+Grenzen: Statische Kachelvorschau bestätigt keine nativen Live-Pushs.
+IPSView-Testeinbettung ersetzt weder echten Webclient noch native IPSView-App;
+diese Hostprüfungen bleiben nach regulärer Installation offen. Die zusätzliche
+WebContent-Vorschau des Symcon-Clients blieb im Ladezustand mit einem Fehler in
+`main.dart.js`; direkte HTML-Kachel und Widget wurden getrennt davon geprüft.
+
+Zuständigkeitskorrektur: Tatsächliche Nutzung in mindestens zwei verschiedenen
+Libraries ist die Voraussetzung für Zentralisierung. Für diesen Widget-Baustein
+ist nur SymconiCloud belegt; Abonnement, zentraler Quellcode und zentrale Tests
+werden deshalb entfernt. Das Widget wird unmittelbar mit der Library ausgeliefert.
+Der CI-Lauf 39967522183 scheiterte an `Unknown helper dependency: StatusWidgetHelper`,
+weil der beim Pull ausgelagerte Manifest-Eintrag vor dem Commit nicht wieder
+enthalten war. Die korrigierte lokale Zuständigkeit benötigt diesen Eintrag nicht.
+Keine Commits, Pushs, Merges oder Releases durch den Agenten.
+
+Nach der Zuständigkeitskorrektur bestehen die vollständige lokale Modulsuite,
+Bild-/JavaScript-Tests, lokale Ressourcen-/Übersetzungsverträge und Stilprüfung
+unter PHP 8.5.10. Das zentrale Manifest umfasst wieder 30 Helper; Bundle-,
+Übersetzungs- und Helper-Prüfungen sowie die isolierte CI-Metadatenvorbereitung
+mit den Sicherheits-/Verteilungstests bestehen ebenfalls.
+Erneute MCP-Prüfung mit synthetischen Daten bestätigt die librarylokalen Pfade:
+native Strict-Instanz aktiv, beide HTML-Ausgaben gefüllt, Kacheltitelabstand,
+deutsche Designertexte und gemischte Gesamtanwesenheit korrekt. Prüfinstanz und
+Library wurden entfernt; die bestehende Anwesenheitskonfiguration samt IDs und
+Verbindung blieb unverändert. Die früher dokumentierten Grenzen für echte
+Host-Live-Pushs und die native IPSView-App bleiben bestehen.
+
+Nach der Prüfung wurden temporäre Instanz, Bilddatei, Library und Hook entfernt.
+Der Vorher-/Nachhervergleich der bestehenden Anwesenheitsinstanz bestätigt
+unveränderte Konfiguration, Verbindung und vollständige Variablen-ID-Liste.
+
 ## Installierte Zonen-GPS-Vorgaben: MCP-Prüfung und Wiederherstellung (2026-10-23)
 
 Nach den vom Benutzer abgeschlossenen Updates wurde die bestehende

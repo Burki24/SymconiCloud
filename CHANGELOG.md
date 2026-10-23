@@ -2,6 +2,14 @@
 
 ## Neu
 
+- **iCloud Anwesenheit** erhält kompakte Kachel- und IPSView-Widgets mit
+  Gesamtanwesenheit, Einzelgeräten und optionalem Bildmedium je Gerät. Unabhängige
+  Designer nutzen zentrale Farb-, Stil-, Schrift- und Layoutvorgaben. Datenupdates
+  erhalten Auswahl und Scrollposition; IPSView aktualisiert den geschützten Cache
+  ohne Neuladen der HTML-Variable. Der Widget-Baustein samt Ressourcen und Tests
+  bleibt innerhalb der Library; die vorhandenen zentralen Basishelper werden
+  unverändert weiterverwendet. Kein zusätzliches Helper-Abonnement erforderlich.
+
 - **iCloud Anwesenheit** bietet je Zone eigene GPS-Vorgaben für Grenzpuffer,
   maximale Standortungenauigkeit und Bestätigungszeit. Ohne Aktivierung gelten
   weiterhin die globalen Werte. Eintritt und Austritt prüfen Herkunft und Ziel;

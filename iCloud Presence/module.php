@@ -7,6 +7,7 @@ require_once __DIR__ . '/../libs/helper/DataFlowHelper.php';
 require_once __DIR__ . '/../libs/helper/ParentConnectionHelper.php';
 require_once __DIR__ . '/../libs/helper/VariablePresentationHelper.php';
 require_once __DIR__ . '/../libs/helper/GeofenceHelper.php';
+require_once __DIR__ . '/../libs/PresenceWidget.php';
 
 class iCloudPresence extends IPSModuleStrict
 {
@@ -15,6 +16,13 @@ class iCloudPresence extends IPSModuleStrict
     use \Burki24\SymconModuleHelper\ParentConnectionHelper;
     use \Burki24\SymconModuleHelper\VariablePresentationHelper;
     use \Burki24\SymconModuleHelper\GeofenceHelper;
+    use \SymconiCloud\PresenceWidget;
+    use \Burki24\SymconModuleHelper\IPSViewHTMLPageHelper;
+    use \Burki24\SymconModuleHelper\VisualizationAssetHelper;
+    use \Burki24\SymconModuleHelper\VisualizationThemeConfigurationHelper;
+    use \Burki24\SymconModuleHelper\IPSViewStyleConfigurationHelper;
+    use \Burki24\SymconModuleHelper\ResponsiveVisualizationHelper;
+    use \Burki24\SymconModuleHelper\HttpResponseHelper;
 
     private const ACCOUNT_MODULE = '{10BF9A03-98A3-495A-B0FA-A4FA0B1002D5}';
     private const REQUEST_DATA = '{1E60F0BE-03E4-4AA4-A1CE-AA838725A4E2}';
@@ -32,6 +40,7 @@ class iCloudPresence extends IPSModuleStrict
     public function Create(): void
     {
         parent::Create();
+        $this->RegisterStatusWidget();
         $this->RegisterPropertyBoolean('Enabled', true);
         $this->RegisterPropertyString('DeviceID', ''); // Legacy migration only; not shown in the form.
         $this->RegisterPropertyString('Devices', '[]');
@@ -69,7 +78,11 @@ class iCloudPresence extends IPSModuleStrict
         $this->SetTimerInterval('Evaluate', 0);
         $this->migrateLegacyVariables();
         $this->registerSummary();
+        $this->ConfigureStatusWidget('IPSViewPresence', $this->Translate('Presence for IPSView'));
         $this->Update();
+        if ($this->IsIPSViewHTMLPageEnabled()) {
+            $this->RegenerateIPSViewHTMLPages();
+        }
     }
 
     public function GetCompatibleParents(): string
@@ -136,7 +149,31 @@ class iCloudPresence extends IPSModuleStrict
                 return false;
             }
         } finally {
-            IPS_SemaphoreLeave('SymconiCloud.Presence.' . $this->InstanceID);
+            try {
+                $this->publishWidget();
+            } finally {
+                IPS_SemaphoreLeave('SymconiCloud.Presence.' . $this->InstanceID);
+            }
+        }
+    }
+
+    /** Native compact widget, sharing the already evaluated values. */
+    public function GetVisualizationTile(): string
+    {
+        return $this->RenderStatusWidget(false);
+    }
+
+    /** Optional compact WebContent widget; cached data updates do not reload its document. */
+    public function GetIPSViewHTML(): string
+    {
+        return $this->RenderStatusWidget(true);
+    }
+
+    public function MessageSink(int $TimeStamp, int $SenderID, int $Message, array $Data): void
+    {
+        parent::MessageSink($TimeStamp, $SenderID, $Message, $Data);
+        if ($this->IsIPSViewStyleMediaUpdate($SenderID, $Message)) {
+            $this->publishWidget();
         }
     }
 
@@ -153,6 +190,9 @@ class iCloudPresence extends IPSModuleStrict
 
     public function RequestAction(string $Ident, mixed $Value): void
     {
+        if ($this->HandleIPSViewHTMLPageAction($Ident, $Value)) {
+            return;
+        }
         if ($Ident !== 'Update') {
             throw new InvalidArgumentException('This evaluation is read only.');
         }
@@ -188,7 +228,7 @@ class iCloudPresence extends IPSModuleStrict
         $form['elements'][7]['caption'] = $limits['message'];
         $form['elements'][7]['visible'] = $limits['message'] !== '';
         $form['actions'][0]['caption'] = $this->ReadAttributeString('LastError');
-        return $this->EncodeConfigurationForm($form);
+        return $this->EncodeConfigurationForm($this->StatusWidgetForm($form));
     }
 
     /** Updates only the open form using unsaved list and spinner values. */
@@ -250,6 +290,17 @@ class iCloudPresence extends IPSModuleStrict
         return 'Device_' . substr(hash('sha256', $DeviceID), 0, 32) . '_' . $Ident;
     }
 
+    protected function VisualizationAssetDirectory(): string
+    {
+        return __DIR__ . '/visualization';
+    }
+
+    /** Native presentation formatting boundary (duration/value presentations are absent from upstream stubs). */
+    protected function PresenceFormattedValue(string $ident): string
+    {
+        return GetValueFormatted($this->GetIDForIdent($ident));
+    }
+
     protected function PresenceNow(): int
     {
         return time();
@@ -259,6 +310,46 @@ class iCloudPresence extends IPSModuleStrict
     protected function ReadPresenceCache(): array
     {
         return json_decode($this->SendDataToParent($this->EncodeDataFlowMessage(self::REQUEST_DATA, ['Command' => 'GetDevices'])), true, 512, JSON_THROW_ON_ERROR);
+    }
+
+    /** Domain adapter only: no new account reads, GPS evaluations or coordinates in the widget. */
+    private function publishWidget(): void
+    {
+        try {
+            $members = $this->selectedMembers();
+        } catch (Throwable) {
+            $members = [];
+        }
+        $names = $this->readState('MemberNames');
+        $pictures = [];
+        $configured = json_decode($this->ReadPropertyString('Devices'), true);
+        foreach (is_array($configured) ? $configured : [] as $row) {
+            if (is_array($row) && is_string($row['deviceID'] ?? null) && is_int($row['picture'] ?? null)) {
+                $pictures[$row['deviceID']] = $row['picture'];
+            }
+        }
+        $labels = [-1 => $this->Translate('Unknown'), 0 => $this->Translate('Absent'), 1 => $this->Translate('Present')];
+        $tones = [-1 => 'unknown', 0 => 'neutral', 1 => 'positive'];
+        $rows = [];
+        foreach ($members as $deviceID => $name) {
+            $id = (string) $deviceID;
+            $read = fn (string $field): mixed => $this->GetValue($this->GetDeviceVariableIdent($id, $field));
+            $presence = $read('Presence');
+            $details = [];
+            if ($read('DistanceAvailable')) {
+                $details[] = $this->Translate('Distance to reference zone') . ': ' . $this->PresenceFormattedValue($this->GetDeviceVariableIdent($id, 'Distance'));
+            }
+            if ($read('StayAvailable')) {
+                $details[] = $this->Translate('Stay') . ': ' . $this->PresenceFormattedValue($this->GetDeviceVariableIdent($id, 'StayDuration'));
+            }
+            $rows[] = ['id' => substr(hash('sha256', $id), 0, 32), 'name' => $name !== '' ? $name : ($names[$id] ?? $this->Translate('Device')),
+                'status'    => $presence === -1 ? $labels[$presence] : $labels[$presence] . ' · ' . $read('Zone'), 'tone' => $tones[$presence],
+                'detail'    => implode(' · ', $details), 'reason' => $presence === -1 || $read('TransitionPending') ? $read('Reason') : '',
+                'image'     => $this->StatusWidgetImage($pictures[$id] ?? 0)];
+        }
+        $presence = $this->GetValue('Presence');
+        $this->PublishStatusWidget(['title' => $this->Translate('Overall presence'), 'summary' => ['label' => $labels[$presence], 'tone' => $tones[$presence],
+            'detail'                                                                                       => sprintf($this->Translate('%d present · %d absent · %d unknown'), $this->GetValue('PresentCount'), $this->GetValue('AbsentCount'), $this->GetValue('UnknownCount'))], 'members' => $rows]);
     }
 
     /** UI limits for the geofence helper's strict radius/buffer contract. */

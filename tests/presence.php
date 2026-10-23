@@ -41,6 +41,11 @@ class PresenceFixture extends iCloudPresence
     {
         return $this->clock;
     }
+
+    protected function PresenceFormattedValue(string $ident): string
+    {
+        return (string) $this->GetValue($ident);
+    }
 }
 
 $presenceModule = '{00438FA2-CF5C-45B0-AFF0-A5A5CE66595E}';

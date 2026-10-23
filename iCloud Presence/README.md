@@ -198,3 +198,53 @@ aus; es gibt keine neue Subscription oder zusätzliche Helper-Ressourcen.
 ## Lizenz
 
 PolyForm Noncommercial License 1.0.0; siehe [LICENSE](../LICENSE).
+
+## Kompakte Widgets für Kachel und IPSView
+
+Die Instanz selbst ist eine HTML-Kachel mit Gesamtanwesenheit und den ausgewählten
+Einzelgeräten. Sie enthält keine Navigation und keine vollständige Dashboardseite.
+Die Liste passt ihre Spalten an die verfügbare Breite an und scrollt innerhalb der
+Kachel. Der native Kacheltitel wird über den zentralen Layoutvertrag berücksichtigt.
+
+Unter **Geräte → Bild (optional)** je Gerät ein vorhandenes Symcon-Bildmedium
+wählen. Unterstützt werden PNG, JPEG, GIF und WebP bis 128 KiB und 1024 × 1024
+Pixel. Kleine quadratische Bilder sind geeignet. Fehlende, gelöschte oder ungültige
+Bilder werden durch Initialen ersetzt. Bilder bleiben lokal; externe Bilddienste,
+Dateipfade und SVG werden nicht eingebunden. Änderungen werden spätestens mit der
+nächsten Anwesenheitsauswertung sichtbar.
+
+**Kacheldesigner** und **IPSView-Designer** werden unabhängig eingestellt:
+
+- Kachel: native Symcon-Farben oder eigene semantische Farben und Schriftgröße.
+- IPSView: zentraler Stil mit Hell-/Dunkelvorgaben, eigenen Farben, Transparenzen,
+  Schriftfamilie, Schriftgröße und Effekten; keine Kopplung an die Kachelfarben.
+- Beide: Bilder und Details ein-/ausblenden, Bildgröße, Eckenradius und Abstände.
+
+Die Gerätekarten zeigen Anwesenheit, Zone, verfügbare Entfernung zur Referenzzone
+und beobachtete Aufenthaltsdauer. Bei Unbekannt erscheint der Bewertungsgrund;
+fehlende Werte werden nicht als echte Entfernung oder Aufenthaltsdauer dargestellt.
+Anklicken markiert ein Gerät lokal, ohne eine Hausautomation auszulösen.
+
+Für IPSView im **IPSView-Designer** die HTML-Ausgabe aktivieren und übernehmen.
+Die String-Variable **Anwesenheit für IPSView** (`IPSViewPresence`, WebContent)
+als HTML-Widget einbinden. Normalerweise bleibt **Symcon-Server-URL** leer: Der
+zentrale Helper ermittelt den HTTP(S)-Ursprung aus dem Client. Wenn ein nativer
+Client keinen Ursprung liefert, den vom Client erreichbaren Symcon-Ursprung
+angeben, z. B. `http://symcon.example.invalid:3777`, ohne Pfad oder abschließenden
+Schrägstrich. Bei HTTPS-Clients auch einen erreichbaren HTTPS-Endpunkt verwenden.
+
+Native Kacheln erhalten SDK-Pushs. IPSView fragt alle fünf Sekunden ausschließlich
+den geschützten Widgetcache ab; bei Fehlern erscheint ein Hinweis und der Abruf
+wird wiederholt. Die HTML-Variable wird bei Datenupdates nicht neu geschrieben.
+Auswahl und Scrollposition bleiben erhalten. Das Abschalten der IPSView-Ausgabe
+widerruft den Zugriff; die Variable bleibt bis zur ausdrücklichen Löschung erhalten.
+Es entstehen keine zusätzlichen Apple-Anfragen. Bilder, Designer und Widgets ändern
+weder die Zonen noch GPS-Bestätigungen, Aufenthaltsbeginn oder bestehende Variablen-IDs.
+
+### Installation und Zuständigkeit
+
+Die Anwesenheitswidgets und ihre Ressourcen gehören direkt zur Library
+SymconiCloud. Sie verwenden die vorhandenen zentralen Theme-, Stil-, Layout-,
+Interaktions- und HTTP-Helper, benötigen jedoch kein zusätzliches Helper-Abonnement
+und keine eigene zentrale Verteilung. Die Widget-Dateien werden mit dem normalen
+SymconiCloud-Modulupdate installiert. Bestehende Variablen-IDs bleiben erhalten.

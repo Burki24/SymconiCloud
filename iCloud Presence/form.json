@@ -37,6 +37,15 @@
                     "edit": {
                         "type": "ValidationTextBox"
                     }
+                },
+                {
+                    "name": "picture",
+                    "caption": "Picture (optional)",
+                    "width": "180px",
+                    "add": 0,
+                    "edit": {
+                        "type": "SelectMedia"
+                    }
                 }
             ]
         },
