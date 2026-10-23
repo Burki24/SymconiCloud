@@ -10,7 +10,11 @@
             "No iCloud account connected.": "Kein iCloud-Konto verbunden.",
             "Account data unavailable.": "Kontodaten nicht verfügbar.",
             "Not in current list": "Nicht in aktueller Liste",
-            "Presence evaluations": "Anwesenheitsauswertungen"
+            "Presence evaluations": "Anwesenheitsauswertungen",
+            "Presence groups": "Anwesenheitsgruppen",
+            "Presence group": "Anwesenheitsgruppe",
+            "Evaluation": "Auswertung",
+            "Shared zones and multiple devices": "Gemeinsame Zonen und mehrere Geräte"
         }
     }
 }

@@ -8,12 +8,13 @@ Den Konfigurator mit dem gewünschten iCloud-Konto verbinden. Die Anmeldung und 
 
 Das Öffnen des Formulars und **Gespeicherte Liste neu laden** lesen ausschließlich den Kontocache. **Geräte bei Apple aktualisieren** startet einen lesenden Abruf bei Apple. Die Liste zeigt vorhandene Instanzen nur dann als zugeordnet an, wenn Geräte-ID und physische Kontoverbindung übereinstimmen. Symcon verbindet neu angelegte Geräte bevorzugt mit dem Konto dieses Konfigurators; die Verbindung nach der Anlage prüfen, insbesondere bei mehreren Konten.
 
-Unter **Anwesenheitsauswertungen** bietet der Konfigurator dieselben Geräte für
-eigenständige [iCloud-Anwesenheitsinstanzen](../iCloud%20Presence/README.md) an.
-Diese Liste ordnet Instanzen getrennt von Geräteinstanzen zu und berücksichtigt
-ebenfalls die Kontoverbindung. Nach der Anlage Zonen und genau eine Referenzzone
-in der neuen Instanz konfigurieren. Die Erstellung übernimmt nur die Geräte-ID;
-sie errät keine Wohnadresse und startet keine Apple-Abfrage.
+Unter **Anwesenheitsgruppen** bietet der Konfigurator eine gemeinsame
+[iCloud-Anwesenheitsinstanz](../iCloud%20Presence/README.md) für das Konto an.
+Vorhandene Gruppen werden anhand ihrer Kontoverbindung zugeordnet, nicht je
+Gerät mehrfach aufgelistet. Ist noch keine Gruppe vorhanden, lässt sich eine
+leere Gruppe erstellen. Anschließend die gewünschten Geräte und gemeinsamen
+Zonen mit genau einer Referenzzone in dieser Instanz auswählen. Die Erstellung
+startet keine Apple-Abfrage. Mehrere bereits vorhandene Gruppen bleiben erhalten.
 
 ## Öffentliche Funktionen
 

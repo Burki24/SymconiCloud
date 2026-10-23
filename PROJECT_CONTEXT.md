@@ -1,8 +1,129 @@
 # Entwicklungsstand
 
+## Anwesenheitsgruppen: mehrere Geräte und gemeinsame Zonen (2026-10-23)
+
+Die Anwesenheitsinstanz wurde auf eine Gruppe mit mehreren Geräten desselben
+Kontos umgebaut. Geräte werden einmal in `Devices` ausgewählt; Zonen,
+Referenzzone und GPS-Einstellungen gelten gemeinsam. Elf Gerätevariablen sowie
+je Gerät getrennte Zustände und Aufenthaltsdauern bleiben erhalten. Sieben
+Gruppenvariablen zeigen Gesamtanwesenheit, Geräteanzahlen und Kontoverfügbarkeit.
+Die Architektur- und Migrationsentscheidung steht in
+[ADR 0008](docs/adr/0008-shared-zone-presence-groups.md).
+
+`GeofenceHelper::AggregateGeofencePresence` bildet zentral den Gesamtstatus:
+mindestens ein anwesendes Gerät genügt für Anwesend; Abwesend erfordert eine
+nichtleere Auswahl ausschließlich abwesender Geräte. Sonst gilt Unbekannt.
+Fehlende, veraltete oder ungenaue Geräte werden nicht als abwesend gezählt.
+Die Gruppe liest den Kontocache nur einmal je Aktualisierung. Es entstehen
+keine weiteren Apple-Abfragen oder Ortungsanforderungen.
+
+Die offizielle SDK-Migration übernimmt eine alte Einzelgeräte-Auswahl nur bei
+noch fehlender neuer Liste. Eine bewusst leere Liste bleibt leer. Alte
+Gerätevariablen behalten ihre Objekt-IDs und werden auf Geräte-Idents umbenannt;
+die Gesamtanwesenheit erhält eine eigene Variable. Ein bestehender Aufenthalt
+wird bei unveränderter Quellzuordnung übernommen. Hinzufügen, Umbenennen und
+Umordnen beeinflussen andere Geräte nicht. Entfernte Geräte werden aus der
+Berechnung genommen; ihre Variablen bleiben unbekannt und ausgeblendet erhalten.
+Die neue API `ICPR_GetDeviceVariableIdent` liefert stabile Idents für Skripte.
+Der Konfigurator ordnet Anwesenheitsgruppen anhand des Kontos zu und erstellt
+eine leere Gruppe, anstatt je Gerät eine neue Instanz anzubieten.
+
+### Offline- und MCP-Nachweis
+
+Die vollständigen Helper- und Modulsuiten unter PHP 8.5.10 bestanden mit einem
+isoliert erzeugten vollständigen Helper-Paket. Die bisherigen Einzelgeräte-
+Regressionen laufen weiterhin; zusätzliche Gruppenprüfungen erfassen
+Mischzustände, unabhängige Bestätigung und Aufenthaltsdauer, fehlende Geräte,
+Auswahländerungen, Quellenfehler, Alterung, Variablen-IDs und Migration.
+Auch der bisherige committete Modulstand bestand mit dem erweiterten Helper:
+Das zentrale Paket kann vor der fachlichen Moduländerung verteilt werden.
+
+Per MCP wurde die neue Implementierung in einer eigenen temporären Bibliothek
+mit nativ registriertem Modul geprüft. 25 Prüfungen bestanden ohne Warnungen
+oder Fehler im erfolgreichen Lauf. Sie erfassten native Erstellung und
+Konfigurationsanwendung, persistente Attribute, getrennte Variablenblöcke,
+Klartextanzeige, Gesamtstatus und Anzahlen, Zonenwechsel mit Bestätigung,
+unbekannte und fehlende Geräte, Aufenthaltsdauern, Reihenfolge und erneute
+Auswahl, Kontofehler mit Wiederaufnahme, Standortalterung und SDK-Migration.
+Das Formular enthielt sowohl gelistete als auch weiterhin ausgewählte fehlende
+Geräte; die neue Gruppenvariable verwendete die deutsche Modulübersetzung.
+
+Die MCP-Prüfung nutzte kontrollierte Zeitpunkte und synthetische Kontocachedaten.
+Reale GPS-Bewegungen und der Transport vom Apple-Server waren nicht Teil dieses
+Nachweises. Die installierte SymconiCloud-Library wurde nicht verändert oder
+neu geladen. Konfigurationen, Kontoverbindungen und Variablen-IDs aller zuvor
+vorhandenen Anwesenheitsinstanzen waren nach der Prüfung unverändert.
+Testinstanzen, Testdateien und die temporäre Modul-/Library-Registrierung
+wurden entfernt. Private Instanz- und Gerätekennungen oder Koordinaten werden
+hier nicht gespeichert.
+
+Ein erster Test mit manuell aufgerufenem `Create` konnte neue Attribute nicht
+registrieren: Symcon erlaubt dies ausschließlich im nativen Erstellungszyklus.
+Dieser abgebrochene Test wurde nicht als Erfolg gewertet. Die anschließende
+Prüfung nutzte deshalb eine eigene temporäre Bibliothek mit echtem Lebenszyklus.
+Ein statischer Formularcaption-Vergleich war außerdem kein Sprachvertrag der
+API-Ausgabe; die Übersetzung wurde stattdessen am tatsächlich registrierten
+nativen Variablennamen nachgewiesen.
+
+### Auslieferung
+
+Zunächst die zentrale Helper-Ergänzung über den Benutzerworkflow freigeben und
+den vorhandenen automatischen Helper-Sync integrieren und pullen. Es ist keine
+neue Subscription erforderlich; `libs/helper` bleibt hier frei von lokalen
+Testkopien. Anschließend den tatsächlichen Integrationsstand mit
+`php tests/run.php` prüfen und die fachliche Moduländerung veröffentlichen.
+Die vorhandenen Anwesenheitsinstanzen wurden während der MCP-Prüfung noch nicht
+auf den neuen fachlichen Stand umgestellt. Ein echter Serverneustart und die
+interaktive native Formularbedienung nach dem regulären Update bleiben offen.
+
+## iCloud Anwesenheit: erfolgreiche MCP-Prüfung (2026-10-23)
+
+Nach dem vom Benutzer abgeschlossenen Modulupdate wurde die vorhandene
+Anwesenheitsinstanz auf dem angeschlossenen Symcon-System per MCP geprüft.
+Kontoverbindung, Gerätezuordnung, geladenes Anwesenheitsmodul und zentraler
+`GeofenceHelper` 1.0.0 waren vorhanden. Alle elf Variablen waren angelegt und
+ausschließlich lesbar; die native Integer-Darstellung zeigte Klartext.
+
+Auf ausdrücklichen Auftrag wurden folgende Einstellungen übernommen:
+
+| Einstellung | Gewählter Wert |
+| --- | --- |
+| Radius der Referenzzone | 100 m |
+| Grenzpuffer (`Hysteresis`) | 25 m |
+| Maximale Standortungenauigkeit (`MaxAccuracy`) | 50 m |
+
+Die nach dem Übernehmen zurückgelesene Konfiguration entsprach den gewünschten
+Änderungen; Gerätezuordnung, Zonenmittelpunkt und übrige Einstellungen blieben
+erhalten. Der Radius ist größer als der Grenzpuffer. Mit der gelieferten
+Standortgenauigkeit lag die Position einschließlich Unsicherheitsradius eindeutig
+innerhalb der verkleinerten Eintrittsgrenze der Referenzzone.
+
+Der Laufzeitnachweis bestätigte Status **102 / Aktiv**, **Anwesend**, die
+zugehörige Referenzzone und eine verlässliche Standortbewertung. Kontodaten,
+Entfernung und Aufenthaltsdauer waren als verfügbar gekennzeichnet. Die
+Entfernung entsprach einer unabhängig aus den Koordinaten berechneten Luftlinie
+zum Referenzmittelpunkt; die native Anzeige formatierte sie mit einer
+Nachkommastelle und der Einheit Meter.
+
+Die Aufenthaltsdauer stieg beim nächsten automatischen lokalen Auswertungslauf
+um genau **15 Sekunden**. Das entsprach exakt dem Abstand der Variablenupdates;
+Anwesenheit und Entfernung blieben erhalten. Der Aufenthaltsbeginn entsprach
+dem Zeitstempel der akzeptierten GPS-Position, nicht dem Zeitpunkt des
+Übernehmens der Konfiguration. Die Dauer wurde nativ als Stunden:Minuten:Sekunden
+angezeigt. Damit sind Cache-Auswertung und fortlaufende Dauer auf dem echten
+System bestätigt.
+
+Die Prüfung verwendete ausschließlich den bestehenden Kontocache. Es erfolgten
+keine zusätzliche Apple-Abfrage, Anmeldung oder aktive Neuortung und keine
+Änderungen am Modul- oder Helper-Code. Reale Zonenwechsel, Standortalterung,
+GPS-Sprünge und ein echter Symcon-Neustart wurden in diesem MCP-Lauf nicht
+ausgelöst; die vorhandenen Offline-Nachweise dafür bleiben getrennt.
+Private Objekt- und Gerätekennungen, Koordinaten und Standortzeitpunkte werden
+hier nicht gespeichert.
+
 ## iCloud Anwesenheit: Zonen und GPS-Stabilisierung (2026-10-23)
 
-Lokal umgesetzt ist das neue Modul `iCloud Presence`, Alias **iCloud Anwesenheit**,
+Umgesetzt ist das neue Modul `iCloud Presence`, Alias **iCloud Anwesenheit**,
 Präfix **ICPR**, Modul-GUID `{00438FA2-CF5C-45B0-AFF0-A5A5CE66595E}`. Eine Instanz
 wertet ein Gerät direkt am bestehenden Kontosplitter aus. Der Geräte-Konfigurator
 erhält eine eigene Liste **Anwesenheitsauswertungen** mit kontogebundenem
@@ -54,15 +175,19 @@ abonnierte Consumer-Paket wurde über den vorhandenen Bundle-Generator erzeugt
 und in isolierten Kopien geprüft. Zusätzlich bestand der bisherige committete
 Modulstand mit neuer Subscription und neuem Paket: Der vorgelagerte Sync kann
 somit vor der Veröffentlichung des Anwesenheitsmoduls geprüft werden.
-Im normalen Arbeitsbaum wurden keine Vendor-Dateien ausgetauscht. Ein echter
-Symcon-Neustart, native Formularbedienung und GPS-Praxisbetrieb dieses neuen
-Moduls sind noch nicht geprüft; es wurde nichts installiert oder veröffentlicht.
+Im normalen Arbeitsbaum wurden für diese Offline-Prüfung keine Vendor-Dateien
+ausgetauscht. Zu diesem Zeitpunkt war noch nichts installiert oder veröffentlicht.
+Der anschließende MCP-Nachweis am installierten Stand steht im vorangehenden
+Abschnitt. Ein echter Symcon-Neustart und die native Formularbedienung wurden
+auch dort nicht geprüft.
 
 ### Verteilung und Übergabe
 
-Das neue Modul benötigt `GeofenceHelper` ab 1.0.0. Dieser ist noch nicht im
-regulären `libs/helper` enthalten; dessen Dateien bleiben bewusst unverändert,
-damit keine lokalen Testkopien einen späteren Pull blockieren.
+Das neue Modul benötigt `GeofenceHelper` ab 1.0.0. Der Benutzer hat das komplette
+Modulupdate inzwischen bestätigt; der MCP-Nachweis bestätigt den geladenen
+Helper am laufenden System. Die folgende Reihenfolge dokumentiert die erstmalige
+Einbindung der neuen Abhängigkeit. Lokale Testkopien verbleiben nicht im
+normalen Arbeitsbaum, damit sie den Pull des regulären Pakets nicht blockieren.
 
 1. In SymconiCloud zunächst ausschließlich `.helper-sync.json` über GitHub Desktop
    committen und nach `dev` pushen. Die laufenden Module nutzen den neuen Helper

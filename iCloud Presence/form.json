@@ -6,15 +6,43 @@
             "caption": "Enable presence evaluation"
         },
         {
-            "type": "Select",
-            "name": "DeviceID",
-            "caption": "Device",
-            "options": [
+            "type": "List",
+            "name": "Devices",
+            "caption": "Devices",
+            "rowCount": 6,
+            "add": true,
+            "delete": true,
+            "changeOrder": true,
+            "columns": [
                 {
-                    "caption": "Select device",
-                    "value": ""
+                    "name": "deviceID",
+                    "caption": "Device",
+                    "width": "auto",
+                    "add": "",
+                    "edit": {
+                        "type": "Select",
+                        "options": [
+                            {
+                                "caption": "Select device",
+                                "value": ""
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "name",
+                    "caption": "Display name (optional)",
+                    "width": "220px",
+                    "add": "",
+                    "edit": {
+                        "type": "ValidationTextBox"
+                    }
                 }
             ]
+        },
+        {
+            "type": "Label",
+            "caption": "All selected devices share these zones and the reference zone. Each device retains its own GPS evaluation and stay duration."
         },
         {
             "type": "List",
@@ -155,7 +183,7 @@
         {
             "code": 201,
             "icon": "inactive",
-            "caption": "Check the device, zones, reference zone and GPS settings."
+            "caption": "Check the device selection, zones, reference zone and GPS settings."
         },
         {
             "code": 202,

@@ -26,17 +26,17 @@
         {
             "type": "Configurator",
             "name": "PresenceInstances",
-            "caption": "Presence evaluations",
-            "rowCount": 6,
+            "caption": "Presence groups",
+            "rowCount": 3,
             "columns": [
                 {
                     "name": "name",
-                    "caption": "Device",
+                    "caption": "Presence group",
                     "width": "auto"
                 },
                 {
                     "name": "model",
-                    "caption": "Model",
+                    "caption": "Evaluation",
                     "width": "180px"
                 }
             ],

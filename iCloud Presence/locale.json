@@ -53,7 +53,22 @@
             "Location is not accurate enough.": "Standort ist nicht genau genug.",
             "Older location ignored.": "Älterer Standort verworfen.",
             "Conflicting location ignored.": "Widersprüchlicher Standort verworfen.",
-            "Implausible GPS movement ignored.": "Unplausible GPS-Bewegung verworfen."
+            "Implausible GPS movement ignored.": "Unplausible GPS-Bewegung verworfen.",
+            "Devices": "Geräte",
+            "Display name (optional)": "Anzeigename (optional)",
+            "All selected devices share these zones and the reference zone. Each device retains its own GPS evaluation and stay duration.": "Alle ausgewählten Geräte verwenden diese gemeinsamen Zonen und die Referenzzone. GPS-Auswertung und Aufenthaltsdauer werden je Gerät getrennt geführt.",
+            "Check the device selection, zones, reference zone and GPS settings.": "Geräteauswahl, Zonen, genau eine Referenzzone und GPS-Einstellungen prüfen.",
+            "Check the zones, reference zone and GPS settings.": "Zonen, genau eine Referenzzone und GPS-Einstellungen prüfen.",
+            "Check the device selection.": "Geräteauswahl prüfen: eindeutige Geräte und gültige Anzeigenamen verwenden.",
+            "Select an account and at least one device.": "Konto und mindestens ein Gerät auswählen.",
+            "Some selected devices are missing from the account cache.": "Einige ausgewählte Geräte fehlen im Kontocache.",
+            "Shared zones evaluated.": "Gemeinsame Zonen ausgewertet.",
+            "Device no longer selected.": "Gerät nicht mehr ausgewählt.",
+            "Overall presence": "Gesamtanwesenheit",
+            "SelectedCount": "Ausgewählte Geräte",
+            "PresentCount": "Anwesende Geräte",
+            "AbsentCount": "Abwesende Geräte",
+            "UnknownCount": "Geräte mit unbekannter Anwesenheit"
         }
     }
 }

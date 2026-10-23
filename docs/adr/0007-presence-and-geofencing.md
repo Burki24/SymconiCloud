@@ -2,7 +2,8 @@
 
 Datum: 2026-10-23
 
-Status: Beschlossen, lokal umgesetzt; Verteilung und Praxisprüfung ausstehend.
+Status: Umgesetzt und per MCP geprüft. Die Ein-Gerät-Aufteilung wird durch
+[ADR 0008](0008-shared-zone-presence-groups.md) ersetzt.
 
 ## Kontext
 

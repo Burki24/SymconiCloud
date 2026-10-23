@@ -38,7 +38,7 @@ class iCloudDeviceConfigurator extends IPSModuleStrict
         $result = $this->request('GetDevices');
         $this->SetStatus(!$this->HasParent() ? 201 : (($result['success'] ?? false) === true ? IS_ACTIVE : 202));
         $form['elements'][0]['values'] = $this->buildValues($result);
-        $form['elements'][1]['values'] = $this->buildValues($result, self::PRESENCE_MODULE);
+        $form['elements'][1]['values'] = $this->buildPresenceValues($result);
         $form['actions'][0]['caption'] = $this->resultCaption($result);
         return $this->EncodeConfigurationForm($form);
     }
@@ -103,7 +103,7 @@ class iCloudDeviceConfigurator extends IPSModuleStrict
         $success = ($result['success'] ?? false) === true;
         $this->SetStatus(!$this->HasParent() ? 201 : ($success ? IS_ACTIVE : 202));
         $this->UpdateFormField('Devices', 'values', json_encode($this->buildValues($result), JSON_THROW_ON_ERROR));
-        $this->UpdateFormField('PresenceInstances', 'values', json_encode($this->buildValues($result, self::PRESENCE_MODULE), JSON_THROW_ON_ERROR));
+        $this->UpdateFormField('PresenceInstances', 'values', json_encode($this->buildPresenceValues($result), JSON_THROW_ON_ERROR));
         $this->UpdateFormField('Result', 'caption', $this->resultCaption($result));
         return $success;
     }
@@ -114,6 +114,25 @@ class iCloudDeviceConfigurator extends IPSModuleStrict
         return ($result['success'] ?? false) === true
             ? $this->Translate('Cached device list. Refresh explicitly to contact Apple.')
             : (string) ($result['error'] ?? $this->Translate('Account data unavailable.'));
+    }
+
+    /** One group entry per existing account-scoped instance; an empty group can be created once. */
+    private function buildPresenceValues(array $result): array
+    {
+        if (!$this->HasParent()) {
+            return [];
+        }
+        $rows = [];
+        foreach (IPS_GetInstanceListByModuleID(self::PRESENCE_MODULE) as $instanceID) {
+            if ((int) IPS_GetInstance($instanceID)['ConnectionID'] === $this->GetParentID()) {
+                $rows[] = ['name' => IPS_GetName($instanceID), 'model' => $this->Translate('Shared zones and multiple devices'), 'instanceID' => $instanceID];
+            }
+        }
+        if ($rows === [] && ($result['success'] ?? false) === true) {
+            $rows[] = ['name' => $this->Translate('Presence group'), 'model' => $this->Translate('Shared zones and multiple devices'), 'instanceID' => 0,
+                'create'      => ['moduleID' => self::PRESENCE_MODULE, 'configuration' => ['Devices' => '[]']]];
+        }
+        return $rows;
     }
 
     /** @param array<string, mixed> $result @return list<array<string, mixed>> Account-scoped device rows. */

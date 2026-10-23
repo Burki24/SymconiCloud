@@ -2,6 +2,15 @@
 
 ## Neu
 
+- **iCloud Anwesenheit** verwaltet mehrere ausgewählte Geräte mit gemeinsamen
+  Zonen in einer Instanz. Neben getrennten Gerätewerten zeigt die Gruppe
+  Gesamtanwesenheit und Anzahlen für Anwesend, Abwesend und Unbekannt.
+  Mindestens ein anwesendes Gerät genügt für Anwesend; Abwesend erfordert alle
+  Geräte als zuverlässig abwesend. Der Konfigurator erstellt eine Gruppe je
+  Konto statt einer Instanz je Gerät. Bestehende Einzelgeräte-Auswahl, Zonen
+  und Variablen-IDs werden übernommen. Zuerst das reguläre GeofenceHelper-Update
+  mit der Gruppenaggregation integrieren, danach das Modulupdate durchführen.
+
 - Neues Modul **iCloud Anwesenheit** (ICPR): konfigurierbare Kreiszonen je Gerät,
   genau eine Referenzzone, lesbare Anwesenheit mit **Unbekannt**, Entfernung zum
   Referenzmittelpunkt und beobachtete Aufenthaltsdauer. Der zentrale
