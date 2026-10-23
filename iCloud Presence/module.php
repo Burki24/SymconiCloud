@@ -107,6 +107,7 @@ class iCloudPresence extends IPSModuleStrict
                 $settings = ['maxAge' => $this->ReadPropertyInteger('MaxLocationAge'), 'maxAccuracy' => $this->ReadPropertyInteger('MaxAccuracy'),
                     'hysteresis'      => $this->ReadPropertyInteger('Hysteresis'), 'confirmSeconds' => $this->ReadPropertyInteger('ConfirmationTime'),
                     'maxSpeed'        => $this->ReadPropertyInteger('MaxSpeed')];
+                $this->ResolveGeofenceZoneSettings($zones, $settings);
                 $this->EvaluateGeofence($zones, $reference, null, [], $this->PresenceNow(), $settings);
             } catch (Throwable) {
                 $limits = $this->zoneFormLimits($this->ReadPropertyString('Zones'), $this->ReadPropertyInteger('Hysteresis'));
@@ -182,6 +183,7 @@ class iCloudPresence extends IPSModuleStrict
         $form['elements'][1]['columns'][0]['edit']['options'] = $options;
         $limits = $this->zoneFormLimits($this->ReadPropertyString('Zones'), $this->ReadPropertyInteger('Hysteresis'));
         $form['elements'][3]['columns'][4]['edit']['minimum'] = $limits['minimum'];
+        $form['elements'][3]['form'] = 'return json_decode(ICPR_GetZoneEditForm($id, $Hysteresis, $MaxAccuracy, $ConfirmationTime, $Zones[\'customGPS\'] ?? false, $Zones[\'radius\'] ?? 100, $Zones[\'hysteresis\'] ?? $Hysteresis), true);';
         $form['elements'][5]['items'][2]['maximum'] = $limits['maximum'];
         $form['elements'][7]['caption'] = $limits['message'];
         $form['elements'][7]['visible'] = $limits['message'] !== '';
@@ -197,6 +199,46 @@ class iCloudPresence extends IPSModuleStrict
         $this->UpdateFormField('Hysteresis', 'maximum', $limits['maximum']);
         $this->UpdateFormField('ZoneSettingsError', 'caption', $limits['message']);
         $this->UpdateFormField('ZoneSettingsError', 'visible', $limits['message'] !== '');
+    }
+
+    /** Builds a fresh native row dialog using the unsaved global defaults. */
+    public function GetZoneEditForm(int $GlobalBuffer, int $GlobalAccuracy, int $GlobalConfirmation, bool $CustomGPS, int $Radius, int $ZoneBuffer): string
+    {
+        $form = $this->LoadConfigurationForm()['elements'][3]['form'];
+        $effective = $CustomGPS ? $ZoneBuffer : $GlobalBuffer;
+        $form[4]['minimum'] = max(1, $effective + 1);
+        $form[7]['visible'] = $CustomGPS;
+        $form[7]['items'][0]['value'] = $GlobalBuffer;
+        $form[7]['items'][0]['maximum'] = max(0, $Radius - 1);
+        $form[7]['items'][1]['value'] = $GlobalAccuracy;
+        $form[7]['items'][2]['value'] = $GlobalConfirmation;
+        foreach ([4, 6] as $index) {
+            // The row also has an "id" field; keep the instance ID unambiguous.
+            $form[$index]['onChange'] = 'ICPR_ValidateZoneDraft(' . $this->InstanceID . ', $radius, $customGPS, $hysteresis, ' . $GlobalBuffer . ');';
+        }
+        $form[7]['items'][0]['onChange'] = $form[4]['onChange'];
+        $form[8]['caption'] = $Radius <= $effective ? $this->Translate('Increase the zone radius or reduce its effective boundary buffer.') : '';
+        $form[8]['visible'] = $Radius <= $effective;
+        // This public row-form function bypasses GetConfigurationForm's native
+        // translation step, so translate the module's captions explicitly.
+        array_walk_recursive($form, function (mixed &$value, string|int $key): void
+        {
+            if ($key === 'caption' && is_string($value)) {
+                $value = $this->Translate($value);
+            }
+        });
+        return json_encode($form, JSON_THROW_ON_ERROR);
+    }
+
+    /** Validates only the open row, including a switch back to inherited values. */
+    public function ValidateZoneDraft(int $Radius, bool $CustomGPS, int $Buffer, int $GlobalBuffer): void
+    {
+        $effective = $CustomGPS ? $Buffer : $GlobalBuffer;
+        $this->UpdateFormField('radius', 'minimum', max(1, $effective + 1));
+        $this->UpdateFormField('hysteresis', 'maximum', max(0, $Radius - 1));
+        $this->UpdateFormField('ZoneGPS', 'visible', $CustomGPS);
+        $this->UpdateFormField('ZoneDraftError', 'caption', $Radius <= $effective ? $this->Translate('Increase the zone radius or reduce its effective boundary buffer.') : '');
+        $this->UpdateFormField('ZoneDraftError', 'visible', $Radius <= $effective);
     }
 
     /** Returns a stable member variable ident for scripts without exposing IDs in variable names. */
@@ -229,9 +271,14 @@ class iCloudPresence extends IPSModuleStrict
             return $limits;
         }
         foreach ($zones as $zone) {
-            $limits['maximum'] = min($limits['maximum'], (int) ceil($zone['radius']) - 1);
-            if ($zone['radius'] <= $buffer && $limits['message'] === '') {
-                $limits['message'] = sprintf($this->Translate('Zone "%s": radius (%s m) must be greater than the boundary buffer (%s m). Increase the radius or reduce the buffer.'), $zone['name'], (string) $zone['radius'], (string) $buffer);
+            $effective = $zone['hysteresis'] ?? $buffer;
+            if (array_key_exists('hysteresis', $zone)) {
+                $limits['minimum'] = 1;
+            } else {
+                $limits['maximum'] = min($limits['maximum'], (int) ceil($zone['radius']) - 1);
+            }
+            if ($zone['radius'] <= $effective && $limits['message'] === '') {
+                $limits['message'] = sprintf($this->Translate('Zone "%s": radius (%s m) must be greater than the boundary buffer (%s m). Increase the radius or reduce the buffer.'), $zone['name'], (string) $zone['radius'], (string) $effective);
             }
         }
         return $limits;

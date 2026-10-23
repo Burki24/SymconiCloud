@@ -2,6 +2,13 @@
 
 ## Neu
 
+- **iCloud Anwesenheit** bietet je Zone eigene GPS-Vorgaben für Grenzpuffer,
+  maximale Standortungenauigkeit und Bestätigungszeit. Ohne Aktivierung gelten
+  weiterhin die globalen Werte. Eintritt und Austritt prüfen Herkunft und Ziel;
+  die längere Bestätigungszeit gilt. Ungenaue Folgedaten können einen strengen
+  Austritt nicht umgehen. Zuerst das zentrale GeofenceHelper-Update mit
+  `ResolveGeofenceZoneSettings` über den regulären Helper-Sync integrieren.
+
 - **iCloud Anwesenheit** verwaltet mehrere ausgewählte Geräte mit gemeinsamen
   Zonen in einer Instanz. Neben getrennten Gerätewerten zeigt die Gruppe
   Gesamtanwesenheit und Anzahlen für Anwesend, Abwesend und Unbekannt.

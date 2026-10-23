@@ -51,6 +51,91 @@
             "onAdd": "ICPR_ValidateZoneSettings($id, json_encode($Zones), $Hysteresis);",
             "onEdit": "ICPR_ValidateZoneSettings($id, json_encode($Zones), $Hysteresis);",
             "onDelete": "ICPR_ValidateZoneSettings($id, json_encode($Zones), $Hysteresis);",
+            "form": [
+                {
+                    "type": "ValidationTextBox",
+                    "name": "id",
+                    "caption": "Zone ID"
+                },
+                {
+                    "type": "ValidationTextBox",
+                    "name": "name",
+                    "caption": "Name"
+                },
+                {
+                    "type": "NumberSpinner",
+                    "name": "latitude",
+                    "caption": "Latitude",
+                    "digits": 6,
+                    "minimum": -90,
+                    "maximum": 90
+                },
+                {
+                    "type": "NumberSpinner",
+                    "name": "longitude",
+                    "caption": "Longitude",
+                    "digits": 6,
+                    "minimum": -180,
+                    "maximum": 180
+                },
+                {
+                    "type": "NumberSpinner",
+                    "name": "radius",
+                    "caption": "Radius (m)",
+                    "minimum": 1,
+                    "maximum": 1000000
+                },
+                {
+                    "type": "CheckBox",
+                    "name": "reference",
+                    "caption": "Reference zone"
+                },
+                {
+                    "type": "CheckBox",
+                    "name": "customGPS",
+                    "caption": "Use custom GPS settings for this zone",
+                    "value": false
+                },
+                {
+                    "type": "ExpansionPanel",
+                    "name": "ZoneGPS",
+                    "caption": "Zone GPS settings",
+                    "visible": false,
+                    "items": [
+                        {
+                            "type": "NumberSpinner",
+                            "name": "hysteresis",
+                            "caption": "Zone boundary buffer (m)",
+                            "minimum": 0,
+                            "maximum": 10000
+                        },
+                        {
+                            "type": "NumberSpinner",
+                            "name": "maxAccuracy",
+                            "caption": "Maximum location uncertainty (m)",
+                            "minimum": 1,
+                            "maximum": 10000
+                        },
+                        {
+                            "type": "NumberSpinner",
+                            "name": "confirmSeconds",
+                            "caption": "Zone change confirmation (seconds)",
+                            "minimum": 0,
+                            "maximum": 3600
+                        }
+                    ]
+                },
+                {
+                    "type": "Label",
+                    "name": "ZoneDraftError",
+                    "caption": "",
+                    "visible": false
+                },
+                {
+                    "type": "Label",
+                    "caption": "Without custom GPS settings this zone inherits the global defaults. A switch must meet the departure and arrival rules; the longer confirmation time applies."
+                }
+            ],
             "rowCount": 6,
             "add": true,
             "delete": true,

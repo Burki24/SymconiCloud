@@ -99,6 +99,29 @@ bestätigenden Position neu.
 
 ## GPS-Stabilisierung und Aktualisierung
 
+Jede Zone bietet im Bearbeitungsdialog **Eigene GPS-Einstellungen für diese Zone
+verwenden**. Standardmäßig ist diese Option aus: Grenzpuffer, maximale
+Standortungenauigkeit und Bestätigungszeit werden aus den globalen Vorgaben
+übernommen. Bei Aktivierung können alle drei Werte für diese Zone angepasst
+werden. Neue Eingaben starten mit den beim Öffnen des Dialogs aktuellen globalen
+Werten. Beim erneuten Ausschalten werden eigene Werte behalten, aber nicht mehr
+angewendet. Bestehende Zonen übernehmen weiterhin unverändert die globalen Werte.
+
+Der Grenzpuffer muss kleiner als der Radius derselben Zone sein. Die Eingabegrenzen
+und Hinweise berücksichtigen auch den Wechsel zwischen eigenen und globalen
+Werten. Eine Zone mit eigenem Puffer begrenzt den globalen Puffer nicht.
+
+Beim Zonenwechsel müssen die Qualität der Herkunfts- und der Zielzone sowie die
+längere ihrer Bestätigungszeiten erfüllt sein. Beim Verlassen aller Zonen gilt
+die Herkunftszone, beim Eintritt aus „außerhalb“ die Zielzone. Nach Qualitätsverlust
+können spätere ungenaue Positionen die strengeren Herkunftsregeln nicht umgehen.
+Auch die Bestätigungszeit gilt nach Unbekannt weiter für einen Wechsel in eine
+andere Zone. Bis zur Bestätigung wird kein früherer Aufenthalt fortgeschrieben.
+Der Zustand wird unbekannt und die Aufenthaltsdauer wird unterbrochen. Eine weit
+entfernte großzügigere Zielzone ist möglich, wenn der gesamte Genauigkeitskreis
+außerhalb der Referenzzone liegt. Überlappungen behalten die Referenzzonenpriorität.
+Maximales Standortalter und maximale plausible Geschwindigkeit bleiben global.
+
 | Eigenschaft | Vorgabe | Bedeutung |
 | --- | --- | --- |
 | `Enabled` | true | Gruppe auswerten |
@@ -117,8 +140,9 @@ Zuordnung erhalten; ohne Vorgeschichte lautet das Ergebnis Unbekannt. Die erste
 klare Position wird sofort angenommen. Anschließende Wechsel brauchen neue,
 zeitlich getrennte Positionen. Wiederholte Cache-Abfragen bestätigen keinen Wechsel.
 
-Das Formular begrenzt den Grenzpuffer auf einen Wert unterhalb des kleinsten
-Zonenradius und den Zonenradius auf einen Wert oberhalb des Grenzpuffers.
+Das Formular begrenzt den globalen Grenzpuffer auf einen Wert unterhalb des
+kleinsten Radius der Zonen, die ihn übernehmen. Der Zonendialog begrenzt den
+Radius auf einen Wert oberhalb des für diese Zone wirksamen Grenzpuffers.
 Die Grenzen werden auch bei noch nicht übernommenen Änderungen der Zonenliste
 und des Puffers aktualisiert. Ungültige gespeicherte Kombinationen zeigen die
 betroffene Zone mit Radius und Puffer sowie einen Korrekturhinweis. Werte werden
@@ -161,6 +185,11 @@ Entfernte Geräte werden nicht mehr mitgezählt. Ihre Variablen werden auf unbek
 bzw. nicht verfügbar gesetzt und ausgeblendet, sodass Objekt-IDs und Archivdaten
 erhalten bleiben. Erneute Auswahl verwendet diese Variablen wieder. Eine bewusst
 leere Liste wird nicht aus der alten Geräteauswahl erneut befüllt.
+
+Die Zonenerweiterung benötigt das regulär verteilte GeofenceHelper-Update mit
+`ResolveGeofenceZoneSettings`. Zuerst den zentralen Helper freigeben und das
+automatisch erzeugte Paket integrieren, anschließend das Modul aktualisieren.
+Vorhandene Geräteauswahl, Zonengeometrie und Variablen-IDs werden nicht geändert.
 
 Vor dem fachlichen Modulupdate das regulär verteilte GeofenceHelper-Paket mit
 `AggregateGeofencePresence` integrieren. Das bestehende Helper-Abonnement reicht

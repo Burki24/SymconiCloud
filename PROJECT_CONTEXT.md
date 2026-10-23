@@ -1,5 +1,58 @@
 # Entwicklungsstand
 
+## Anwesenheit: optionale GPS-Vorgaben je Zone (2026-10-23)
+
+Zonen können im eigenen Bearbeitungsdialog **Eigene GPS-Einstellungen für diese
+Zone verwenden** aktivieren: Grenzpuffer, maximale Standortungenauigkeit und
+Bestätigungszeit. Standardmäßig werden weiterhin die globalen Werte übernommen.
+Der zentrale GeofenceHelper löst aktive Überschreibungen auf und prüft jeden
+Radius mit seinem wirksamen Puffer. Standortalter und Geschwindigkeitsprüfung
+bleiben global. Die Entscheidung und der kompatible Zustandsvertrag stehen in
+[ADR 0009](docs/adr/0009-zone-gps-inheritance.md).
+
+Wechsel berücksichtigen Herkunft und Ziel sowie die längere Bestätigungszeit.
+Eine ungenaue Position oder ein Wechsel über Unbekannt kann die strengeren
+Austrittsregeln nicht umgehen. Auch nach Qualitätsverlust benötigt der Wechsel
+in eine andere Zone eine neue bestätigende Position nach Ablauf der Zeit.
+Währenddessen bleiben Anwesenheit unbekannt und Aufenthalt nicht verfügbar.
+Die Priorität der Referenzzone bei Überlappungen bleibt erhalten.
+
+Bestehende Zonen und Zustände bleiben lesbar. Ohne aktive Überschreibungen bleibt
+die normalisierte Quellidentität unverändert; Variablen werden nicht neu angelegt.
+Der Zeilendialog wird für jede Öffnung neu aus den aktuellen, auch ungespeicherten
+globalen Werten erzeugt. Eigene Werte sind optional sichtbar, werden bei
+Deaktivierung behalten und nicht angewendet. Radius-/Puffergrenzen gelten auch
+beim Umschalten der Übernahme. Die dynamischen Beschriftungen werden ausdrücklich
+über den Modul-Sprachkontext übersetzt. Das Zeilenfeld `id` kann die Instanz-ID
+der Formularaktionen nicht überschreiben.
+
+### Nachweis und Auslieferung
+
+Unter PHP 8.5.10 bestanden die vollständigen Helper- und Modulsuiten mit einem
+isoliert erzeugten vollständigen Consumer-Paket: 15 abonnierte Helper und 61
+Helper-/Ressourcendateien. Manifest-, Abhängigkeits-, Übersetzungs-, Struktur-,
+JSON-/LF- und Stilprüfungen bestanden. Die neuen Regressionen prüfen Vererbung,
+wirksame Eingabegrenzen, beide Wechselrichtungen, Bestätigungszeiten, wiederholte
+Cachepositionen, Herkunftsschutz nach Unbekannt, Referenzüberlappung, Dauer,
+Formularaktionsverträge und unveränderte Variablen-IDs.
+
+Der abschließende MCP-Lauf in einer temporären nativen Bibliothek bestand mit
+28 Prüfungen. Nur Uhrzeit und Kontocache waren synthetisch; Erstellung,
+Konfiguration, Attribute, Variablen, Übersetzung und generierte Modulaufrufe
+liefen nativ. Der Lauf prüfte zwei Geräte, Gesamtanwesenheit, Ein-/Austritt,
+Qualitätsverlust mit bestätigter Wiederaufnahme, Aufenthaltsdauer, globale
+Übernahme, eigene Werte, ungültige Einstellungen, Referenzüberlappungen und IDs.
+Die Testinstanz und Bibliothek wurden vollständig entfernt. Die bestehende
+Anwesenheitsinstanz blieb aktiv; Konfiguration, Kontoverbindung und alle
+29 Variablen-IDs waren unverändert. Private Kennungen und Koordinaten werden
+hier nicht gespeichert. Interaktive Bedienung des neuen Dialogs im regulär
+aktualisierten Client und echte GPS-Bewegungen sind damit noch nicht nachgewiesen.
+
+Zuerst die zentrale Helper-Änderung freigeben und automatisch verteilen lassen,
+dann das reguläre Paket pullen und die Moduländerung veröffentlichen. Der normale
+Consumer enthält keine lokalen Helper-Testkopien. Bestehende Subscription und
+Verteilungsregeln reichen aus; neue Ressourcen sind nicht erforderlich.
+
 ## Anwesenheit: Formulargrenzen und erneute Laufzeitprüfung (2026-10-23)
 
 Die fachliche Bedingung `radius > hysteresis` bleibt im zentralen GeofenceHelper

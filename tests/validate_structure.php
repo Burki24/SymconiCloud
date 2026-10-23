@@ -45,6 +45,9 @@ foreach (glob($root . '/*/module.json') as $file) {
             if (isset($item['items'])) {
                 $walk($item['items']);
             }
+            if (isset($item['form']) && is_array($item['form'])) {
+                $walk($item['form']);
+            }
         }
     };
     $walk($form['elements']);

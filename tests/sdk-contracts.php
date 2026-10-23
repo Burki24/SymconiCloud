@@ -164,6 +164,19 @@ foreach ($knownModules as $moduleID => $folder) {
     }
     $form = json_decode(IPS_GetConfigurationForm($instanceID), true, 512, JSON_THROW_ON_ERROR);
     $defaults = json_decode(IPS_GetConfiguration($instanceID), true, 512, JSON_THROW_ON_ERROR);
+    if ($module['prefix'] === 'ICPR') {
+        // A dynamic List form has its own scope and the row's id is not an
+        // instance ID. The generated callbacks must use the instance literal.
+        $check(str_contains($form['elements'][3]['form'], 'ICPR_GetZoneEditForm($id, $Hysteresis, $MaxAccuracy, $ConfirmationTime,'), 'The zone form must receive the unsaved global defaults.');
+        $row = json_decode(ICPR_GetZoneEditForm($instanceID, 25, 50, 60, true, 10, 2), true, 512, JSON_THROW_ON_ERROR);
+        $rowScope = ['id' => 'synthetic-zone', 'radius' => 10, 'customGPS' => true, 'hysteresis' => 2];
+        foreach ([$row[4], $row[6], $row[7]['items'][0]] as $control) {
+            foreach (validateButtonScript($control['onChange'], $rowScope, $module) as [$function, $arguments]) {
+                $check($arguments[0] === $instanceID, 'A row id must never shadow the instance ID in zone callbacks.');
+                $function(...$arguments);
+            }
+        }
+    }
     foreach (['elements', 'actions'] as $section) {
         $scope = ['id' => $instanceID];
         $buttons = [];
