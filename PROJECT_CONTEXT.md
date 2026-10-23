@@ -1,5 +1,49 @@
 # Entwicklungsstand
 
+## Installierte Zonen-GPS-Vorgaben: MCP-Prüfung und Wiederherstellung (2026-10-23)
+
+Nach den vom Benutzer abgeschlossenen Updates wurde die bestehende
+Anwesenheitsinstanz auf dem angeschlossenen Symcon-System geprüft. Die neuen
+Modulfunktionen und GeofenceHelper 1.2.0 waren geladen; dessen Datei entsprach
+dem SHA-256 des installierten Helper-Manifests. Die Instanz war aktiv und
+verwaltete zwei Geräte mit einer gemeinsamen Referenzzone und 29 Variablen.
+
+Der abschließende Lauf bestand mit **29 Prüfungen ohne Warnungen oder Fehler**.
+Temporäre Konfigurationen und kontrollierte Standortdaten wurden an der
+Auswertungsgrenze der bestehenden Instanz verwendet. Der Apple-Kontocache blieb
+unverändert; zusätzliche Apple-Abfragen oder Neuortungen wurden nicht ausgelöst.
+Geprüft wurden globale Übernahme trotz ruhender eigener Werte, abweichende
+GPS-Vorgaben beider Zonen, wirksame Radius-/Puffergrenzen, deutsche dynamische
+Formularbeschriftungen sowie getrennte Gerätewerte und Gesamtanwesenheit.
+
+Eintritt und Austritt berücksichtigten die längere Bestätigungszeit von Herkunft
+und Ziel. Wiederholte Cachepositionen bestätigten keinen Wechsel. Ungenaue Daten
+führten zu Unbekannt und unterbrachen den Aufenthalt; weder spätere ungenaue
+Positionen noch ein Wechsel über Unbekannt umgingen Herkunftsqualität oder
+Bestätigungszeit. Eine weit entfernte Zielzone durfte ihre eigene großzügigere
+Genauigkeitsgrenze nutzen. Auch eigener Grenzpuffer, Austritt aus allen Zonen,
+Beginn und Dauer eines bestätigten Aufenthalts sowie sichere Ablehnung einer
+ungültigen Rückkehr zu globalen Vorgaben wurden nachgewiesen.
+
+Die Wiederherstellung erfolgte im Abschluss-/Fehlerpfad und wurde anschließend
+erneut lesend geprüft: vollständige ursprüngliche Konfiguration, Kontoverbindung,
+15-Sekunden-Timer, alle 29 Variablen-IDs und beide bisherigen Aufenthaltsbeginne
+waren erhalten. Die beiden archivierten Anwesenheitsvariablen wurden während der
+kontrollierten Testwechsel kurz von der Protokollierung ausgenommen; ihre
+ursprüngliche Archivierung war danach wieder aktiv. Gesicherte Auswertungszustände
+wurden zurückgespielt und über die normale Modulauswertung mit den Echtwerten
+abgeglichen. Status 102, beide Geräte Anwesend und Gesamtanwesenheit Anwesend
+waren wiederhergestellt. Ein nachfolgender regulärer Timerlauf aktualisierte
+beide Aufenthaltsdauern weiter, ohne deren Beginn zurückzusetzen.
+
+Beim ersten Lauf wies Symcon direkte Wiederherstellungsversuche an den
+schreibgeschützten Variablen ab. Die Teststeuerung wurde auf den moduleigenen
+SDK-Wertzugriff korrigiert; der danach vollständig wiederholte Lauf war
+warnungsfrei. Dies erforderte keine Änderung am Modul oder an den Helpern.
+Private Geräte-/Objektkennungen, Endpunkte und Koordinaten werden hier nicht
+gespeichert. Reale GPS-Bewegungen und die interaktive Bedienung des neuen
+Zonendialogs sind durch diesen kontrollierten Lauf nicht nachgewiesen.
+
 ## Anwesenheit: optionale GPS-Vorgaben je Zone (2026-10-23)
 
 Zonen können im eigenen Bearbeitungsdialog **Eigene GPS-Einstellungen für diese
