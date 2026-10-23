@@ -192,18 +192,20 @@ IPS_ApplyChanges($configurator);
 $check(IPS_GetInstance($configurator)['InstanceStatus'] === IS_ACTIVE, 'Configured account cache must remain active after ApplyChanges.');
 $check($firstBoundary->commands === ['GetDevices'], 'ApplyChanges must read cache without refreshing Apple.');
 $form = json_decode(IPS_GetConfigurationForm($configurator), false, 512, JSON_THROW_ON_ERROR);
-$table = $form->elements[0];
-$columns = [];
-foreach ($table->columns as $column) {
-    $check(is_string($column->name) && !in_array($column->name, ['id', 'parent', 'create', 'expanded', 'instanceID'], true), 'Reserved Configurator column name.');
-    $check(!isset($columns[$column->name]), 'Duplicate Configurator column.');
-    $check(is_string($column->width) && ($column->width === 'auto' || preg_match('/\A[0-9]+px\z/', $column->width) === 1), 'Invalid column width.');
-    $columns[$column->name] = $column->width;
+foreach ([$form->elements[0], $form->elements[1]] as $table) {
+    $columns = [];
+    foreach ($table->columns as $column) {
+        $check(is_string($column->name) && !in_array($column->name, ['id', 'parent', 'create', 'expanded', 'instanceID'], true), 'Reserved Configurator column name.');
+        $check(!isset($columns[$column->name]), 'Duplicate Configurator column.');
+        $check(is_string($column->width) && ($column->width === 'auto' || preg_match('/\A[0-9]+px\z/', $column->width) === 1), 'Invalid column width.');
+        $columns[$column->name] = $column->width;
+    }
+    $check(count(array_filter($columns, static fn ($width): bool => $width === 'auto')) <= 1, 'Only one auto column is supported.');
+    $check(isset($columns[$table->sort->column]) && in_array($table->sort->direction, ['ascending', 'descending'], true), 'Invalid Configurator sorting.');
+    $recipe = $table->values[0]->create;
+    validateCreationRecipe($recipe, $knownModules);
 }
-$check(count(array_filter($columns, static fn ($width): bool => $width === 'auto')) <= 1, 'Only one auto column is supported.');
-$check(isset($columns[$table->sort->column]) && in_array($table->sort->direction, ['ascending', 'descending'], true), 'Invalid Configurator sorting.');
-$recipe = $table->values[0]->create;
-validateCreationRecipe($recipe, $knownModules);
+$recipe = $form->elements[0]->values[0]->create;
 $created = IPS_CreateInstance($recipe->moduleID);
 IPS_ConnectInstance($created, $firstAccount);
 IPS_SetConfiguration($created, json_encode($recipe->configuration, JSON_THROW_ON_ERROR));
@@ -235,6 +237,7 @@ IPS_ConnectInstance($probeID, $firstAccount);
 IPS_ApplyChanges($probeID);
 $probe = IPS\InstanceManager::getInstanceInterface($probeID);
 $check(count(json_decode($probe->fieldUpdates['Devices']['values'], true, 512, JSON_THROW_ON_ERROR)) >= 1, 'Dynamic list update must carry device rows as JSON.');
+$check(count(json_decode($probe->fieldUpdates['PresenceInstances']['values'], true, 512, JSON_THROW_ON_ERROR)) >= 1, 'Presence list updates must also carry JSON rows.');
 $check(is_string($probe->fieldUpdates['Result']['caption']), 'Dynamic result caption must remain a string.');
 
 $firstBoundary->result['success'] = false;
@@ -242,6 +245,7 @@ IPS_ApplyChanges($configurator);
 $check(IPS_GetInstance($configurator)['InstanceStatus'] === 202, 'Unavailable account cache must produce an error after ApplyChanges.');
 $failed = json_decode(IPS_GetConfigurationForm($configurator), true, 512, JSON_THROW_ON_ERROR);
 $check(!isset($failed['elements'][0]['values'][0]['create']), 'Failed account cache must not offer device creation.');
+$check(!isset($failed['elements'][1]['values'][0]['create']), 'Failed account cache must not offer presence creation.');
 $disconnected = IPS_CreateInstance($configuratorModule);
 $check(IPS_GetInstance($disconnected)['InstanceStatus'] === 201, 'Missing account must retain its dedicated status.');
 echo "Documented form-action and creation contracts passed.\n";

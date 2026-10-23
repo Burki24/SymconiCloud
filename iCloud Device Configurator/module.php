@@ -14,6 +14,7 @@ class iCloudDeviceConfigurator extends IPSModuleStrict
 
     private const ACCOUNT_MODULE = '{10BF9A03-98A3-495A-B0FA-A4FA0B1002D5}';
     private const DEVICE_MODULE = '{DEA72AD7-7877-4392-B64F-055B63D1E5C4}';
+    private const PRESENCE_MODULE = '{00438FA2-CF5C-45B0-AFF0-A5A5CE66595E}';
     private const REQUEST_DATA = '{1E60F0BE-03E4-4AA4-A1CE-AA838725A4E2}';
     private const NOTIFICATION_DATA = '{FCE7780F-9520-4E52-92F3-60034FFAED6D}';
 
@@ -37,6 +38,7 @@ class iCloudDeviceConfigurator extends IPSModuleStrict
         $result = $this->request('GetDevices');
         $this->SetStatus(!$this->HasParent() ? 201 : (($result['success'] ?? false) === true ? IS_ACTIVE : 202));
         $form['elements'][0]['values'] = $this->buildValues($result);
+        $form['elements'][1]['values'] = $this->buildValues($result, self::PRESENCE_MODULE);
         $form['actions'][0]['caption'] = $this->resultCaption($result);
         return $this->EncodeConfigurationForm($form);
     }
@@ -101,6 +103,7 @@ class iCloudDeviceConfigurator extends IPSModuleStrict
         $success = ($result['success'] ?? false) === true;
         $this->SetStatus(!$this->HasParent() ? 201 : ($success ? IS_ACTIVE : 202));
         $this->UpdateFormField('Devices', 'values', json_encode($this->buildValues($result), JSON_THROW_ON_ERROR));
+        $this->UpdateFormField('PresenceInstances', 'values', json_encode($this->buildValues($result, self::PRESENCE_MODULE), JSON_THROW_ON_ERROR));
         $this->UpdateFormField('Result', 'caption', $this->resultCaption($result));
         return $success;
     }
@@ -114,12 +117,12 @@ class iCloudDeviceConfigurator extends IPSModuleStrict
     }
 
     /** @param array<string, mixed> $result @return list<array<string, mixed>> Account-scoped device rows. */
-    private function buildValues(array $result): array
+    private function buildValues(array $result, string $moduleID = self::DEVICE_MODULE): array
     {
         $parent = $this->HasParent() ? $this->GetParentID() : 0;
         $existing = [];
         if ($parent > 0) {
-            foreach (IPS_GetInstanceListByModuleID(self::DEVICE_MODULE) as $instanceID) {
+            foreach (IPS_GetInstanceListByModuleID($moduleID) as $instanceID) {
                 if ((int) IPS_GetInstance($instanceID)['ConnectionID'] === $parent) {
                     $existing[(string) IPS_GetProperty($instanceID, 'DeviceID')][] = $instanceID;
                 }
@@ -140,7 +143,7 @@ class iCloudDeviceConfigurator extends IPSModuleStrict
             ];
             if ($parent > 0 && ($result['success'] ?? false) === true) {
                 $rows[array_key_last($rows)]['create'] = [
-                    'moduleID'      => self::DEVICE_MODULE,
+                    'moduleID'      => $moduleID,
                     'configuration' => ['DeviceID' => $id]
                 ];
             }

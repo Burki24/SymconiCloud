@@ -1,5 +1,85 @@
 # Entwicklungsstand
 
+## iCloud Anwesenheit: Zonen und GPS-Stabilisierung (2026-10-23)
+
+Lokal umgesetzt ist das neue Modul `iCloud Presence`, Alias **iCloud Anwesenheit**,
+Präfix **ICPR**, Modul-GUID `{00438FA2-CF5C-45B0-AFF0-A5A5CE66595E}`. Eine Instanz
+wertet ein Gerät direkt am bestehenden Kontosplitter aus. Der Geräte-Konfigurator
+erhält eine eigene Liste **Anwesenheitsauswertungen** mit kontogebundenem
+Instanzabgleich und Erstellungsvorgaben. Geräteinstanz und Karte sind dafür
+nicht erforderlich. Die Architekturentscheidung steht in
+[ADR 0007](docs/adr/0007-presence-and-geofencing.md).
+
+Eine bis 64 Kreiszonen besitzen stabile IDs, Namen, Mittelpunkt und Radius;
+genau eine Referenzzone wird markiert. `Presence` verwendet die bereits zentral
+vorhandene native Integer-Klartextdarstellung: **-1 Unbekannt**, **0 Abwesend**,
+**1 Anwesend**. Andere bestätigte Zonen zählen als abwesend von der Referenzzone.
+Zusätzlich entstehen aktuelle Zone/ID, Bewertungsgrund, Luftlinienentfernung
+zum Referenzmittelpunkt, Aufenthaltsbeginn und -dauer sowie eigene
+Verfügbarkeits- und Bestätigungskennzeichnungen. Alle Variablen sind lesend.
+
+Die generische Berechnung liegt ausschließlich im neuen zentralen
+`GeofenceHelper`. Er verarbeitet Genauigkeitsradius, Altersgrenze, Hysterese,
+zeitlich getrennte Bestätigungen und unplausible Sprünge. Referenztreffer haben
+bei Überlappungen Vorrang. Grenzfälle halten bekannte Zustände, ohne vorherige
+Bestätigung bleiben sie unbekannt. Fehlende, alte oder unbrauchbare Positionen
+ergeben Unbekannt; ein alter wiederholter Cachetreffer darf einen unterbrochenen
+Aufenthalt nicht neu bestätigen. Die Dauer zählt beobachtete Zeit innerhalb einer
+bestätigten Zone. Zustände sind persistent und durch eine Identität aus Konto,
+Gerät, Zonen und Einstellungen getrennt.
+
+Vorgaben: Standortalter 900 s, maximale Unsicherheit 100 m, Grenzpuffer 25 m,
+Bestätigungszeit 30 s, plausible Geschwindigkeit 300 km/h. Der lokale
+15-Sekunden-Timer liest nur `GetDevices` aus dem Kontocache und prüft Alter und
+Dauer. Dieselbe Position bestätigt keinen Wechsel. Der tatsächliche
+Kontoabrufrhythmus und die von Apple gelieferten Zeitstempel begrenzen die
+Reaktionszeit. Es gibt keine neue Anmeldung, aktive Neuortung, Adressabfrage
+oder weitere Netzwerkverbindung.
+
+### Prüfung
+
+Unter PHP 8.5.10 bestanden die vollständige zentrale Helpersuite und die
+vollständige Modulsuite einschließlich der bisherigen Karten-/Browser-Verträge.
+Die neuen Regressionen prüfen Geometrie einschließlich Datumsgrenze, Ein- und
+Austritt mit Bestätigung, Randfälle und Rückkehr, Genauigkeits-/Altersfehler,
+Sprünge, doppelte und rückläufige Zeitstempel, serialisierten Neustartzustand,
+Beobachtungslücken, lokale Timer, Variablen-IDs, Konto-/Konfigurationswechsel,
+entfernte Geräte, abgeschaltete Auswertung und ungültige Konfiguration.
+Formularaktionen und beide Konfigurator-Erstellungsvorgaben werden durch die
+dokumentbasierten SDK-Vertragsprüfungen erfasst.
+
+Die Manifest- und Bundle-Prüfung bestätigt den neuen Helper bytegleich mit
+seiner kanonischen Quelle und ohne weitere Laufzeitabhängigkeiten. Das gesamte
+abonnierte Consumer-Paket wurde über den vorhandenen Bundle-Generator erzeugt
+und in isolierten Kopien geprüft. Zusätzlich bestand der bisherige committete
+Modulstand mit neuer Subscription und neuem Paket: Der vorgelagerte Sync kann
+somit vor der Veröffentlichung des Anwesenheitsmoduls geprüft werden.
+Im normalen Arbeitsbaum wurden keine Vendor-Dateien ausgetauscht. Ein echter
+Symcon-Neustart, native Formularbedienung und GPS-Praxisbetrieb dieses neuen
+Moduls sind noch nicht geprüft; es wurde nichts installiert oder veröffentlicht.
+
+### Verteilung und Übergabe
+
+Das neue Modul benötigt `GeofenceHelper` ab 1.0.0. Dieser ist noch nicht im
+regulären `libs/helper` enthalten; dessen Dateien bleiben bewusst unverändert,
+damit keine lokalen Testkopien einen späteren Pull blockieren.
+
+1. In SymconiCloud zunächst ausschließlich `.helper-sync.json` über GitHub Desktop
+   committen und nach `dev` pushen. Die laufenden Module nutzen den neuen Helper
+   dabei noch nicht. Die strenge Integritätsprüfung meldet bis zum Eingang des
+   Pakets die noch fehlende abonnierte Datei; sie wird nicht gelockert.
+2. Die zentrale GeofenceHelper-Ergänzung nach dem vorhandenen Benutzerworkflow
+   freigeben. Automatische Versionierung und Verteilung laufen auf
+   `Symcon_ModuleHelper/main`; der Sync liest die nun vorhandene Subscription
+   aus `SymconiCloud/dev` und liefert das vollständige Paket per Helper-PR.
+   Falls der zentrale Stand vorher freigegeben wurde, den vorhandenen Workflow
+   **Sync Helpers to Consumers** danach für `GeofenceHelper` erneut starten.
+3. Nach erfolgreicher Integration des regulären Pakets in `dev` dieses in GitHub
+   Desktop pullen. Die hier geprüften fachlichen Änderungen liegen außerhalb von
+   `libs/helper` und überschneiden sich nicht mit dem Paket-Pull. Den tatsächlichen
+   Integrationsstand mit `php tests/run.php` erneut prüfen und erst dann die
+   übrigen Moduländerungen committen, pushen und zum Test installieren.
+
 ## Lesbare Integer-Statusanzeigen: MCP-Nachweis und Korrektur (2026-10-23)
 
 Der Benutzer meldete Rohwerte wie `-1` anstelle lesbarer Texte bei den neuen

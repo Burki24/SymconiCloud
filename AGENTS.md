@@ -3,8 +3,8 @@
 Lies `../SymconDevelopment/AGENTS.md`, `../SymconDevelopment/ARCHITECTURE.md`, die zentralen `principles/` und die relevanten Standards. Sie gelten für dieses Projekt.
 
 - Ziel: IP-Symcon 9.0 / PHP 8.5; eigenständige Library mit `IPSModuleStrict`.
-- Library: SymconiCloud. Kontomodul, allgemeiner Gerätekonfigurator, iCloud-Gerät und WoIst-Karte sind getrennte Module. WoIst liest alle Geräte des verbundenen Kontocaches.
-- Öffentliche Präfixe sind vierstellig: ICAC (Konto), ICDC (Device-Konfigurator), ICID (iCloud-Gerät), ICWI (WoIst-Karte).
+- Library: SymconiCloud. Kontomodul, allgemeiner Gerätekonfigurator, iCloud-Gerät, WoIst-Karte und iCloud-Anwesenheit sind getrennte Module. WoIst liest alle Geräte des verbundenen Kontocaches; Anwesenheit wertet je Instanz ein Gerät aus.
+- Öffentliche Präfixe sind vierstellig: ICAC (Konto), ICDC (Device-Konfigurator), ICID (iCloud-Gerät), ICWI (WoIst-Karte), ICPR (Anwesenheit).
 - Keine Implementierung aus iCloud3 übernehmen. Externe Protokollinformationen sind Quellen, keine Kopiervorlage.
 - Kontomodul besitzt Anmeldung, Sitzung, HTTPS und Gerätecache. Kinder erhalten ausschließlich normalisierte Gerätedaten, keine Zugangsdaten oder Tokens.
 - Keine realen Apple-Anmeldungen ohne ausdrücklichen Praxisauftrag. Offline-Tests verwenden synthetische Daten.

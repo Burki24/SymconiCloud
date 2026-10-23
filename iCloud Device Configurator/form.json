@@ -22,6 +22,29 @@
                 "direction": "ascending"
             },
             "values": []
+        },
+        {
+            "type": "Configurator",
+            "name": "PresenceInstances",
+            "caption": "Presence evaluations",
+            "rowCount": 6,
+            "columns": [
+                {
+                    "name": "name",
+                    "caption": "Device",
+                    "width": "auto"
+                },
+                {
+                    "name": "model",
+                    "caption": "Model",
+                    "width": "180px"
+                }
+            ],
+            "sort": {
+                "column": "name",
+                "direction": "ascending"
+            },
+            "values": []
         }
     ],
     "actions": [

@@ -2,6 +2,15 @@
 
 ## Neu
 
+- Neues Modul **iCloud Anwesenheit** (ICPR): konfigurierbare Kreiszonen je Gerät,
+  genau eine Referenzzone, lesbare Anwesenheit mit **Unbekannt**, Entfernung zum
+  Referenzmittelpunkt und beobachtete Aufenthaltsdauer. Der zentrale
+  GeofenceHelper stabilisiert GPS-Daten mit Genauigkeitsgrenzen, Grenzpuffer,
+  zeitlich getrennten Bestätigungen und einem Filter für unplausible Sprünge.
+  Der Geräte-Konfigurator erhält eine eigene Liste für Anwesenheitsinstanzen.
+  Es entstehen keine zusätzlichen Apple-Abfragen; vor der Installation muss
+  das neue GeofenceHelper-Paket über den regulären Helper-Sync eingegangen sein.
+
 - iCloud-Geräteinstanzen zeigen zusätzliche Angaben zu Stromsparmodus, Ortung, Verloren-Modus, Aktivierungssperre, Familienfreigabe und technischer Modellkennung. Die zehn neuen Statusvariablen unterscheiden **Nicht verfügbar**, **Nein** und **Ja**; fehlende Angaben und Kontofehler lassen keine alten Statuswerte stehen. Nach dem Update die Geräteinstanzkonfiguration übernehmen und die nächste Kontoaktualisierung abwarten.
 
 - Geoapify steht als zweiter Adressanbieter neben dem eigenen Nominatim-Server zur Wahl. Eigener API-Key, einstellbares UTC-Tageslimit je WoIst-Instanz (Vorgabe 2.500), Verbrauchsanzeige und automatische Fortsetzung am nächsten Tag ergänzen die bisherigen Genauigkeitsregeln. Cachetreffer bleiben am Limit verfügbar; Quellenhinweise erscheinen in Kachel und IPSView. Bestehende Nominatim-Einstellungen bleiben erhalten.

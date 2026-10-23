@@ -4,6 +4,11 @@ SymconiCloud verbindet Apple-iCloud-Dienste mit IP-Symcon. Die Library bietet Ap
 
 **[WoIst](iCloud%20WoIst/README.md)** zeigt die verfügbaren Positionen aller Geräte eines Kontos gemeinsam auf einer Karte in der Kachelvisualisierung oder als IPSView-WebContent. Beide Ausgaben besitzen einen Designer; IPSView kann das Kachel-Design übernehmen. Kalender, Kontakte, Fotos und iCloud Drive sind nicht enthalten.
 
+**[iCloud Anwesenheit](iCloud%20Presence/README.md)** wertet pro Instanz ein
+Gerät in frei konfigurierbaren Kreiszonen aus. Anwesenheit unterscheidet
+**Unbekannt**, **Abwesend** und **Anwesend** bezogen auf eine Referenzzone.
+Entfernung, Aufenthaltsdauer und GPS-Stabilisierung nutzen denselben Kontocache.
+
 ## Voraussetzungen
 
 - IP-Symcon 9.0 mit PHP 8.5 und den PHP-Erweiterungen `curl` und `bcmath`.
@@ -21,6 +26,9 @@ Die Anbindung verwendet Apples Web-Endpunkte. Apple stellt dafür keine zugesich
 4. [iCloud Device Configurator](iCloud%20Device%20Configurator/README.md) anlegen und mit diesem Konto verbinden.
 5. Geräte über den Konfigurator als [iCloud Device](iCloud%20Device/README.md) anlegen.
 6. Für die Kartenansicht **iCloud WoIst Karte** anlegen, mit dem Konto verbinden und in der Kachelvisualisierung hinzufügen. Einzelne Geräteinstanzen sind für die Karte nicht erforderlich.
+7. Für Anwesenheit im Konfigurator unter **Anwesenheitsauswertungen** das Gerät
+   anlegen, Zonen definieren und genau eine Referenzzone markieren. Karten- und
+   Geräteinstanzen sind dafür nicht erforderlich.
 
 Ein Konto kann mehrere Geräte bedienen; mehrere Apple-Konten verwenden getrennte Kontoinstanzen. Das Konto speichert Sitzung und Gerätecache über Symcon-Neustarts hinweg. Passwörter und Sitzungstokens gehören zu den vertraulichen Instanzdaten; Symcon-Konfiguration und Backups entsprechend schützen.
 

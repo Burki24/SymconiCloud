@@ -1,0 +1,18 @@
+{
+    "id": "{00438FA2-CF5C-45B0-AFF0-A5A5CE66595E}",
+    "name": "iCloud Presence",
+    "type": 3,
+    "vendor": "Apple",
+    "aliases": [
+        "iCloud Anwesenheit"
+    ],
+    "parentRequirements": [
+        "{1E60F0BE-03E4-4AA4-A1CE-AA838725A4E2}"
+    ],
+    "childRequirements": [],
+    "implemented": [
+        "{FCE7780F-9520-4E52-92F3-60034FFAED6D}"
+    ],
+    "prefix": "ICPR",
+    "url": "https://github.com/Burki24/SymconiCloud/blob/main/iCloud%20Presence/README.md"
+}
