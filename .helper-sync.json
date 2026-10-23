@@ -48,9 +48,6 @@
         },
         "GeofenceHelper": {
             "target": "libs/helper/GeofenceHelper.php"
-        },
-        "StatusWidgetHelper": {
-            "target": "libs/helper/StatusWidgetHelper.php"
         }
     }
 }

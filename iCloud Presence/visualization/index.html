@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="{{HTML_LANGUAGE}}" class="{{HTML_CLASSES}}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="{{VIEWPORT_CONTENT}}">
+    <title>{{DOCUMENT_TITLE}}</title>
+    <style>html { font-size: {{ROOT_FONT_SIZE}}; }</style>
+    <style id="widget-theme">{{VISUALIZATION_THEME}}{{IPSVIEW_STYLE}}</style>
+    <style>{{RESPONSIVE_CSS}}{{MODULE_STYLE}}</style>
+</head>
+<body>
+    <main id="status-widget" aria-label="{{DOCUMENT_TITLE}}">
+        <header id="summary" role="status"><span id="summary-label"></span><strong id="summary-value"></strong><small id="summary-detail"></small></header>
+        <p id="connection" role="status" hidden></p>
+        <div id="members" role="list"></div>
+        <p id="empty" hidden></p>
+    </main>
+    <script type="application/json" id="widget-bootstrap">{{BOOTSTRAP_JSON}}</script>
+    <script>{{HTTP_ORIGIN_SCRIPT}}</script>
+    <script>{{MODULE_SCRIPT}}</script>
+</body>
+</html>
