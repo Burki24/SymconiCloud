@@ -45,6 +45,9 @@
         },
         "ReverseGeocodingHelper": {
             "target": "libs/helper/ReverseGeocodingHelper.php"
+        },
+        "GeofenceHelper": {
+            "target": "libs/helper/GeofenceHelper.php"
         }
     }
 }
