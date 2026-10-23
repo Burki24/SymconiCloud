@@ -390,10 +390,10 @@
             ]
         },
         "GeofenceHelper": {
-            "version": "1.1.0",
-            "sha256": "f34b722ab56268d5316942c047f01600a9254b6dd5ce8942358c74c72d7d497e",
+            "version": "1.2.0",
+            "sha256": "a52906069249fb98ec1fcdd6cd7230aa265ae96358f906ee5bbb567624b3dba2",
             "path": "libs/helper/GeofenceHelper.php",
-            "source_sha": "3ada7de18918573f1443aab3fd42ef31297b7e48"
+            "source_sha": "351fb65539c79fe51d682bf5598ce832749f52d3"
         }
     }
 }
