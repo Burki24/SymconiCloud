@@ -236,6 +236,10 @@ Schrägstrich. Bei HTTPS-Clients auch einen erreichbaren HTTPS-Endpunkt verwende
 Native Kacheln erhalten SDK-Pushs. IPSView fragt alle fünf Sekunden ausschließlich
 den geschützten Widgetcache ab; bei Fehlern erscheint ein Hinweis und der Abruf
 wird wiederholt. Die HTML-Variable wird bei Datenupdates nicht neu geschrieben.
+Die HTMLBox lädt dafür eine echte HTTP(S)-Widgetseite vom Symcon-Server. Dadurch
+benötigen Datenupdates keine CORS-Vorabfrage aus einer eingebetteten Daten-URL.
+Nach diesem Modulupdate die Instanzkonfiguration einmal übernehmen, damit die
+bestehende HTML-Variable den neuen Loader enthält; ihre ID bleibt erhalten.
 Auswahl und Scrollposition bleiben erhalten. Das Abschalten der IPSView-Ausgabe
 widerruft den Zugriff; die Variable bleibt bis zur ausdrücklichen Löschung erhalten.
 Es entstehen keine zusätzlichen Apple-Anfragen. Bilder, Designer und Widgets ändern

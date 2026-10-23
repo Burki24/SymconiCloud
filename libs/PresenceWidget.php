@@ -13,6 +13,7 @@ require_once __DIR__ . '/helper/VisualizationThemeConfigurationHelper.php';
 require_once __DIR__ . '/helper/IPSViewStyleConfigurationHelper.php';
 require_once __DIR__ . '/helper/ResponsiveVisualizationHelper.php';
 require_once __DIR__ . '/helper/HttpResponseHelper.php';
+require_once __DIR__ . '/IPSViewFrame.php';
 
 /**
  * SymconiCloud presence widget layout, images and cached IPSView output.
@@ -21,6 +22,8 @@ require_once __DIR__ . '/helper/HttpResponseHelper.php';
  */
 trait PresenceWidget
 {
+    use IPSViewFrame;
+
     private const PRESENCE_WIDGET_TEXT = [
         'tile'       => 'Tile designer', 'ipsview' => 'IPSView designer', 'layout' => 'Layout and content',
         'colors'     => 'Colors', 'style' => 'Colors and typography', 'font' => 'Font size in pixels',
@@ -109,15 +112,14 @@ trait PresenceWidget
     /** Compact HTML document, with no navigation or dashboard shell. */
     protected function RenderStatusWidget(bool $ipsView): string
     {
-        $bootstrap = $this->StatusWidgetBootstrap($ipsView);
-        return $this->RenderVisualizationHTMLPage($ipsView, [
-            'title'              => (string) ($bootstrap['state']['title'] ?? ''), 'state' => $bootstrap['state'],
-            'options'            => $bootstrap['options'],
-            'visualizationTheme' => $this->VisualizationThemeCSS(),
-            'ipsViewStyle'       => $this->VisualizationBaseThemeCSS() . $this->IPSViewStyleCSSVariables(':root'),
-            'rootFontSize'       => $bootstrap['options']['design']['fontSize'],
-            'replacements'       => ['{{RESPONSIVE_CSS}}' => $this->ResponsiveVisualizationCSS('#status-widget', 'status-widget', true),
-                '{{HTTP_ORIGIN_SCRIPT}}'                  => $this->VisualizationHTTPOriginScript()]
+        if (!$ipsView) {
+            return $this->RenderStatusWidgetPage(false);
+        }
+        return $this->RenderIPSViewFrame([
+            'url'   => $this->StatusWidgetServerURLValid() ? $this->ReadPropertyString('IPSViewServerURL') . '/hook/' . $this->StatusWidgetHookName() . '/page' : '',
+            'token' => $this->ReadAttributeString('StatusWidgetToken'),
+            'title' => $this->Translate('Overall presence'),
+            'error' => $this->StatusWidgetText('connection')
         ]);
     }
 
@@ -154,9 +156,21 @@ trait PresenceWidget
         header('Access-Control-Allow-Headers: X-Status-Widget-Token');
         header('Access-Control-Allow-Methods: POST, OPTIONS');
         $method = $_SERVER['REQUEST_METHOD'] ?? '';
-        if (($_SERVER['REQUEST_URI'] ?? '') !== '/hook/' . $this->StatusWidgetHookName() || !$this->IsIPSViewHTMLPageEnabled()
+        $path = '/hook/' . $this->StatusWidgetHookName();
+        $uri = $_SERVER['REQUEST_URI'] ?? '';
+        $page = $uri === $path . '/page';
+        if (($uri !== $path && !$page) || !$this->IsIPSViewHTMLPageEnabled()
             || !$this->StatusWidgetServerURLValid() || $this->ReadAttributeInteger('StatusWidgetConnection') !== IPS_GetInstance($this->InstanceID)['ConnectionID']) {
             $this->SendPlainTextResponse(404, 'Not available.');
+            return;
+        }
+        if ($page) {
+            if ($method !== 'GET') {
+                $this->SendPlainTextResponse(405, 'Method not allowed.');
+                return;
+            }
+            header('Referrer-Policy: no-referrer');
+            $this->SendResponse(200, 'text/html', $this->RenderStatusWidgetPage(true, true));
             return;
         }
         if ($method === 'OPTIONS') {
@@ -179,6 +193,24 @@ trait PresenceWidget
     protected function StatusWidgetText(string $key): string
     {
         return $this->Translate(self::PRESENCE_WIDGET_TEXT[$key]);
+    }
+
+    /** The unauthenticated HTTP shell must never contain device data or its access token. */
+    private function RenderStatusWidgetPage(bool $ipsView, bool $publicShell = false): string
+    {
+        $bootstrap = $this->StatusWidgetBootstrap($ipsView);
+        if ($publicShell) {
+            $bootstrap['state'] = ['title' => $this->Translate('Overall presence'), 'summary' => [], 'members' => []];
+        }
+        return $this->RenderVisualizationHTMLPage($ipsView, [
+            'title'              => (string) ($bootstrap['state']['title'] ?? ''), 'state' => $bootstrap['state'],
+            'options'            => $bootstrap['options'],
+            'visualizationTheme' => $this->VisualizationThemeCSS(),
+            'ipsViewStyle'       => $this->VisualizationBaseThemeCSS() . $this->IPSViewStyleCSSVariables(':root'),
+            'rootFontSize'       => $bootstrap['options']['design']['fontSize'],
+            'replacements'       => ['{{RESPONSIVE_CSS}}' => $this->ResponsiveVisualizationCSS('#status-widget', 'status-widget', true),
+                '{{HTTP_ORIGIN_SCRIPT}}'                  => $this->VisualizationHTTPOriginScript()]
+        ]);
     }
 
     private function StatusWidgetHookName(): string
@@ -210,7 +242,6 @@ trait PresenceWidget
             'options'   => array_merge($this->ResponsiveVisualizationLayoutOptions(!$ipsView), ['design' => $design,
                 'themeCSS'                                                                               => $ipsView ? $this->VisualizationBaseThemeCSS() . $this->IPSViewStyleCSSVariables(':root') : $this->VisualizationThemeCSS(),
                 'connectionError'                                                                        => $this->StatusWidgetText('connection'), 'empty' => $this->StatusWidgetText('empty'),
-                'transport'                                                                              => $ipsView ? ['url' => $this->StatusWidgetServerURLValid() ? $this->ReadPropertyString('IPSViewServerURL') . '/hook/' . $this->StatusWidgetHookName() : '',
-                    'token'                                                                                                   => $this->ReadAttributeString('StatusWidgetToken')] : null])];
+                'transport'                                                                              => $ipsView ? ['url' => '/hook/' . $this->StatusWidgetHookName(), 'token' => '', 'fragmentToken' => true] : null])];
     }
 }

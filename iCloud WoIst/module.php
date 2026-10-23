@@ -16,6 +16,7 @@ require_once __DIR__ . '/../libs/WoIstIPSViewTransport.php';
 require_once __DIR__ . '/../libs/helper/HttpResponseHelper.php';
 require_once __DIR__ . '/../libs/helper/ReverseGeocodingHelper.php';
 require_once __DIR__ . '/../libs/WoIstGeocoding.php';
+require_once __DIR__ . '/../libs/IPSViewFrame.php';
 
 /** One account's device positions, rendered through the authenticated HTML SDK. */
 class iCloudWoIst extends IPSModuleStrict
@@ -34,6 +35,7 @@ class iCloudWoIst extends IPSModuleStrict
     use \Burki24\SymconModuleHelper\HttpResponseHelper;
     use \Burki24\SymconModuleHelper\ReverseGeocodingHelper;
     use \SymconiCloud\WoIstGeocoding;
+    use \SymconiCloud\IPSViewFrame;
 
     private const ACCOUNT_MODULE = '{10BF9A03-98A3-495A-B0FA-A4FA0B1002D5}';
     private const REQUEST_DATA = '{1E60F0BE-03E4-4AA4-A1CE-AA838725A4E2}';
@@ -143,12 +145,12 @@ class iCloudWoIst extends IPSModuleStrict
     {
         $this->ConfigureWoIstIPSViewTransport();
         $options = $this->WoIstIPSViewTransportOptions();
-        return strtr($this->VisualizationAsset('ipsview.html'), ['{{LOADER_SCRIPT}}' => $this->VisualizationInteractionScript() . "\n" . $this->VisualizationHTTPOriginScript() . "\n" . $this->VisualizationAsset('ipsview-loader.js'), '{{LOADER_CONFIG}}' => $this->encode([
+        return $this->RenderIPSViewFrame([
             'url'   => isset($options['url']) ? $options['url'] . '/page' : '',
             'token' => $options['token'] ?? '',
             'title' => $this->Translate('WoIst'),
             'error' => $this->Translate('Configure the Symcon server URL for IPSView live updates.')
-        ])]);
+        ]);
     }
 
     /** @param string $JSONString Normalized account notification. @return string Empty acknowledgement. */

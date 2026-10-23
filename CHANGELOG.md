@@ -1,5 +1,13 @@
 # Unveröffentlicht
 
+## Korrekturen
+
+- Anwesenheitswidgets in IPSView laden eine echte HTTP(S)-Widgetseite. Der
+  geschützte Cacheabruf bleibt damit auf demselben Ursprung und benötigt keine
+  CORS-Vorabfrage aus der HTMLBox. Auswahl und Scrollposition bleiben bei
+  Datenupdates erhalten. WoIst und Anwesenheit verwenden denselben librarylokalen
+  Loader mit den vorhandenen zentralen Adress-, Interaktions- und Seitenhelpern.
+
 ## Neu
 
 - **iCloud Anwesenheit** erhält kompakte Kachel- und IPSView-Widgets mit

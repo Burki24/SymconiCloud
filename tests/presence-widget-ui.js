@@ -39,19 +39,22 @@ const sample = {
     ]},
     options: {design: {photos: true, details: true, fontSize: '14px', spacing: 10}, tileHeaderInset: 58, empty: 'Empty', connectionError: 'Retry', transport: null}
 };
-function harness(transport) {
+function harness(transport, fragment) {
     const nodes = Object.fromEntries(['widget-bootstrap', 'status-widget', 'members', 'summary-label', 'summary-value', 'summary-detail', 'summary', 'empty', 'widget-theme', 'connection'].map(id => [id, new Element()]));
     nodes.connection.hidden = true;
     const input = structuredClone(sample);
     if (transport) input.options.transport = {url: '/hook/test', token: 'synthetic-token'};
+    if (fragment !== undefined) Object.assign(input.options.transport, {token: '', fragmentToken: true});
     nodes['widget-bootstrap'].textContent = JSON.stringify(input);
     const tasks = new Map(); let seq = 0;
     const window = {document: {getElementById: id => nodes[id], createElement: tag => new Element(tag), documentElement: new Element('html')}, events: {},
         addEventListener(name, fn) { this.events[name] = fn; },
         setTimeout(fn, ms) { tasks.set(++seq, {fn, ms}); return seq; }, clearTimeout(id) { tasks.delete(id); },
-        SymconHTTPOrigin: {resolve: () => 'http://symcon.example.invalid'}, fetch: async () => { throw new Error('offline'); }
+        SymconHTTPOrigin: {resolve: () => 'http://symcon.example.invalid'}, fetch: async () => { throw new Error('offline'); },
+        location: {hash: '#token=' + (fragment || ''), pathname: '/hook/test/page', search: ''},
+        history: {replaceState(_state, _title, url) { this.url = url; }}
     };
-    vm.runInNewContext(source, {window, URL, AbortController, console});
+    vm.runInNewContext(source, {window, URL, URLSearchParams, AbortController, console});
     return {window, nodes, tasks};
 }
 async function settle() { for (let i = 0; i < 12; i++) await Promise.resolve(); }
@@ -93,5 +96,20 @@ async function settle() { for (let i = 0; i < 12; i++) await Promise.resolve(); 
     const pending = web.tasks.size;
     web.window.events.pageshow({persisted: true}); await settle();
     assert.equal(web.tasks.size, pending + 1, 'Returning from back-forward cache starts one polling cycle.');
+    const secret = 'b'.repeat(64);
+    const framed = harness(true, secret); await settle();
+    assert.equal(framed.window.history.url, '/hook/test/page', 'The frame removes the fragment before polling.');
+    const selected = framed.nodes.members.children[1]; selected.events.click(); framed.nodes.members.scrollTop = 73;
+    framed.window.fetch = async (url, options) => {
+        assert.equal(url, 'http://symcon.example.invalid/hook/test', 'HTTP page polling stays on its own origin, avoiding an opaque-origin preflight.');
+        assert.equal(options.headers['X-Status-Widget-Token'], secret);
+        return {ok: true, json: async () => ({...sample, state: {...sample.state, members: sample.state.members.map(m => ({...m, status: 'Changed'}))}})};
+    };
+    [...framed.tasks.values()].find(task => task.ms === 5000).fn(); await settle();
+    assert.equal(framed.nodes.connection.hidden, true);
+    assert.equal(selected.attrs['aria-pressed'], 'true'); assert.equal(framed.nodes.members.scrollTop, 73);
+    assert.equal(selected.parts.status.textContent, 'Changed', 'The same selected row receives the HTTP update.');
+    const invalid = harness(true, 'invalid'); await settle();
+    assert.equal(invalid.nodes.connection.hidden, false, 'Malformed/missing fragment tokens fail closed.');
     console.log('Status widget SDK updates, keyed rows, selection, scroll, images and polling recovery passed.');
 })().catch(error => { console.error(error); process.exitCode = 1; });

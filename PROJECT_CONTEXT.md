@@ -1059,3 +1059,49 @@ Die Kachel und IPSView verwenden denselben Modulcode sowie die vorhandenen zentr
 Der bisher ausgeblendete Aktualisieren-Button ist auch in IPSView aktiv. Ein fester POST-Endpunkt `/refresh` verwendet den vorhandenen instanzbezogenen Token sowie die bestehende `RefreshDevices`-Funktion des Kontomoduls. Kontoanmeldung, Serialisierung und Wartezeit bleiben dort zentral. Normales Polling liest weiter nur den Cache. Der Token berechtigt nun auch zu dieser einzelnen ausdruecklichen Aktualisierung; beliebige Fernaktionen sind nicht freigegeben. Falsche Tokens, deaktivierte Ausgabe, unpassende Kontoverbindung, GET und abweichende Pfade werden vor dem Kontoaufruf abgewiesen.
 
 Der Client verhindert parallele Aktualisierungen, unterbricht laufende Cache-Abfragen und nimmt danach das normale Polling wieder auf. Der explizite Aufruf hat ein Zeitlimit von 30 Sekunden und wird nicht automatisch wiederholt. Die Antwort verwendet den vorhandenen Zustandspfad ohne HTML-Neuerzeugung. Die vollstaendige Offline-Suite unter PHP 8.5.10, PHP-Style, JSON- und gezielte PHP-/JS-Transporttests bestanden. Ein lokaler MCP-Browserlauf mit synthetischen Daten bestaetigte den sichtbaren Button, Sperre waehrend des Aufrufs, aktualisierte Daten, Fehlerbehandlung, Kamera-/Auswahlerhalt sowie weiterhin funktionierenden Mausradzoom und Listenscroll. Vor dem Kameravergleich wurde die Auswahlanimation abgeschlossen. Es gab keinen echten Apple-Aufruf und keine Live-Installation; die native IPSView-Abnahme dieses neuen Stands bleibt offen.
+## Anwesenheitswidgets: IPSView-Live-Updates korrigiert (2026-10-23)
+
+Der echte IPSView-Webclient bettet eine HTMLBox als opaque Daten-URL ein.
+Der bisherige direkte Cache-POST mit eigenem Token-Header erforderte dadurch
+eine CORS-Vorabfrage. Der Symcon-Webserver beantwortete OPTIONS ohne die
+erforderlichen CORS-Header; die direkte HTTP-Ausgabe konnte dagegen aktualisieren.
+
+IPSViewPresence enthält jetzt einen stabilen Loader zu einer echten HTTP(S)-
+Widgetseite auf dem Symcon-Server. Deren Cache-POST ist gleichursprünglich.
+Die öffentliche GET-Seite enthält weder Gerätedaten noch Zugriffstoken. Der
+Loader übergibt den instanzbezogenen Token ausschließlich im URL-Fragment;
+die Widgetseite übernimmt ihn in den Arbeitsspeicher und entfernt das Fragment
+aus dem Verlauf. Datenabrufe bleiben authentifiziert und lesen nur den Cache.
+Deaktivierte Ausgabe, falsche Tokens und abweichende Pfade werden abgewiesen.
+
+WoIst und Anwesenheit verwenden denselben Loader unter libs/IPSViewFrame.php
+und libs/visualization. Die vorhandenen zentralen Helper liefern JSON-Kodierung,
+HTTP-Antworten, Seitenerstellung, Ursprungsermittlung und Mausrad-/Frame-Routing.
+Der Loader bleibt wegen tatsächlicher Nutzung nur in SymconiCloud librarylokal;
+Symcon_ModuleHelper und regulär verteilte Dateien unter libs/helper sind unverändert.
+
+MCP-Nachweis auf dem freigegebenen Testsystem mit vorübergehendem Prüfstand:
+temporäre echte IPSView-Webclient-Ansicht, bestehende Anwesenheitsinstanz mit
+zwei Geräten und leerem Serveradressfeld, 320 × 230 Pixel. In Hell und Dunkel
+aktualisierte sich die Aufenthaltsdauer mehrfach, während Geräteauswahl und
+Scrollposition von 101 Pixeln erhalten blieben. Die HTML-Variable behielt sowohl
+ihren Inhalt als auch ihren Aktualisierungszeitstempel. Kein Transporthinweis.
+Echte Mausradaktionen bewegten die Liste in beiden Stilen von 101 auf 0 und
+zurück auf 101 Pixel. Wegen eines Actionability-Fehlers der Browsersteuerung
+erfolgte die Geräteauswahl per echter Tab-/Leertastenbedienung; dies wird nicht
+als erfolgreicher Zeigerklick ausgegeben. Die native IPSView-App ist mit der
+verfügbaren Steuerung nicht direkt erreichbar und bleibt als Praxisnachweis offen.
+
+Temporäre Ansicht, HTML-Variable und zusätzliche Laufzeitdateien wurden entfernt,
+die vorherigen Laufzeitquellen vollständig zurückgespielt. Vollständige ursprüngliche
+Konfiguration, Kontoverbindung und alle bisherigen Variablen-IDs sind wiederhergestellt;
+Status 102. Keine Apple-Anmeldung oder zusätzlichen Apple-Abfragen. Der korrigierte
+Stand wird regulär über das Modulupdate installiert; anschließend Konfiguration
+einmal übernehmen, damit vorhandene HTML-Variablen den neuen Loader erhalten.
+
+Nachweise: Regression zunächst am fehlenden HTTP-Loader reproduziert; vollständige
+Offline-Suite einschließlich WoIst, gemeinsamer Loader, private HTTP-Shell,
+Token-Fragment, fehlerhafte Zugriffe und Auswahl-/Scroll-Erhalt bestanden.
+Struktur-/Hash-/LF-, JSON- und vollständige PHP-CS-Fixer-Prüfung gemäß offizieller
+Style-Action bestanden unter PHP 8.5.10 (Fixer 3.95.27). Keine Versionsanhebung,
+Commits oder Pushs durch den Agenten.

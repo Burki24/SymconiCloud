@@ -78,6 +78,16 @@
     };
     render(bootstrap);
     const transport = bootstrap.options.transport;
+    if (transport && transport.fragmentToken === true) {
+        transport.token = '';
+        try {
+            const fragment = new URLSearchParams(global.location.hash.slice(1));
+            const token = fragment.get('token') || '';
+            if (/^[a-f0-9]{64}$/i.test(token)) transport.token = token;
+            // Keep the secret in memory and the authorization header, not in URLs/referrers/history.
+            global.history.replaceState(null, '', global.location.pathname + global.location.search);
+        } catch (_) { /* Missing/invalid access remains a visible transport error. */ }
+    }
     async function poll() {
         if (stopped) return;
         const message = doc.getElementById('connection');

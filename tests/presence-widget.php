@@ -17,6 +17,9 @@ foreach ($widgetTrait->getConstant('PRESENCE_WIDGET_TEXT') as $caption) {
 foreach (['index.html', 'style.css', 'app.js'] as $asset) {
     $check(is_file($root . '/iCloud Presence/visualization/' . $asset), 'Widget resource must be part of the library package: ' . $asset);
 }
+foreach (['ipsview-page.html', 'ipsview-page.js'] as $asset) {
+    $check(is_file($root . '/libs/visualization/' . $asset), 'Shared library frame resource must ship with the module: ' . $asset);
+}
 
 $selection = [['deviceID' => 'alpha', 'name' => '<script>widget</script>', 'picture' => 0], ['deviceID' => 'beta', 'name' => 'Second', 'picture' => 99999]];
 $firstBoundary->result = $envelope;
@@ -68,10 +71,7 @@ IPS_SetProperty($widgetID, 'IPSViewWidgetPhotos', false);
 IPS_ApplyChanges($widgetID);
 $webID = IPS_GetObjectIDByIdent('IPSViewPresence', $widgetID);
 $html = GetValue($webID);
-$web = $decodeWidget($html);
-$check($web['options']['tileHeaderInset'] === 0 && !$web['options']['design']['photos'] && $decodeWidget($widget->GetVisualizationTile())['options']['design']['photos'], 'IPSView has independent design and no native heading reservation.');
-$token = $readAttribute->invoke($widget, 'StatusWidgetToken');
-$check(strlen($token) === 64, 'IPSView uses a per-instance authorization token.');
+$check(str_contains($html, 'id="ipsview-page"') && !str_contains($html, 'id="members"'), 'IPSView embeds a real HTTP page, not an opaque data document with cross-origin polling.');
 $hook = new ReflectionMethod($widget, 'ProcessHookData');
 $request = static function (string $method, string $credential, string $suffix = '') use ($hook, $widget, $widgetID): array
 {
@@ -80,8 +80,19 @@ $request = static function (string $method, string $credential, string $suffix =
     $hook->invoke($widget);
     return [http_response_code(), ob_get_clean()];
 };
+[$pageStatus, $page] = $request('GET', '', '/page');
+$check($pageStatus === 200, 'Public HTTP shell is available while output is enabled.');
+$shell = $decodeWidget($page);
+$check($shell['state']['members'] === [] && !str_contains($page, '<script>widget</script>'), 'Public HTTP shell exposes no device data.');
+$web = json_decode($request('POST', $readAttribute->invoke($widget, 'StatusWidgetToken'))[1], true, 512, JSON_THROW_ON_ERROR);
+$check($web['options']['tileHeaderInset'] === 0 && !$web['options']['design']['photos'] && $decodeWidget($widget->GetVisualizationTile())['options']['design']['photos'], 'IPSView has independent design and no native heading reservation.');
+$token = $readAttribute->invoke($widget, 'StatusWidgetToken');
+$check(strlen($token) === 64, 'IPSView uses a per-instance authorization token.');
+$check(str_contains($html, 'SymconVisualizationInteraction') && str_contains($html, 'SymconHTTPOrigin'), 'Outer data frame uses the central origin and wheel-forwarding helpers.');
+$check(!str_contains($page, $token) && $shell['options']['transport']['fragmentToken'] === true, 'Token travels only in the frame fragment, never in a public page response.');
+$check($request('POST', $token, '/page')[0] === 405 && $request('GET', '', '/page?token=x')[0] === 404, 'Page route accepts only the exact GET path.');
 $check($request('POST', '')[0] === 403 && $request('GET', $token)[0] === 405 && $request('POST', $token, '?token=x')[0] === 404, 'Cache endpoint rejects unauthenticated, query and non-POST requests.');
-$check($request('OPTIONS', '')[0] === 204 && $request('POST', $token)[0] === 200, 'CORS preflight and authenticated cache request work.');
+$check($request('OPTIONS', '')[0] === 204 && $request('POST', $token)[0] === 200, 'Hook accepts OPTIONS and authenticated POST; the browser uses the same-origin HTTP page.');
 $oldIdentity = $readAttribute->invoke($widget, 'SourceIdentity');
 $oldStates = $readAttribute->invoke($widget, 'MemberStates');
 $selection[0]['picture'] = 99999;
@@ -98,6 +109,7 @@ $check($firstBoundary->commands === ['GetDevices'], 'Only the regular evaluation
 IPS_SetProperty($widgetID, 'EnableIPSView', false);
 IPS_ApplyChanges($widgetID);
 $check($request('POST', $token)[0] === 404 && IPS_VariableExists($webID) && $readAttribute->invoke($widget, 'StatusWidgetToken') === '', 'Disabling output revokes access and retains the variable.');
+$check($request('GET', '', '/page')[0] === 404, 'Disabling output also removes the public HTTP page.');
 IPS_SetProperty($widgetID, 'EnableIPSView', true);
 IPS_SetProperty($widgetID, 'IPSViewServerURL', 'https://example.invalid/path');
 IPS_ApplyChanges($widgetID);
