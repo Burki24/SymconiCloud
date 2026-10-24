@@ -1600,13 +1600,40 @@ MCP auf dem bereits freigegebenen angeschlossenen Windows-Testsystem:
   und WoIst waren erfolgreich; die vorhandene Reload-Reihenfolge wurde im Rahmen
   dieser Tonaktion nicht umgebaut.
 
-Abgrenzung: Noch kein echter Tonauftrag an Apple gesendet. Fuer die hoerbare
-Probe ist die gezielte Rueckfrage zum ausgewaehlten realen Geraet noch offen.
-Die MCP-Nachweise bestaetigen Formular, Routing und Erfolgs-/Fehlerbehandlung,
-nicht die Annahme durch Apple oder hoerbare Wiedergabe auf dem iPhone.
+Abgrenzung des ersten Prueflaufs: Bis hier wurde kein echter Tonauftrag an Apple
+gesendet. Die hoerbare Probe war zunaechst bis zur Antwort auf die gezielte
+Geraetefrage offen. Die obigen MCP-Nachweise betreffen Formular, Routing und
+Erfolgs-/Fehlerbehandlung; die anschliessende reale Abnahme folgt unten.
 
 Die abschliessende vollstaendige Offline-Suite unter PHP 8.5.10 einschliesslich
 neuer Suchton-Vertraege, vorhandener Formularaktionen, Struktur-/Hash-/LF-,
 JSON- und Syntaxpruefungen ist erfolgreich. php-cs-fixer im Pruefmodus meldet
 keine Aenderungen. Der lokale Arbeitsbaum enthaelt die neue Implementierung;
 das angeschlossene Testsystem ist wieder auf seinem vorherigen Modulstand.
+
+### Reale MCP-Tonprobe und bestaetigte Wiedergabe (2026-10-24)
+
+Der Benutzer hat das einmalige Ausloesen des Suchtons auf dem zuvor konkret
+benannten iPhone ausdruecklich freigegeben. Die frische Inventarabfrage ueber
+das bestehende Konto war erfolgreich; das Zielgeraet wurde als online und
+verfuegbar gemeldet. Die sechs neuen Laufzeitdateien wurden danach erneut nur
+voruebergehend auf dem angeschlossenen Windows-Testsystem eingespielt.
+
+Genau ein Aufruf der echten ICID_PlaySound-Funktion fuer die freigegebene
+Geraeteinstanz lieferte true. Der Formularhinweis meldete die Annahme des
+Tonauftrags durch Apple. Auf die anschliessende Rueckfrage bestaetigte der
+Benutzer ausdruecklich: "Ja, der Ton war hoerbar". Damit ist neben der
+technischen Annahme auch die tatsaechliche Wiedergabe praktisch bestaetigt.
+Es wurde kein zweiter Suchton-Auftrag gesendet.
+
+Der vorherige Modulstand wurde im finally-Pfad wiederhergestellt; alle sechs
+Dateien wurden exakt mit ihrer Sicherung verglichen. Die vorhandenen
+Geraetevariablen-IDs blieben unveraendert, alle fuenf bestehenden Instanzen
+waren abschliessend aktiv. Die Cacheupdates von Anwesenheit und WoIst lieferten
+erneut true. Die bereits oben dokumentierten voruebergehenden Interface-
+Warnungen beim Library-Reload traten auch hier auf; es blieb kein fehlerhafter
+Instanzstatus bestehen.
+
+Nachweisquellen sind der echte MCP-Funktionsaufruf samt Formularrueckmeldung,
+die Wiederherstellungspruefung und die getrennte Benutzerbestaetigung der
+hoerbaren Wiedergabe. Die zuvor offene reale Tonprobe ist damit abgeschlossen.
