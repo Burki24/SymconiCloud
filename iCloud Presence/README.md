@@ -246,6 +246,15 @@ eingebunden. Beide Darstellungen verwenden dasselbe Bild. Änderungen werden nac
   Schriftfamilie, Schriftgröße und Effekten; keine Kopplung an die Kachelfarben.
 - Beide: Bilder und Details ein-/ausblenden, Bildgröße, Eckenradius und Abstände.
 
+Im **IPSView-Designer → Farbzuordnung: Widget und WidgetCompact** erklärt ein
+nummeriertes Beispielbild die zwölf verwendeten Farbrollen. Die deutsche Legende
+ordnet Hintergrund, Karten, Namen, Detailtexte, Statusfarben, Auswahlrahmen,
+Auswahlfläche, Gerätebildhintergrund und Schatten den Stilfeldern zu. Die
+Beispielfarben sind schematisch; das Bild ist keine Live-Vorschau ungespeicherter
+Farbänderungen. Die Zuordnung gilt für eigene Farben und Hell-/Dunkelstile.
+Zusätzlich erklärt die Legende die abgeleitete Auswahlfläche und warum etwa
+Popup-, Diagramm- oder Critical-Farben diese Widgets nicht verändern.
+
 Die Gerätekarten zeigen Anwesenheit, Zone, verfügbare Entfernung zur Referenzzone
 und beobachtete Aufenthaltsdauer. Bei Unbekannt erscheint der Bewertungsgrund;
 fehlende Werte werden nicht als echte Entfernung oder Aufenthaltsdauer dargestellt.

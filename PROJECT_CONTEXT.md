@@ -1283,3 +1283,34 @@ lokalen Vorschauserver ab; die Browser-Sicherheitsrichtlinie verweigerte die
 Daten-URL-Alternative (nur HTTP/HTTPS erlaubt). Keine Umgehung dieser Sperren.
 Visuelle Abnahme, Hell-/Dunkelmodus und echte Mausradbedienung beider Varianten
 im tatsaechlichen Kachel-/IPSView-Host bleiben nach dem Update zu pruefen.
+
+## Farbkarte im IPSView-Designer der Anwesenheit (2026-10-24)
+
+Unter IPSView-Designer liegt die neue aufklappbare Farbzuordnung fuer Widget und
+WidgetCompact. Das nummerierte Beispielbild zeigt zwoelf technische Rollen:
+ViewBackground, ControlBackground, LabelText, TextInactive, Positive, Information,
+Warning, Border, Accent, AccentSoft, ControlActiveBackground und ShadowColor.
+Eine uebersetzte Legende erklaert die Bereiche und die abgeleitete Auswahlfarbe
+(18 Prozent Akzentdeckkraft), die 13-Prozent-Statusmischung der Kopfzeile sowie
+die allgemeinen Text- und nicht verwendeten Popup-/Diagramm-/Critical-Farben.
+
+Die Grafik nutzt feste schematische Beispielfarben und ist ausdruecklich keine
+Live-Vorschau ungespeicherter Einstellungen. Die Rollen gelten fuer eigene Farben
+und Hell-/Dunkelstile gleichermassen. Keine privaten Geraetedaten oder Fotos.
+Das native Image-Feld nutzt 100 Prozent Breite ohne feste Panelbreite.
+
+Die modulbezogene SVG-Quelle und die vorcodierte Data-URI liegen unter der
+Anwesenheitsvisualisierung. Die Bildressource wurde mit dem vorhandenen zentralen
+SVGPreviewHelper::dataUri erzeugt; Laden erfolgt ueber VisualizationAssetHelper.
+Damit braucht die feste Grafik keinen neuen Laufzeithelper und keine neue
+Subscription. Keine lokale Kopie der SVG-Helperfunktionen. Bei Aenderungen an
+color-guide.svg wird color-guide.image mit dem zentralen SVGPreviewHelper neu
+erzeugt; der Regressionstest verlangt bytegleiche Quelle und decodierte Grafik.
+
+Nachweise: PNG-Render aus dem SVG visuell kontrolliert. Formular-/Bildvertrag
+prueft responsive Einbindung, XML-Gueltigkeit, beide Varianten, Farbrollen,
+Uebersetzungen und das Fehlen aktiver oder externer Ressourcen. Die Farbkarte
+erscheint nur im Designer; Live-Widgets, Transporte und Bedienung bleiben
+unveraendert. Vollstaendige Offline-Suite, Struktur-/Hash-/LF-, JSON- und
+Stilpruefungen unter PHP 8.5.10 bestanden. Die Anzeige im echten Konsolenformular ist nach dem Update noch
+abzunehmen; es wurde kein angeschlossenes System veraendert.

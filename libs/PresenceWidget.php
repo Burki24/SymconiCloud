@@ -99,6 +99,9 @@ trait PresenceWidget
             }
             $items[] = ['type' => 'ExpansionPanel', 'caption' => $this->StatusWidgetText($prefix === 'Tile' ? 'colors' : 'style'),
                 'items'        => $prefix === 'Tile' ? $this->VisualizationThemeFormItems() : $this->IPSViewStyleFormItems()];
+            if ($prefix === 'IPSView') {
+                $items[] = $this->StatusWidgetColorGuide();
+            }
             $layout = [];
             if ($prefix === 'Tile') {
                 $layout[] = ['type' => 'Select', 'name' => 'TileWidgetVariant', 'caption' => $this->StatusWidgetText('variant'),
@@ -214,6 +217,36 @@ trait PresenceWidget
     protected function StatusWidgetText(string $key): string
     {
         return $this->Translate(self::PRESENCE_WIDGET_TEXT[$key]);
+    }
+
+    /** Module-specific guide, encoded at build time with the central SVGPreviewHelper. */
+    private function StatusWidgetColorGuide(): array
+    {
+        $roles = [
+            'ViewBackground'          => 'Widget background behind the header and device cards.',
+            'ControlBackground'       => 'Background of an unselected device card.',
+            'LabelText'               => 'Device names, heading and avatar initials.',
+            'TextInactive'            => 'Distance, stay duration, diagnostic text and summary counts in Widget.',
+            'Positive'                => 'Present: zone text and left status stripe. The header uses a 13% status tint.',
+            'Information'             => 'Absent: zone text and left status stripe.',
+            'Warning'                 => 'Unknown: status text, left stripe and connection warnings.',
+            'Border'                  => 'Device card border; visible when border width is greater than zero.',
+            'Accent'                  => 'Outline of the selected device card.',
+            'AccentSoft'              => 'Selected card background, derived from Accent with 18% opacity.',
+            'ControlActiveBackground' => 'Avatar background behind initials or transparent pictures.',
+            'ShadowColor'             => 'Card shadow, depending on the configured shadow settings.'
+        ];
+        $items = [
+            ['type' => 'Label', 'caption' => $this->Translate('Schematic example colors. The numbered assignments apply to Widget, WidgetCompact and all light/dark styles; this image does not preview unsaved color changes.')],
+            ['type'     => 'Image', 'name' => 'PresenceIPSViewColorGuide', 'width' => '100%',
+                'image' => trim($this->VisualizationAsset('color-guide.image'))]
+        ];
+        $number = 1;
+        foreach ($roles as $role => $description) {
+            $items[] = ['type' => 'Label', 'caption' => $number++ . '. ' . $role . ': ' . $this->Translate($description)];
+        }
+        $items[] = ['type' => 'Label', 'caption' => $this->Translate('Text is the base fallback; device names use LabelText and details use TextInactive. Popup, chart and Critical colors are not used by these widgets.')];
+        return ['type' => 'ExpansionPanel', 'caption' => $this->Translate('Color guide: Widget and WidgetCompact'), 'items' => $items];
     }
 
     private function InspectStatusWidgetUpload(string $content): array

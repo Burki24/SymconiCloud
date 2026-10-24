@@ -66,6 +66,29 @@ $walk($form['elements']);
 foreach (['VisualizationThemeTextColor', 'VisualizationThemeBackgroundColor', 'IPSViewStyleViewBackgroundColor', 'TileWidgetPhotos', 'IPSViewWidgetPhotos', 'TileWidgetSpacing', 'IPSViewWidgetSpacing'] as $field) {
     $check(isset($fields[$field]), 'Independent designers must expose ' . $field);
 }
+$guide = $fields['PresenceIPSViewColorGuide'] ?? [];
+$check(($guide['type'] ?? '') === 'Image' && ($guide['width'] ?? '') === '100%', 'The IPSView designer needs a responsive explanatory image.');
+$guidePrefix = 'data:image/svg+xml;base64,';
+$check(str_starts_with($guide['image'], $guidePrefix), 'Color guide must be a self-contained SVG image, without a server or remote image dependency.');
+$guideSVG = base64_decode(substr($guide['image'], strlen($guidePrefix)), true);
+$check($guideSVG === file_get_contents($root . '/iCloud Presence/visualization/color-guide.svg'), 'The prebuilt central-helper data URI must exactly match its editable SVG source.');
+$guideXML = new DOMDocument();
+$check($guideXML->loadXML($guideSVG, LIBXML_NONET) && $guideXML->documentElement->localName === 'svg', 'Color guide must remain a valid vector document.');
+$check(!preg_match('/<(?:script|foreignObject|image)\b|\bhref\s*=|<!DOCTYPE/i', $guideSVG), 'Guide cannot execute scripts or load any external resources.');
+$guidePanel = (new ReflectionMethod($widget, 'StatusWidgetColorGuide'))->invoke($widget);
+foreach ($guidePanel['items'] as $item) {
+    if (($item['type'] ?? '') === 'Label') {
+        $caption = $item['caption'];
+        if (preg_match('/^\d+\. \w+: (.*)$/', $caption, $parts)) {
+            $caption = $parts[1];
+        }
+        $check(isset($locale[$caption]), 'Color guide caption needs a German translation: ' . $caption);
+    }
+}
+foreach (['Widget', 'WidgetCompact', 'ViewBackground', 'ControlBackground', 'LabelText', 'TextInactive', 'Positive', 'Information', 'Warning', 'Border', 'Accent', 'AccentSoft', 'ControlActiveBackground', 'ShadowColor'] as $term) {
+    $check(str_contains($guideSVG, $term), 'Guide must show both variants and the relevant style role: ' . $term);
+}
+$check(!str_contains($widget->GetVisualizationTile(), 'PresenceIPSViewColorGuide'), 'The explanatory guide belongs to the designer, not to the live widget.');
 $check($form['elements'][1]['columns'][2]['edit']['type'] === 'SelectMedia', 'Pictures use the documented media selector.');
 $deviceForm = array_column($form['elements'][1]['form'], null, 'name');
 $check($deviceForm['pictureUpload']['type'] === 'SelectFile' && $deviceForm['pictureUpload']['extensions'] === '.png,.jpg,.jpeg,.gif,.webp', 'The device dialog must accept a local console image file.');

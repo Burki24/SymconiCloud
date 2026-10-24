@@ -21,6 +21,10 @@
 
 ## Neu
 
+- Der IPSView-Designer der Anwesenheit enthält eine beschriftete Farbkarte für
+  Widget und WidgetCompact mit zwölf Farbrollen und deutscher Legende. Das
+  schematische Beispiel erklärt auch Auswahlflächen, Statusfärbung und Schatten.
+
 - **WidgetCompact** ergänzt die Anwesenheitsdarstellung um Gerätebild, Name und
   Zone mit schmaler Gesamtanwesenheit. Die bisherige Ausgabe bleibt erhalten.
   IPSView erhält eine zusätzliche HTML-Variable; die native Kachel bietet die
