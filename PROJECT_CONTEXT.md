@@ -1235,3 +1235,17 @@ den zentralen Helper freigeben und automatisch verteilen. Das komplette Modul
 erst nach dem eingegangenen Helper-Bundle installieren. Bis zur Verteilung ist
 der neue Helper im normalen lokalen Consumer-Arbeitsbaum noch nicht vorhanden;
 die Verhaltensnachweise stammen ausdruecklich aus dem isolierten Gesamtpaket.
+
+## Praxisabnahme des automatischen Bild-Uploads (2026-10-24)
+
+Der Benutzer hat den echten Bild-Upload nach dem Update erfolgreich geprueft
+und mit "Funktioniert perfekt" bestaetigt. Das Auswaehlen eines Bildes vom
+Konsolenrechner mit anschliessender automatischer Verkleinerung und Komprimierung
+funktioniert im praktischen Ablauf. Damit ist die zuvor offene Praxisabnahme
+des Dateidialogs und der automatischen Bildaufbereitung abgeschlossen.
+
+Nachweisquelle ist die ausdrueckliche Benutzerbestaetigung; fuer diese Abnahme
+wurde kein neuer MCP-Lauf ausgefuehrt. Die zuvor dokumentierten Offline- und
+MCP-Rechentests bleiben separate technische Nachweise. Aus der Bestaetigung
+werden keine zusaetzlichen Aussagen zu einzelnen Dateiformaten, Grenzfaellen
+oder Clients abgeleitet.
