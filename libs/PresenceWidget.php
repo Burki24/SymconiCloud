@@ -331,12 +331,12 @@ trait PresenceWidget
             $design[lcfirst($name)] = max($min, min($max, $this->ReadPropertyInteger($prefix . 'Widget' . $name)));
         }
         $design['fontSize'] = $ipsView ? $this->IPSViewStyleRootFontSize() : max(10, min(28, $this->ReadPropertyInteger('TileWidgetFontSize'))) . 'px';
-        if ($compact) {
+        if ($compact && $ipsView) {
             $design['pictureSize'] = min(36, $design['pictureSize']);
             $design['spacing'] = min(8, $design['spacing']);
         }
         $state = json_decode($this->ReadAttributeString('StatusWidgetState'), true, 512, JSON_THROW_ON_ERROR);
-        if ($compact) {
+        if ($compact && $ipsView) {
             $state['summary']['detail'] = '';
             foreach ($state['members'] ?? [] as $index => $member) {
                 $state['members'][$index] = array_replace($member, ['status' => $member['zone'] ?? '', 'detail' => '', 'reason' => '']);
@@ -344,6 +344,9 @@ trait PresenceWidget
         }
         return ['state' => $state,
             'options'   => array_merge($this->ResponsiveVisualizationLayoutOptions(!$ipsView), ['design' => $design, 'variant' => $compact ? 'WidgetCompact' : 'Widget',
+                'variantSwitch'                                                                          => !$ipsView,
+                'variantLabel'                                                                           => $this->StatusWidgetText('variant'),
+                'variantStorageKey'                                                                      => $ipsView ? '' : hash('sha256', $this->InstanceID . ':' . IPS_GetInstance($this->InstanceID)['ConnectionID']),
                 'themeCSS'                                                                               => $ipsView ? $this->VisualizationBaseThemeCSS() . $this->IPSViewStyleCSSVariables(':root') : $this->VisualizationThemeCSS(),
                 'connectionError'                                                                        => $this->StatusWidgetText('connection'), 'empty' => $this->StatusWidgetText('empty'),
                 'transport'                                                                              => $ipsView ? ['url' => '/hook/' . $this->StatusWidgetHookName() . ($compact ? '/compact' : ''), 'token' => '', 'fragmentToken' => true] : null])];

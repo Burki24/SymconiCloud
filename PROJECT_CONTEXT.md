@@ -1441,3 +1441,45 @@ Die schematische Karte und die OpenFreeMap-Farbeinstellungen bleiben erhalten.
 Nachweisquelle ist die ausdrueckliche Benutzerbestaetigung. Dieser Schritt
 dokumentiert die Praxisabnahme; es wurde kein neuer MCP- oder Client-Test
 ausgefuehrt. Die zuvor dokumentierten Offline-Nachweise bleiben davon getrennt.
+
+## Direkter Variantenumschalter in der Anwesenheitskachel (2026-10-24)
+
+Die native Kachel bietet Widget und WidgetCompact als lokale Schaltflaechen.
+Der Designerwert TileWidgetVariant ist weiterhin die Startvorgabe. Eine manuelle
+Wahl bleibt ueber SDK-Datenupdates erhalten und wird, soweit zulaessig, als
+einziger Wert im tabgebundenen sessionStorage abgelegt. Der Schluessel trennt
+Instanz und Kontoverbindung; es werden keine Geraete-, Standort- oder Zugangsdaten
+gespeichert. Ungueltige oder verweigerte Speicherung verhindert die Bedienung
+nicht. Getrennte IPSView-Ausgaben bleiben unveraendert und ohne Umschalter.
+
+Native Bootstrap- und Push-Daten enthalten auch bei kompakter Startvorgabe die
+vollstaendigen Anzeigedaten und Designgroessen. Die kompakte Darstellung blendet
+Details lokal aus und begrenzt Bildgroesse/Abstaende; Widget stellt die normalen
+Angaben wieder her. Bestehende Geraetezeilen werden weiterverwendet, die Auswahl
+bleibt ueber ihre ID erhalten. Beide Varianten merken sich ihren jeweiligen
+Scrollwert; beim ersten Wechsel gilt der bisherige Wert bis zur tatsaechlichen
+Scrollgrenze der kuerzeren Darstellung.
+
+Vorhandene zentrale Theme-, HTML-Seiten-, Responsive- und Interaktionshelper
+bleiben eingebunden. Die Umschaltlogik ist modulspezifisch in dieser Library;
+der vorhandene OpenFreeMap-Speichervertrag ist an Kartenansichten gebunden und
+wird nicht fuer Varianten zweckentfremdet. Keine zentralen Helper-Testkopien.
+
+Der Benutzer hat den Wunsch nach zwei benannten Darstellungen direkt im nativen
+Auswahldialog an Symcon gesendet. Der zentrale Standard VARIABLE_PRESENTATION
+und dessen Verweis in SymconDevelopment/AGENTS.md halten fest: Bei Zustimmung
+und Umsetzung durch Symcon die Zwischenloesung anhand des dann verfuegbaren
+SDKs neu pruefen und kompatibel auf die native Variantenwahl umstellen.
+
+Nachweise: der neue Node-Regressionsfall scheiterte vor der Umsetzung am
+fehlenden Umschalter und besteht danach. Geprueft sind beide Richtungen,
+Zeilenidentitaet/Geraeteauswahl, getrennte Scrollwerte, unveraenderte lokale
+Wahl bei SDK-Push, Wiederherstellung der Details und Designgroessen,
+tablokale Speicherung sowie ungueltiger und verweigerter Speicher.
+PHP-Vertraege bestaetigen vollstaendige native Daten auch bei kompakter
+Startvorgabe, die Instanz-/Kontotrennung und unveraenderte IPSView-Varianten.
+Vollstaendige Offline-Suite mit Struktur-/Hash-/LF-, JSON-, Syntax- und
+JavaScript-Pruefungen sowie php-cs-fixer im Pruefmodus unter PHP 8.5.10 bestanden.
+Der neue Stand wurde nicht auf ein Live-System installiert. Praxisabnahme
+des Umschalters samt Mausradbedienung in der echten nativen Kachel nach dem
+Modulupdate bleibt offen; ein neuer MCP-/Browser-Lauf wird nicht behauptet.

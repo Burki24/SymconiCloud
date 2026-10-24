@@ -25,6 +25,11 @@
 
 ## Neu
 
+- Die Anwesenheitskachel bietet einen direkten Umschalter zwischen **Widget**
+  und **WidgetCompact**. Geräteauswahl und Scrollposition je Variante bleiben
+  erhalten; Datenupdates überschreiben die lokale Variantenwahl nicht.
+  Der Kacheldesigner legt weiterhin die Startvorgabe fest.
+
 - Der IPSView-Designer der WoIst-Karte erhält eine eigene Farbzuordnung für
   Karte, Bedienleiste, Popup und Geräteliste. 19 nummerierte Zuordnungen
   erklären IPSView-Stil und Positionsfarben; OpenFreeMap-Farben bleiben direkt
