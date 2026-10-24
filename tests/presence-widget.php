@@ -71,7 +71,15 @@ $check(($guide['type'] ?? '') === 'Image' && ($guide['width'] ?? '') === '100%',
 $guidePrefix = 'data:image/svg+xml;base64,';
 $check(str_starts_with($guide['image'], $guidePrefix), 'Color guide must be a self-contained SVG image, without a server or remote image dependency.');
 $guideSVG = base64_decode(substr($guide['image'], strlen($guidePrefix)), true);
-$check($guideSVG === file_get_contents($root . '/iCloud Presence/visualization/color-guide.svg'), 'The prebuilt central-helper data URI must exactly match its editable SVG source.');
+$check($guideSVG === file_get_contents($root . '/iCloud Presence/visualization/color-guide-de.svg'), 'The German designer must use its localized guide image.');
+foreach (['color-guide', 'color-guide-de'] as $asset) {
+    $encodedGuide = trim(file_get_contents($root . '/iCloud Presence/visualization/' . $asset . '.image'));
+    $check(base64_decode(substr($encodedGuide, strlen($guidePrefix)), true) === file_get_contents($root . '/iCloud Presence/visualization/' . $asset . '.svg'), 'Each localized image must exactly match its SVG source.');
+}
+$styleCatalog = json_decode(file_get_contents($root . '/libs/helper/translations/IPSViewStyleHelper.json'), true)['translations'];
+foreach (['view_background', 'control_background', 'label_text', 'text_inactive', 'positive', 'information', 'warning', 'border', 'accent', 'control_active_background', 'shadow'] as $key) {
+    $check(str_contains($guideSVG, $styleCatalog['color.' . $key]['de']), 'Guide must use the exact central German designer caption: ' . $key);
+}
 $guideXML = new DOMDocument();
 $check($guideXML->loadXML($guideSVG, LIBXML_NONET) && $guideXML->documentElement->localName === 'svg', 'Color guide must remain a valid vector document.');
 $check(!preg_match('/<(?:script|foreignObject|image)\b|\bhref\s*=|<!DOCTYPE/i', $guideSVG), 'Guide cannot execute scripts or load any external resources.');
@@ -79,12 +87,42 @@ $guidePanel = (new ReflectionMethod($widget, 'StatusWidgetColorGuide'))->invoke(
 foreach ($guidePanel['items'] as $item) {
     if (($item['type'] ?? '') === 'Label') {
         $caption = $item['caption'];
-        if (preg_match('/^\d+\. \w+: (.*)$/', $caption, $parts)) {
+        if (preg_match('/^\d+\. .* \([A-Za-z]+\): (.*)$/u', $caption, $parts)) {
             $caption = $parts[1];
         }
         $check(isset($locale[$caption]), 'Color guide caption needs a German translation: ' . $caption);
     }
 }
+foreach (['View-Hintergrund', 'Label-Schrift', 'Informationsfarbe', 'Akzentfarbe', 'Schattenfarbe'] as $caption) {
+    $check(str_contains(json_encode($guidePanel, JSON_UNESCAPED_UNICODE), $caption), 'The text legend must also use the German designer captions: ' . $caption);
+}
+$englishGuideWidget = new class() {
+    use \SymconiCloud\PresenceWidget;
+    use \Burki24\SymconModuleHelper\HelperTranslationHelper;
+
+    public function guide(): array
+    {
+        return $this->StatusWidgetColorGuide();
+    }
+
+    protected function HelperTranslationLanguageOverride(): string
+    {
+        return 'en';
+    }
+
+    protected function Translate(string $text): string
+    {
+        return $text;
+    }
+
+    protected function VisualizationAsset(string $name): string
+    {
+        return file_get_contents(dirname(__DIR__) . '/iCloud Presence/visualization/' . $name);
+    }
+};
+$englishGuide = $englishGuideWidget->guide();
+$check($englishGuide['items'][1]['image'] === trim(file_get_contents($root . '/iCloud Presence/visualization/color-guide.image')), 'English designers retain their English explanatory image.');
+$check(str_contains(json_encode($englishGuide), 'View background (ViewBackground)'), 'The English text legend uses the central English designer labels.');
 foreach (['Widget', 'WidgetCompact', 'ViewBackground', 'ControlBackground', 'LabelText', 'TextInactive', 'Positive', 'Information', 'Warning', 'Border', 'Accent', 'AccentSoft', 'ControlActiveBackground', 'ShadowColor'] as $term) {
     $check(str_contains($guideSVG, $term), 'Guide must show both variants and the relevant style role: ' . $term);
 }

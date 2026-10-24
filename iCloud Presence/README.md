@@ -248,6 +248,11 @@ eingebunden. Beide Darstellungen verwenden dasselbe Bild. Änderungen werden nac
 
 Im **IPSView-Designer → Farbzuordnung: Widget und WidgetCompact** erklärt ein
 nummeriertes Beispielbild die zwölf verwendeten Farbrollen. Die deutsche Legende
+verwendet dieselben Feldnamen wie der Designer, etwa **View-Hintergrund**,
+**Bedienelement-Hintergrund**, **Label-Schrift** und **Akzentfarbe**. Die Grafik
+erscheint ebenfalls auf Deutsch; technische Rollen stehen kleiner als Ergänzung
+darunter. Im englischen Designer werden englische Beschriftungen verwendet.
+Die Legende
 ordnet Hintergrund, Karten, Namen, Detailtexte, Statusfarben, Auswahlrahmen,
 Auswahlfläche, Gerätebildhintergrund und Schatten den Stilfeldern zu. Die
 Beispielfarben sind schematisch; das Bild ist keine Live-Vorschau ungespeicherter

@@ -236,14 +236,31 @@ trait PresenceWidget
             'ControlActiveBackground' => 'Avatar background behind initials or transparent pictures.',
             'ShadowColor'             => 'Card shadow, depending on the configured shadow settings.'
         ];
+        $labels = [
+            'ViewBackground'          => ['color.view_background', 'View background'],
+            'ControlBackground'       => ['color.control_background', 'Control background'],
+            'LabelText'               => ['color.label_text', 'Label text'],
+            'TextInactive'            => ['color.text_inactive', 'Inactive text'],
+            'Positive'                => ['color.positive', 'Positive status'],
+            'Information'             => ['color.information', 'Information color'],
+            'Warning'                 => ['color.warning', 'Warning status'],
+            'Border'                  => ['color.border', 'Border color'],
+            'Accent'                  => ['color.accent', 'Accent color'],
+            'ControlActiveBackground' => ['color.control_active_background', 'Active control background'],
+            'ShadowColor'             => ['color.shadow', 'Shadow color']
+        ];
+        $german = $this->NormalizeHelperTranslationLanguage($this->ResolveHelperTranslationLanguage()) === 'de';
         $items = [
             ['type' => 'Label', 'caption' => $this->Translate('Schematic example colors. The numbered assignments apply to Widget, WidgetCompact and all light/dark styles; this image does not preview unsaved color changes.')],
             ['type'     => 'Image', 'name' => 'PresenceIPSViewColorGuide', 'width' => '100%',
-                'image' => trim($this->VisualizationAsset('color-guide.image'))]
+                'image' => trim($this->VisualizationAsset($german ? 'color-guide-de.image' : 'color-guide.image'))]
         ];
         $number = 1;
         foreach ($roles as $role => $description) {
-            $items[] = ['type' => 'Label', 'caption' => $number++ . '. ' . $role . ': ' . $this->Translate($description)];
+            $label = isset($labels[$role])
+                ? $this->TranslateHelperText('IPSViewStyleHelper', $labels[$role][0], $labels[$role][1])
+                : $this->Translate('Selection background derived from Accent color');
+            $items[] = ['type' => 'Label', 'caption' => $number++ . '. ' . $label . ' (' . $role . '): ' . $this->Translate($description)];
         }
         $items[] = ['type' => 'Label', 'caption' => $this->Translate('Text is the base fallback; device names use LabelText and details use TextInactive. Popup, chart and Critical colors are not used by these widgets.')];
         return ['type' => 'ExpansionPanel', 'caption' => $this->Translate('Color guide: Widget and WidgetCompact'), 'items' => $items];

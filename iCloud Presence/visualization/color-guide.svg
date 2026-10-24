@@ -68,17 +68,17 @@
   </g>
   <text x="775" y="55" class="heading">IPSViewStyle</text>
   <g class="role">
-    <text x="775" y="94">1   ViewBackground</text>
-    <text x="775" y="136">2   ControlBackground</text>
-    <text x="775" y="178">3   LabelText</text>
-    <text x="775" y="220">4   TextInactive</text>
-    <text x="775" y="262">5   Positive</text>
-    <text x="775" y="304">6   Information</text>
-    <text x="775" y="346">7   Warning</text>
-    <text x="775" y="388">8   Border</text>
-    <text x="775" y="430">9   Accent</text>
-    <text x="775" y="472">10 AccentSoft</text>
-    <text x="775" y="514">11 ControlActiveBackground</text>
-    <text x="775" y="556">12 ShadowColor</text>
+    <text x="775" y="94">1   View background</text><text x="793" y="112" class="small">ViewBackground</text>
+    <text x="775" y="136">2   Control background</text><text x="793" y="154" class="small">ControlBackground</text>
+    <text x="775" y="178">3   Label text</text><text x="793" y="196" class="small">LabelText</text>
+    <text x="775" y="220">4   Inactive text</text><text x="793" y="238" class="small">TextInactive</text>
+    <text x="775" y="262">5   Positive status</text><text x="793" y="280" class="small">Positive</text>
+    <text x="775" y="304">6   Information color</text><text x="793" y="322" class="small">Information</text>
+    <text x="775" y="346">7   Warning status</text><text x="793" y="364" class="small">Warning</text>
+    <text x="775" y="388">8   Border color</text><text x="793" y="406" class="small">Border</text>
+    <text x="775" y="430">9   Accent color</text><text x="793" y="448" class="small">Accent</text>
+    <text x="775" y="472">10 Selection background (derived)</text><text x="793" y="490" class="small">AccentSoft</text>
+    <text x="775" y="514">11 Active control background</text><text x="793" y="532" class="small">ControlActiveBackground</text>
+    <text x="775" y="556">12 Shadow color</text><text x="793" y="574" class="small">ShadowColor</text>
   </g>
 </svg>

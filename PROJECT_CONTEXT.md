@@ -1314,3 +1314,21 @@ erscheint nur im Designer; Live-Widgets, Transporte und Bedienung bleiben
 unveraendert. Vollstaendige Offline-Suite, Struktur-/Hash-/LF-, JSON- und
 Stilpruefungen unter PHP 8.5.10 bestanden. Die Anzeige im echten Konsolenformular ist nach dem Update noch
 abzunehmen; es wurde kein angeschlossenes System veraendert.
+
+### Deutsche Designerbezeichnungen in Bild und Legende (2026-10-24)
+
+Die Farbkarte verwendet jetzt die tatsaechlichen deutschen Feldnamen des zentralen
+IPSViewStyleHelper-Katalogs, unter anderem View-Hintergrund, Bedienelement-
+Hintergrund, Label-Schrift, Inaktive Schrift, Positiver Status, Informationsfarbe,
+Warnstatus, Rahmenfarbe, Akzentfarbe, Aktiver Bedienelement-Hintergrund und
+Schattenfarbe. Technische Rollennamen stehen als kleinere Zusatzinformation
+darunter. Die abgeleitete Auswahlflaeche ist kein eigenes Designerfarbfeld und
+wird deshalb entsprechend als Ableitung aus Akzentfarbe erklaert.
+
+Die Textlegende liest die Feldnamen zur Laufzeit mit TranslateHelperText aus
+demselben zentralen Katalog wie der Designer. Die Sprachwahl des vorhandenen
+zentralen Helpers waehlt die deutsche oder englische vorbereitete SVG-Bildressource.
+Tests gleichen Bild und Textlegende mit den zentralen deutschen Bezeichnungen ab
+und verlangen fuer beide Sprachen bytegleiche SVG-Quelle und Data-URI. Die
+deutsche Grafik wurde als PNG gerendert und visuell auf Lesbarkeit kontrolliert.
+Keine neue Subscription oder Aenderung eines zentralen Helpers notwendig.

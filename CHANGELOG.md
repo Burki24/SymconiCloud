@@ -2,6 +2,10 @@
 
 ## Fixes
 
+- Farbkarte und Legende der Anwesenheit verwenden die deutschen Feldbezeichnungen
+  des IPSView-Designers aus dem zentralen Übersetzungskatalog. Technische Rollen
+  bleiben ergänzend sichtbar; der englische Designer behält englische Labels.
+
 - Der Gerätedialog der Anwesenheit zeigt die Bildgrenzen direkt an und meldet
   unzulässige Uploads bereits bei der Auswahl. Zu große Dateien (mehr als
   128 KiB), unzulässige Formate und Abmessungen über 1024 × 1024 Pixel
