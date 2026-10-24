@@ -1105,3 +1105,40 @@ Token-Fragment, fehlerhafte Zugriffe und Auswahl-/Scroll-Erhalt bestanden.
 Struktur-/Hash-/LF-, JSON- und vollständige PHP-CS-Fixer-Prüfung gemäß offizieller
 Style-Action bestanden unter PHP 8.5.10 (Fixer 3.95.27). Keine Versionsanhebung,
 Commits oder Pushs durch den Agenten.
+## Native IPSView-HTMLBox: Basisadresse im zentralen Helper (2026-10-23)
+
+Der nach dem ersten HTTP-Fix gemeldete Screenshot zeigt den Fehler des äußeren
+Loaders, nicht den Warnhinweis eines bereits laufenden Cacheabrufs. Ein weiterer
+Fall ließ sich im gemeinsamen Ursprungsermittler reproduzieren: opaque Daten-URL,
+kein zugänglicher Parent, leere ancestorOrigins und leerer Referrer, aber eine
+gültige vom Client eingefügte HTTP(S)-Basisadresse. document.baseURI wurde bisher
+nicht berücksichtigt. Der zentrale VisualizationAssetHelper-Baustein prüft diese
+Adresse jetzt nach dem eigenen HTTP-Ursprung und vor Parent-/Referrer-Fallbacks.
+Eigene HTTP-Adressen behalten Vorrang; unsichere Schemata und Zugangsdaten werden
+weiterhin abgewiesen. Der äußere Anwesenheitsloader zeigt bei Startfehlern einen
+Konfigurationshinweis statt der irreführenden Ankündigung eines erneuten Abrufs.
+
+Die Ressourcen-/Metadatenautomatisierung ordnet die Änderung korrekt dem
+VisualizationAssetHelper zu. Vorhandenes Abonnement und Asset-Deklaration genügen;
+der Paketvertrag prüft http-origin.js nun zusätzlich als transitive Ressource des
+IPSViewHTMLPageHelper. Das vollständige Paket wurde mit der regulären Metadaten-
+und Bundle-Logik ausschließlich in einer temporären Kopie erzeugt. Manifest,
+Verteilungstests, beide vollständigen PHP-Suiten, Basisadressen-Regression und
+der Anwesenheitsloader mit ausschließlich einer Basisadresse bestanden. Keine
+lokalen Testkopien oder Hashänderungen verbleiben unter libs/helper.
+
+MCP: vorübergehender Prüfstand auf dem freigegebenen Testsystem, echte temporäre
+IPSView-Webclient-Ansicht mit leerem Serveradressfeld. Die HTMLBox enthielt ein
+HTTP-Basiselement; die Widgetseite wurde geladen und die Aufenthaltsdauer änderte
+sich bei erhaltenem Gerät und 101 Pixeln Listenscroll. Kein Warnhinweis. Echte
+Mausradaktionen bestätigten 101 auf 0 und zurück auf 101 Pixel. Geräteauswahl per
+Tab-/Leertaste wegen der bereits bekannten Eingabegrenze der Browsersteuerung.
+Dieser Webclient-Nachweis und die simulierte native Basisadressen-Umgebung ersetzen
+keine direkte Abnahme der nativen IPSView-App; diese ist weiterhin offen.
+
+Prüfansicht, neue HTML-Variable und zusätzliche Laufzeitdateien wurden entfernt.
+Ursprüngliche Konfiguration, Kontoverbindung und alle bisherigen Variablen-IDs
+sind wiederhergestellt (Status 102), ebenso die gesicherten Modul-/Helperquellen.
+Keine zusätzliche Apple-Abfrage. Erst den zentralen Helper regulär freigeben und
+verteilen, das Bundle in SymconiCloud integrieren und installieren; danach die
+Instanzkonfiguration übernehmen, damit gespeicherte Loader das neue Script enthalten.

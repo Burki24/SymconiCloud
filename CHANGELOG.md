@@ -1,6 +1,12 @@
 # Unveröffentlicht
 
-## Korrekturen
+## Fixes
+
+- Native IPSView-HTMLBoxen mit einer vom Client bereitgestellten Basisadresse
+  werden bei der automatischen Servererkennung berücksichtigt. Zuerst das
+  aktualisierte VisualizationAssetHelper-Paket regulär verteilen und übernehmen,
+  danach die Instanzkonfiguration übernehmen. Startfehler zeigen einen passenden
+  Konfigurationshinweis statt einer irreführenden Wiederholungsmeldung.
 
 - Anwesenheitswidgets in IPSView laden eine echte HTTP(S)-Widgetseite. Der
   geschützte Cacheabruf bleibt damit auf demselben Ursprung und benötigt keine

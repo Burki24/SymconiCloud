@@ -93,6 +93,7 @@
             "Symcon server URL for IPSView (optional)": "Symcon-Server-URL für IPSView (optional)",
             "Normally the server address is detected automatically. Only enter an HTTP(S) origin without a path if the client cannot provide it.": "Normalerweise wird die Serveradresse automatisch erkannt. Nur dann einen HTTP(S)-Ursprung ohne Pfad eintragen, wenn der Client keinen bereitstellt.",
             "Live updates unavailable. Retrying...": "Live-Aktualisierungen nicht verfügbar. Neuer Versuch…",
+            "Unable to open the IPSView widget. Check the server URL and apply the instance configuration.": "Die IPSView-Widgetseite kann nicht geöffnet werden. Serveradresse prüfen und Instanzkonfiguration übernehmen.",
             "No devices selected.": "Keine Geräte ausgewählt.",
             "Optional pictures: select a Symcon image medium per device. Use PNG, JPEG, GIF or WebP, at most 128 KiB and 1024 x 1024 pixels. Invalid pictures use initials.": "Optionale Bilder: Je Gerät ein Symcon-Bildmedium auswählen. PNG, JPEG, GIF oder WebP mit höchstens 128 KiB und 1024 × 1024 Pixeln verwenden. Ungültige Bilder werden durch Initialen ersetzt."
         }

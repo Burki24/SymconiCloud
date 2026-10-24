@@ -233,6 +233,13 @@ Client keinen Ursprung liefert, den vom Client erreichbaren Symcon-Ursprung
 angeben, z. B. `http://symcon.example.invalid:3777`, ohne Pfad oder abschließenden
 Schrägstrich. Bei HTTPS-Clients auch einen erreichbaren HTTPS-Endpunkt verwenden.
 
+Native HTMLBoxen können die Serveradresse ausschließlich über eine vom Client
+eingefügte Basisadresse bereitstellen. Dafür zuerst das aktualisierte zentrale
+VisualizationAssetHelper-Paket über den regulären Helper-Sync integrieren und
+anschließend die Instanzkonfiguration übernehmen, damit der gespeicherte Loader
+die neue Adressermittlung enthält. Nur wenn auch diese Basisadresse fehlt, ist
+eine manuelle Serveradresse erforderlich.
+
 Native Kacheln erhalten SDK-Pushs. IPSView fragt alle fünf Sekunden ausschließlich
 den geschützten Widgetcache ab; bei Fehlern erscheint ein Hinweis und der Abruf
 wird wiederholt. Die HTML-Variable wird bei Datenupdates nicht neu geschrieben.

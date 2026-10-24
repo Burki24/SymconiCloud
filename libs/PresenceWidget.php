@@ -32,6 +32,7 @@ trait PresenceWidget
         'url'        => 'Symcon server URL for IPSView (optional)',
         'urlHint'    => 'Normally the server address is detected automatically. Only enter an HTTP(S) origin without a path if the client cannot provide it.',
         'connection' => 'Live updates unavailable. Retrying...', 'empty' => 'No devices selected.',
+        'loader'     => 'Unable to open the IPSView widget. Check the server URL and apply the instance configuration.',
         'imageHint'  => 'Optional pictures: select a Symcon image medium per device. Use PNG, JPEG, GIF or WebP, at most 128 KiB and 1024 x 1024 pixels. Invalid pictures use initials.'
     ];
 
@@ -119,7 +120,7 @@ trait PresenceWidget
             'url'   => $this->StatusWidgetServerURLValid() ? $this->ReadPropertyString('IPSViewServerURL') . '/hook/' . $this->StatusWidgetHookName() . '/page' : '',
             'token' => $this->ReadAttributeString('StatusWidgetToken'),
             'title' => $this->Translate('Overall presence'),
-            'error' => $this->StatusWidgetText('connection')
+            'error' => $this->StatusWidgetText('loader')
         ]);
     }
 
