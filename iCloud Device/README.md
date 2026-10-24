@@ -8,7 +8,16 @@ Eine Instanz zeigt die Geräte-, Akku- und Standortdaten eines Apple-Gerätes au
 
 ### Handy suchen
 
-**Handy suchen (Ton abspielen)** sendet einmalig einen Suchton-Auftrag für das
+Die Aktionsvariable **Handy suchen** (`PlaySound`) stellt in der Kachelvisualisierung
+einen Taster **Ton abspielen** bereit. Nach dem Modulupdate einmal die
+Instanzkonfiguration übernehmen, damit die Variable angelegt wird. Diese Variable
+oder eine Verknüpfung darauf als eigene Kachel hinzufügen und die Darstellung
+**Aufzählung** verwenden; sie ist bereits vom Modul voreingestellt. In der
+Listendarstellung der Geräteinstanz ist die Aktion ebenfalls bedienbar.
+Ein zusätzliches Aktionsskript ist nicht erforderlich.
+
+Der Taster und der Formularbutton **Handy suchen (Ton abspielen)** senden
+denselben einmaligen Suchton-Auftrag für das
 konfigurierte Gerät über dessen verbundenes iCloud-Konto. Das Gerät muss im
 Cache dieses angemeldeten Kontos vorhanden sein. Der Button verwendet immer
 die gespeicherte Gerätezuordnung; eine andere Ziel-ID kann beim Aufruf nicht
@@ -59,10 +68,12 @@ nächsten Geräteupdate erneut geprüft.
 
 ## Variablen
 
-Alle Variablen sind ausschließlich lesbar.
+Die Statusvariablen sind ausschließlich lesbar. **Handy suchen** ist die einzige
+Aktionsvariable; ihr Wert ist kein Wiedergabestatus.
 
 | Ident | Typ | Bedeutung / Einheit |
 | --- | --- | --- |
+| `PlaySound` | int, Aktion | Taster **Ton abspielen**: `RequestAction($VariablenID, 1)` sendet einmalig; `0` ist der neutrale Wert und löst keinen Auftrag aus |
 | `DataAvailable` | bool | Gerät in der erfolgreich abgerufenen Kontoliste vorhanden |
 | `Online` | bool | Von Apple gemeldeter Gerätestatus 200 |
 | `DeviceName`, `Model`, `DeviceClass` | string | Gerätebezeichnung und Typ |
@@ -140,6 +151,13 @@ dieses Gerät. `true` bedeutet, dass Apple den Auftrag angenommen hat; bei
 Ablehnung, fehlender Sitzung, falscher Zuordnung oder einem Transportfehler
 wird `false` geliefert. Ein Formularhinweis enthält das letzte Aktionsergebnis.
 Das Skript kann die Funktion gezielt aus einer Automation aufrufen.
+
+Alternativ `RequestAction($PlaySoundVariablenID, 1)` für die Aktionsvariable
+verwenden. Diese bleibt nach Erfolg und Fehler auf `0`, damit jeder weitere
+Tastendruck wieder einen ausdrücklichen Auftrag auslösen kann. Fehler werden
+bei der Variablenaktion an den Client zurückgemeldet; der letzte Hinweis bleibt
+auch im Instanzformular sichtbar. Ein direktes Setzen eines Wertes ersetzt
+keinen Aktionsaufruf und startet keine Wiedergabe.
 
 ## Lizenz
 

@@ -19,6 +19,13 @@ IPS_ApplyChanges($deviceID);
 /** @var iCloudDevice $device */
 $device = IPS\InstanceManager::getInstanceInterface($deviceID);
 $check(method_exists($device, 'PlaySound'), 'Device instances must expose an explicit PlaySound action.');
+$actionVariables = array_filter(IPS_GetChildrenIDs($deviceID), static fn (int $id): bool => IPS_GetObject($id)['ObjectIdent'] === 'PlaySound');
+$check(count($actionVariables) === 1, 'Device instances need an actionable PlaySound variable for the tile visualization.');
+$actionID = (int) reset($actionVariables);
+$check(IPS_GetVariable($actionID)['VariableType'] === 1 && IPS_GetVariable($actionID)['VariableAction'] === $deviceID, 'The sound button must be an integer action owned by the device instance.');
+$actionPresentation = IPS_GetVariablePresentation($actionID);
+$check($actionPresentation['PRESENTATION'] === VARIABLE_PRESENTATION_ENUMERATION && json_decode($actionPresentation['OPTIONS'], true)[0]['Value'] === 1, 'The native action uses the shared enumeration presentation with one explicit sound command.');
+$check(GetValue($actionID) === 0, 'The action variable represents a neutral button, not a playing/on state.');
 $ids = IPS_GetChildrenIDs($deviceID);
 $cache = $soundAccount->GetPersistence()['attributes']['DeviceCache'];
 $state = IPS_GetInstance($deviceID)['InstanceStatus'];
@@ -93,5 +100,35 @@ try {
     $rejected = true;
 }
 $check($rejected && $otherAccount->transport->requests === [], 'The device action must not accept an alternative target payload.');
+$soundAccount->ApplyPersistence($saved);
+$soundAccount->ApplyChanges();
+IPS_DisconnectInstance($deviceID);
+IPS_ConnectInstance($deviceID, $soundAccountID);
+IPS_ApplyChanges($deviceID);
+$beforeActions = count($soundTransport->requests);
+foreach ([1, 2] as $press) {
+    $soundTransport->enqueue('POST', '/playSound?', 200, ['statusCode' => '200']);
+    RequestAction($actionID, 1);
+    $check(count($soundTransport->requests) === $beforeActions + $press && GetValue($actionID) === 0, 'Each explicit button press sends one request and returns to the neutral value.');
+}
+$count = count($soundTransport->requests);
+try {
+    SetValue($actionID, 1);
+} catch (Exception) {
+    // Symcon protects module-owned variables from direct external writes.
+}
+RequestAction($actionID, 0);
+$device->Update();
+IPS_ApplyChanges($deviceID);
+$check(count($soundTransport->requests) === $count && GetValue($actionID) === 0, 'Variable writes, reset, cache updates and ApplyChanges must never submit a sound command.');
+$check(IPS_GetObjectIDByIdent('PlaySound', $deviceID) === $actionID && IPS_GetChildrenIDs($deviceID) === $ids, 'Repeated configuration preserves all variable IDs including the action.');
+$soundTransport->enqueue('POST', '/playSound?', 503);
+$failedAction = false;
+try {
+    RequestAction($actionID, 1);
+} catch (RuntimeException $exception) {
+    $failedAction = $exception->getMessage() !== '';
+}
+$check($failedAction && GetValue($actionID) === 0 && count($soundTransport->requests) === $count + 1, 'A failed tile action must surface feedback, stay neutral and never retry.');
 ob_end_clean();
 echo "Explicit device sound action, account isolation, error handling and no-retry contracts passed.\n";

@@ -13,6 +13,14 @@ Befehl `PlaySound` mit `DeviceID` an das physisch verbundene Kontomodul.
 Zusätzliche Befehlsparameter, frei wählbare URLs und unbekannte Geräte werden
 vor einem Netzwerkzugriff abgewiesen.
 
+Für die native Kachel wird zusätzlich eine Integer-Aktionsvariable `PlaySound`
+registriert. Der vorhandene zentrale VariablePresentationHelper erstellt eine
+Aufzählung mit genau einer Option `1` / "Ton abspielen"; EnableAction bindet
+sie an die Geräteinstanz. Neutraler Speicherwert ist `0`, ohne vorgetäuschten
+Ein-/Aus- oder Wiedergabestatus. Nur ein ausdrücklicher RequestAction-Aufruf mit
+`1` löst den Befehl aus; `0`, Konfigurationsanwendung und Cacheupdates tun dies
+nicht. Fehler werden bei der Variablenaktion bereinigt an den Client gemeldet.
+
 Das Konto prüft Konfiguration, Zugangsdatenidentität, Sitzung, Sperrfrist und
 Zugehörigkeit zum eigenen Gerätecache unter seinem bestehenden Semaphore.
 Die Apple-Protokolllogik bleibt librarylokal in AppleClient; HTTPS und Cookies

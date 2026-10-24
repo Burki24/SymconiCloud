@@ -36,7 +36,7 @@ class iCloudDevice extends IPSModuleStrict
         $this->RegisterAttributeString('SoundResult', '');
     }
 
-    /** Applies the identity, creates read-only variables, and reads cached data. */
+    /** Applies identity, registers status variables and the sound action, and reads cached data. */
     public function ApplyChanges(): void
     {
         parent::ApplyChanges();
@@ -139,15 +139,31 @@ class iCloudDevice extends IPSModuleStrict
 
     /**
      * @param string $Ident Explicit cache or sound action.
-     * @param mixed $Value Unused action value.
+     * @param mixed $Value Empty string for form actions; 1 triggers the sound button, 0 resets it.
      */
     public function RequestAction(string $Ident, mixed $Value): void
     {
-        match ($Ident) {
-            'Update'    => $this->Update(),
-            'PlaySound' => $Value === '' ? $this->PlaySound() : throw new InvalidArgumentException('Unsupported sound action payload.'),
-            default     => throw new InvalidArgumentException('Unsupported device action.')
-        };
+        if ($Ident === 'Update') {
+            $this->Update();
+            return;
+        }
+        if ($Ident !== 'PlaySound' || !in_array($Value, ['', 0, 1], true)) {
+            throw new InvalidArgumentException('Unsupported device action.');
+        }
+        if ($Value === 0) {
+            $this->SetValue('PlaySound', 0);
+            return;
+        }
+        try {
+            $success = $this->PlaySound();
+        } finally {
+            if ($Value === 1) {
+                $this->SetValue('PlaySound', 0);
+            }
+        }
+        if (!$success && $Value === 1) {
+            throw new RuntimeException($this->ReadAttributeString('SoundResult'));
+        }
     }
 
     /** @param array<string, mixed> $data @return bool Device cache availability. */
@@ -238,6 +254,11 @@ class iCloudDevice extends IPSModuleStrict
         if ($this->RegisterVariableString('ModelIdentifier', $this->Translate('ModelIdentifier'), $this->TextPresentation(), $position++)) {
             $this->SetValue('ModelIdentifier', $this->Translate('Not available'));
         }
+        $this->RegisterVariableInteger('PlaySound', $this->Translate('Find phone'), $this->EnumerationPresentation([
+            ['Value' => 1, 'Caption' => $this->Translate('Play sound')]
+        ], 1), $position++);
+        $this->SetValue('PlaySound', 0);
+        $this->EnableAction('PlaySound');
     }
 
     /** Missing optional fields are unknown, never a retained or inferred false. */

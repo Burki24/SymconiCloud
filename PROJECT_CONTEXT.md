@@ -1637,3 +1637,52 @@ Instanzstatus bestehen.
 Nachweisquellen sind der echte MCP-Funktionsaufruf samt Formularrueckmeldung,
 die Wiederherstellungspruefung und die getrennte Benutzerbestaetigung der
 hoerbaren Wiedergabe. Die zuvor offene reale Tonprobe ist damit abgeschlossen.
+
+### Native Aktionsvariable fuer den Suchton (2026-10-24)
+
+Der erste Stand bot nur Formularbutton und Skriptfunktion. Auf die Rueckfrage
+zur Kacheleinbindung ergaenzt die Geraeteinstanz die Integer-Aktionsvariable
+PlaySound mit dem Namen "Handy suchen". Der vorhandene zentrale
+VariablePresentationHelper erzeugt eine native Aufzaehlung mit genau einer
+Option: Wert 1 / "Ton abspielen". EnableAction bindet den Taster an die
+Geraeteinstanz; ein zusaetzliches Aktionsskript oder HTML-Widget ist nicht noetig.
+Nach dem Update einmal die Instanzkonfiguration uebernehmen und die Variable
+oder eine Verknuepfung darauf als eigene Kachel mit Darstellung Aufzaehlung
+hinzufuegen. Die Instanzliste kann die Aktion ebenfalls darstellen.
+
+Neutraler Wert ist 0, kein vorgetaeuschter Wiedergabe-/Ein-/Auszustand. Nur
+RequestAction mit 1 loest einen Auftrag aus, 0 setzt ausschliesslich neutral
+zurueck. Die Variablenaktion verwendet dieselbe PlaySound-Funktion wie das
+Formular und gibt bei Fehlern einen bereinigten Hinweis an den Client weiter.
+Nach Erfolg und Fehler bleibt der Wert 0; weitere ausdrueckliche Tastendruecke
+sind moeglich. Cacheupdates und ApplyChanges loesen keinen Ton aus.
+Bestehende Variablen behalten ihre IDs; die neue Variable wird hinten ergaenzt.
+
+Nachweise: Der neue Offline-Fall schlug vor der Umsetzung wegen fehlender
+Aktionsvariable fehl. Danach bestehen native Darstellung, Aktionszuordnung,
+mehrfache gezielte Aufrufe, neutraler Endwert, Reset-/Cache-/Konfigurationspfade,
+Fehlerrueckmeldung und unveraenderte IDs bei wiederholter Konfiguration.
+
+MCP pruefte einen isolierten temporaeren Pruefstand mit demselben Geraetecode
+(nur Klassen-/Modulkennungen und Importpfade fuer die Isolation angepasst).
+Die Helper wurden direkt aus der vorhandenen SymconiCloud-Library eingebunden,
+nicht kopiert oder veraendert. Ein synthetisches Gateway nahm zwei echte
+Kernel-RequestAction-Aufrufe an, zaehlte genau zwei Auftraege und bestaetigte
+jeweils den neutralen Variablenwert. Reset, ApplyChanges und Cacheupdate liessen
+den Zaehler unveraendert. Ein anschliessend absichtlich abgewiesener Auftrag
+erzeugte den erwarteten Aktionsfehler; der Wert blieb 0 und es gab keinen Retry.
+IPS_GetVariablePresentation bestaetigte die native Aufzaehlung mit deutschem
+Buttontext und IPS_GetVariable die richtige Instanzaktion. Die temporaeren
+Instanzen samt Variablen und die Prueflibrary wurden vollstaendig entfernt.
+
+Keine Aenderung an vorhandenen Live-Instanzen und kein weiterer echter Suchton
+fuer diese Variablenergaenzung. Die vorherige hoerbare Apple-Praxisabnahme gilt
+fuer die gemeinsam verwendete Tonfunktion; ein echter Zeigerklick auf die neue
+Kachel im Benutzerclient bleibt nach dem Modulupdate zu pruefen.
+
+Abschliessend bestanden die vollstaendige Offline-Suite mit Struktur-/Hash-/LF-,
+Formular-, Integrations-, JavaScript- und Syntaxpruefungen sowie JSON-Check und
+php-cs-fixer im Pruefmodus unter PHP 8.5.10. Der neutrale Variablenreset liegt
+im finally-Pfad der Variablenaktion; die vorhandene oeffentliche Tonfunktion
+bleibt unabhaengig von der neuen Darstellung. Der finale Stand dieses Pfads
+wurde nochmals im isolierten MCP-Pruefstand bestaetigt.

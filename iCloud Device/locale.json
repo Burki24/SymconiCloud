@@ -19,6 +19,8 @@
             "ModelIdentifier": "Technische Modellkennung",
             "Read account cache": "Gespeicherte Kontodaten lesen",
             "Find phone (play sound)": "Handy suchen (Ton abspielen)",
+            "Find phone": "Handy suchen",
+            "Play sound": "Ton abspielen",
             "Offline devices may play the sound later when they reconnect.": "Nicht erreichbare Geräte können den Ton später beim Wiederverbinden abspielen.",
             "Sound request could not be confirmed. Check the device before trying again.": "Der Tonauftrag konnte nicht bestätigt werden. Vor einem erneuten Versuch das Gerät prüfen.",
             "Select an account and device.": "Konto und Gerät auswählen.",

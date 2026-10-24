@@ -30,7 +30,10 @@
 ## Neu
 
 - Die Geräteinstanz bietet **Handy suchen (Ton abspielen)** und
-  `ICID_PlaySound()` für das konfigurierte Gerät. Der Auftrag läuft über das
+  `ICID_PlaySound()` für das konfigurierte Gerät. Die zusätzliche Aktionsvariable
+  **Handy suchen** lässt sich direkt als Kachel mit dem Taster **Ton abspielen**
+  verwenden. Nach dem Update die Instanzkonfiguration übernehmen. Bestehende
+  Variablen behalten ihre IDs. Der Auftrag läuft über das
   angemeldete Konto und wird nur für dessen gelistete Geräte gesendet. Das
   Formular meldet Annahme oder Fehler; bei nicht erreichbaren Geräten kann der
   Ton später ertönen. Datenupdates lösen keinen Ton aus. Fehler führen zu keiner
