@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace SymconiCloud;
 
+require_once __DIR__ . '/WoIstColorGuide.php';
+
 /** Map-specific design properties; HTML output lifecycle belongs to the central helper. */
 trait WoIstDesign
 {
+    use WoIstColorGuide;
     private const MAP_DESIGN = [
         'Height'       => [0, 0, 1200, 'Fallback map height in pixels (0 = automatic)'],
         'FontSize'     => [14, 10, 28, 'Font size in pixels'],
@@ -75,6 +78,9 @@ trait WoIstDesign
             }
             $items[] = ['type' => 'ExpansionPanel', 'caption' => $prefix === 'IPSView' ? 'IPSView style' : 'Tile colors',
                 'items'        => $prefix === 'IPSView' ? $this->IPSViewStyleFormItems() : $this->VisualizationThemeFormItems()];
+            if ($prefix === 'IPSView') {
+                $items[] = $this->WoIstColorGuideForm();
+            }
             foreach (self::MAP_DESIGN as $name => [$default, $minimum, $maximum, $label]) {
                 if ($prefix === 'IPSView' && $name === 'FontSize') {
                     continue;

@@ -25,6 +25,12 @@
 
 ## Neu
 
+- Der IPSView-Designer der WoIst-Karte erhält eine eigene Farbzuordnung für
+  Karte, Bedienleiste, Popup und Geräteliste. 25 nummerierte Zuordnungen
+  unterscheiden IPSView-Stil, Positionsfarben und OpenFreeMap-Kartenfarben;
+  Beschriftungen entsprechen den deutschen beziehungsweise englischen
+  Designer-Feldnamen.
+
 - Der IPSView-Designer der Anwesenheit enthält eine beschriftete Farbkarte für
   Widget und WidgetCompact mit zwölf Farbrollen und deutscher Legende. Das
   schematische Beispiel erklärt auch Auswahlflächen, Statusfärbung und Schatten.

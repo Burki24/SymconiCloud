@@ -1346,3 +1346,41 @@ standards/CONFIGURATION_FORM.md verankert: Jeder Kachel-/IPSView-Designer mit
 Farboptionen erhaelt eine modulbezogene Farbkarte samt Legende mit den exakt
 verwendeten lokalisierten Designerbezeichnungen. Die Ueberarbeitung der anderen
 Libraries folgt separat; deren Umsetzung oder Abnahme wird hier nicht behauptet.
+
+## WoIst: modulbezogene Farbzuordnung im IPSView-Designer (2026-10-24)
+
+WoIst besitzt eine eigene Kartenillustration mit Bedienleiste, Hinweisbereich,
+Vektorkartenausschnitt, Zoomtasten, Markern, Genauigkeitskreis, Popup und drei
+Geraetekarten (aktuell, ausgewaehlt/veraltet, ohne Position). Keine unveraenderte
+Anwesenheitsgrafik: Das Motiv und die 25 Zuordnungen folgen dem WoIst-HTML/CSS.
+Die schematischen Beispielfarben sind ausdruecklich keine Live-Vorschau.
+
+Die Legende trennt IPSView-Stilrollen, CurrentColor/StaleColor und die sechs
+OpenFreeMap-Palettenfarben. Zentrale deutsche/englische Feldnamen kommen aus
+IPSViewStyleHelper und OpenFreeMapHelper, die beiden Positionsfarbnamen aus der
+WoIst-Lokalisierung. Hinweise erklaeren die Uebernahme des Kachelprofils,
+bedingte benutzerdefinierte Vektorkartenfarben, fest weisse Markerränder,
+Akzentfarbe nur fuer die ausgewaehlte Geraetekarte und den Genauigkeitskreis
+mit aktueller Positionsfarbe und 8 Prozent Fuelldeckkraft.
+
+Die gemeinsame Formularstruktur fuer Farbguide-Panels liegt librarylokal in
+DesignerColorGuide und wird von Anwesenheit und WoIst verwendet. Die konkreten
+Illustrationen und Zuordnungen bleiben getrennt. Wiederverwendung der vorhandenen
+zentralen Uebersetzungs- und Asset-Helper; die Data-URIs werden beim Erzeugen der
+Bildressourcen mit SVGPreviewHelper::dataUri aufgebaut. Keine neue Subscription,
+kein zentraler Helper geaendert und keine Testkopien unter libs/helper.
+
+Reproduzierbarer Aufbau der vier SVG-/Bilddateien (de/en):
+php tests/generate-woist-color-guide.php ../Symcon_ModuleHelper/src/SVGPreviewHelper.php
+Der Generator braucht den zentralen SVG-Helper nur zur Entwicklungszeit.
+
+Nachweise: deutsche Grafik als PNG gerendert und visuell kontrolliert.
+Vertragstests gleichen alle 25 Beschriftungen in beiden Sprachen mit den
+massgeblichen Katalogen ab, pruefen SVG/Data-URI-Identitaet, passive lokale
+Ressourcen, die tatsaechlichen HTML-/CSS-Zuordnungen und die unveraenderten
+festen Markerraender/Genauigkeitsdeckkraft. Die bestehende Anwesenheits-Farbkarte
+bleibt durch ihre Regressionen abgesichert. Vollstaendige Offline-Suite,
+Struktur-/Hash-/LF-, JSON- und Stilpruefungen unter PHP 8.5.10 bestanden.
+Keine Aenderung auf einem
+angeschlossenen Symcon-System, keine Apple- oder Kartendienstabfrage.
+Die Anzeige im echten WoIst-Konsolenformular bleibt nach dem Update abzunehmen.

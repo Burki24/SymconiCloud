@@ -215,6 +215,34 @@ Im IPSView-Designer bietet **IPSView-Stil** die zentralen Stilquellen: eigene Ei
 
 Farbänderungen werden in die bestehende Karte übertragen. Zoom, Kartenausschnitt und Geräteauswahl werden dabei nicht zurückgesetzt. OpenFreeMap besitzt weiterhin einen eigenen Menüpunkt in beiden Designern und folgt im Automatikmodus der wirksamen Hintergrundhelligkeit.
 
+### Farbzuordnung im IPSView-Designer
+
+Unter **IPSView-Designer → Farbzuordnung: WoIst-Karte** zeigt eine eigene,
+nummerierte Kartenillustration die Farbzuordnungen für Bedienleiste, Karte,
+Geräteliste, Popup und Positionsmarker. Bild und Legende verwenden dieselben
+deutschen Feldnamen wie der Designer, ergänzt um technische Rollennamen.
+Im englischen Designer stehen englische Beschriftungen. Die Farben sind
+schematische Beispiele, keine Live-Vorschau ungespeicherter Einstellungen.
+
+Die Farbkarte unterscheidet drei Bereiche:
+
+- **IPSView-Stil:** Hintergründe, Textarten, Auswahlrahmen, Warnhinweise,
+  Popup, Zoomtasten, Rahmen und Schatten.
+- **Positionsfarben:** **Farbe aktueller Positionen** und
+  **Farbe letzter bekannter Positionen** für Marker und Gerätestreifen.
+  Der Genauigkeitskreis verwendet die aktuelle Positionsfarbe mit 8 %
+  Fülldeckkraft. Markerränder sind fest weiß; **Akzentfarbe** umrandet die
+  ausgewählte Gerätekarte und färbt nicht den Marker.
+- **OpenFreeMap:** **Landfarbe**, **Wasserfarbe**, **Farbe der Grünflächen**,
+  **Straßenfarbe**, **Gebäudefarbe** und **Beschriftungsfarbe** gehören zur
+  hellen beziehungsweise dunklen Kartenpalette. Sie wirken bei aktivierten
+  eigenen Kartenfarben auf passende sichtbare Vektorebenen.
+
+Ist **Karteneinstellungen der Kachel verwenden** aktiv, stammen Positionsfarben
+und OpenFreeMap-Profil aus der Kachel. Der IPSView-Stil bleibt unabhängig.
+Die beschriftete Beispielkarte benötigt keine Kartenabfragen oder privaten
+Geräte-/Standortdaten und erscheint nur im Designer.
+
 ### Mausradbedienung in IPSView
 
 Kachel und IPSView-Ausgabe nutzen die gemeinsame Eingabebehandlung aus `Symcon_ModuleHelper`. Sie normalisiert Mausrad-Deltas und ermittelt bei von IPSView umadressierten Ereignissen den Bereich unter der letzten tatsächlichen Mausposition. Listen und Dialoginhalte scrollen innerhalb ihres Bereichs; vorhandener Karten-/Diagrammzoom bleibt komponentenspezifisch. Verschachtelte teilnehmende HTML-Frames geben ausschließlich UI-Eingaben über den zentralen Vertrag weiter. Ctrl-/Meta-Mausrad bleibt beim Host. Eine vollständige Funktionsprüfung unterscheidet den IPSView-Webclient von der nativen IPSView-App.

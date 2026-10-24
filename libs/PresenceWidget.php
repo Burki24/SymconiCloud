@@ -15,6 +15,7 @@ require_once __DIR__ . '/helper/ResponsiveVisualizationHelper.php';
 require_once __DIR__ . '/helper/HttpResponseHelper.php';
 require_once __DIR__ . '/helper/RasterImageHelper.php';
 require_once __DIR__ . '/IPSViewFrame.php';
+require_once __DIR__ . '/DesignerColorGuide.php';
 
 /**
  * SymconiCloud presence widget layout, images and cached IPSView output.
@@ -24,6 +25,7 @@ require_once __DIR__ . '/IPSViewFrame.php';
 trait PresenceWidget
 {
     use IPSViewFrame;
+    use DesignerColorGuide;
     use \Burki24\SymconModuleHelper\RasterImageHelper;
 
     private const PRESENCE_WIDGET_TEXT = [
@@ -246,24 +248,19 @@ trait PresenceWidget
             'Warning'                 => ['color.warning', 'Warning status'],
             'Border'                  => ['color.border', 'Border color'],
             'Accent'                  => ['color.accent', 'Accent color'],
+            'AccentSoft'              => ['', 'Selection background derived from Accent color'],
             'ControlActiveBackground' => ['color.control_active_background', 'Active control background'],
             'ShadowColor'             => ['color.shadow', 'Shadow color']
         ];
-        $german = $this->NormalizeHelperTranslationLanguage($this->ResolveHelperTranslationLanguage()) === 'de';
-        $items = [
-            ['type' => 'Label', 'caption' => $this->Translate('Schematic example colors. The numbered assignments apply to Widget, WidgetCompact and all light/dark styles; this image does not preview unsaved color changes.')],
-            ['type'     => 'Image', 'name' => 'PresenceIPSViewColorGuide', 'width' => '100%',
-                'image' => trim($this->VisualizationAsset($german ? 'color-guide-de.image' : 'color-guide.image'))]
-        ];
-        $number = 1;
-        foreach ($roles as $role => $description) {
-            $label = isset($labels[$role])
-                ? $this->TranslateHelperText('IPSViewStyleHelper', $labels[$role][0], $labels[$role][1])
-                : $this->Translate('Selection background derived from Accent color');
-            $items[] = ['type' => 'Label', 'caption' => $number++ . '. ' . $label . ' (' . $role . '): ' . $this->Translate($description)];
-        }
-        $items[] = ['type' => 'Label', 'caption' => $this->Translate('Text is the base fallback; device names use LabelText and details use TextInactive. Popup, chart and Critical colors are not used by these widgets.')];
-        return ['type' => 'ExpansionPanel', 'caption' => $this->Translate('Color guide: Widget and WidgetCompact'), 'items' => $items];
+        return $this->BuildDesignerColorGuide(
+            'PresenceIPSViewColorGuide',
+            'Color guide: Widget and WidgetCompact',
+            'Schematic example colors. The numbered assignments apply to Widget, WidgetCompact and all light/dark styles; this image does not preview unsaved color changes.',
+            'color-guide',
+            $roles,
+            $labels,
+            ['Text is the base fallback; device names use LabelText and details use TextInactive. Popup, chart and Critical colors are not used by these widgets.']
+        );
     }
 
     private function InspectStatusWidgetUpload(string $content): array
