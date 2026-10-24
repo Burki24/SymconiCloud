@@ -28,11 +28,10 @@ $check(GetValue($normalID) === $normalHTML && GetValue($compactID) === $compactH
 IPS_SetProperty($widgetID, 'TileWidgetVariant', 'WidgetCompact');
 IPS_ApplyChanges($widgetID);
 $nativeCompact = $decodeWidget($widget->GetVisualizationTile());
-$check($nativeCompact['options']['variant'] === 'WidgetCompact' && $nativeCompact['options']['variantSwitch'] === true, 'The native tile starts with the designer variant and offers a local switch.');
-$check($nativeCompact['state']['members'][0]['detail'] !== '' && $nativeCompact['state']['summary']['detail'] !== '', 'The native compact default must retain full details for immediate switching to Widget.');
-$check($nativeCompact['options']['design']['pictureSize'] === IPS_GetProperty($widgetID, 'TileWidgetPictureSize') && $nativeCompact['options']['design']['spacing'] === IPS_GetProperty($widgetID, 'TileWidgetSpacing'), 'Native switches need the full designer sizes; compact caps are applied in the client.');
-$check($normalModel['options']['variantSwitch'] === false && $compactModel['options']['variantSwitch'] === false, 'The native switch must not change the separate IPSView outputs.');
-$check($nativeCompact['options']['variantStorageKey'] === hash('sha256', $widgetID . ':' . IPS_GetInstance($widgetID)['ConnectionID']), 'Variant preference is scoped to the instance and account connection without storing account data.');
+$check($nativeCompact['options']['variant'] === 'WidgetCompact', 'The native tile follows the variant configured in the designer.');
+$check(!str_contains($widget->GetVisualizationTile(), 'variant-switch') && !isset($nativeCompact['options']['variantStorageKey']), 'The tile has no variant toolbar or local preference overriding the designer.');
+$check($nativeCompact['state']['members'][0]['detail'] === '' && $nativeCompact['state']['summary']['detail'] === '', 'Native compact output omits details and aggregate counts.');
+$check($nativeCompact['options']['design']['pictureSize'] <= 36 && $nativeCompact['options']['design']['spacing'] <= 8, 'Native compact output retains its compact picture and spacing limits.');
 $check($widget->GetIPSViewHTML() !== $widget->GetIPSViewCompactHTML(), 'Native variant selection must not replace the full IPSView output.');
 $widget->RequestAction('IPSViewHTMLRegenerateVariables', '');
 $check(str_contains(GetValue($compactID), '/compact/page'), 'Regeneration must not overwrite compact HTML with normal HTML.');

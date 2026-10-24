@@ -6,22 +6,6 @@
     const root = doc.getElementById('status-widget');
     const list = doc.getElementById('members');
     const rows = new Map();
-    const variantSwitch = doc.getElementById('variant-switch');
-    const variantButtons = [doc.getElementById('variant-widget'), doc.getElementById('variant-compact')];
-    const canSwitch = bootstrap.options.variantSwitch === true;
-    const variantValid = value => value === 'Widget' || value === 'WidgetCompact';
-    const storageKey = typeof bootstrap.options.variantStorageKey === 'string' && /^[a-zA-Z0-9_-]{1,128}$/.test(bootstrap.options.variantStorageKey)
-        ? 'SymconiCloud.presence.variant:' + bootstrap.options.variantStorageKey : '';
-    let chosenVariant = '';
-    let currentPayload = bootstrap;
-    let activeVariant = '';
-    const scrollPositions = new Map();
-    if (canSwitch && storageKey) {
-        try {
-            const saved = global.sessionStorage.getItem(storageKey);
-            if (variantValid(saved)) chosenVariant = saved;
-        } catch (_) { /* Browser storage is optional; switching remains available. */ }
-    }
     let selected = '';
     let stopped = false;
     let timer = null;
@@ -29,24 +13,18 @@
     let generation = 0;
     const text = (id, value) => { doc.getElementById(id).textContent = typeof value === 'string' ? value : ''; };
     const tone = value => ['positive', 'neutral'].includes(value) ? value : 'unknown';
-    function render(payload, restorePosition) {
+    function render(payload) {
         if (!payload || !payload.state || !Array.isArray(payload.state.members) || !payload.options) return;
-        currentPayload = payload;
         const state = payload.state;
         const options = payload.options;
         const design = options.design || {};
-        activeVariant = canSwitch && chosenVariant ? chosenVariant : options.variant === 'WidgetCompact' ? 'WidgetCompact' : 'Widget';
-        const compact = activeVariant === 'WidgetCompact';
+        const compact = options.variant === 'WidgetCompact';
         root.dataset.variant = compact ? 'compact' : 'normal';
-        variantSwitch.hidden = !canSwitch;
-        variantSwitch.setAttribute('aria-label', bootstrap.options.variantLabel || 'Widget variant');
-        variantButtons.forEach((button, index) => button.setAttribute('aria-pressed', String(activeVariant === (index ? 'WidgetCompact' : 'Widget'))));
-        const scrollTop = restorePosition ? restorePosition.top : list.scrollTop;
-        const scrollLeft = restorePosition ? restorePosition.left : list.scrollLeft;
+        const scrollTop = list.scrollTop;
+        const scrollLeft = list.scrollLeft;
         root.style.setProperty('--symc-tile-header-inset', Math.max(0, Math.min(100, Number(options.tileHeaderInset) || 0)) + 'px');
         for (const [key, css] of [['pictureSize', 'picture-size'], ['radius', 'radius'], ['spacing', 'spacing']]) {
-            const value = compact && ['pictureSize', 'spacing'].includes(key) ? Math.min(key === 'pictureSize' ? 36 : 8, design[key]) : design[key];
-            if (Number.isFinite(value)) root.style.setProperty('--widget-' + css, value + 'px');
+            if (Number.isFinite(design[key])) root.style.setProperty('--widget-' + css, design[key] + 'px');
         }
         if (/^\d+(?:\.\d+)?px$/.test(design.fontSize)) doc.documentElement.style.fontSize = design.fontSize;
         if (typeof options.themeCSS === 'string') doc.getElementById('widget-theme').textContent = options.themeCSS;
@@ -101,18 +79,6 @@
         doc.getElementById('empty').hidden = keep.size > 0;
         list.scrollTop = scrollTop; list.scrollLeft = scrollLeft;
     }
-    variantButtons.forEach((button, index) => button.addEventListener('click', () => {
-        if (!canSwitch) return;
-        const next = index ? 'WidgetCompact' : 'Widget';
-        if (next === activeVariant) return;
-        const position = {top: list.scrollTop, left: list.scrollLeft};
-        scrollPositions.set(activeVariant, position);
-        chosenVariant = next;
-        if (storageKey) {
-            try { global.sessionStorage.setItem(storageKey, next); } catch (_) { /* Continue without persistence. */ }
-        }
-        render(currentPayload, scrollPositions.get(next) || position);
-    }));
     global.handleMessage = value => {
         try { render(typeof value === 'string' ? JSON.parse(value) : value); } catch (_) { /* Keep last usable state. */ }
     };

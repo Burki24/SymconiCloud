@@ -39,14 +39,11 @@ const sample = {
     ]},
     options: {design: {photos: true, details: true, fontSize: '14px', spacing: 10}, tileHeaderInset: 58, empty: 'Empty', connectionError: 'Retry', transport: null}
 };
-function harness(transport, fragment, variant = 'Widget', storage = new Map()) {
-    const nodes = Object.fromEntries(['widget-bootstrap', 'status-widget', 'members', 'summary-label', 'summary-value', 'summary-detail', 'summary', 'empty', 'widget-theme', 'connection', 'variant-switch', 'variant-widget', 'variant-compact'].map(id => [id, new Element()]));
+function harness(transport, fragment, variant = 'Widget') {
+    const nodes = Object.fromEntries(['widget-bootstrap', 'status-widget', 'members', 'summary-label', 'summary-value', 'summary-detail', 'summary', 'empty', 'widget-theme', 'connection'].map(id => [id, new Element()]));
     nodes.connection.hidden = true;
     const input = structuredClone(sample);
     input.options.variant = variant;
-    input.options.variantSwitch = !transport;
-    input.options.variantStorageKey = 'synthetic-instance';
-    input.options.variantLabel = 'Widget variant';
     if (transport) input.options.transport = {url: '/hook/test', token: 'synthetic-token'};
     if (fragment !== undefined) Object.assign(input.options.transport, {token: '', fragmentToken: true});
     nodes['widget-bootstrap'].textContent = JSON.stringify(input);
@@ -58,7 +55,7 @@ function harness(transport, fragment, variant = 'Widget', storage = new Map()) {
         location: {hash: '#token=' + (fragment || ''), pathname: '/hook/test/page', search: ''},
         history: {replaceState(_state, _title, url) { this.url = url; }}
     };
-    window.sessionStorage = {getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value)};
+    Object.defineProperty(window, 'sessionStorage', {get() { throw new Error('Variant selection must not read old session preferences.'); }});
     vm.runInNewContext(source, {window, URL, URLSearchParams, AbortController, console});
     return {window, nodes, tasks};
 }
@@ -132,39 +129,10 @@ async function settle() { for (let i = 0; i < 12; i++) await Promise.resolve(); 
     compact.window.handleMessage(compactUpdate);
     assert.equal(compactList.children[0], compactRow); assert.equal(compactRow.parts.status.textContent, 'Work');
     assert.equal(compactRow.attrs['aria-pressed'], 'true'); assert.equal(compactList.scrollTop, 81); assert.equal(compactList.scrollLeft, 4);
-    const storage = new Map();
-    const switching = harness(false, undefined, 'WidgetCompact', storage);
-    const switchingList = switching.nodes.members;
-    const switchingRow = switchingList.children[0];
-    switchingRow.events.click(); switchingList.scrollTop = 72; switchingList.scrollLeft = 3;
-    switching.nodes['variant-widget'].events.click();
-    assert.equal(switching.nodes['status-widget'].dataset.variant, 'normal');
-    assert.equal(switchingRow.parts.detail.textContent, 'Stay: 20 s', 'Native compact default retains the full data for switching back.');
-    assert.equal(switching.nodes['status-widget'].style['--widget-spacing'], '10px');
-    assert.equal(switchingRow.attrs['aria-pressed'], 'true');
-    assert.equal(switchingList.scrollTop, 72); assert.equal(switchingList.scrollLeft, 3);
-    switchingList.scrollTop = 140;
-    switching.nodes['variant-compact'].events.click();
-    assert.equal(switchingList.scrollTop, 72, 'Each variant restores its own last scroll offset.');
-    assert.equal(switchingRow.parts.status.textContent, 'Home');
-    assert.equal(switching.nodes['status-widget'].style['--widget-spacing'], '8px');
-    switching.window.handleMessage({...sample, options: {...sample.options, variant: 'Widget'}});
-    assert.equal(switching.nodes['status-widget'].dataset.variant, 'compact', 'SDK data updates do not override the local choice.');
-    assert.equal(switchingList.children[0], switchingRow); assert.equal(switchingRow.attrs['aria-pressed'], 'true');
-    switching.nodes['variant-widget'].events.click();
-    assert.equal(switchingList.scrollTop, 140);
-    assert.equal(switching.nodes['variant-widget'].attrs['aria-pressed'], 'true');
-    assert.equal(switching.nodes['variant-compact'].attrs['aria-pressed'], 'false');
-    assert.equal(harness(false, undefined, 'WidgetCompact', storage).nodes['status-widget'].dataset.variant, 'normal', 'Session choice overrides the designer default when the tile is reopened.');
-    assert.equal(harness(false, undefined, 'WidgetCompact').nodes['status-widget'].dataset.variant, 'compact', 'Other clients retain their own default.');
-    assert.equal(web.nodes['variant-switch'].hidden, true, 'IPSView retains its two independent outputs without a native switch.');
-    web.nodes['variant-compact'].events.click();
-    assert.equal(web.nodes['status-widget'].dataset.variant, 'normal');
-    storage.set('SymconiCloud.presence.variant:synthetic-instance', 'invalid');
-    assert.equal(harness(false, undefined, 'WidgetCompact', storage).nodes['status-widget'].dataset.variant, 'compact', 'Invalid saved variants fall back to the designer default.');
-    const unavailableStorage = {get() { throw new Error('denied'); }, set() { throw new Error('denied'); }};
-    const withoutStorage = harness(false, undefined, 'Widget', unavailableStorage);
-    withoutStorage.nodes['variant-compact'].events.click();
-    assert.equal(withoutStorage.nodes['status-widget'].dataset.variant, 'compact', 'Blocked browser storage must not prevent switching.');
+    compactUpdate.options.variant = 'Widget';
+    compact.window.handleMessage(compactUpdate);
+    assert.equal(compact.nodes['status-widget'].dataset.variant, 'normal', 'Designer changes control the native variant without a local override.');
+    assert.equal(compactList.children[0], compactRow); assert.equal(compactRow.attrs['aria-pressed'], 'true');
+    assert.equal(compactList.scrollTop, 81); assert.equal(compactList.scrollLeft, 4);
     console.log('Status widget SDK updates, keyed rows, selection, scroll, images and polling recovery passed.');
 })().catch(error => { console.error(error); process.exitCode = 1; });

@@ -2,6 +2,10 @@
 
 ## Fixes
 
+- Die Anwesenheitskachel zeigt keine Schaltflächen zur Variantenwahl mehr.
+  **Widget** und **WidgetCompact** werden ausschließlich im Kacheldesigner
+  ausgewählt; bisherige lokale Sitzungswerte überschreiben diese Auswahl nicht.
+
 - Farbkarte und Legende der Anwesenheit verwenden die deutschen Feldbezeichnungen
   des IPSView-Designers aus dem zentralen Übersetzungskatalog. Technische Rollen
   bleiben ergänzend sichtbar; der englische Designer behält englische Labels.
@@ -24,11 +28,6 @@
   Loader mit den vorhandenen zentralen Adress-, Interaktions- und Seitenhelpern.
 
 ## Neu
-
-- Die Anwesenheitskachel bietet einen direkten Umschalter zwischen **Widget**
-  und **WidgetCompact**. Geräteauswahl und Scrollposition je Variante bleiben
-  erhalten; Datenupdates überschreiben die lokale Variantenwahl nicht.
-  Der Kacheldesigner legt weiterhin die Startvorgabe fest.
 
 - Der IPSView-Designer der WoIst-Karte erhält eine eigene Farbzuordnung für
   Karte, Bedienleiste, Popup und Geräteliste. 19 nummerierte Zuordnungen

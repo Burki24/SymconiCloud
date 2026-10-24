@@ -1483,3 +1483,31 @@ JavaScript-Pruefungen sowie php-cs-fixer im Pruefmodus unter PHP 8.5.10 bestande
 Der neue Stand wurde nicht auf ein Live-System installiert. Praxisabnahme
 des Umschalters samt Mausradbedienung in der echten nativen Kachel nach dem
 Modulupdate bleibt offen; ein neuer MCP-/Browser-Lauf wird nicht behauptet.
+
+## Anwesenheit: Variantenwahl ausschliesslich im Designer (2026-10-24)
+
+Der Benutzer bestaetigt nach dem Update die Funktion des direkten Umschalters,
+wuenscht dessen Schaltflaechen aber nicht in der Kachel selbst. Auf die gezielte
+Rueckfrage wurde ausdruecklich "Entfernen; Auswahl im Kacheldesigner" gewaehlt.
+Diese Entscheidung ersetzt die zuvor dokumentierte lokale Umschaltloesung.
+
+HTML-Bedienelemente, CSS, Umschaltlogik und Sitzungsspeicherung sind entfernt.
+Die native Kachel folgt wieder ausschliesslich TileWidgetVariant aus
+Kacheldesigner / Layout und Inhalt. Bereits gespeicherte lokale Variantenwerte
+werden nicht mehr gelesen und koennen die Designerwahl nicht ueberschreiben.
+WidgetCompact behaelt seine reduzierten Inhalte und Groessen; beide getrennten
+IPSView-Ausgaben und die bestehenden zentralen Helper bleiben erhalten.
+Geraeteauswahl und Scrollposition bleiben bei Datenupdates abgesichert.
+
+Der offene Wunsch nach mehreren benannten instanzspezifischen Darstellungen
+im nativen Symcon-Auswahldialog bleibt in den zentralen Regeln festgehalten.
+Die dort beschriebene Zwischenloesung ist entsprechend auf die ausschliessliche
+Designerwahl angepasst; Neubewertung bei Zustimmung und Umsetzung durch Symcon
+bleibt verbindlich. Die Benutzerbestaetigung betrifft den vorherigen Stand;
+fuer die nun entfernten Schaltflaechen wird kein neuer Live-Nachweis behauptet.
+
+Nachweise: vollstaendige Offline-Suite einschliesslich Varianten-, SDK-/Polling-,
+Auswahl-/Scroll-, Struktur-/Hash-/LF- und Syntaxpruefungen unter PHP 8.5.10
+bestanden. JSON-Check und php-cs-fixer im Pruefmodus ebenfalls erfolgreich.
+Die angepassten Vertraege pruefen die Designerwahl ohne Toolbar oder lokale
+Speicheruebersteuerung sowie die weiterhin getrennten IPSView-Ausgaben.

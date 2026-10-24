@@ -272,16 +272,10 @@ Name und Zone. Entfernung, Aufenthaltsdauer und Diagnosegrund entfallen. Bei
 unzuverlässigen Daten steht weiterhin **Unbekannt**. Die Gesamtanwesenheit erscheint
 als schmale Kopfzeile ohne zusätzliche Zählerzeile.
 
-- Native Kachel: Direkt über **Widget | WidgetCompact** umschalten. Die Auswahl
-  gilt lokal für diese Instanz und Kontoverbindung im jeweiligen Browser-Tab
-  und bleibt während der Sitzung auch beim erneuten Öffnen erhalten, soweit
-  der Client Sitzungsspeicher zulässt. Unter **Kacheldesigner → Layout und
-  Inhalt → Widget-Variante** wird die Startvorgabe gewählt; Standard ist **Widget**.
-  Datenupdates überschreiben die lokale Wahl nicht. Die Geräteauswahl bleibt
-  beim Umschalten erhalten; jede Variante merkt sich ihre letzte Scrollposition.
-  Beim ersten Wechsel wird der aktuelle Ausschnitt soweit möglich übernommen.
-  Bei kürzerem Inhalt begrenzt der Browser den Scrollwert auf den verfügbaren
-  Bereich; beim Zurückschalten wird die vorherige Position wiederhergestellt.
+- Native Kachel: Unter **Kacheldesigner → Layout und Inhalt → Widget-Variante**
+  zwischen **Widget** und **WidgetCompact** wählen und die Konfiguration
+  übernehmen. Standard ist **Widget**. Die Kachel zeigt keine Schaltflächen
+  zur Variantenwahl; frühere lokale Sitzungswerte werden nicht mehr verwendet.
 - IPSView: Bei aktivierter Ausgabe entstehen zwei getrennte HTML-Variablen:
   **Anwesenheit für IPSView** (`IPSViewPresence`, bisherige Ausgabe) und
   **Anwesenheit WidgetCompact für IPSView** (`IPSViewPresenceCompact`, zusätzlich).
