@@ -1332,3 +1332,17 @@ Tests gleichen Bild und Textlegende mit den zentralen deutschen Bezeichnungen ab
 und verlangen fuer beide Sprachen bytegleiche SVG-Quelle und Data-URI. Die
 deutsche Grafik wurde als PNG gerendert und visuell auf Lesbarkeit kontrolliert.
 Keine neue Subscription oder Aenderung eines zentralen Helpers notwendig.
+
+### Praxisabnahme der deutschen Farbzuordnung (2026-10-24)
+
+Der Benutzer hat die deutsche Farbzuordnung im echten IPSView-Designer nach dem
+Update erfolgreich geprueft und mit "Funktioniert" bestaetigt. Damit ist die
+offene Formularabnahme fuer Bild und Legende mit den deutschen Feldbezeichnungen
+abgeschlossen. Die technischen Rollennamen bleiben ergaenzende Informationen.
+Nachweis ist die ausdrueckliche Benutzerbestaetigung, kein neuer MCP-Lauf.
+
+Die daraus abgeleitete allgemeine Vorgabe wurde in SymconDevelopment unter
+standards/CONFIGURATION_FORM.md verankert: Jeder Kachel-/IPSView-Designer mit
+Farboptionen erhaelt eine modulbezogene Farbkarte samt Legende mit den exakt
+verwendeten lokalisierten Designerbezeichnungen. Die Ueberarbeitung der anderen
+Libraries folgt separat; deren Umsetzung oder Abnahme wird hier nicht behauptet.
