@@ -46,6 +46,37 @@
                     "edit": {
                         "type": "SelectMedia"
                     }
+                },
+                {
+                    "name": "pictureSource",
+                    "caption": "Picture source",
+                    "width": "180px",
+                    "add": "media",
+                    "edit": {
+                        "type": "Select",
+                        "options": [
+                            {
+                                "caption": "Symcon medium",
+                                "value": "media"
+                            },
+                            {
+                                "caption": "File from computer",
+                                "value": "upload"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "pictureUpload",
+                    "caption": "Picture file from computer (optional)",
+                    "width": "0px",
+                    "visible": false,
+                    "save": true,
+                    "add": "",
+                    "edit": {
+                        "type": "SelectFile",
+                        "extensions": ".png,.jpg,.jpeg,.gif,.webp"
+                    }
                 }
             ]
         },

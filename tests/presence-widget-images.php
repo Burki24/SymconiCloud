@@ -19,6 +19,11 @@ final class StatusWidgetImageHarness
     {
         return $this->StatusWidgetImage($id);
     }
+
+    public function upload(string $content): string
+    {
+        return $this->StatusWidgetUpload($content);
+    }
 }
 
 $imageMedia = ['MediaType' => 1, 'MediaIsAvailable' => true, 'MediaSize' => 34];
@@ -36,6 +41,15 @@ function IPS_GetMediaContent(int $id): string
     return $GLOBALS['imageContent'];
 }
 $widget = new StatusWidgetImageHarness();
+checkImage('data:image/gif;base64,' . $imageContent, $widget->upload($imageContent), 'Console file contents use the same safe inline image format.');
+foreach (['', 'not base64', base64_encode('<svg onload="alert(1)"></svg>'), base64_encode('https://example.invalid/image')] as $invalid) {
+    checkImage('', $widget->upload($invalid), 'Empty or invalid uploads use initials without network or filesystem reads.');
+}
+checkImage('', $widget->upload(base64_encode(str_repeat('x', 131073))), 'Uploads exceeding 128 KiB are rejected.');
+// A GIF header with excessive dimensions must be rejected before browser decoding.
+$wide = base64_decode($imageContent);
+$wide = substr_replace($wide, pack('v', 1025), 6, 2);
+checkImage('', $widget->upload(base64_encode($wide)), 'Uploads wider than 1024 pixels are rejected.');
 checkImage('', $widget->image(0), 'No picture uses initials.');
 checkImage('', $widget->image(2), 'Deleted media uses initials.');
 checkImage('data:image/gif;base64,' . $imageContent, $widget->image(1), 'Supported image content is embedded.');

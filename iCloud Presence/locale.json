@@ -75,6 +75,10 @@
             "AbsentCount": "Abwesende Geräte",
             "UnknownCount": "Geräte mit unbekannter Anwesenheit",
             "Picture (optional)": "Bild (optional)",
+            "Picture source": "Bildquelle",
+            "Symcon medium": "Symcon-Medium",
+            "File from computer": "Datei vom Rechner",
+            "Picture file from computer (optional)": "Bilddatei vom Rechner (optional)",
             "Presence for IPSView": "Anwesenheit für IPSView",
             "Distance to reference zone": "Entfernung zur Referenzzone",
             "Stay": "Aufenthalt",
@@ -95,7 +99,7 @@
             "Live updates unavailable. Retrying...": "Live-Aktualisierungen nicht verfügbar. Neuer Versuch…",
             "Unable to open the IPSView widget. Check the server URL and apply the instance configuration.": "Die IPSView-Widgetseite kann nicht geöffnet werden. Serveradresse prüfen und Instanzkonfiguration übernehmen.",
             "No devices selected.": "Keine Geräte ausgewählt.",
-            "Optional pictures: select a Symcon image medium per device. Use PNG, JPEG, GIF or WebP, at most 128 KiB and 1024 x 1024 pixels. Invalid pictures use initials.": "Optionale Bilder: Je Gerät ein Symcon-Bildmedium auswählen. PNG, JPEG, GIF oder WebP mit höchstens 128 KiB und 1024 × 1024 Pixeln verwenden. Ungültige Bilder werden durch Initialen ersetzt."
+            "Optional pictures: choose a Symcon image medium or a file from the computer running the console for each device. Use PNG, JPEG, GIF or WebP, at most 128 KiB and 1024 x 1024 pixels. Invalid pictures use initials.": "Optionale Bilder: Je Gerät ein Symcon-Bildmedium oder eine Datei vom Rechner auswählen, auf dem die Konsole geöffnet ist. PNG, JPEG, GIF oder WebP mit höchstens 128 KiB und 1024 × 1024 Pixeln verwenden. Ungültige Bilder werden durch Initialen ersetzt."
         }
     }
 }

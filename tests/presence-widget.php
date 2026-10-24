@@ -66,6 +66,10 @@ foreach (['VisualizationThemeTextColor', 'VisualizationThemeBackgroundColor', 'I
     $check(isset($fields[$field]), 'Independent designers must expose ' . $field);
 }
 $check($form['elements'][1]['columns'][2]['edit']['type'] === 'SelectMedia', 'Pictures use the documented media selector.');
+$deviceForm = array_column($form['elements'][1]['form'], null, 'name');
+$check($deviceForm['pictureUpload']['type'] === 'SelectFile' && $deviceForm['pictureUpload']['extensions'] === '.png,.jpg,.jpeg,.gif,.webp', 'The device dialog must accept a local console image file.');
+$check($deviceForm['deviceID']['options'] === $form['elements'][1]['columns'][0]['edit']['options'], 'Device selection retains cached choices in the custom row dialog.');
+$check($form['elements'][1]['columns'][4]['visible'] === false && $form['elements'][1]['columns'][4]['save'] === true, 'Uploaded bytes must persist without appearing in the device table.');
 IPS_SetProperty($widgetID, 'EnableIPSView', true);
 IPS_SetProperty($widgetID, 'IPSViewWidgetPhotos', false);
 IPS_ApplyChanges($widgetID);
@@ -96,10 +100,25 @@ $check($request('OPTIONS', '')[0] === 204 && $request('POST', $token)[0] === 200
 $oldIdentity = $readAttribute->invoke($widget, 'SourceIdentity');
 $oldStates = $readAttribute->invoke($widget, 'MemberStates');
 $selection[0]['picture'] = 99999;
+$selection[0]['pictureSource'] = 'upload';
+$selection[0]['pictureUpload'] = 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=';
 IPS_SetProperty($widgetID, 'Devices', json_encode($selection, JSON_THROW_ON_ERROR));
 IPS_SetProperty($widgetID, 'TileWidgetSpacing', 20);
 IPS_ApplyChanges($widgetID);
 $check($readAttribute->invoke($widget, 'SourceIdentity') === $oldIdentity && $readAttribute->invoke($widget, 'MemberStates') === $oldStates, 'Picture/design changes cannot reset GPS confirmation or observed stays.');
+$expectedImage = 'data:image/gif;base64,' . $selection[0]['pictureUpload'];
+$check($decodeWidget($widget->GetVisualizationTile())['state']['members'][0]['image'] === $expectedImage, 'A local upload renders in the native widget independently of any media ID.');
+$check(json_decode($request('POST', $token)[1], true)['state']['members'][0]['image'] === $expectedImage, 'Authenticated IPSView data carries the same validated image.');
+$check(!str_contains($request('GET', '', '/page')[1], $selection[0]['pictureUpload']), 'The public HTTP shell must not disclose uploaded pictures.');
+$selection[0]['pictureUpload'] = base64_encode('<svg onload="alert(1)"></svg>');
+IPS_SetProperty($widgetID, 'Devices', json_encode($selection, JSON_THROW_ON_ERROR));
+IPS_ApplyChanges($widgetID);
+$check($decodeWidget($widget->GetVisualizationTile())['state']['members'][0]['image'] === '', 'Invalid uploaded content falls back to initials.');
+$selection[0]['pictureUpload'] = substr($expectedImage, strlen('data:image/gif;base64,'));
+$selection[0]['pictureSource'] = 'media';
+IPS_SetProperty($widgetID, 'Devices', json_encode($selection, JSON_THROW_ON_ERROR));
+IPS_ApplyChanges($widgetID);
+$check($decodeWidget($widget->GetVisualizationTile())['state']['members'][0]['image'] === '', 'Switching to media stops using a previously uploaded picture.');
 $firstBoundary->commands = [];
 $widget->clock += 15;
 $widget->Update();

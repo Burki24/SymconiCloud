@@ -221,6 +221,11 @@ class iCloudPresence extends IPSModuleStrict
             // No authentication, external request or configuration write while opening the form.
         }
         $form['elements'][1]['columns'][0]['edit']['options'] = $options;
+        // Keep uploaded bytes out of the table while retaining a native local file
+        // picker in the row dialog, including the current cached device options.
+        $form['elements'][1]['form'] = array_map(static fn (array $column): array => array_merge($column['edit'], [
+            'name' => $column['name'], 'caption' => $column['caption']
+        ]), $form['elements'][1]['columns']);
         $limits = $this->zoneFormLimits($this->ReadPropertyString('Zones'), $this->ReadPropertyInteger('Hysteresis'));
         $form['elements'][3]['columns'][4]['edit']['minimum'] = $limits['minimum'];
         $form['elements'][3]['form'] = 'return json_decode(ICPR_GetZoneEditForm($id, $Hysteresis, $MaxAccuracy, $ConfirmationTime, $Zones[\'customGPS\'] ?? false, $Zones[\'radius\'] ?? 100, $Zones[\'hysteresis\'] ?? $Hysteresis), true);';
@@ -324,8 +329,10 @@ class iCloudPresence extends IPSModuleStrict
         $pictures = [];
         $configured = json_decode($this->ReadPropertyString('Devices'), true);
         foreach (is_array($configured) ? $configured : [] as $row) {
-            if (is_array($row) && is_string($row['deviceID'] ?? null) && is_int($row['picture'] ?? null)) {
-                $pictures[$row['deviceID']] = $row['picture'];
+            if (is_array($row) && is_string($row['deviceID'] ?? null)) {
+                $pictures[$row['deviceID']] = ($row['pictureSource'] ?? 'media') === 'upload'
+                    ? $this->StatusWidgetUpload(is_string($row['pictureUpload'] ?? null) ? $row['pictureUpload'] : '')
+                    : $this->StatusWidgetImage(is_int($row['picture'] ?? null) ? $row['picture'] : 0);
             }
         }
         $labels = [-1 => $this->Translate('Unknown'), 0 => $this->Translate('Absent'), 1 => $this->Translate('Present')];
@@ -345,7 +352,7 @@ class iCloudPresence extends IPSModuleStrict
             $rows[] = ['id' => substr(hash('sha256', $id), 0, 32), 'name' => $name !== '' ? $name : ($names[$id] ?? $this->Translate('Device')),
                 'status'    => $presence === -1 ? $labels[$presence] : $labels[$presence] . ' · ' . $read('Zone'), 'tone' => $tones[$presence],
                 'detail'    => implode(' · ', $details), 'reason' => $presence === -1 || $read('TransitionPending') ? $read('Reason') : '',
-                'image'     => $this->StatusWidgetImage($pictures[$id] ?? 0)];
+                'image'     => $pictures[$id] ?? ''];
         }
         $presence = $this->GetValue('Presence');
         $this->PublishStatusWidget(['title' => $this->Translate('Overall presence'), 'summary' => ['label' => $labels[$presence], 'tone' => $tones[$presence],

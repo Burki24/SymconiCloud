@@ -16,6 +16,11 @@
 
 ## Neu
 
+- **iCloud Anwesenheit** kann Gerätebilder direkt vom Rechner laden, auf dem die
+  Konsole geöffnet ist. Je Gerät lässt sich zwischen Symcon-Medium und lokalem
+  Datei-Upload wählen. Beide Wege prüfen PNG, JPEG, GIF und WebP auf höchstens
+  128 KiB und 1024 × 1024 Pixel; bestehende Bildzuordnungen bleiben erhalten.
+
 - **iCloud Anwesenheit** erhält kompakte Kachel- und IPSView-Widgets mit
   Gesamtanwesenheit, Einzelgeräten und optionalem Bildmedium je Gerät. Unabhängige
   Designer nutzen zentrale Farb-, Stil-, Schrift- und Layoutvorgaben. Datenupdates

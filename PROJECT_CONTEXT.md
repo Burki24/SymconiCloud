@@ -1142,3 +1142,31 @@ sind wiederhergestellt (Status 102), ebenso die gesicherten Modul-/Helperquellen
 Keine zusätzliche Apple-Abfrage. Erst den zentralen Helper regulär freigeben und
 verteilen, das Bundle in SymconiCloud integrieren und installieren; danach die
 Instanzkonfiguration übernehmen, damit gespeicherte Loader das neue Script enthalten.
+
+## Geraetebilder vom Konsolenrechner (2026-10-24)
+
+Anwesenheit bietet je Geraetezeile zusaetzlich zur bisherigen Medien-ID eine
+Bildquelle (pictureSource: media/upload) und SelectFile (pictureUpload).
+Der native Konsolendialog liest die Datei auf dem Rechner, auf dem die Konsole
+geoeffnet ist; gespeichert werden Base64-Dateiinhalte in der Devices-Property,
+keine Client- oder Serverpfade. Die Bildquelle bleibt ohne neue Felder auf media,
+so dass bestehende Konfigurationen und Bilder kompatibel bleiben. Die Uploadspalte
+ist gespeichert, aber in der Tabelle verborgen; der explizite Zeilendialog zeigt
+die Dateiauswahl und dieselben dynamischen Geraeteoptionen wie bisher.
+
+Medien und Uploads nutzen dieselbe librarylokale Rasterbildpruefung: PNG, JPEG,
+GIF oder WebP, maximal 128 KiB und 1024 x 1024 Pixel. Kein SVG oder Nachladen
+externer URLs; ungueltige/leere Inhalte werden als Initialen dargestellt.
+Bestehende zentrale Layout-, Stil-, Interaktions- und Transporthelper bleiben
+unveraendert. Keine neue zentrale Abstraktion: der konkrete Uploadadapter hat
+nur eine tatsaechlich verwendende Library. Kein Helper-Update erforderlich.
+
+Nachweise: vollstaendige Offline-Suite, Struktur/Hashes/LF, JSON und PHP-CS-Fixer
+3.95.27 unter PHP 8.5.10 bestanden. Tests fuer lokalen Dateiinhalt, Groessen- und
+Dimensionsgrenzen, fehlerhafte Inhalte, Quellwechsel, private HTTP-Shell,
+authentifizierte IPSView-Bilder, Variablen-IDs und unveraenderte GPS-Zustaende.
+Der UI-Vertrag bestaetigt Auswahl und Scrollposition auch beim Bildwechsel durch
+ein Datenupdate. Keine Installation oder Konfigurationsaenderung auf einem
+laufenden System; Dateidialog und neue Bilder sind nach dem Modulupdate noch in
+der echten Konsole und IPSView-App abzunehmen. Die zuvor vom Benutzer bestaetigte
+Mausradfunktion bleibt ein separater Praxisnachweis, kein neuer Upload-Livetest.

@@ -206,12 +206,22 @@ Einzelgeräten. Sie enthält keine Navigation und keine vollständige Dashboards
 Die Liste passt ihre Spalten an die verfügbare Breite an und scrollt innerhalb der
 Kachel. Der native Kacheltitel wird über den zentralen Layoutvertrag berücksichtigt.
 
-Unter **Geräte → Bild (optional)** je Gerät ein vorhandenes Symcon-Bildmedium
-wählen. Unterstützt werden PNG, JPEG, GIF und WebP bis 128 KiB und 1024 × 1024
-Pixel. Kleine quadratische Bilder sind geeignet. Fehlende, gelöschte oder ungültige
-Bilder werden durch Initialen ersetzt. Bilder bleiben lokal; externe Bilddienste,
-Dateipfade und SVG werden nicht eingebunden. Änderungen werden spätestens mit der
-nächsten Anwesenheitsauswertung sichtbar.
+Unter **Geräte** das gewünschte Gerät bearbeiten und die **Bildquelle** wählen:
+
+- **Symcon-Medium**: Unter **Bild (optional)** ein vorhandenes Bildmedium auswählen.
+- **Datei vom Rechner**: Unter **Bilddatei vom Rechner (optional)** eine lokale Datei
+  auswählen. Der Dateidialog öffnet sich auf dem Rechner, auf dem die Konsole läuft.
+  Das Bild wird mit dem Listeneintrag und anschließend **Übernehmen** in der
+  Instanzkonfiguration gespeichert; ein vorheriger Import in Symcon ist nicht nötig.
+
+Unterstützt werden PNG, JPEG, GIF und WebP bis 128 KiB und 1024 × 1024 Pixel.
+Kleine quadratische Bilder sind geeignet. Zum Ersetzen eine andere Datei auswählen;
+zum Abschalten wieder **Symcon-Medium** wählen und die Medienauswahl leeren.
+Bestehende Konfigurationen verwenden weiterhin ihre bisherigen Symcon-Bildmedien.
+Fehlende, gelöschte oder ungültige Bilder werden durch Initialen ersetzt. Bilder
+bleiben lokal in Symcon; externe Bilddienste, Dateipfade und SVG werden nicht
+eingebunden. Beide Darstellungen verwenden dasselbe Bild. Änderungen werden nach
+Übernahme der Konfiguration sichtbar.
 
 **Kacheldesigner** und **IPSView-Designer** werden unabhängig eingestellt:
 

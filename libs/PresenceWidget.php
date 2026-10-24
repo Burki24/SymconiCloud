@@ -33,7 +33,7 @@ trait PresenceWidget
         'urlHint'    => 'Normally the server address is detected automatically. Only enter an HTTP(S) origin without a path if the client cannot provide it.',
         'connection' => 'Live updates unavailable. Retrying...', 'empty' => 'No devices selected.',
         'loader'     => 'Unable to open the IPSView widget. Check the server URL and apply the instance configuration.',
-        'imageHint'  => 'Optional pictures: select a Symcon image medium per device. Use PNG, JPEG, GIF or WebP, at most 128 KiB and 1024 x 1024 pixels. Invalid pictures use initials.'
+        'imageHint'  => 'Optional pictures: choose a Symcon image medium or a file from the computer running the console for each device. Use PNG, JPEG, GIF or WebP, at most 128 KiB and 1024 x 1024 pixels. Invalid pictures use initials.'
     ];
 
     /** Call from Create(); volatile hook registration must survive output toggles. */
@@ -135,19 +135,28 @@ trait PresenceWidget
             if ($media['MediaType'] !== 1 || !$media['MediaIsAvailable'] || $media['MediaSize'] > 131072) {
                 return '';
             }
-            $content = IPS_GetMediaContent($mediaID);
-            if (strlen($content) > 174764) {
-                return '';
-            }
-            $bytes = base64_decode($content, true);
-            $size = is_string($bytes) ? @getimagesizefromstring($bytes) : false;
-            if ($size === false || $size[0] > 1024 || $size[1] > 1024 || !in_array($size['mime'], ['image/png', 'image/jpeg', 'image/gif', 'image/webp'], true)) {
-                return '';
-            }
-            return 'data:' . $size['mime'] . ';base64,' . base64_encode($bytes);
+            return $this->StatusWidgetUpload(IPS_GetMediaContent($mediaID));
         } catch (Throwable) {
             return '';
         }
+    }
+
+    /** SelectFile supplies Base64 bytes, never a client or server filesystem path. */
+    protected function StatusWidgetUpload(string $content): string
+    {
+        if ($content === '' || strlen($content) > 174764) {
+            return '';
+        }
+        $bytes = base64_decode($content, true);
+        if (!is_string($bytes) || strlen($bytes) > 131072) {
+            return '';
+        }
+        $size = @getimagesizefromstring($bytes);
+        if ($size === false || $size[0] < 1 || $size[1] < 1 || $size[0] > 1024 || $size[1] > 1024
+            || !in_array($size['mime'], ['image/png', 'image/jpeg', 'image/gif', 'image/webp'], true)) {
+            return '';
+        }
+        return 'data:' . $size['mime'] . ';base64,' . base64_encode($bytes);
     }
 
     /** Serves only the cached model, never runs a domain action or an external request. */
