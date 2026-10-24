@@ -110,11 +110,17 @@ class iCloudAccount extends IPSModuleStrict
         $this->ReloadForm();
     }
 
-    /** @param string $JSONString Allowlisted child command. @return string Sanitized inventory envelope. */
+    /** @param string $JSONString Allowlisted child command. @return string Sanitized inventory or action result. */
     public function ForwardData(string $JSONString): string
     {
         try {
             $request = $this->DecodeDataFlowMessage($JSONString, self::REQUEST_DATA);
+            if (($request['Command'] ?? '') === 'PlaySound') {
+                if (!is_string($request['DeviceID'] ?? null) || array_diff(array_keys($request), ['DataID', 'Command', 'DeviceID']) !== []) {
+                    throw new InvalidArgumentException();
+                }
+                return json_encode($this->playDeviceSound($request['DeviceID']), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+            }
             if (($request['Command'] ?? '') === 'RefreshDevices') {
                 if (!$this->RefreshDevices()) {
                     $result = $this->inventory();
@@ -210,6 +216,61 @@ class iCloudAccount extends IPSModuleStrict
             $this->ReloadForm();
         }
         return $success;
+    }
+
+    /** Only cached members of this authenticated account can receive a sound command. */
+    private function playDeviceSound(string $deviceID): array
+    {
+        if (!IPS_SemaphoreEnter('SymconiCloud.' . $this->InstanceID, 1000)) {
+            return ['success' => false, 'message' => $this->Translate('Account request already running.')];
+        }
+        $client = null;
+        $success = false;
+        $reason = '';
+        try {
+            if (!$this->configurationValid() || $this->credentialFingerprint() !== $this->ReadAttributeString('CredentialFingerprint')) {
+                throw new \SymconiCloud\AppleException('configuration');
+            }
+            if (($this->readSession()['state'] ?? '') !== 'authenticated') {
+                throw new \SymconiCloud\AppleException('authentication');
+            }
+            if ($this->ReadAttributeInteger('RetryAt') > time()) {
+                throw new \SymconiCloud\AppleException('rateLimited');
+            }
+            $cache = json_decode($this->ReadAttributeString('DeviceCache'), true, 512, JSON_THROW_ON_ERROR);
+            $known = false;
+            foreach ($cache['devices'] ?? [] as $device) {
+                if (is_array($device) && ($device['id'] ?? null) === $deviceID) {
+                    $known = true;
+                    break;
+                }
+            }
+            if (!$known || (int) ($cache['updatedAt'] ?? 0) <= 0) {
+                throw new \SymconiCloud\AppleException('deviceUnknown');
+            }
+            $client = $this->CreateAppleClient($this->readSession());
+            $client->playSound($deviceID);
+            $success = true;
+        } catch (\SymconiCloud\AppleException $exception) {
+            $reason = $exception->reason;
+            if ($exception->retryAfter > 0) {
+                $this->WriteAttributeInteger('RetryAt', time() + $exception->retryAfter);
+            }
+        } catch (Throwable) {
+            $reason = 'internal';
+        } finally {
+            if ($client !== null) {
+                $this->WriteAttributeString('Session', json_encode($client->session(), JSON_THROW_ON_ERROR));
+            }
+            $this->updateState();
+            IPS_SemaphoreLeave('SymconiCloud.' . $this->InstanceID);
+        }
+        if ($client !== null && ($client->session()['state'] ?? '') === 'expired') {
+            $this->notifyChildren();
+        }
+        return ['success' => $success, 'message' => $success
+            ? $this->Translate('Sound request accepted by Apple. Playback is not confirmed; offline devices may play it later.')
+            : $this->errorMessage($reason)];
     }
 
     private function configurationValid(): bool
@@ -308,6 +369,8 @@ class iCloudAccount extends IPSModuleStrict
             'server'             => 'The Apple service is temporarily unavailable.',
             'endpoint'           => 'Apple returned an unsupported service address.',
             'srp'                => 'The Apple authentication challenge is unsupported or invalid.',
+            'deviceUnknown'      => 'Device not in the authenticated account cache.',
+            'soundRejected'      => 'Apple rejected the sound request.',
             default              => 'The Apple response could not be processed.'
         });
     }

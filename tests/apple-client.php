@@ -203,4 +203,18 @@ foreach (['http://setup.icloud.com', 'https://icloud.com.evil.invalid', 'https:/
 }
 $source = file_get_contents(__DIR__ . '/../libs/AppleHttpClient.php');
 check(str_contains($source, 'CURLOPT_FOLLOWLOCATION => false'), 'Transport redirects are enabled');
-echo "PASS: independent SRP vectors, 2FA lifecycle, inventory, renewal, failures, origins\n";
+$soundSession = ['state' => 'authenticated', 'findme' => 'https://p01-fmipweb.icloud.com', 'dsid' => '12345', 'headers' => []];
+$soundFailure = new ScriptedAppleTransport([
+    ['POST', '/playSound?', 200, [], [], static function (): void
+    {
+        throw new AppleException('network');
+    }]
+]);
+fails(fn () => (new AppleClient($soundFailure, $soundSession))->playSound('synthetic-device'), 'network');
+$soundFailure->complete();
+check(count($soundFailure->calls) === 1, 'A network timeout during sound submission must never trigger an automatic retry.');
+$soundRejection = new ScriptedAppleTransport([['POST', '/playSound?', 200, ['success' => false]]]);
+fails(fn () => (new AppleClient($soundRejection, $soundSession))->playSound('synthetic-device'), 'soundRejected');
+$soundRejection->complete();
+
+echo "PASS: independent SRP vectors, 2FA lifecycle, inventory, renewal, failures, origins, explicit sound without retries\n";

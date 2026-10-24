@@ -4,7 +4,30 @@ Eine Instanz zeigt die Geräte-, Akku- und Standortdaten eines Apple-Gerätes au
 
 ## Konfiguration
 
-`DeviceID` enthält die unveränderte Apple-Geräte-ID; Standard ist leer. Die Instanz muss physisch mit dem richtigen iCloud-Konto verbunden sein. Ein leerer Identifikator oder fehlendes Konto führt zu einem inaktiven Zustand. Die Instanz liest ausschließlich gespeicherte Daten des Kontos und empfängt dessen Aktualisierungen. Sie startet selbst keine Apple-Anmeldung oder Netzwerkabfrage.
+`DeviceID` enthält die unveränderte Apple-Geräte-ID; Standard ist leer. Die Instanz muss physisch mit dem richtigen iCloud-Konto verbunden sein. Ein leerer Identifikator oder fehlendes Konto führt zu einem inaktiven Zustand. Die normale Datenaktualisierung liest ausschließlich gespeicherte Daten des Kontos und empfängt dessen Aktualisierungen. Apple-Anmeldung und Netzwerkzugriff bleiben im Kontomodul; nur ausdrücklich ausgelöste Geräteaktionen senden einen zusätzlichen Auftrag.
+
+### Handy suchen
+
+**Handy suchen (Ton abspielen)** sendet einmalig einen Suchton-Auftrag für das
+konfigurierte Gerät über dessen verbundenes iCloud-Konto. Das Gerät muss im
+Cache dieses angemeldeten Kontos vorhanden sein. Der Button verwendet immer
+die gespeicherte Gerätezuordnung; eine andere Ziel-ID kann beim Aufruf nicht
+übergeben werden.
+
+Die Rückmeldung im Formular unterscheidet einen von Apple angenommenen Auftrag
+von einer fehlgeschlagenen oder nicht bestätigten Anfrage. Eine Annahme ist kein
+Nachweis, dass das Gerät bereits hörbar klingelt. Ein nicht erreichbares Gerät
+kann den Ton später beim Wiederverbinden abspielen. Den Ton bei Bedarf am
+Gerät beenden; Apple kann eine Bestätigungs-E-Mail senden.
+
+Bei Fehlern wird der Auftrag nicht automatisch erneut gesendet. Insbesondere
+nach einem Verbindungsabbruch zuerst das Gerät prüfen, bevor erneut ausgelöst
+wird. Eine abgelaufene Sitzung erfordert zunächst die Wiederherstellung der
+Kontositzung; die Tonaktion startet keine Passwortanmeldung. Apple-Sperrfristen
+gelten gemeinsam für alle Anfragen dieses Kontos.
+
+Formularöffnung, Konfigurationsübernahme, Cacheupdates und Timer spielen keinen
+Ton ab. Die Gerätevariablen bleiben lesbar und behalten ihre bisherigen IDs.
 
 ### Adresse aus WoIst
 
@@ -108,9 +131,15 @@ Bei geringerer Genauigkeit enthält die Variable die gröbere Adresse mit dem
 Präfix **Ungefähr** und der jeweiligen Detailstufe. Unbekannte Genauigkeit wird
 ausdrücklich benannt. Verbessert sich die Position, entfällt der Hinweis wieder.
 
-## Öffentliche Funktion
+## Öffentliche Funktionen
 
 `ICID_Update(int $InstanceID): bool` liest das Gerät aus dem Kontocache. `true` bedeutet, dass das Gerät in einer erfolgreich abgerufenen Liste vorhanden ist. Die Funktion und **Gespeicherte Kontodaten lesen** starten keinen Netzwerkabruf. Für neue Apple-Daten die Geräteabfrage im Konto oder Konfigurator verwenden.
+
+`ICID_PlaySound(int $InstanceID): bool` sendet den Suchton-Auftrag für genau
+dieses Gerät. `true` bedeutet, dass Apple den Auftrag angenommen hat; bei
+Ablehnung, fehlender Sitzung, falscher Zuordnung oder einem Transportfehler
+wird `false` geliefert. Ein Formularhinweis enthält das letzte Aktionsergebnis.
+Das Skript kann die Funktion gezielt aus einer Automation aufrufen.
 
 ## Lizenz
 

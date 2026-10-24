@@ -1547,3 +1547,66 @@ Nachweise fuer diese Einordnung: OpenCalendar/README.md (Aufgabentermine),
 libs/CalDavProvider.php (VEVENT-Filter) und libs/ICalendarCodec.php
 (VEVENT/VALARM). Ausschliesslich Quellpruefung und Planungsdokumentation;
 keine Aenderung an OpenCalendar und kein Zugriff auf reale Apple-Daten.
+
+## Handy suchen: explizite Tonaktion der Geraeteinstanz (2026-10-24)
+
+Auf Benutzerauftrag ergaenzt ICID_PlaySound() mit booleschem Ergebnis die
+Geraeteinstanz. Der Formularbutton "Handy suchen (Ton abspielen)" leitet
+RequestAction('PlaySound', '') ueber den vorhandenen DataFlowHelper an das
+verbundene Konto. Die Ziel-ID kommt ausschliesslich aus der angewendeten
+Geraetekonfiguration; das Konto prueft Zugehoerigkeit zum eigenen Cache,
+Konfiguration, Sitzung und gemeinsame Apple-Sperrfrist unter seinem Semaphore.
+AppleClient sendet genau einen festen playSound-POST. Kein automatisches
+Wiederholen bei unsicherem Ergebnis und keine Passwortanmeldung aus der Aktion.
+
+Der Formularhinweis bestaetigt nur die Annahme des Auftrags. Er behauptet keine
+hoerbare Wiedergabe; nicht erreichbare Geraete koennen den Ton spaeter abspielen.
+Ein reiner Befehlsfehler invalidiert keinen sonst nutzbaren Standortcache.
+Authentifizierungsfehler markieren dagegen die Kontositzung als abgelaufen.
+Bestehende Variablen, IDs und Zeitstempel bleiben erhalten. Normale Updates,
+Timer, Formularoeffnung und ApplyChanges loesen keinen Suchton aus.
+
+Vorhandene zentrale Formular-, Parent- und Datenflusshelper werden unveraendert
+genutzt. Apple-spezifische Logik verbleibt in der Library; kein zusaetzliches
+Helper-Abonnement oder lokales Testbundle. ADR 0011 dokumentiert die gezielte
+Erweiterung der bisherigen lesenden Kontogrenze.
+
+Offline-Nachweise verwenden die echten Geraete- und Kontoklassen mit
+synthetischem HTTPS-Transport. Geprueft sind positive Annahme, exaktes Ziel,
+Formularrouting, unveraenderte Variablen-IDs und Cache, unbekannte/entfernte
+Geraete, Kontowechsel, deaktivierte Konten, ungueltige Parameter, HTTP- und
+Anwendungsfehler, Netzwerkfehler ohne Wiederholung, abgelaufene Sitzung und
+kontoweite Sperrfrist.
+
+MCP auf dem bereits freigegebenen angeschlossenen Windows-Testsystem:
+
+- Die sechs betroffenen Laufzeitdateien wurden gegen den bisherigen Commitstand
+  abgeglichen, ausserhalb des versionierten Inhalts gesichert und voruebergehend
+  eingespielt. Syntaxpruefung ohne Fehler; die neue boolesche Funktion und der
+  deutsche Formularbutton waren registriert. Bestehende Geraetevariablen-IDs
+  blieben unveraendert.
+- Eine temporaere echte Geraeteinstanz wies fehlendes Konto und eine unbekannte
+  ID am vorhandenen angemeldeten Konto mit bereinigten deutschen Hinweisen ab.
+- Ein separates synthetisches Testgateway bestaetigte mit der echten neuen
+  Geraetefunktion die positive Rueckgabe, genau einen PlaySound-Befehl und den
+  sichtbaren Formularhinweis. Ein folgender ICID_Update-Aufruf liess den
+  Befehlszaehler unveraendert. Dieses Gateway sendete keine Apple-Anfrage.
+- Alle temporaeren Instanzen samt Variablen und die Testlibrary wurden entfernt.
+  Die sechs urspruenglichen Dateien wurden exakt wiederhergestellt und verglichen.
+  Alle fuenf bestehenden Library-Instanzen waren abschliessend aktiv.
+- Beim Reload traten voruebergehend Interface-Warnungen in Anwesenheit und
+  WoIst-Adressweitergabe auf. Derselbe Effekt trat auch nach Wiederherstellung
+  des bisherigen Codes auf. Anschliessende explizite Cacheupdates von Anwesenheit
+  und WoIst waren erfolgreich; die vorhandene Reload-Reihenfolge wurde im Rahmen
+  dieser Tonaktion nicht umgebaut.
+
+Abgrenzung: Noch kein echter Tonauftrag an Apple gesendet. Fuer die hoerbare
+Probe ist die gezielte Rueckfrage zum ausgewaehlten realen Geraet noch offen.
+Die MCP-Nachweise bestaetigen Formular, Routing und Erfolgs-/Fehlerbehandlung,
+nicht die Annahme durch Apple oder hoerbare Wiedergabe auf dem iPhone.
+
+Die abschliessende vollstaendige Offline-Suite unter PHP 8.5.10 einschliesslich
+neuer Suchton-Vertraege, vorhandener Formularaktionen, Struktur-/Hash-/LF-,
+JSON- und Syntaxpruefungen ist erfolgreich. php-cs-fixer im Pruefmodus meldet
+keine Aenderungen. Der lokale Arbeitsbaum enthaelt die neue Implementierung;
+das angeschlossene Testsystem ist wieder auf seinem vorherigen Modulstand.

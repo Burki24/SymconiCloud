@@ -21,6 +21,14 @@ Das Modul besitzt keine Statusvariablen. Formular und Instanzstatus unterscheide
 
 Kinder erhalten nur normalisierte Gerätedaten. Bei Abfragefehlern bleibt der letzte Cache erhalten, wird aber als nicht aktuell verfügbar gekennzeichnet. Die Abfrage liest vorhandene Daten und fordert keine aktive Neuortung an.
 
+Die ausdrücklich ausgelöste Geräteaktion **Handy suchen** verwendet denselben
+HTTPS-Transport, dieselbe Sitzung und dieselbe Anfragesperre. Sie akzeptiert nur
+Geräte aus dem Cache dieses Kontos. Es gibt keinen frei konfigurierbaren
+HTTP-Befehl. Suchton-Aufträge werden nicht automatisch wiederholt; eine reine
+Ton-Ablehnung macht einen ansonsten verwendbaren Standortcache nicht ungültig.
+Schlägt dagegen die Authentifizierung fehl, wird die Sitzung als abgelaufen
+gekennzeichnet. Kinder erhalten ausschließlich das bereinigte Aktionsergebnis.
+
 ## Öffentliche Funktionen
 
 | Funktion | Rückgabe | Bedeutung |

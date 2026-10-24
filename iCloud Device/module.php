@@ -33,6 +33,7 @@ class iCloudDevice extends IPSModuleStrict
         $this->RegisterPropertyInteger('AddressSource', 0);
         $this->RegisterAttributeString('LastError', '');
         $this->RegisterAttributeString('SourceIdentity', '');
+        $this->RegisterAttributeString('SoundResult', '');
     }
 
     /** Applies the identity, creates read-only variables, and reads cached data. */
@@ -42,6 +43,7 @@ class iCloudDevice extends IPSModuleStrict
         $this->registerVariables();
         $identity = $this->GetParentID() . ':' . $this->ReadPropertyString('DeviceID');
         if ($identity !== $this->ReadAttributeString('SourceIdentity')) {
+            $this->WriteAttributeString('SoundResult', '');
             foreach (['Latitude', 'Longitude', 'Accuracy', 'BatteryLevel'] as $ident) {
                 $this->SetValue($ident, 0.0);
             }
@@ -68,6 +70,13 @@ class iCloudDevice extends IPSModuleStrict
     {
         $form = $this->LoadConfigurationForm();
         $form['actions'][0]['caption'] = $this->ReadAttributeString('LastError');
+        foreach ($form['actions'] as &$action) {
+            if (($action['name'] ?? '') === 'SoundResult') {
+                $action['caption'] = $this->ReadAttributeString('SoundResult');
+            }
+        }
+        unset($action);
+        $form['actions'] = $this->SetFormFieldVisibility($form['actions'], ['SoundResult'], $this->ReadAttributeString('SoundResult') !== '');
         return $this->EncodeConfigurationForm($form);
     }
 
@@ -102,16 +111,43 @@ class iCloudDevice extends IPSModuleStrict
         return '';
     }
 
+    /** @return bool Apple accepted a single sound request; audible playback is not confirmed. */
+    public function PlaySound(): bool
+    {
+        $success = false;
+        $message = $this->Translate('Sound request could not be confirmed. Check the device before trying again.');
+        if (!$this->HasParent() || trim($this->ReadPropertyString('DeviceID')) === '') {
+            $message = $this->Translate('Select an account and device.');
+        } else {
+            try {
+                $result = json_decode($this->SendDataToParent($this->EncodeDataFlowMessage(self::REQUEST_DATA, [
+                    'Command' => 'PlaySound', 'DeviceID' => $this->ReadPropertyString('DeviceID')
+                ])), true, 512, JSON_THROW_ON_ERROR);
+                $success = ($result['success'] ?? false) === true;
+                if (is_string($result['message'] ?? null) && $result['message'] !== '') {
+                    $message = $result['message'];
+                }
+            } catch (Throwable) {
+                // The account owns transport errors; never repeat an uncertain sound request.
+            }
+        }
+        $this->WriteAttributeString('SoundResult', $message);
+        $this->UpdateFormField('SoundResult', 'caption', $message);
+        $this->UpdateFormField('SoundResult', 'visible', true);
+        return $success;
+    }
+
     /**
-     * @param string $Ident Supported cache action.
+     * @param string $Ident Explicit cache or sound action.
      * @param mixed $Value Unused action value.
      */
     public function RequestAction(string $Ident, mixed $Value): void
     {
-        if ($Ident !== 'Update') {
-            throw new InvalidArgumentException('This device is read only.');
-        }
-        $this->Update();
+        match ($Ident) {
+            'Update'    => $this->Update(),
+            'PlaySound' => $Value === '' ? $this->PlaySound() : throw new InvalidArgumentException('Unsupported sound action payload.'),
+            default     => throw new InvalidArgumentException('Unsupported device action.')
+        };
     }
 
     /** @param array<string, mixed> $data @return bool Device cache availability. */

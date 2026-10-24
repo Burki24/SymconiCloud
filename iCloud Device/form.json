@@ -28,6 +28,22 @@
             "type": "Button",
             "caption": "Read account cache",
             "onClick": "IPS_RequestAction($id, 'Update', '');"
+        },
+        {
+            "type": "Button",
+            "name": "PlaySound",
+            "caption": "Find phone (play sound)",
+            "onClick": "IPS_RequestAction($id, 'PlaySound', '');"
+        },
+        {
+            "type": "Label",
+            "caption": "Offline devices may play the sound later when they reconnect."
+        },
+        {
+            "type": "Label",
+            "name": "SoundResult",
+            "caption": "",
+            "visible": false
         }
     ],
     "status": [

@@ -128,6 +128,34 @@ final class AppleClient
         return $devices;
     }
 
+    /** Explicit side effect: submit once, without retrying an uncertain result. */
+    public function playSound(string $deviceID): void
+    {
+        if ($this->session['state'] !== 'authenticated') {
+            throw new AppleException('authentication');
+        }
+        if ($deviceID === '' || strlen($deviceID) > 4096 || preg_match('/[\x00-\x1F\x7F]/', $deviceID)) {
+            throw new AppleException('deviceUnknown');
+        }
+        $url = ($this->session['findme'] ?? '') . '/fmipservice/client/web/playSound?' . http_build_query([
+            'clientId' => $this->session['clientId'], 'dsid' => $this->session['dsid'] ?? ''
+        ]);
+        $response = $this->call('POST', $url, [], [
+            'device' => $deviceID, 'subject' => 'Find My iPhone Alert', 'clientContext' => ['fmly' => true]
+        ]);
+        if (in_array($response['status'], [401, 421, 450], true)) {
+            $this->session['state'] = 'expired';
+        }
+        $this->expect($response, [200, 202, 204]);
+        $code = $response['body']['statusCode'] ?? null;
+        if ($code !== null && !in_array($code, [200, '200', 202, '202', 204, '204'], true)) {
+            throw new AppleException('soundRejected');
+        }
+        if (($response['body']['success'] ?? null) === false || !empty($response['body']['error'])) {
+            throw new AppleException('soundRejected');
+        }
+    }
+
     private function awaitCode(): void
     {
         $this->session['state'] = 'awaiting2FA';
