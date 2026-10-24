@@ -1511,3 +1511,39 @@ Auswahl-/Scroll-, Struktur-/Hash-/LF- und Syntaxpruefungen unter PHP 8.5.10
 bestanden. JSON-Check und php-cs-fixer im Pruefmodus ebenfalls erfolgreich.
 Die angepassten Vertraege pruefen die Designerwahl ohne Toolbar oder lokale
 Speicheruebersteuerung sowie die weiterhin getrennten IPSView-Ausgaben.
+
+## Gewuenschte Erweiterungen und Abgrenzung zu OpenCalendar (2026-10-24)
+
+Benutzerprioritaeten fuer die weitere Planung, noch keine Implementierung:
+
+- Handy suchen / Ton abspielen wird auf jeden Fall aufgenommen, vorzugsweise
+  als Aktion der vorhandenen Geraeteinstanz statt als separates Modul.
+- Verloren-Modus ist ebenfalls von hohem Interesse. Tatsaechliche
+  Geraeteunterstuetzung, Rueckmeldungen und die wirksamen Apple-Aktionen sind
+  vor einer Umsetzung gezielt zu pruefen.
+- iCloud Fotos ist ein interessanter Kandidat fuer eine eigene Erweiterung.
+- iCloud Kontakte ist als Datenquelle fuer das geplante Nachrichten-Modul
+  interessant; dessen konkrete Schnittstelle ist noch abzustimmen.
+- iCloud Speicher steht weiter hinten und wird nur bei ausdruecklichem Bedarf
+  umgesetzt. Er ist nicht als unmittelbar naechster Arbeitsschritt vorgesehen.
+- iCloud Kalender wird bereits durch OpenCalendar abgedeckt und hier nicht
+  nochmals implementiert.
+
+Erinnerungen sind fachlich zu unterscheiden: Der gepruefte lokale OpenCalendar-
+Stand liest fuer Apple/CalDAV VEVENT-Termine und deren VALARM-Erinnerungen.
+Seine Aufgabentermine sind bei diesen Providern ganztägige Kalenderereignisse
+mit eigenen X-OPENCALENDAR-Aufgabenfeldern. Native Microsoft-To-Do-Aufgaben
+sind separat angebunden. Daraus folgt keine vorhandene Synchronisation mit
+den eigenstaendigen Aufgaben-/Einkaufslisten der Apple-App Erinnerungen.
+
+Apple-Erinnerungen sind deshalb eine moegliche zusaetzliche Datenquelle,
+keine bereits beschlossene SymconiCloud-Erweiterung. Vorher sind Bedarf,
+Zustaendigkeit im Verhaeltnis zu OpenCalendar und die technische Erreichbarkeit
+der aktuellen iCloud-Erinnerungslisten zu klaeren. Die gemeinsame Anzeige
+terminierter Erinnerungen in Apples Kalender-App ist kein Nachweis, dass diese
+Eintraege ueber den bestehenden CalDAV-Kalenderzugang geliefert werden.
+
+Nachweise fuer diese Einordnung: OpenCalendar/README.md (Aufgabentermine),
+libs/CalDavProvider.php (VEVENT-Filter) und libs/ICalendarCodec.php
+(VEVENT/VALARM). Ausschliesslich Quellpruefung und Planungsdokumentation;
+keine Aenderung an OpenCalendar und kein Zugriff auf reale Apple-Daten.
