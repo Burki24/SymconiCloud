@@ -231,4 +231,17 @@ fails(fn () => (new AppleClient($invalidLostInput, $soundSession))->activateLost
 check($invalidLostInput->calls === [], 'Invalid input must also be rejected at the protocol boundary.');
 $invalidLostInput->complete();
 
+$stopFailure = new ScriptedAppleTransport([
+    ['POST', '/lostDevice?', 200, [], [], static function (): void
+    {
+        throw new AppleException('network');
+    }]
+]);
+fails(fn () => (new AppleClient($stopFailure, $soundSession))->deactivateLostMode('synthetic-device'), 'network');
+$stopFailure->complete();
+check(count($stopFailure->calls) === 1 && $stopFailure->calls[0]['body']['lostModeEnabled'] === false, 'An uncertain stop request must never retry or fall back to an activation.');
+$stopRejection = new ScriptedAppleTransport([['POST', '/lostDevice?', 200, ['success' => false]]]);
+fails(fn () => (new AppleClient($stopRejection, $soundSession))->deactivateLostMode('synthetic-device'), 'lostModeStopRejected');
+$stopRejection->complete();
+
 echo "PASS: independent SRP vectors, 2FA lifecycle, inventory, renewal, failures, origins, explicit sound without retries\n";

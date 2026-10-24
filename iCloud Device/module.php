@@ -153,35 +153,18 @@ class iCloudDevice extends IPSModuleStrict
      */
     public function ActivateLostMode(bool $Confirmed, string $PhoneNumber, string $Message, string $NewPasscode): bool
     {
-        $success = false;
-        $message = $this->Translate('Confirm Lost Mode activation explicitly.');
-        try {
-            if ($Confirmed) {
-                $message = $this->Translate('Lost Mode request could not be confirmed. Check Find My before trying again.');
-                if (!$this->HasParent() || trim($this->ReadPropertyString('DeviceID')) === '') {
-                    $message = $this->Translate('Select an account and device.');
-                } else {
-                    $result = json_decode($this->SendDataToParent($this->EncodeDataFlowMessage(self::REQUEST_DATA, [
-                        'Command'     => 'ActivateLostMode', 'DeviceID' => $this->ReadPropertyString('DeviceID'), 'Confirmed' => true,
-                        'PhoneNumber' => $PhoneNumber, 'Message' => $Message, 'NewPasscode' => $NewPasscode
-                    ])), true, 512, JSON_THROW_ON_ERROR);
-                    $success = ($result['success'] ?? false) === true;
-                    if (is_string($result['message'] ?? null) && $result['message'] !== '') {
-                        $message = $result['message'];
-                    }
-                }
-            }
-        } catch (Throwable) {
-            // Never persist input/response bodies or retry an uncertain lock command.
-        } finally {
-            foreach (['LostModePhone', 'LostModeMessage', 'LostModePasscode'] as $field) {
-                $this->UpdateFormField($field, 'value', '');
-            }
-        }
-        $this->WriteAttributeString('LostModeResult', $message);
-        $this->UpdateFormField('LostModeResult', 'caption', $message);
-        $this->UpdateFormField('LostModeResult', 'visible', true);
-        return $success;
+        return $this->changeLostMode($Confirmed, true, [
+            'PhoneNumber' => $PhoneNumber, 'Message' => $Message, 'NewPasscode' => $NewPasscode
+        ]);
+    }
+
+    /**
+     * @param bool $Confirmed Explicit per-call confirmation; never saved as a setting.
+     * @return bool Apple accepted the stop request, not proof of an unlocked device.
+     */
+    public function DeactivateLostMode(bool $Confirmed): bool
+    {
+        return $this->changeLostMode($Confirmed, false);
     }
 
     /**
@@ -211,6 +194,40 @@ class iCloudDevice extends IPSModuleStrict
         if (!$success && $Value === 1) {
             throw new RuntimeException($this->ReadAttributeString('SoundResult'));
         }
+    }
+
+    /** Uses the same account boundary for two separately confirmed, fixed Lost Mode commands. */
+    private function changeLostMode(bool $confirmed, bool $enabled, array $input = []): bool
+    {
+        $success = false;
+        $message = $this->Translate($enabled ? 'Confirm Lost Mode activation explicitly.' : 'Confirm Lost Mode deactivation explicitly.');
+        try {
+            if ($confirmed) {
+                $message = $this->Translate('Lost Mode request could not be confirmed. Check Find My before trying again.');
+                if (!$this->HasParent() || trim($this->ReadPropertyString('DeviceID')) === '') {
+                    $message = $this->Translate('Select an account and device.');
+                } else {
+                    $result = json_decode($this->SendDataToParent($this->EncodeDataFlowMessage(self::REQUEST_DATA, [
+                        'Command'  => $enabled ? 'ActivateLostMode' : 'DeactivateLostMode',
+                        'DeviceID' => $this->ReadPropertyString('DeviceID'), 'Confirmed' => true
+                    ] + $input)), true, 512, JSON_THROW_ON_ERROR);
+                    $success = ($result['success'] ?? false) === true;
+                    if (is_string($result['message'] ?? null) && $result['message'] !== '') {
+                        $message = $result['message'];
+                    }
+                }
+            }
+        } catch (Throwable) {
+            // Never persist input/response bodies or retry an uncertain lock command.
+        } finally {
+            foreach (['LostModePhone', 'LostModeMessage', 'LostModePasscode'] as $field) {
+                $this->UpdateFormField($field, 'value', '');
+            }
+        }
+        $this->WriteAttributeString('LostModeResult', $message);
+        $this->UpdateFormField('LostModeResult', 'caption', $message);
+        $this->UpdateFormField('LostModeResult', 'visible', true);
+        return $success;
     }
 
     /** @param array<string, mixed> $data @return bool Device cache availability. */

@@ -29,11 +29,13 @@ Ton-Ablehnung macht einen ansonsten verwendbaren Standortcache nicht ungültig.
 Schlägt dagegen die Authentifizierung fehl, wird die Sitzung als abgelaufen
 gekennzeichnet. Kinder erhalten ausschließlich das bereinigte Aktionsergebnis.
 
-Die bestätigte **Verloren-Modus-Aktivierung** der Geräteinstanz nutzt dieselben
+Die bestätigte **Verloren-Modus-Aktivierung und -Deaktivierung** der Geräteinstanz nutzt dieselben
 Kontogrenzen, Sitzung und Sperrfristen. Zusätzlich werden eine ausdrückliche
 Bestätigung, die von Apple gemeldete Unterstützung und die begrenzten
-Kontakt-/Codefelder geprüft. Bereits aktivierte Geräte werden abgewiesen.
-Der Sperrauftrag wird genau einmal gesendet, ohne automatische Wiederholung
+Kontakt-/Codefelder geprüft. Bereits aktivierte Geräte erhalten keinen weiteren
+Aktivierungsauftrag. Eine Deaktivierung ist auch bei noch nicht bestätigtem
+Aktivierungsstatus möglich und sendet ausschließlich feste Ausschaltwerte.
+Der jeweilige Auftrag wird genau einmal gesendet, ohne automatische Wiederholung
 oder erneute Anmeldung. Kontaktangaben und Gerätecode werden nicht im Konto
 gespeichert. Eine angenommene Anfrage verändert den Gerätestatus im Cache
 nicht; dieser folgt der nächsten regulären Geräteabfrage. Bedienung und

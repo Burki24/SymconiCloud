@@ -60,7 +60,7 @@ Die Felder sind flüchtige Aktionsdaten, keine gespeicherten Einstellungen;
 nach einem Aufruf werden sie geleert. Kontaktangaben, Gerätecode und rohe
 Apple-Antworten werden nicht im Modulzustand oder in Diagnosemeldungen abgelegt.
 
-Die Aktion verlangt ein angemeldetes Konto und ein Gerät aus dessen Cache mit
+Die Aktivierungsaktion verlangt ein angemeldetes Konto und ein Gerät aus dessen Cache mit
 ausdrücklich gemeldeter Verloren-Modus-Unterstützung. Fehlende oder unbekannte
 Unterstützung und ein bereits aktivierter Modus werden abgewiesen. Das Formular
 meldet Annahme oder Fehler. **Verloren-Modus aktiviert** (`LostModeEnabled`)
@@ -73,8 +73,19 @@ Kontosperrfristen und Gerätezuordnung gelten wie beim Suchton. Formularöffnung
 Konfigurationsübernahme, Cacheupdates und Timer aktivieren den Modus nicht.
 Es gibt keinen unbestätigten Verloren-Modus-Taster in der Kachel.
 
-Zum Deaktivieren **Wo ist?** verwenden oder das Gerät gemäß Apple entsperren;
-das Modul bietet in diesem Stand ausschließlich die bestätigte Aktivierung.
+Zum Beenden im selben Formularbereich **Verloren-Modus deaktivieren** wählen
+und den eigenen Ja/Nein-Dialog bestätigen. **Nein** sendet keinen Auftrag.
+Diese Aktion verwendet keine Rückrufnummer, Nachricht oder Codeeingabe. Sie
+kann auch bei bisher mit **Nein** oder **Nicht verfügbar** gemeldetem Zustand
+angefordert werden, um einen noch unbestätigten Aktivierungsauftrag zu beenden.
+Auch dabei muss Apple die Unterstützung für dieses Gerät melden.
+
+Die Rückmeldung bestätigt lediglich die Annahme des Auftrags. Bei nicht
+erreichbaren Geräten kann die Bearbeitung später erfolgen. Die Variable
+`LostModeEnabled` bleibt bis zur nächsten Apple-Gerätemeldung unverändert.
+Eine Deaktivierung entfernt weder den Gerätecode noch die Aktivierungssperre;
+das Gerät kann weiterhin gesperrt bleiben. Falls Apple zusätzliche Schritte
+verlangt, **Wo ist?** verwenden oder das Gerät gemäß Apple entsperren.
 Siehe [Apples Anleitung zum Verloren-Modus](https://support.apple.com/de-de/guide/icloud/mmfc0f0165/icloud).
 
 ### Adresse aus WoIst
@@ -207,6 +218,15 @@ sein. `true` als Ergebnis bestätigt ausschließlich die Annahme durch Apple.
 Skripte müssen die Bestätigung vor dem Aufruf selbst einholen; der PHP-Aufruf
 öffnet keinen Dialog. Kontaktangaben und Code nicht in Skripten fest hinterlegen
 oder protokollieren. Bestehende Variablen und ihre IDs bleiben erhalten.
+
+`ICID_DeactivateLostMode(int $InstanceID, bool $Confirmed): bool` sendet einen
+einmaligen Auftrag zum Beenden des Verloren-Modus für das konfigurierte Gerät.
+`$Confirmed` muss für jeden Aufruf ausdrücklich angegeben werden; `false`
+sendet keinen Auftrag. Skripte holen die Bestätigung selbst ein. `true` als
+Ergebnis bedeutet ausschließlich, dass Apple den Auftrag angenommen hat.
+Gerätezuordnung, Sitzung, Sperrfristen und Verzicht auf automatische
+Wiederholungen gelten wie bei der Aktivierung. Ein Fehler führt niemals zu
+einem ersatzweisen Aktivierungsauftrag.
 
 ## Lizenz
 

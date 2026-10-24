@@ -135,6 +135,13 @@ class iCloudAccount extends IPSModuleStrict
                     $request['PhoneNumber'], $request['Message'], $request['NewPasscode']
                 ]), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
             }
+            if (($request['Command'] ?? '') === 'DeactivateLostMode') {
+                if (($request['Confirmed'] ?? null) !== true || !is_string($request['DeviceID'] ?? null)
+                    || array_diff(array_keys($request), ['DataID', 'Command', 'DeviceID', 'Confirmed']) !== []) {
+                    throw new InvalidArgumentException();
+                }
+                return json_encode($this->performDeviceAction($request['DeviceID'], 'DeactivateLostMode'), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+            }
             if (($request['Command'] ?? '') === 'RefreshDevices') {
                 if (!$this->RefreshDevices()) {
                     $result = $this->inventory();
@@ -262,10 +269,10 @@ class iCloudAccount extends IPSModuleStrict
             if ($target === null || (int) ($cache['updatedAt'] ?? 0) <= 0) {
                 throw new \SymconiCloud\AppleException('deviceUnknown');
             }
+            if (in_array($action, ['ActivateLostMode', 'DeactivateLostMode'], true) && ($target['details']['lostModeCapable'] ?? null) !== true) {
+                throw new \SymconiCloud\AppleException('lostModeUnsupported');
+            }
             if ($action === 'ActivateLostMode') {
-                if (($target['details']['lostModeCapable'] ?? null) !== true) {
-                    throw new \SymconiCloud\AppleException('lostModeUnsupported');
-                }
                 if (($target['details']['lostModeEnabled'] ?? null) === true) {
                     throw new \SymconiCloud\AppleException('lostModeActive');
                 }
@@ -274,6 +281,9 @@ class iCloudAccount extends IPSModuleStrict
             $client = $this->CreateAppleClient($this->readSession());
             if ($action === 'ActivateLostMode') {
                 $client->activateLostMode($deviceID, ...$parameters);
+            } elseif ($action === 'DeactivateLostMode') {
+                // Also permit a stop when the cache has not yet confirmed a pending activation.
+                $client->deactivateLostMode($deviceID);
             } else {
                 $client->playSound($deviceID);
             }
@@ -296,9 +306,11 @@ class iCloudAccount extends IPSModuleStrict
             $this->notifyChildren();
         }
         return ['success' => $success, 'message' => $success
-            ? $this->Translate($action === 'ActivateLostMode'
-                ? 'Lost Mode request accepted by Apple. Activation is not confirmed; offline devices may activate it later. Check Find My before trying again.'
-                : 'Sound request accepted by Apple. Playback is not confirmed; offline devices may play it later.')
+            ? $this->Translate(match ($action) {
+                'ActivateLostMode'   => 'Lost Mode request accepted by Apple. Activation is not confirmed; offline devices may activate it later. Check Find My before trying again.',
+                'DeactivateLostMode' => 'Lost Mode stop request accepted by Apple. Deactivation is not confirmed; offline devices may process it later. The device may remain locked. Check Find My.',
+                default              => 'Sound request accepted by Apple. Playback is not confirmed; offline devices may play it later.'
+            })
             : $this->errorMessage($reason)];
     }
 
@@ -383,28 +395,29 @@ class iCloudAccount extends IPSModuleStrict
     private function errorMessage(string $reason): string
     {
         return $this->Translate(match ($reason) {
-            ''                    => '',
-            'configuration'       => 'Enable the account and enter valid credentials and interval.',
-            'dependency'          => 'PHP extensions curl and bcmath are required.',
-            'credentials'         => 'Apple rejected the account credentials. Sign in again.',
-            'authentication'      => 'Sign in to the Apple account first.',
-            'invalidCode'         => 'Apple rejected the verification code.',
-            'codeFormat'          => 'Enter the six-digit verification code.',
-            'challengeExpired'    => 'Verification has expired. Sign in again.',
-            'rateLimited'         => 'Apple requests a pause. Try again later.',
-            'accessDenied'        => 'Apple denied access. Check the account in a browser.',
-            'serviceUnavailable'  => 'Find My is unavailable for this account.',
-            'network'             => 'The Apple server could not be reached securely.',
-            'server'              => 'The Apple service is temporarily unavailable.',
-            'endpoint'            => 'Apple returned an unsupported service address.',
-            'srp'                 => 'The Apple authentication challenge is unsupported or invalid.',
-            'deviceUnknown'       => 'Device not in the authenticated account cache.',
-            'soundRejected'       => 'Apple rejected the sound request.',
-            'lostModeRejected'    => 'Apple rejected the Lost Mode request. Check Find My before trying again.',
-            'lostModeUnsupported' => 'Lost Mode support is missing or unknown for this device. Check Find My.',
-            'lostModeActive'      => 'Lost Mode is already enabled according to the account cache. Check Find My.',
-            'lostModeInput'       => 'Check the contact number, message (maximum 160 characters) and optional new passcode (4 or 6 digits).',
-            default               => 'The Apple response could not be processed.'
+            ''                     => '',
+            'configuration'        => 'Enable the account and enter valid credentials and interval.',
+            'dependency'           => 'PHP extensions curl and bcmath are required.',
+            'credentials'          => 'Apple rejected the account credentials. Sign in again.',
+            'authentication'       => 'Sign in to the Apple account first.',
+            'invalidCode'          => 'Apple rejected the verification code.',
+            'codeFormat'           => 'Enter the six-digit verification code.',
+            'challengeExpired'     => 'Verification has expired. Sign in again.',
+            'rateLimited'          => 'Apple requests a pause. Try again later.',
+            'accessDenied'         => 'Apple denied access. Check the account in a browser.',
+            'serviceUnavailable'   => 'Find My is unavailable for this account.',
+            'network'              => 'The Apple server could not be reached securely.',
+            'server'               => 'The Apple service is temporarily unavailable.',
+            'endpoint'             => 'Apple returned an unsupported service address.',
+            'srp'                  => 'The Apple authentication challenge is unsupported or invalid.',
+            'deviceUnknown'        => 'Device not in the authenticated account cache.',
+            'soundRejected'        => 'Apple rejected the sound request.',
+            'lostModeRejected'     => 'Apple rejected the Lost Mode request. Check Find My before trying again.',
+            'lostModeStopRejected' => 'Apple rejected the Lost Mode stop request. Check Find My before trying again.',
+            'lostModeUnsupported'  => 'Lost Mode support is missing or unknown for this device. Check Find My.',
+            'lostModeActive'       => 'Lost Mode is already enabled according to the account cache. Check Find My.',
+            'lostModeInput'        => 'Check the contact number, message (maximum 160 characters) and optional new passcode (4 or 6 digits).',
+            default                => 'The Apple response could not be processed.'
         });
     }
 }

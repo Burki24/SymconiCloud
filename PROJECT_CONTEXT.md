@@ -1812,3 +1812,65 @@ abgenommen. Eine bestaetigte Aktivierung bei Apple sowie das anschliessende
 Entsperren waren ausdruecklich nicht Teil dieser Pruefung und bleiben ungeprueft.
 Private Endpunkte, Geraetekennungen und lokale Screenshots werden nicht in den
 versionierten Projektkontext uebernommen.
+
+### Deaktivierung des Verloren-Modus mit Bestaetigung (2026-10-24)
+
+Die Geraeteinstanz ergaenzt im vorhandenen Formularbereich den Button
+"Verloren-Modus deaktivieren" mit eigener deutscher Ja/Nein-Abfrage und
+ICID_DeactivateLostMode(int $InstanceID, bool $Confirmed): bool. Die Freigabe
+ist bei jedem Aufruf ausdruecklich erforderlich; false sendet keine Anfrage.
+Der neue Callback verwendet keine Eingaben der Aktivierung. Beide Aktionen
+teilen den internen, an die gespeicherte Geraetezuordnung gebundenen Bedienweg
+und die bereinigte Ergebnisanzeige LostModeResult.
+
+ConfigurationFormHelper, DataFlowHelper und ParentConnectionHelper bleiben
+unveraendert eingebunden. Die providerbezogene Logik bleibt innerhalb von
+SymconiCloud; zentrale Helper und deren automatische Verteilung werden nicht
+geaendert. Das Konto verwendet dieselbe Semaphore, Sitzung, Geraetepruefung
+und Sperrfrist wie Suchton und Aktivierung. Der Datenfluss erlaubt fuer die
+Deaktivierung ausschliesslich Command, DeviceID und Confirmed neben DataID.
+Kontakt-, Code-, URL- oder abweichende Schaltparameter werden abgewiesen.
+
+Der AppleClient sendet genau einen lostDevice-POST mit lostModeEnabled=false,
+emailUpdates=false, trackingEnabled=false und userText=false. Weder Kontakttext
+noch Geraetecode werden uebertragen; es gibt keinen alternativen Aufruf mit
+Aktivierungswerten. Bei unklarem Ergebnis erfolgt keine Wiederholung oder
+Neuanmeldung. Der Auftrag kann auch vor Bestaetigung eines frueheren
+Aktivierungsauftrags angefordert werden, weshalb ein bisher mit false oder
+null gemeldeter lostModeEnabled-Cachewert den bewussten Stop nicht blockiert.
+Die vom Konto gemeldete Unterstuetzung muss weiterhin true sein.
+
+Die Rueckmeldung unterscheidet Annahme und tatsaechliche Deaktivierung. Cache,
+LostModeEnabled und Variablen-IDs werden nicht anhand des Auftragserfolgs
+veraendert. Der Geraetezustand folgt weiter den regulaeren Apple-Daten. Die
+Bedienhinweise erklaeren, dass ein Stop-Auftrag weder Geraetecode noch
+Aktivierungssperre entfernt und kein entsperrtes Geraet bestaetigt. Falls Apple
+weitere Schritte verlangt, bleibt Wo ist? beziehungsweise Entsperren am Geraet
+der zusaetzliche Bedienweg.
+
+Protokollreferenz fuer den Stop-Payload (keine Codeuebernahme):
+https://github.com/CaramelFur/findmy.js/blob/c7eec9d0d1ea0bb505942f242c5f5ceeeb31bc85/src/device.ts
+Eine aeltere abweichende Referenz mit einem true-Aktivierungsflag wurde nicht
+uebernommen. Die Implementierung sendet ausschliesslich die festen false-Werte;
+eine echte Apple-Praxisabnahme ist damit nicht vorweggenommen.
+
+Nachweise: Der neue Deaktivierungstest scheiterte zunaechst an der fehlenden
+Funktion. Danach bestanden synthetische Integrationspruefungen fuer fehlende
+Bestaetigung, native Formular-Callbacks, festen Ausschalt-Payload, Ziel-/Konto-
+grenzen, unbekannte Unterstuetzung, aktive/inaktive/unbekannte Cachezustaende,
+unveraenderten Status und IDs, HTTP-/Anwendungsfehler, bereinigte Rueckmeldungen,
+gemeinsame Sperrfristen und abgelaufene Sitzungen. Ein gesonderter Transport-
+Timeout prueft genau einen Sendeversuch ohne Retry oder Aktivierungs-Fallback.
+Der CI-Einstieg lost-mode-deactivation.php fuehrt auch die bisherigen
+Aktivierungsvertraege aus; Suchton und dokumentbasierte Formularpruefung
+bleiben ebenfalls abgedeckt.
+
+Es wurde kein reales iPhone testweise gesperrt und kein echter Apple-
+Geraeteauftrag ausgeloest. Alle Aktionspruefungen verwenden synthetische
+Antworten. Der neue Dialog im echten Client und die tatsaechliche Apple-
+Deaktivierung bleiben nach dem Modulupdate gesondert zu pruefen.
+
+Abschliessend bestanden unter PHP 8.5.10 die vollstaendige Offline-Suite mit
+Aktivierungs-, Deaktivierungs-, Suchton-, Formular-, Helper-Hash-, JavaScript-
+und Syntaxpruefungen sowie der JSON-Check. php-cs-fixer im Pruefmodus meldete
+0 von 41 Dateien mit Aenderungsbedarf. git diff --check war erfolgreich.

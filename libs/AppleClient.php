@@ -157,6 +157,14 @@ final class AppleClient
         ], 'lostModeRejected');
     }
 
+    /** Fixed stop payload; never send contact details, a passcode, or an activation fallback. */
+    public function deactivateLostMode(string $deviceID): void
+    {
+        $this->sendDeviceCommand($deviceID, 'lostDevice', [
+            'lostModeEnabled' => false, 'emailUpdates' => false, 'trackingEnabled' => false, 'userText' => false
+        ], 'lostModeStopRejected');
+    }
+
     /** One authenticated POST, never token renewal, password login or an automatic retry. */
     private function sendDeviceCommand(string $deviceID, string $command, array $payload, string $rejectedReason): void
     {

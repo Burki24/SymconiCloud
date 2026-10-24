@@ -90,7 +90,18 @@
                 },
                 {
                     "type": "Label",
-                    "caption": "To turn Lost Mode off, use Find My or unlock the device as described by Apple. An accepted request does not confirm activation; the status variable follows the next account update."
+                    "caption": "Accepted Lost Mode requests do not confirm a completed change; the status variable follows the next account update."
+                },
+                {
+                    "type": "Button",
+                    "name": "DeactivateLostMode",
+                    "caption": "Deactivate Lost Mode",
+                    "confirm": "Deactivate Lost Mode for the displayed device? This ends Lost Mode protection. The device may remain locked; its passcode and Activation Lock are not removed. Offline devices may process the request later.",
+                    "onClick": "ICID_DeactivateLostMode($id, true);"
+                },
+                {
+                    "type": "Label",
+                    "caption": "Deactivation does not require the contact fields or a new passcode. It may also be requested before an earlier activation is confirmed. If Apple requires further steps, use Find My or unlock the device as described by Apple."
                 }
             ]
         },

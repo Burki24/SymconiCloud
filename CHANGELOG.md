@@ -29,6 +29,13 @@
 
 ## Neu
 
+- Die Geräteinstanz ergänzt **Verloren-Modus deaktivieren** mit eigenem
+  Ja/Nein-Dialog und `ICID_DeactivateLostMode()`. Auch Skripte benötigen eine
+  ausdrückliche Bestätigung. Der Auftrag verwendet feste Ausschaltwerte ohne
+  Kontaktangaben oder Code und kann vor der Bestätigung eines Aktivierungsauftrags
+  angefordert werden. Status und Variablen-IDs bleiben erhalten; Fehler lösen
+  weder eine automatische Wiederholung noch eine ersatzweise Aktivierung aus.
+
 - Die Geräteinstanz bietet die Aktivierung des **Verloren-Modus** mit
   Rückrufnummer, Sperrbildschirmnachricht und optionalem neuem Gerätecode.
   Ein Ja/Nein-Dialog sichert jeden Formularauftrag ab; Skriptaufrufe benötigen
