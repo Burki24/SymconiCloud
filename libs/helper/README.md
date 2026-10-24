@@ -20,6 +20,7 @@ The files in this directory are vendored from
 | `IPSViewStyleHelper.php` | 1.6.9 | `44140d34f866a59808948d29849de23a5bc2b1441df1fdc92df6f39d97e90e21` |
 | `OpenFreeMapHelper.php` | 1.0.1 | `5dfa302d938e3d02e4ede6b85b4758c8eafc6bf10400b849c044361d92bab2dd` |
 | `ParentConnectionHelper.php` | 1.0.0 | `d4f01dee721aa32e64410979ca15b2795a0fcc59c0232c0ad69e4702d9ff573c` |
+| `RasterImageHelper.php` | 1.0.0 | `2c9f18d6ad9809015e6415f510106c02f1bb709b1d37e8acba4a6ad4ef151a81` |
 | `ResponsiveVisualizationHelper.php` | 1.0.1 | `9b8f708fe4de4271310a50c1ac2f09166ba731f540eb829f46ad15b805f9f220` |
 | `ReverseGeocodingHelper.php` | 1.1.0 | `a1511ade232cb44bd923d1edddac171e9006fe60a37bd250e8c63aed96bc5e67` |
 | `PersistentJsonCacheHelper.php` | 1.0.0 | `adbc7680abe814dc6c15a9cda1312cc30023073595052006662716bc0d65f2a4` |
