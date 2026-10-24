@@ -1,0 +1,40 @@
+<?php
+
+declare(strict_types=1);
+
+ob_start();
+require __DIR__ . '/presence-widget.php';
+IPS_SetProperty($widgetID, 'IPSViewServerURL', '');
+IPS_SetProperty($widgetID, 'EnableIPSView', true);
+IPS_ApplyChanges($widgetID);
+$compactID = IPS_GetObjectIDByIdent('IPSViewPresenceCompact', $widgetID);
+$normalID = IPS_GetObjectIDByIdent('IPSViewPresence', $widgetID);
+$check($compactID !== $normalID, 'WidgetCompact must be an additional output, retaining the normal variable.');
+$check(str_contains(GetValue($compactID), '/compact/page') && !str_contains(GetValue($normalID), '/compact/page'), 'Both IPSView widgets must keep independent HTTP page routes.');
+$check($request('GET', '', '/compact/page')[0] === 200, 'The compact HTTP shell must load.');
+$shellCompact = $decodeWidget($request('GET', '', '/compact/page')[1]);
+$check($shellCompact['state']['members'] === [] && $shellCompact['options']['variant'] === 'WidgetCompact', 'The public compact shell is private and explicitly identified.');
+$token = $readAttribute->invoke($widget, 'StatusWidgetToken');
+$compactModel = json_decode($request('POST', $token, '/compact')[1], true, 512, JSON_THROW_ON_ERROR);
+$normalModel = json_decode($request('POST', $token)[1], true, 512, JSON_THROW_ON_ERROR);
+$check($compactModel['options']['variant'] === 'WidgetCompact' && $normalModel['options']['variant'] === 'Widget', 'Cache routes must return the appropriate variant.');
+$check(isset($compactModel['state']['members'][0]['zone']), 'Compact devices need an explicit zone without parsing localized status text.');
+$check($compactModel['state']['members'][0]['detail'] === '' && $compactModel['state']['members'][0]['reason'] === '' && $compactModel['state']['summary']['detail'] === '', 'Compact state omits per-device details and aggregate counts.');
+$check($normalModel['state']['members'][0]['detail'] !== '', 'The normal widget retains its existing details.');
+$normalHTML = GetValue($normalID);
+$compactHTML = GetValue($compactID);
+ICPR_Update($widgetID);
+$check(GetValue($normalID) === $normalHTML && GetValue($compactID) === $compactHTML, 'Data updates must not rewrite either HTML variable.');
+IPS_SetProperty($widgetID, 'TileWidgetVariant', 'WidgetCompact');
+IPS_ApplyChanges($widgetID);
+$check($decodeWidget($widget->GetVisualizationTile())['options']['variant'] === 'WidgetCompact', 'The native tile can choose WidgetCompact.');
+$check($widget->GetIPSViewHTML() !== $widget->GetIPSViewCompactHTML(), 'Native variant selection must not replace the full IPSView output.');
+$widget->RequestAction('IPSViewHTMLRegenerateVariables', '');
+$check(str_contains(GetValue($compactID), '/compact/page'), 'Regeneration must not overwrite compact HTML with normal HTML.');
+$check(IPS_GetObjectIDByIdent('IPSViewPresence', $widgetID) === $normalID && IPS_GetObjectIDByIdent('IPSViewPresenceCompact', $widgetID) === $compactID, 'Reapplying configuration preserves both output IDs.');
+$check($request('POST', '', '/compact')[0] === 403 && $request('GET', '', '/compact/page?x')[0] === 404, 'Compact endpoints require the same authentication and exact-path checks.');
+IPS_SetProperty($widgetID, 'EnableIPSView', false);
+IPS_ApplyChanges($widgetID);
+$check($request('POST', $token, '/compact')[0] === 404 && IPS_VariableExists($compactID), 'Disabling output revokes compact access while retaining its variable.');
+ob_end_clean();
+echo "Additional WidgetCompact output, routes, privacy and native selection passed.\n";

@@ -34,15 +34,16 @@ class Element {
 const source = fs.readFileSync(require('node:path').join(__dirname, '../iCloud Presence/visualization/app.js'), 'utf8');
 const sample = {
     state: {title: 'Presence', summary: {label: 'Present', tone: 'positive', detail: '1 present'}, members: [
-        {id: 'alpha', name: '<script>unsafe</script>', status: 'Present', tone: 'positive', detail: 'Stay: 20 s', image: ''},
-        {id: 'beta', name: 'Second', status: 'Unknown', tone: 'unknown', reason: 'Inaccurate', image: 'https://example.invalid/image'}
+        {id: 'alpha', name: '<script>unsafe</script>', zone: 'Home', status: 'Present', tone: 'positive', detail: 'Stay: 20 s', image: ''},
+        {id: 'beta', name: 'Second', zone: 'Unknown', status: 'Unknown', tone: 'unknown', reason: 'Inaccurate', image: 'https://example.invalid/image'}
     ]},
     options: {design: {photos: true, details: true, fontSize: '14px', spacing: 10}, tileHeaderInset: 58, empty: 'Empty', connectionError: 'Retry', transport: null}
 };
-function harness(transport, fragment) {
+function harness(transport, fragment, variant = 'Widget') {
     const nodes = Object.fromEntries(['widget-bootstrap', 'status-widget', 'members', 'summary-label', 'summary-value', 'summary-detail', 'summary', 'empty', 'widget-theme', 'connection'].map(id => [id, new Element()]));
     nodes.connection.hidden = true;
     const input = structuredClone(sample);
+    input.options.variant = variant;
     if (transport) input.options.transport = {url: '/hook/test', token: 'synthetic-token'};
     if (fragment !== undefined) Object.assign(input.options.transport, {token: '', fragmentToken: true});
     nodes['widget-bootstrap'].textContent = JSON.stringify(input);
@@ -113,5 +114,19 @@ async function settle() { for (let i = 0; i < 12; i++) await Promise.resolve(); 
     assert.equal(selected.parts.status.textContent, 'Changed', 'The same selected row receives the HTTP update.');
     const invalid = harness(true, 'invalid'); await settle();
     assert.equal(invalid.nodes.connection.hidden, false, 'Malformed/missing fragment tokens fail closed.');
+    const compact = harness(false, undefined, 'WidgetCompact');
+    const compactList = compact.nodes.members;
+    const compactRow = compactList.children[0];
+    assert.equal(compact.nodes['status-widget'].dataset.variant, 'compact');
+    assert.equal(compactRow.parts.status.textContent, 'Home', 'Compact devices show the zone without redundant presence labels.');
+    assert.equal(compactRow.parts.detail.textContent, ''); assert.equal(compactRow.parts.detail.hidden, true);
+    assert.equal(compactList.children[1].parts.reason.textContent, ''); assert.equal(compactList.children[1].parts.reason.hidden, true);
+    assert.equal(compactList.children[1].parts.status.textContent, 'Unknown', 'Unknown must remain visible even without diagnostic details.');
+    assert.equal(compact.nodes['summary-detail'].hidden, true, 'Compact aggregate uses a single heading row.');
+    compactRow.events.click(); compactList.scrollTop = 81; compactList.scrollLeft = 4;
+    const compactUpdate = structuredClone(sample); compactUpdate.options.variant = 'WidgetCompact'; compactUpdate.state.members[0].zone = 'Work';
+    compact.window.handleMessage(compactUpdate);
+    assert.equal(compactList.children[0], compactRow); assert.equal(compactRow.parts.status.textContent, 'Work');
+    assert.equal(compactRow.attrs['aria-pressed'], 'true'); assert.equal(compactList.scrollTop, 81); assert.equal(compactList.scrollLeft, 4);
     console.log('Status widget SDK updates, keyed rows, selection, scroll, images and polling recovery passed.');
 })().catch(error => { console.error(error); process.exitCode = 1; });

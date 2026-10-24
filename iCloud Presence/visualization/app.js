@@ -18,6 +18,8 @@
         const state = payload.state;
         const options = payload.options;
         const design = options.design || {};
+        const compact = options.variant === 'WidgetCompact';
+        root.dataset.variant = compact ? 'compact' : 'normal';
         const scrollTop = list.scrollTop;
         const scrollLeft = list.scrollLeft;
         root.style.setProperty('--symc-tile-header-inset', Math.max(0, Math.min(100, Number(options.tileHeaderInset) || 0)) + 'px');
@@ -29,6 +31,7 @@
         text('summary-label', state.title);
         text('summary-value', state.summary && state.summary.label);
         text('summary-detail', state.summary && state.summary.detail);
+        doc.getElementById('summary-detail').hidden = compact;
         doc.getElementById('summary').dataset.tone = tone(state.summary && state.summary.tone);
         const members = Array.isArray(state.members) ? state.members : [];
         const keep = new Set();
@@ -51,9 +54,12 @@
             previous = row;
             row.dataset.tone = tone(member.tone);
             row.setAttribute('aria-pressed', String(selected === member.id));
-            for (const key of ['name', 'status', 'detail', 'reason']) row.querySelector('.' + key).textContent = typeof member[key] === 'string' ? member[key] : '';
-            row.querySelector('.detail').hidden = design.details === false;
-            row.querySelector('.reason').hidden = design.details === false || !member.reason;
+            for (const key of ['name', 'status', 'detail', 'reason']) {
+                const value = key === 'status' && compact ? member.zone : compact && ['detail', 'reason'].includes(key) ? '' : member[key];
+                row.querySelector('.' + key).textContent = typeof value === 'string' ? value : '';
+            }
+            row.querySelector('.detail').hidden = compact || design.details === false;
+            row.querySelector('.reason').hidden = compact || design.details === false || !member.reason;
             const avatar = row.querySelector('.avatar');
             avatar.hidden = design.photos === false;
             const image = typeof member.image === 'string' && /^data:image\/(png|jpeg|gif|webp);base64,[A-Za-z0-9+/=]+$/.test(member.image) ? member.image : '';

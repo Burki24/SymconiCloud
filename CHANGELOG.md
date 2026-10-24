@@ -21,6 +21,12 @@
 
 ## Neu
 
+- **WidgetCompact** ergänzt die Anwesenheitsdarstellung um Gerätebild, Name und
+  Zone mit schmaler Gesamtanwesenheit. Die bisherige Ausgabe bleibt erhalten.
+  IPSView erhält eine zusätzliche HTML-Variable; die native Kachel bietet die
+  Variantenwahl im Designer. Beide nutzen vorhandene Stile und Bilder und
+  erhalten Geräteauswahl und Scrollposition bei Datenupdates.
+
 - Gerätebilder der Anwesenheit werden beim lokalen Upload automatisch skaliert
   und komprimiert. Der zentrale `RasterImageHelper` verarbeitet Bilder bis
   10 MiB und 16 Millionen Pixel auf höchstens 512 Pixel pro Seite und 128 KiB.

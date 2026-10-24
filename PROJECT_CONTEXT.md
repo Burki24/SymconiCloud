@@ -1249,3 +1249,37 @@ wurde kein neuer MCP-Lauf ausgefuehrt. Die zuvor dokumentierten Offline- und
 MCP-Rechentests bleiben separate technische Nachweise. Aus der Bestaetigung
 werden keine zusaetzlichen Aussagen zu einzelnen Dateiformaten, Grenzfaellen
 oder Clients abgeleitet.
+
+## Zusaetzliche Anwesenheitsvariante WidgetCompact (2026-10-24)
+
+Widget bleibt die bisherige ausfuehrliche Ausgabe. WidgetCompact zeigt je Geraet
+nur Bild/Initialen, Namen und Zone; bei ungueltigen Standorten weiterhin
+Unbekannt. Entfernung, Aufenthaltsdauer, Diagnosetext und die zweite Zaehlerzeile
+der Gesamtanwesenheit entfallen. Kompakte Karten haben kleinere Abstaende und
+Bilder (maximal 8 bzw. 36 Pixel) sowie eine schmale Gesamtanwesenheits-Kopfzeile.
+
+Die native Instanz bleibt eine Kachel und waehlt im bestehenden Designer mit
+TileWidgetVariant zwischen Widget (Default) und WidgetCompact. IPSView erhaelt
+zusaetzlich IPSViewPresenceCompact; die bestehende IPSViewPresence bleibt mit
+ihrer bisherigen ID und Ausgabe erhalten. Beide Varianten koennen gleichzeitig
+eingebunden werden. Beide verwenden die vorhandenen Bilder und die jeweiligen
+Kachel-/IPSView-Farb-, Schrift- und Hell-/Dunkelvorgaben.
+
+Die neue Variante nutzt /compact/page als private HTTP-Shell und /compact als
+authentifizierten Cache-Endpunkt unter demselben Instanzhook. Keine Geraetedaten
+oder Tokens in der oeffentlichen Shell. Die Authentifizierungs-, Pfad- und
+Abschaltregeln entsprechen der normalen Variante. HTML-Regenerierung rendert
+beide Varianten gesondert mit den zentralen Variablen- und Aufbewahrungshelpern.
+Kein zusaetzlicher zentraler Helper und kein Helper-Update erforderlich.
+
+Regressionen pruefen neue Ausgabe neben unveraenderter alter Variable, getrennte
+Routen, Regenerierung, Variablen-IDs, Abschalten und Datenschutz. Die UI-Vertraege
+pruefen Namen/Zonen ohne Details, Unbekannt sowie Auswahl- und Scroll-Erhalt bei
+Updates. Vollstaendige Offline-Suite, Struktur-/Hash-/LF-, JSON- und Style-
+Pruefungen unter PHP 8.5.10 mit GD/EXIF bestanden. Keine Aenderung am
+angeschlossenen System und keine Apple-Anfrage.
+Die Browser-Vorschau ist offen: Die automatische Befehlspruefung lehnte den
+lokalen Vorschauserver ab; die Browser-Sicherheitsrichtlinie verweigerte die
+Daten-URL-Alternative (nur HTTP/HTTPS erlaubt). Keine Umgehung dieser Sperren.
+Visuelle Abnahme, Hell-/Dunkelmodus und echte Mausradbedienung beider Varianten
+im tatsaechlichen Kachel-/IPSView-Host bleiben nach dem Update zu pruefen.

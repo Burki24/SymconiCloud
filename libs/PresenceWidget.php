@@ -28,6 +28,8 @@ trait PresenceWidget
 
     private const PRESENCE_WIDGET_TEXT = [
         'tile'                 => 'Tile designer', 'ipsview' => 'IPSView designer', 'layout' => 'Layout and content',
+        'variant'              => 'Widget variant',
+        'variantsHint'         => 'IPSView provides Widget and WidgetCompact as separate HTML variables. WidgetCompact shows device pictures, names and zones without distance, stay duration or diagnostic details.',
         'colors'               => 'Colors', 'style' => 'Colors and typography', 'font' => 'Font size in pixels',
         'photos'               => 'Show device pictures', 'details' => 'Show details', 'size' => 'Picture size in pixels',
         'radius'               => 'Corner radius in pixels', 'spacing' => 'Spacing in pixels',
@@ -50,6 +52,7 @@ trait PresenceWidget
         $this->RegisterVisualizationThemeProperties();
         $this->RegisterIPSViewStyleProperties();
         $this->RegisterPropertyString('IPSViewServerURL', '');
+        $this->RegisterPropertyString('TileWidgetVariant', 'Widget');
         foreach (['Tile', 'IPSView'] as $prefix) {
             $this->RegisterPropertyBoolean($prefix . 'WidgetPhotos', true);
             $this->RegisterPropertyBoolean($prefix . 'WidgetDetails', true);
@@ -75,6 +78,7 @@ trait PresenceWidget
         $this->SetVisualizationType(1);
         $this->RegisterIPSViewStyleMediaMessages();
         $this->MaintainIPSViewHTMLVariable($ident, $caption, 2000, '', false);
+        $this->MaintainIPSViewHTMLVariable('IPSViewPresenceCompact', $this->Translate('Presence WidgetCompact for IPSView'), 2001, '', false);
         $connection = IPS_GetInstance($this->InstanceID)['ConnectionID'];
         if (!$this->IsIPSViewHTMLPageEnabled() || !$this->StatusWidgetServerURLValid()) {
             $this->WriteAttributeString('StatusWidgetToken', '');
@@ -97,6 +101,8 @@ trait PresenceWidget
                 'items'        => $prefix === 'Tile' ? $this->VisualizationThemeFormItems() : $this->IPSViewStyleFormItems()];
             $layout = [];
             if ($prefix === 'Tile') {
+                $layout[] = ['type' => 'Select', 'name' => 'TileWidgetVariant', 'caption' => $this->StatusWidgetText('variant'),
+                    'options'       => [['caption' => 'Widget', 'value' => 'Widget'], ['caption' => 'WidgetCompact', 'value' => 'WidgetCompact']]];
                 $layout[] = ['type' => 'NumberSpinner', 'name' => 'TileWidgetFontSize', 'caption' => $this->StatusWidgetText('font'), 'minimum' => 10, 'maximum' => 28];
             }
             foreach (['Photos' => 'photos', 'Details' => 'details'] as $property => $key) {
@@ -109,6 +115,7 @@ trait PresenceWidget
             $form['elements'][] = ['type' => 'ExpansionPanel', 'caption' => $this->StatusWidgetText(strtolower($prefix)), 'items' => $items];
         }
         $form['elements'][] = ['type' => 'Label', 'caption' => $this->StatusWidgetText('imageHint')];
+        $form['elements'][] = ['type' => 'Label', 'caption' => $this->StatusWidgetText('variantsHint')];
         return $form;
     }
 
@@ -116,17 +123,17 @@ trait PresenceWidget
     protected function PublishStatusWidget(array $state): void
     {
         $this->WriteAttributeString('StatusWidgetState', $this->EncodeVisualizationHTMLJSON($state));
-        $this->UpdateVisualizationValue($this->EncodeVisualizationHTMLJSON($this->StatusWidgetBootstrap(false)));
+        $this->UpdateVisualizationValue($this->EncodeVisualizationHTMLJSON($this->StatusWidgetBootstrap(false, $this->ReadPropertyString('TileWidgetVariant') === 'WidgetCompact')));
     }
 
     /** Compact HTML document, with no navigation or dashboard shell. */
-    protected function RenderStatusWidget(bool $ipsView): string
+    protected function RenderStatusWidget(bool $ipsView, bool $compact = false): string
     {
         if (!$ipsView) {
-            return $this->RenderStatusWidgetPage(false);
+            return $this->RenderStatusWidgetPage(false, false, $compact);
         }
         return $this->RenderIPSViewFrame([
-            'url'   => $this->StatusWidgetServerURLValid() ? $this->ReadPropertyString('IPSViewServerURL') . '/hook/' . $this->StatusWidgetHookName() . '/page' : '',
+            'url'   => $this->StatusWidgetServerURLValid() ? $this->ReadPropertyString('IPSViewServerURL') . '/hook/' . $this->StatusWidgetHookName() . ($compact ? '/compact/page' : '/page') : '',
             'token' => $this->ReadAttributeString('StatusWidgetToken'),
             'title' => $this->Translate('Overall presence'),
             'error' => $this->StatusWidgetText('loader')
@@ -171,8 +178,9 @@ trait PresenceWidget
         $method = $_SERVER['REQUEST_METHOD'] ?? '';
         $path = '/hook/' . $this->StatusWidgetHookName();
         $uri = $_SERVER['REQUEST_URI'] ?? '';
-        $page = $uri === $path . '/page';
-        if (($uri !== $path && !$page) || !$this->IsIPSViewHTMLPageEnabled()
+        $compact = in_array($uri, [$path . '/compact', $path . '/compact/page'], true);
+        $page = in_array($uri, [$path . '/page', $path . '/compact/page'], true);
+        if (($uri !== $path && $uri !== $path . '/compact' && !$page) || !$this->IsIPSViewHTMLPageEnabled()
             || !$this->StatusWidgetServerURLValid() || $this->ReadAttributeInteger('StatusWidgetConnection') !== IPS_GetInstance($this->InstanceID)['ConnectionID']) {
             $this->SendPlainTextResponse(404, 'Not available.');
             return;
@@ -183,7 +191,7 @@ trait PresenceWidget
                 return;
             }
             header('Referrer-Policy: no-referrer');
-            $this->SendResponse(200, 'text/html', $this->RenderStatusWidgetPage(true, true));
+            $this->SendResponse(200, 'text/html', $this->RenderStatusWidgetPage(true, true, $compact));
             return;
         }
         if ($method === 'OPTIONS') {
@@ -200,7 +208,7 @@ trait PresenceWidget
             $this->SendPlainTextResponse(403, 'Access denied.');
             return;
         }
-        $this->SendResponse(200, 'application/json', $this->EncodeVisualizationHTMLJSON($this->StatusWidgetBootstrap(true)));
+        $this->SendResponse(200, 'application/json', $this->EncodeVisualizationHTMLJSON($this->StatusWidgetBootstrap(true, $compact)));
     }
 
     protected function StatusWidgetText(string $key): string
@@ -234,9 +242,9 @@ trait PresenceWidget
     }
 
     /** The unauthenticated HTTP shell must never contain device data or its access token. */
-    private function RenderStatusWidgetPage(bool $ipsView, bool $publicShell = false): string
+    private function RenderStatusWidgetPage(bool $ipsView, bool $publicShell = false, bool $compact = false): string
     {
-        $bootstrap = $this->StatusWidgetBootstrap($ipsView);
+        $bootstrap = $this->StatusWidgetBootstrap($ipsView, $compact);
         if ($publicShell) {
             $bootstrap['state'] = ['title' => $this->Translate('Overall presence'), 'summary' => [], 'members' => []];
         }
@@ -268,7 +276,7 @@ trait PresenceWidget
             && ($parts['path'] ?? '') === '' && !preg_match('/[\x00-\x20\x7f]/', $url);
     }
 
-    private function StatusWidgetBootstrap(bool $ipsView): array
+    private function StatusWidgetBootstrap(bool $ipsView, bool $compact = false): array
     {
         $prefix = $ipsView ? 'IPSView' : 'Tile';
         $design = ['photos' => $this->ReadPropertyBoolean($prefix . 'WidgetPhotos'), 'details' => $this->ReadPropertyBoolean($prefix . 'WidgetDetails')];
@@ -276,10 +284,21 @@ trait PresenceWidget
             $design[lcfirst($name)] = max($min, min($max, $this->ReadPropertyInteger($prefix . 'Widget' . $name)));
         }
         $design['fontSize'] = $ipsView ? $this->IPSViewStyleRootFontSize() : max(10, min(28, $this->ReadPropertyInteger('TileWidgetFontSize'))) . 'px';
-        return ['state' => json_decode($this->ReadAttributeString('StatusWidgetState'), true, 512, JSON_THROW_ON_ERROR),
-            'options'   => array_merge($this->ResponsiveVisualizationLayoutOptions(!$ipsView), ['design' => $design,
+        if ($compact) {
+            $design['pictureSize'] = min(36, $design['pictureSize']);
+            $design['spacing'] = min(8, $design['spacing']);
+        }
+        $state = json_decode($this->ReadAttributeString('StatusWidgetState'), true, 512, JSON_THROW_ON_ERROR);
+        if ($compact) {
+            $state['summary']['detail'] = '';
+            foreach ($state['members'] ?? [] as $index => $member) {
+                $state['members'][$index] = array_replace($member, ['status' => $member['zone'] ?? '', 'detail' => '', 'reason' => '']);
+            }
+        }
+        return ['state' => $state,
+            'options'   => array_merge($this->ResponsiveVisualizationLayoutOptions(!$ipsView), ['design' => $design, 'variant' => $compact ? 'WidgetCompact' : 'Widget',
                 'themeCSS'                                                                               => $ipsView ? $this->VisualizationBaseThemeCSS() . $this->IPSViewStyleCSSVariables(':root') : $this->VisualizationThemeCSS(),
                 'connectionError'                                                                        => $this->StatusWidgetText('connection'), 'empty' => $this->StatusWidgetText('empty'),
-                'transport'                                                                              => $ipsView ? ['url' => '/hook/' . $this->StatusWidgetHookName(), 'token' => '', 'fragmentToken' => true] : null])];
+                'transport'                                                                              => $ipsView ? ['url' => '/hook/' . $this->StatusWidgetHookName() . ($compact ? '/compact' : ''), 'token' => '', 'fragmentToken' => true] : null])];
     }
 }

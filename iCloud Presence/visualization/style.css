@@ -15,6 +15,12 @@ body { color: var(--symc-text); background: var(--symc-background); }
 .name { overflow-wrap: anywhere; color: var(--symc-heading); }
 .status { font-size: .9rem; color: var(--status-color); }
 .detail, .reason { font-size: .8rem; color: var(--symc-subheading); overflow-wrap: anywhere; }
+#status-widget[data-variant="compact"] #summary { padding: 6px 10px; gap: 2px 8px; }
+#status-widget[data-variant="compact"] #summary-value { font-size: 1rem; }
+#status-widget[data-variant="compact"] #members { grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); }
+#status-widget[data-variant="compact"] .member { padding: 6px 8px; gap: 8px; align-items: center; }
+#status-widget[data-variant="compact"] .copy { gap: 2px; align-content: center; }
+#status-widget[data-variant="compact"] .status { overflow-wrap: anywhere; }
 [data-tone="positive"] { --status-color: var(--symc-success); }
 [data-tone="neutral"] { --status-color: var(--symc-info); }
 [data-tone="unknown"] { --status-color: var(--symc-warning); }

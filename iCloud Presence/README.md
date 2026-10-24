@@ -249,6 +249,31 @@ eingebunden. Beide Darstellungen verwenden dasselbe Bild. Änderungen werden nac
 Die Gerätekarten zeigen Anwesenheit, Zone, verfügbare Entfernung zur Referenzzone
 und beobachtete Aufenthaltsdauer. Bei Unbekannt erscheint der Bewertungsgrund;
 fehlende Werte werden nicht als echte Entfernung oder Aufenthaltsdauer dargestellt.
+
+### Zusätzliches WidgetCompact
+
+**Widget** bleibt die bisherige ausführliche Darstellung. **WidgetCompact** ist
+eine zusätzliche Variante: Je Gerät erscheinen nur Bild beziehungsweise Initialen,
+Name und Zone. Entfernung, Aufenthaltsdauer und Diagnosegrund entfallen. Bei
+unzuverlässigen Daten steht weiterhin **Unbekannt**. Die Gesamtanwesenheit erscheint
+als schmale Kopfzeile ohne zusätzliche Zählerzeile.
+
+- Native Kachel: Unter **Kacheldesigner → Layout und Inhalt → Widget-Variante**
+  zwischen **Widget** und **WidgetCompact** wählen. Standard bleibt **Widget**.
+- IPSView: Bei aktivierter Ausgabe entstehen zwei getrennte HTML-Variablen:
+  **Anwesenheit für IPSView** (`IPSViewPresence`, bisherige Ausgabe) und
+  **Anwesenheit WidgetCompact für IPSView** (`IPSViewPresenceCompact`, zusätzlich).
+  Beide können gleichzeitig in unterschiedliche HTMLBoxen eingebunden werden.
+- Beide Varianten verwenden die vorhandenen Bilder, Farben, Hell-/Dunkelstile,
+  Schriften und Designer. WidgetCompact begrenzt Bilder auf 36 Pixel und Abstände
+  auf 8 Pixel; kleinere Designerwerte gelten weiterhin. Der Detail-Schalter
+  betrifft das normale Widget; WidgetCompact blendet Details immer aus.
+
+Datenupdates laden keine der beiden IPSView-Variablen neu. Geräteauswahl und
+Scrollposition bleiben je eingebundenem Widget getrennt erhalten. Auch
+**HTML-Variablen neu erzeugen** erhält die getrennten Varianten und Variablen-IDs.
+Beim Abschalten der IPSView-Ausgabe bleiben beide Variablen nach dem zentralen
+Aufbewahrungsvertrag bestehen; ihre HTTP-Endpunkte werden gesperrt.
 Anklicken markiert ein Gerät lokal, ohne eine Hausautomation auszulösen.
 
 Für IPSView im **IPSView-Designer** die HTML-Ausgabe aktivieren und übernehmen.

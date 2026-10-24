@@ -157,16 +157,22 @@ class iCloudPresence extends IPSModuleStrict
         }
     }
 
-    /** Native compact widget, sharing the already evaluated values. */
+    /** Native widget variant, sharing the already evaluated values. */
     public function GetVisualizationTile(): string
     {
-        return $this->RenderStatusWidget(false);
+        return $this->RenderStatusWidget(false, $this->ReadPropertyString('TileWidgetVariant') === 'WidgetCompact');
     }
 
-    /** Optional compact WebContent widget; cached data updates do not reload its document. */
+    /** Existing full WebContent widget; cached updates do not reload its document. */
     public function GetIPSViewHTML(): string
     {
         return $this->RenderStatusWidget(true);
+    }
+
+    /** Additional compact output; the existing full widget remains independent. */
+    public function GetIPSViewCompactHTML(): string
+    {
+        return $this->RenderStatusWidget(true, true);
     }
 
     public function MessageSink(int $TimeStamp, int $SenderID, int $Message, array $Data): void
@@ -312,6 +318,22 @@ class iCloudPresence extends IPSModuleStrict
         return 'Device_' . substr(hash('sha256', $DeviceID), 0, 32) . '_' . $Ident;
     }
 
+    /** Render each variant through the central helper's retained-variable writer. */
+    protected function RegenerateIPSViewHTMLPages(): bool
+    {
+        if (!$this->IsIPSViewHTMLPageEnabled()) {
+            return false;
+        }
+        try {
+            $normal = $this->UpdateIPSViewHTMLVariable('IPSViewPresence', $this->GetIPSViewHTML());
+            $compact = $this->UpdateIPSViewHTMLVariable('IPSViewPresenceCompact', $this->GetIPSViewCompactHTML());
+            return $normal && $compact;
+        } catch (Throwable $exception) {
+            $this->SendDebug('IPSViewHTMLRegeneration', $exception->getMessage(), 0);
+            return false;
+        }
+    }
+
     protected function VisualizationAssetDirectory(): string
     {
         return __DIR__ . '/visualization';
@@ -368,6 +390,7 @@ class iCloudPresence extends IPSModuleStrict
             }
             $rows[] = ['id' => substr(hash('sha256', $id), 0, 32), 'name' => $name !== '' ? $name : ($names[$id] ?? $this->Translate('Device')),
                 'status'    => $presence === -1 ? $labels[$presence] : $labels[$presence] . ' · ' . $read('Zone'), 'tone' => $tones[$presence],
+                'zone'      => $presence === -1 ? $labels[-1] : $read('Zone'),
                 'detail'    => implode(' · ', $details), 'reason' => $presence === -1 || $read('TransitionPending') ? $read('Reason') : '',
                 'image'     => $pictures[$id] ?? ''];
         }
