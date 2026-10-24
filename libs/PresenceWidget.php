@@ -25,15 +25,18 @@ trait PresenceWidget
     use IPSViewFrame;
 
     private const PRESENCE_WIDGET_TEXT = [
-        'tile'       => 'Tile designer', 'ipsview' => 'IPSView designer', 'layout' => 'Layout and content',
-        'colors'     => 'Colors', 'style' => 'Colors and typography', 'font' => 'Font size in pixels',
-        'photos'     => 'Show device pictures', 'details' => 'Show details', 'size' => 'Picture size in pixels',
-        'radius'     => 'Corner radius in pixels', 'spacing' => 'Spacing in pixels',
-        'url'        => 'Symcon server URL for IPSView (optional)',
-        'urlHint'    => 'Normally the server address is detected automatically. Only enter an HTTP(S) origin without a path if the client cannot provide it.',
-        'connection' => 'Live updates unavailable. Retrying...', 'empty' => 'No devices selected.',
-        'loader'     => 'Unable to open the IPSView widget. Check the server URL and apply the instance configuration.',
-        'imageHint'  => 'Optional pictures: choose a Symcon image medium or a file from the computer running the console for each device. Use PNG, JPEG, GIF or WebP, at most 128 KiB and 1024 x 1024 pixels. Invalid pictures use initials.'
+        'tile'                 => 'Tile designer', 'ipsview' => 'IPSView designer', 'layout' => 'Layout and content',
+        'colors'               => 'Colors', 'style' => 'Colors and typography', 'font' => 'Font size in pixels',
+        'photos'               => 'Show device pictures', 'details' => 'Show details', 'size' => 'Picture size in pixels',
+        'radius'               => 'Corner radius in pixels', 'spacing' => 'Spacing in pixels',
+        'url'                  => 'Symcon server URL for IPSView (optional)',
+        'urlHint'              => 'Normally the server address is detected automatically. Only enter an HTTP(S) origin without a path if the client cannot provide it.',
+        'connection'           => 'Live updates unavailable. Retrying...', 'empty' => 'No devices selected.',
+        'loader'               => 'Unable to open the IPSView widget. Check the server URL and apply the instance configuration.',
+        'imageSizeError'       => 'Picture exceeds 128 KiB. Choose a smaller file; this picture will not be displayed.',
+        'imageFormatError'     => 'Invalid picture. Choose a PNG, JPEG, GIF or WebP file; this picture will not be displayed.',
+        'imageDimensionsError' => 'Picture exceeds 1024 x 1024 pixels. Reduce its dimensions; this picture will not be displayed.',
+        'imageHint'            => 'Optional pictures: choose a Symcon image medium or a file from the computer running the console for each device. Use PNG, JPEG, GIF or WebP, at most 128 KiB and 1024 x 1024 pixels. Invalid pictures use initials.'
     ];
 
     /** Call from Create(); volatile hook registration must survive output toggles. */
@@ -144,19 +147,13 @@ trait PresenceWidget
     /** SelectFile supplies Base64 bytes, never a client or server filesystem path. */
     protected function StatusWidgetUpload(string $content): string
     {
-        if ($content === '' || strlen($content) > 174764) {
-            return '';
-        }
-        $bytes = base64_decode($content, true);
-        if (!is_string($bytes) || strlen($bytes) > 131072) {
-            return '';
-        }
-        $size = @getimagesizefromstring($bytes);
-        if ($size === false || $size[0] < 1 || $size[1] < 1 || $size[0] > 1024 || $size[1] > 1024
-            || !in_array($size['mime'], ['image/png', 'image/jpeg', 'image/gif', 'image/webp'], true)) {
-            return '';
-        }
-        return 'data:' . $size['mime'] . ';base64,' . base64_encode($bytes);
+        return $this->InspectStatusWidgetUpload($content)['image'];
+    }
+
+    /** Same validation for the unsaved console draft and rendered images. */
+    protected function StatusWidgetUploadIssue(string $content): string
+    {
+        return $this->InspectStatusWidgetUpload($content)['issue'];
     }
 
     /** Serves only the cached model, never runs a domain action or an external request. */
@@ -203,6 +200,32 @@ trait PresenceWidget
     protected function StatusWidgetText(string $key): string
     {
         return $this->Translate(self::PRESENCE_WIDGET_TEXT[$key]);
+    }
+
+    private function InspectStatusWidgetUpload(string $content): array
+    {
+        if ($content === '') {
+            return ['image' => '', 'issue' => ''];
+        }
+        if (strlen($content) > 174764) {
+            return ['image' => '', 'issue' => self::PRESENCE_WIDGET_TEXT['imageSizeError']];
+        }
+        $bytes = base64_decode($content, true);
+        if (!is_string($bytes)) {
+            return ['image' => '', 'issue' => self::PRESENCE_WIDGET_TEXT['imageFormatError']];
+        }
+        if (strlen($bytes) > 131072) {
+            return ['image' => '', 'issue' => self::PRESENCE_WIDGET_TEXT['imageSizeError']];
+        }
+        $size = @getimagesizefromstring($bytes);
+        if ($size === false || $size[0] < 1 || $size[1] < 1
+            || !in_array($size['mime'], ['image/png', 'image/jpeg', 'image/gif', 'image/webp'], true)) {
+            return ['image' => '', 'issue' => self::PRESENCE_WIDGET_TEXT['imageFormatError']];
+        }
+        if ($size[0] > 1024 || $size[1] > 1024) {
+            return ['image' => '', 'issue' => self::PRESENCE_WIDGET_TEXT['imageDimensionsError']];
+        }
+        return ['image' => 'data:' . $size['mime'] . ';base64,' . base64_encode($bytes), 'issue' => ''];
     }
 
     /** The unauthenticated HTTP shell must never contain device data or its access token. */

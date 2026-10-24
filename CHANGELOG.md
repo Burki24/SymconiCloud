@@ -2,6 +2,11 @@
 
 ## Fixes
 
+- Der Gerätedialog der Anwesenheit zeigt die Bildgrenzen direkt an und meldet
+  unzulässige Uploads bereits bei der Auswahl. Zu große Dateien (mehr als
+  128 KiB), unzulässige Formate und Abmessungen über 1024 × 1024 Pixel
+  erhalten konkrete Hinweise statt eines stillen Rückfalls auf Initialen.
+
 - Native IPSView-HTMLBoxen mit einer vom Client bereitgestellten Basisadresse
   werden bei der automatischen Servererkennung berücksichtigt. Zuerst das
   aktualisierte VisualizationAssetHelper-Paket regulär verteilen und übernehmen,

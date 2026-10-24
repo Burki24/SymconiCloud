@@ -24,6 +24,11 @@ final class StatusWidgetImageHarness
     {
         return $this->StatusWidgetUpload($content);
     }
+
+    public function issue(string $content): string
+    {
+        return $this->StatusWidgetUploadIssue($content);
+    }
 }
 
 $imageMedia = ['MediaType' => 1, 'MediaIsAvailable' => true, 'MediaSize' => 34];
@@ -41,6 +46,10 @@ function IPS_GetMediaContent(int $id): string
     return $GLOBALS['imageContent'];
 }
 $widget = new StatusWidgetImageHarness();
+checkImage('', $widget->issue($imageContent), 'Valid uploads do not show an error.');
+checkImage('', $widget->issue(''), 'Removing an optional upload clears its error.');
+checkImage(true, str_contains($widget->issue(base64_encode(str_repeat('x', 203100))), '128 KiB'), 'The reported 203 kB upload must explain the size limit.');
+checkImage(true, str_contains($widget->issue('invalid'), 'PNG'), 'Invalid contents must explain supported image formats.');
 checkImage('data:image/gif;base64,' . $imageContent, $widget->upload($imageContent), 'Console file contents use the same safe inline image format.');
 foreach (['', 'not base64', base64_encode('<svg onload="alert(1)"></svg>'), base64_encode('https://example.invalid/image')] as $invalid) {
     checkImage('', $widget->upload($invalid), 'Empty or invalid uploads use initials without network or filesystem reads.');
@@ -50,6 +59,7 @@ checkImage('', $widget->upload(base64_encode(str_repeat('x', 131073))), 'Uploads
 $wide = base64_decode($imageContent);
 $wide = substr_replace($wide, pack('v', 1025), 6, 2);
 checkImage('', $widget->upload(base64_encode($wide)), 'Uploads wider than 1024 pixels are rejected.');
+checkImage(true, str_contains($widget->issue(base64_encode($wide)), '1024'), 'Oversized dimensions need a separate correction message.');
 checkImage('', $widget->image(0), 'No picture uses initials.');
 checkImage('', $widget->image(2), 'Deleted media uses initials.');
 checkImage('data:image/gif;base64,' . $imageContent, $widget->image(1), 'Supported image content is embedded.');

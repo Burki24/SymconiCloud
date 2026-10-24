@@ -1170,3 +1170,25 @@ ein Datenupdate. Keine Installation oder Konfigurationsaenderung auf einem
 laufenden System; Dateidialog und neue Bilder sind nach dem Modulupdate noch in
 der echten Konsole und IPSView-App abzunehmen. Die zuvor vom Benutzer bestaetigte
 Mausradfunktion bleibt ein separater Praxisnachweis, kein neuer Upload-Livetest.
+
+## Bild-Upload: konkrete Ablehnungsgruende im Zeilendialog (2026-10-24)
+
+Der Benutzer meldete einen gespeicherten Upload mit angezeigten rund 203 kB,
+waehrend das Widget weiterhin Initialen zeigte. Die bestehende Grenze von
+128 KiB wurde ueberschritten; der Datei-Upload ist von der nachgelagerten
+Rasterbildpruefung zu unterscheiden. Die Grenze wird nicht stillschweigend
+angehoben. Es gibt keine automatische Bildkomprimierung oder Skalierung.
+
+Der Geraetedialog zeigt den Groessen-/Formathinweis jetzt direkt neben der
+Auswahl und besitzt ein eigenes Fehlerfeld. Datei- und Bildquellenwechsel
+validieren den aktuellen, noch nicht gespeicherten Inhalt: Dateigroesse,
+unterstuetztes Rasterformat und Abmessungen haben getrennte, uebersetzte
+Korrekturhinweise. Eine gueltige Datei, das Entfernen der Datei oder der Wechsel
+zum Symcon-Medium loescht den alten Hinweis. Anzeige und Formular benutzen
+dieselbe librarylokale Pruefung; Konfiguration, Variablen und GPS-Auswertung
+werden durch die Formularvalidierung nicht veraendert.
+
+Regression mit synthetischem 203100-Byte-Inhalt und uebergrossen Abmessungen;
+vollstaendige Offline-Suite, JSON, Struktur/Hash/LF und PHP-CS-Fixer bestanden.
+Keine Installation auf einem laufenden System. Der neue Inlinehinweis ist noch
+in der aktualisierten echten Konsole abzunehmen.

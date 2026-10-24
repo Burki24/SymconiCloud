@@ -54,6 +54,7 @@
                     "add": "media",
                     "edit": {
                         "type": "Select",
+                        "onChange": "ICPR_ValidatePictureUpload($id, $pictureSource, $pictureUpload);",
                         "options": [
                             {
                                 "caption": "Symcon medium",
@@ -75,6 +76,7 @@
                     "add": "",
                     "edit": {
                         "type": "SelectFile",
+                        "onChange": "ICPR_ValidatePictureUpload($id, $pictureSource, $pictureUpload);",
                         "extensions": ".png,.jpg,.jpeg,.gif,.webp"
                     }
                 }

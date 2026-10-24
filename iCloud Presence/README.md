@@ -215,7 +215,11 @@ Unter **Geräte** das gewünschte Gerät bearbeiten und die **Bildquelle** wähl
   Instanzkonfiguration gespeichert; ein vorheriger Import in Symcon ist nicht nötig.
 
 Unterstützt werden PNG, JPEG, GIF und WebP bis 128 KiB und 1024 × 1024 Pixel.
-Kleine quadratische Bilder sind geeignet. Zum Ersetzen eine andere Datei auswählen;
+Kleine quadratische Bilder sind geeignet. Der Gerätedialog zeigt diese Grenzen
+direkt an und meldet nach der Dateiauswahl zu große Dateien, unzulässige Inhalte
+oder zu große Abmessungen. Solche Bilder werden nicht automatisch verkleinert:
+die Datei vorher mit einem Bildprogramm reduzieren und erneut auswählen.
+Zum Ersetzen eine andere Datei auswählen;
 zum Abschalten wieder **Symcon-Medium** wählen und die Medienauswahl leeren.
 Bestehende Konfigurationen verwenden weiterhin ihre bisherigen Symcon-Bildmedien.
 Fehlende, gelöschte oder ungültige Bilder werden durch Initialen ersetzt. Bilder

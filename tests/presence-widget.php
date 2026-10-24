@@ -70,6 +70,22 @@ $deviceForm = array_column($form['elements'][1]['form'], null, 'name');
 $check($deviceForm['pictureUpload']['type'] === 'SelectFile' && $deviceForm['pictureUpload']['extensions'] === '.png,.jpg,.jpeg,.gif,.webp', 'The device dialog must accept a local console image file.');
 $check($deviceForm['deviceID']['options'] === $form['elements'][1]['columns'][0]['edit']['options'], 'Device selection retains cached choices in the custom row dialog.');
 $check($form['elements'][1]['columns'][4]['visible'] === false && $form['elements'][1]['columns'][4]['save'] === true, 'Uploaded bytes must persist without appearing in the device table.');
+$check(isset($deviceForm['PictureUploadError']) && !$deviceForm['PictureUploadError']['visible'], 'A picture draft needs a dedicated inline error field.');
+foreach (['pictureSource', 'pictureUpload'] as $field) {
+    $check($deviceForm[$field]['onChange'] === 'ICPR_ValidatePictureUpload($id, $pictureSource, $pictureUpload);', 'Both changing the source and the file must validate the current draft.');
+}
+$draftConfiguration = IPS_GetConfiguration($widgetID);
+$draftIDs = IPS_GetChildrenIDs($widgetID);
+$firstBoundary->commands = [];
+ICPR_ValidatePictureUpload($widgetID, 'upload', base64_encode(str_repeat('x', 203100)));
+$check($widget->fieldUpdates['PictureUploadError']['visible'] && str_contains($widget->fieldUpdates['PictureUploadError']['caption'], '128 KiB'), 'The reported oversized file must show a useful correction immediately.');
+ICPR_ValidatePictureUpload($widgetID, 'upload', 'not an image');
+$check($widget->fieldUpdates['PictureUploadError']['visible'] && str_contains($widget->fieldUpdates['PictureUploadError']['caption'], 'PNG'), 'Malformed files must explain accepted image formats.');
+foreach ([['media', 'invalid'], ['upload', ''], ['upload', 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=']] as [$source, $content]) {
+    ICPR_ValidatePictureUpload($widgetID, $source, $content);
+    $check(!$widget->fieldUpdates['PictureUploadError']['visible'] && $widget->fieldUpdates['PictureUploadError']['caption'] === '', 'Selecting media, removing the file or choosing a valid file clears obsolete errors.');
+}
+$check(IPS_GetConfiguration($widgetID) === $draftConfiguration && IPS_GetChildrenIDs($widgetID) === $draftIDs && $firstBoundary->commands === [], 'Picture validation must not save configuration, alter variables or contact the account.');
 IPS_SetProperty($widgetID, 'EnableIPSView', true);
 IPS_SetProperty($widgetID, 'IPSViewWidgetPhotos', false);
 IPS_ApplyChanges($widgetID);

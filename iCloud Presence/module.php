@@ -226,6 +226,8 @@ class iCloudPresence extends IPSModuleStrict
         $form['elements'][1]['form'] = array_map(static fn (array $column): array => array_merge($column['edit'], [
             'name' => $column['name'], 'caption' => $column['caption']
         ]), $form['elements'][1]['columns']);
+        $form['elements'][1]['form'][] = ['type' => 'Label', 'caption' => $this->StatusWidgetText('imageHint')];
+        $form['elements'][1]['form'][] = ['type' => 'Label', 'name' => 'PictureUploadError', 'caption' => '', 'visible' => false];
         $limits = $this->zoneFormLimits($this->ReadPropertyString('Zones'), $this->ReadPropertyInteger('Hysteresis'));
         $form['elements'][3]['columns'][4]['edit']['minimum'] = $limits['minimum'];
         $form['elements'][3]['form'] = 'return json_decode(ICPR_GetZoneEditForm($id, $Hysteresis, $MaxAccuracy, $ConfirmationTime, $Zones[\'customGPS\'] ?? false, $Zones[\'radius\'] ?? 100, $Zones[\'hysteresis\'] ?? $Hysteresis), true);';
@@ -234,6 +236,14 @@ class iCloudPresence extends IPSModuleStrict
         $form['elements'][7]['visible'] = $limits['message'] !== '';
         $form['actions'][0]['caption'] = $this->ReadAttributeString('LastError');
         return $this->EncodeConfigurationForm($this->StatusWidgetForm($form));
+    }
+
+    /** Reports rejected picture drafts without changing configuration or GPS state. */
+    public function ValidatePictureUpload(string $PictureSource, string $PictureUpload): void
+    {
+        $issue = $PictureSource === 'upload' ? $this->StatusWidgetUploadIssue($PictureUpload) : '';
+        $this->UpdateFormField('PictureUploadError', 'caption', $issue === '' ? '' : $this->Translate($issue));
+        $this->UpdateFormField('PictureUploadError', 'visible', $issue !== '');
     }
 
     /** Updates only the open form using unsaved list and spinner values. */
