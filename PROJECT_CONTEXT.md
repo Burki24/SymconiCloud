@@ -1686,3 +1686,33 @@ php-cs-fixer im Pruefmodus unter PHP 8.5.10. Der neutrale Variablenreset liegt
 im finally-Pfad der Variablenaktion; die vorhandene oeffentliche Tonfunktion
 bleibt unabhaengig von der neuen Darstellung. Der finale Stand dieses Pfads
 wurde nochmals im isolierten MCP-Pruefstand bestaetigt.
+
+### Echte Kachel-Tonprobe nach dem Modulupdate (2026-10-24)
+
+Nach ausdruecklicher Freigabe fuer genau einen Suchton wurde die echte native
+Symcon-Kachelvisualisierung des Produktivsystems per MCP-Browsersteuerung
+geoeffnet. In der erweiterten Geraetekachel des freigegebenen iPhones war die
+Aktionsvariable "Handy suchen" mit dem Taster "Ton abspielen" vorhanden.
+Genau ein sichtbarer Zeigerklick auf diesen Taster loeste die Tonprobe aus;
+kein direkter API-Aufruf und keine statische Vorschau ersetzten den Klick.
+Es wurde kein zweiter Suchton und kein Wiederholungsversuch ausgeloest.
+
+Der Client zeigte danach keinen Aktionsfehler. Der Taster blieb bedienbar,
+und die Browserdiagnose meldete keine Warnungen oder Fehler. Der Benutzer
+bestaetigte anschliessend ausdruecklich: "Ja, der Ton war hoerbar". Damit ist
+die zuvor offene echte Kachelbedienung einschliesslich hoerbarer Wiedergabe
+abgenommen. Konfiguration, Kachelzuordnung und Moduldateien wurden bei dieser
+Pruefung nicht veraendert.
+
+Der numerische Endwert der Produktivvariable wurde in diesem Browserlauf nicht
+direkt aus dem Kernel gelesen. Der neutrale Wert 0 nach Erfolg und Fehler ist
+separat durch die erneut erfolgreich ausgefuehrten Offline-Vertraege unter
+tests/play-sound.php sowie die vorherige isolierte MCP-Pruefung nachgewiesen.
+Die aktuelle Tonprobe bestaetigt den echten Bedienweg und die Wiedergabe;
+sie ersetzt diese getrennten Zustands- und Fehlerpfadnachweise nicht.
+
+Das angeschlossene Windows-MCP-Testsystem hatte noch den vorherigen Modulstand
+ohne Aktionsvariable. Dort erfolgten deshalb weder eine Installation noch ein
+Suchton-Aufruf. Die reale Abnahme fand ausschliesslich am aktualisierten
+Produktivclient statt. Private Endpunkte und Geraetekennungen bleiben ausserhalb
+des versionierten Pruefberichts.
