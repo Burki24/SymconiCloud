@@ -26,8 +26,9 @@
 ## Neu
 
 - Der IPSView-Designer der WoIst-Karte erhält eine eigene Farbzuordnung für
-  Karte, Bedienleiste, Popup und Geräteliste. 25 nummerierte Zuordnungen
-  unterscheiden IPSView-Stil, Positionsfarben und OpenFreeMap-Kartenfarben;
+  Karte, Bedienleiste, Popup und Geräteliste. 19 nummerierte Zuordnungen
+  erklären IPSView-Stil und Positionsfarben; OpenFreeMap-Farben bleiben direkt
+  in ihren Formularfeldern beschriftet und einstellbar. Die
   Beschriftungen entsprechen den deutschen beziehungsweise englischen
   Designer-Feldnamen.
 

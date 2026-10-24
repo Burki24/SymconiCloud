@@ -224,7 +224,7 @@ deutschen Feldnamen wie der Designer, ergänzt um technische Rollennamen.
 Im englischen Designer stehen englische Beschriftungen. Die Farben sind
 schematische Beispiele, keine Live-Vorschau ungespeicherter Einstellungen.
 
-Die Farbkarte unterscheidet drei Bereiche:
+Die Farbkarte enthält 19 Zuordnungen in zwei Bereichen:
 
 - **IPSView-Stil:** Hintergründe, Textarten, Auswahlrahmen, Warnhinweise,
   Popup, Zoomtasten, Rahmen und Schatten.
@@ -233,10 +233,11 @@ Die Farbkarte unterscheidet drei Bereiche:
   Der Genauigkeitskreis verwendet die aktuelle Positionsfarbe mit 8 %
   Fülldeckkraft. Markerränder sind fest weiß; **Akzentfarbe** umrandet die
   ausgewählte Gerätekarte und färbt nicht den Marker.
-- **OpenFreeMap:** **Landfarbe**, **Wasserfarbe**, **Farbe der Grünflächen**,
-  **Straßenfarbe**, **Gebäudefarbe** und **Beschriftungsfarbe** gehören zur
-  hellen beziehungsweise dunklen Kartenpalette. Sie wirken bei aktivierten
-  eigenen Kartenfarben auf passende sichtbare Vektorebenen.
+
+Die OpenFreeMap-Farben werden direkt unter **OpenFreeMap → Helle Kartenfarben**
+beziehungsweise **Dunkle Kartenfarben** beschriftet und eingestellt. Sie haben
+keine zusätzlichen Nummern oder Legendeneinträge in der Farbzuordnung;
+die schematische Karte bleibt als Anschauung erhalten.
 
 Ist **Karteneinstellungen der Kachel verwenden** aktiv, stammen Positionsfarben
 und OpenFreeMap-Profil aus der Kachel. Der IPSView-Stil bleibt unabhängig.

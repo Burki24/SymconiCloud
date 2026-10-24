@@ -30,13 +30,7 @@ trait WoIstColorGuide
         'Line'                      => 'Separator lines between map zoom buttons.',
         'ShadowColor'               => 'Map-frame shadow. Popups additionally use their central popup shadow and opacity settings.',
         'CurrentColor'              => 'Current position markers, current-device stripes and the accuracy circle (8% fill opacity).',
-        'StaleColor'                => 'Last-known-position markers and stale-device stripes.',
-        'Land'                      => 'Land and background layers of the vector map.',
-        'Water'                     => 'Water layers of the vector map.',
-        'Park'                      => 'Parks and green areas of the vector map.',
-        'Road'                      => 'Road layers of the vector map.',
-        'Building'                  => 'Building layers of the vector map.',
-        'MapText'                   => 'Place and street labels on the map, independently of the IPSView text colors.'
+        'StaleColor'                => 'Last-known-position markers and stale-device stripes.'
     ];
     private const WOIST_GUIDE_LABELS = [
         'ViewBackground'            => ['color.view_background', 'View background'],
@@ -57,13 +51,7 @@ trait WoIstColorGuide
         'Line'                      => ['color.line', 'Line color'],
         'ShadowColor'               => ['color.shadow', 'Shadow color'],
         'CurrentColor'              => ['', 'Current position color'],
-        'StaleColor'                => ['', 'Last known position color'],
-        'Land'                      => ['land', 'Land color', 'OpenFreeMapHelper'],
-        'Water'                     => ['water', 'Water color', 'OpenFreeMapHelper'],
-        'Park'                      => ['park', 'Green areas color', 'OpenFreeMapHelper'],
-        'Road'                      => ['road', 'Road color', 'OpenFreeMapHelper'],
-        'Building'                  => ['building', 'Building color', 'OpenFreeMapHelper'],
-        'MapText'                   => ['text', 'Label color', 'OpenFreeMapHelper']
+        'StaleColor'                => ['', 'Last known position color']
     ];
 
     private function WoIstColorGuideForm(): array

@@ -13,7 +13,7 @@ $catalogs = [];
 foreach (['IPSViewStyleHelper', 'OpenFreeMapHelper'] as $catalog) {
     $catalogs[$catalog] = json_decode(file_get_contents($root . '/libs/helper/translations/' . $catalog . '.json'), true)['translations'];
 }
-$check(count($roles) === 25 && array_keys($roles) === array_keys($labels), 'The WoIst guide needs complete labels for its 25 actual color roles.');
+$check(count($roles) === 19 && array_keys($roles) === array_keys($labels), 'The WoIst guide needs complete labels for its 19 interface and position color roles.');
 foreach (['de', 'en'] as $language) {
     $guide = new class($language) {
         use \SymconiCloud\WoIstColorGuide;
@@ -56,6 +56,11 @@ foreach (['de', 'en'] as $language) {
     $check($xml->loadXML($svg, LIBXML_NONET), 'Localized map guide must be valid SVG.');
     $check(!preg_match('/<(?:script|foreignObject|image)\b|\bhref\s*=|<!DOCTYPE/i', $svg), 'No scripts, external pictures or map-tile downloads in the guide.');
     $xpath = new DOMXPath($xml);
+    $pins = $xpath->query('//*[local-name()="text" and @class="number"]');
+    $check(array_map(static fn ($pin): string => $pin->textContent, iterator_to_array($pins)) === array_map('strval', range(1, 19)), 'Only markers 1 through 19 remain; OpenFreeMap markers 20 through 25 are removed.');
+    foreach (['Land', 'Water', 'Park', 'Road', 'Building', 'MapText'] as $removedRole) {
+        $check(!isset($roles[$removedRole]) && $xpath->query('//*[@data-role="' . $removedRole . '"]')->length === 0, 'OpenFreeMap palette roles must not appear in the guide legend.');
+    }
     $number = 0;
     foreach ($roles as $role => $description) {
         [$key, $fallback] = $labels[$role];
@@ -82,6 +87,14 @@ foreach ($guidePanel['items'] as $item) {
     $check(isset($locale[$caption]), 'All map guide hints, notes and descriptions need module translations.');
 }
 $form = json_decode($map->GetConfigurationForm(), true);
+$formJson = json_encode($form, JSON_THROW_ON_ERROR);
+foreach (['Tile', 'IPSView'] as $prefix) {
+    foreach (['Light', 'Dark'] as $palette) {
+        foreach (['Land', 'Water', 'Park', 'Road', 'Building', 'Text'] as $color) {
+            $check(str_contains($formJson, '"name":"' . $prefix . 'Map' . $palette . $color . 'Color"'), 'Both designers retain every light and dark OpenFreeMap color field.');
+        }
+    }
+}
 $findImage = static function (array $items) use (&$findImage): int
 {
     $count = 0;

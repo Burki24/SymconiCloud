@@ -15,14 +15,14 @@ use Burki24\SymconModuleHelper\SVGPreviewHelper as SVG;
 $root = dirname(__DIR__);
 $labels = (new ReflectionClass(SymconiCloud\WoIstColorGuide::class))->getConstant('WOIST_GUIDE_LABELS');
 $catalogs = [];
-foreach (['IPSViewStyleHelper', 'OpenFreeMapHelper'] as $name) {
+foreach (['IPSViewStyleHelper'] as $name) {
     $catalogs[$name] = json_decode(file_get_contents($root . '/libs/helper/translations/' . $name . '.json'), true)['translations'];
 }
 $locale = json_decode(file_get_contents($root . '/iCloud WoIst/locale.json'), true)['translations']['de'];
 foreach (['en', 'de'] as $lang) {
     $de = $lang === 'de';
-    $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1160" viewBox="0 0 1400 1160"><title>WoIst: IPSView / OpenFreeMap</title><defs><style>text{font-family:Arial,sans-serif;font-size:17px;fill:#263448}.heading{font-size:23px;font-weight:bold}.small{font-size:13px;fill:#6c798b}.label{font-size:16px}.pin{fill:#263448;stroke:#fff;stroke-width:2}.number{font-size:13px;fill:#fff;font-weight:bold;text-anchor:middle;dominant-baseline:central}</style></defs>';
-    $svg .= '<rect width="1400" height="1160" rx="16" fill="#fff"/><rect x="22" y="22" width="836" height="658" rx="12" fill="#f4f6f9"/>';
+    $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900"><title>WoIst: IPSView</title><defs><style>text{font-family:Arial,sans-serif;font-size:17px;fill:#263448}.heading{font-size:23px;font-weight:bold}.small{font-size:13px;fill:#6c798b}.label{font-size:16px}.pin{fill:#263448;stroke:#fff;stroke-width:2}.number{font-size:13px;fill:#fff;font-weight:bold;text-anchor:middle;dominant-baseline:central}</style></defs>';
+    $svg .= '<rect width="1400" height="900" rx="16" fill="#fff"/><rect x="22" y="22" width="836" height="658" rx="12" fill="#f4f6f9"/>';
     $svg .= '<text x="46" y="65" class="heading">WoIst</text><text x="46" y="91" class="small">' . ($de ? 'Konto aktualisiert: 1 min zuvor' : 'Account updated: 1 min ago') . '</text>';
     $svg .= '<rect x="420" y="45" width="212" height="44" rx="7" fill="#e9eef5" stroke="#bcc9d9"/><text x="434" y="73">' . ($de ? 'Alle Positionen anzeigen' : 'Show all positions') . '</text><rect x="646" y="45" width="188" height="44" rx="7" fill="#e9eef5" stroke="#bcc9d9"/><text x="660" y="73">' . ($de ? 'Bei Apple aktualisieren' : 'Refresh from Apple') . '</text>';
     $svg .= '<rect x="46" y="112" width="788" height="36" rx="5" fill="#faf0da"/><path d="M48 117V143" stroke="#bf8b30" stroke-width="4"/><text x="67" y="136">' . ($de ? 'Beispiel: Verbindungs- oder Adresshinweis' : 'Example: connection or address warning') . '</text>';
@@ -37,12 +37,12 @@ foreach (['en', 'de'] as $lang) {
     $svg .= '<rect x="631" y="210" width="190" height="89" rx="8" fill="#fff" stroke="#bcc9d9"/><path d="M634 219V290" stroke="#168d80" stroke-width="4"/><text x="646" y="235" font-weight="bold">Alex</text><text x="646" y="260" class="small">' . ($de ? 'Aktuelle Position' : 'Current position') . '</text><text x="646" y="281" class="small">1 min</text>';
     $svg .= '<rect x="631" y="313" width="190" height="89" rx="8" fill="#d8e3f4" stroke="#5573cd" stroke-width="3"/><path d="M634 322V393" stroke="#b47722" stroke-width="4"/><text x="646" y="338" style="fill:#274880;font-weight:bold">Blake</text><text x="646" y="363" class="small">' . ($de ? 'Letzte bekannte Position' : 'Last known position') . '</text>';
     $svg .= '<rect x="631" y="416" width="190" height="89" rx="8" fill="#edf0f4" stroke="#bcc9d9"/><path d="M634 425V496" stroke="#6c798b" stroke-width="4"/><text x="646" y="441" style="fill:#6c798b;font-weight:bold">Casey</text><text x="646" y="470" class="small">' . ($de ? 'Keine Position' : 'No position') . '</text>';
-    $pins = [[33, 47], [812, 600], [800, 282], [795, 384], [795, 487], [159, 61], [609, 99], [730, 336], [795, 258], [598, 621], [821, 354], [48, 132], [500, 385], [529, 338], [113, 193], [113, 221], [242, 638], [211, 545], [440, 477], [550, 600], [83, 481], [210, 224], [378, 292], [190, 423], [368, 574]];
+    $pins = [[33, 47], [812, 600], [800, 282], [795, 384], [795, 487], [159, 61], [609, 99], [730, 336], [795, 258], [598, 621], [821, 354], [48, 132], [500, 385], [529, 338], [113, 193], [113, 221], [242, 638], [211, 545], [440, 477]];
     foreach ($pins as $i => [$x,$y]) {
         $svg .= '<circle class="pin" cx="' . $x . '" cy="' . $y . '" r="12"/><text class="number" x="' . $x . '" y="' . $y . '">' . ($i + 1) . '</text>';
     }
     $svg .= '<text x="887" y="47" class="heading">' . ($de ? 'IPSView-Stil' : 'IPSView style') . '</text>';
-    $svg .= '<text x="46" y="742" class="heading">' . ($de ? 'Karteneinstellungen und OpenFreeMap' : 'Map settings and OpenFreeMap') . '</text>';
+    $svg .= '<text x="46" y="742" class="heading">' . ($de ? 'Positionsfarben' : 'Position colors') . '</text>';
     foreach (array_values(array_keys($labels)) as $i => $role) {
         [$key,$fallback] = $labels[$role];
         $catalog = $labels[$role][2] ?? 'IPSViewStyleHelper';
@@ -57,8 +57,8 @@ foreach (['en', 'de'] as $lang) {
         }
         $svg .= '<g data-role="' . $role . '"><text x="' . $x . '" y="' . $y . '" class="label">' . ($i + 1) . ' ' . SVG::escape($caption) . '</text><text x="' . ($x + 20) . '" y="' . ($y + 17) . '" class="small">' . $role . '</text></g>';
     }
-    $svg .= '<text x="46" y="1110" class="small">' . ($de ? 'Schematische Farben. Eigene Kartenfarben wirken nur auf passende sichtbare Vektorebenen.' : 'Schematic colors. Custom map colors apply only to compatible visible vector layers.') . '</text>';
-    $svg .= '<text x="46" y="1133" class="small">' . ($de ? 'Positionsfarben folgen bei aktivierter Übernahme dem Kachelprofil. Weiße Markerränder sind fest vorgegeben.' : 'Position colors follow the Tile profile when linked. White marker outlines are fixed.') . '</text></svg>';
+    $svg .= '<text x="46" y="850" class="small">' . ($de ? 'Schematische Farben; keine Live-Vorschau.' : 'Schematic colors; not a live preview.') . '</text>';
+    $svg .= '<text x="46" y="873" class="small">' . ($de ? 'Positionsfarben folgen bei aktivierter Übernahme dem Kachelprofil. Weiße Markerränder sind fest vorgegeben.' : 'Position colors follow the Tile profile when linked. White marker outlines are fixed.') . '</text></svg>';
     $stem = $root . '/iCloud WoIst/visualization/color-guide' . ($de ? '-de' : '');
     file_put_contents($stem . '.svg', $svg . "\n");
     file_put_contents($stem . '.image', SVG::dataUri($svg . "\n") . "\n");

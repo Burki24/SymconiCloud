@@ -1405,3 +1405,27 @@ Nachweisquelle sind die Benutzerbestaetigung und die beiden bereitgestellten
 Screenshots. Fuer diesen Dokumentationsschritt wurde kein neuer MCP-Lauf
 ausgefuehrt; eine erneute Laufzeitpruefung einzelner Farbaenderungen wird damit
 nicht behauptet.
+
+### Vereinfachte WoIst-Farbzuordnung (2026-10-24)
+
+Auf Benutzerwunsch entfallen die OpenFreeMap-Markierungen 20 bis 25 samt
+Bild- und Textlegendeneintraegen fuer Land, Wasser, Gruenflaechen, Strassen,
+Gebaeude und Kartenbeschriftung. Die Farbzuordnung erklaert weiterhin die
+IPSView-Stilrollen und die Positionsfarben mit den unveraenderten Nummern
+1 bis 19. Die schematische Karte bleibt erhalten; die Grafik wird ohne die
+entfallenen Legendenzeilen kuerzer.
+
+Die OpenFreeMap-Paletten bleiben im Formular fuer Hell und Dunkel vollstaendig
+beschriftet und einstellbar. Keine Aenderung an Kartenressourcen zur Laufzeit,
+Farb-Properties, gespeicherten Einstellungen oder zentralen Helpern.
+Der bestehende Generator verwendet weiterhin SVGPreviewHelper zum Erzeugen
+der deutschen und englischen Bildressourcen.
+
+Nachweise: beide neu erzeugten Sprachfassungen gerendert und visuell geprueft.
+Die angepassten Vertragstests bestaetigen exakt die Nummern 1 bis 19, das Fehlen
+der sechs OpenFreeMap-Legendenrollen und den Erhalt saemtlicher heller und
+dunkler OpenFreeMap-Farbfelder in beiden Designern. Die vollstaendige
+Offline-Suite einschliesslich UI-/Transport-, Struktur-/Hash-/LF- und
+Syntaxpruefungen sowie JSON-Check und php-cs-fixer im Pruefmodus sind unter
+PHP 8.5.10 erfolgreich. Kein neuer MCP- oder nativer Client-Test fuer diese
+reine Designer-Ressourcenaenderung.
