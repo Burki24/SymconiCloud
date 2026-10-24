@@ -1384,3 +1384,24 @@ Struktur-/Hash-/LF-, JSON- und Stilpruefungen unter PHP 8.5.10 bestanden.
 Keine Aenderung auf einem
 angeschlossenen Symcon-System, keine Apple- oder Kartendienstabfrage.
 Die Anzeige im echten WoIst-Konsolenformular bleibt nach dem Update abzunehmen.
+
+### Erfolgreiche Praxisabnahme der WoIst-Farbzuordnung (2026-10-24)
+
+Der Benutzer bestaetigt nach dem Update mit "Funktioniert" die erfolgreiche
+Pruefung der Farbzuordnung im echten IPSView-Designer der WoIst-Karte.
+Die bereitgestellten Screenshots zeigen das geoeffnete Panel
+"Farbzuordnung: WoIst-Karte" mit der kartenspezifischen Illustration fuer
+Bedienleiste, Karte, Popup und Geraeteliste. Die nummerierten Zuordnungen
+verwenden die deutschen Designer-Bezeichnungen; technische Feldnamen werden
+ergaenzend angezeigt.
+
+Sichtbar sind sowohl die IPSView-Stilrollen als auch der Abschnitt
+"Karteneinstellungen und OpenFreeMap" mit Positions- und Kartenfarben,
+Erlaeuterungen zu den schematischen Farben und der ergaenzenden Textlegende.
+Damit ist die zuvor offene Anzeigepruefung im echten Konsolenformular
+abgeschlossen.
+
+Nachweisquelle sind die Benutzerbestaetigung und die beiden bereitgestellten
+Screenshots. Fuer diesen Dokumentationsschritt wurde kein neuer MCP-Lauf
+ausgefuehrt; eine erneute Laufzeitpruefung einzelner Farbaenderungen wird damit
+nicht behauptet.
