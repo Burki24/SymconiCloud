@@ -2005,3 +2005,50 @@ IPSView-Variable entfernt. Relay und Testclients sind beendet; die
 Kontositzung bleibt angemeldet. Die dauerhafte Uebernahme erfolgt ueber den
 regulaeren Modulupdateweg. Die vom Benutzer erneuerten Zugangsdaten wurden
 bei der Wiederherstellung ausdruecklich beibehalten.
+
+### Fotos: erfolgreiche MCP-Nachpruefung nach dem Modulupdate (2026-10-24)
+
+Nach dem regulaeren Update wurden der installierte Foto-Code und der zentrale
+ChunkedJsonTransferHelper auf dem angeschlossenen Windows-Testsystem mit dem
+Repository-Stand abgeglichen. Die Dateien stimmten ueberein; die vorhandene
+Kontositzung war angemeldet. Es waren keine temporaeren Quelldateiaenderungen
+und kein Modul-Reload fuer diese Nachpruefung erforderlich.
+
+Die Abnahme umfasste die echte native Symcon-Kachel in der Hauptansicht und die
+gespeicherte IPSView-HTML-Einbettung im Browser. Die Albumauswahl wurde von einem
+persoenlichen Album ohne unterstuetzte Bildvorschau auf Favoriten gewechselt.
+Beide Ausgaben zeigten zuerst den korrekten Leerzustand und danach die Fotos
+des gewaehlten Albums. Die gespeicherte IPSView-Ausgabe entsprach nach dem
+Albumwechsel der neu erzeugten Einbettung. Automatischer Bildwechsel im
+Fuenfsekundenintervall, Pause sowie echtes Mausrad-Blaettern vorwaerts und
+rueckwaerts funktionierten in beiden Darstellungen.
+
+Vor dem Datenupdate wurden die vollstaendig geladenen, pausierten Bilder
+getrennt je Darstellung erfasst. Ein erfolgreicher Metadatenrefresh und die
+nachfolgenden Modellabrufe veraenderten weder das jeweilige Bild noch dessen
+Blob-URL oder den Pausenzustand.
+
+Anschliessend unterbrach ein temporaeres lokales HTTP-/WebSocket-Relay nur die
+Testclients. Der Ausfall war durch 24 abgewiesene Verbindungen und ausbleibende
+erfolgreiche Modellabrufe belegt. IPSView hielt sein pausiertes Bild sichtbar
+und zeigte den Verbindungshinweis. Der native Host ersetzte seinen
+Kachelrenderer. Nach Freigabe wurden zwei neue WebSocket-Verbindungen und
+erfolgreiche Modellabrufe nachgewiesen: Beide Darstellungen zeigten wieder
+dasselbe jeweilige Bild und blieben pausiert; die Verbindungshinweise
+verschwanden. In IPSView blieb auch die Blob-URL erhalten. Anschliessend liess
+sich die Wiedergabe in beiden Ausgaben fortsetzen. Die abschliessende Kontrolle
+mit dem dokumentierten Ladeablauf zeigte keine JavaScript-Fehler.
+
+Alle 51 gemessenen Bildtransfers wurden freigegeben; es blieben keine
+Transferdateien zurueck. Die vollstaendige urspruengliche Fotokonfiguration
+(ohne Albumauswahl und mit deaktivierter IPSView-Ausgabe) wurde wiederhergestellt,
+die nur fuer den Test angelegte Ausgabevariable entfernt und der vorherige
+Objektbestand bestaetigt. Testclients und Relay wurden beendet und die
+urspruengliche Kachelansicht wieder geoeffnet. Die Kontositzung blieb angemeldet.
+Fotos, Alben, Zugangsdaten und installierte Moduldateien wurden nicht veraendert.
+
+**Offen:** Der echte IPSView-Client einschliesslich einer nativen IPSView-App
+wurde mit der Fotoausgabe noch nicht geprueft. Der Benutzer hat diesen Test
+ausdruecklich fuer spaeter vorgesehen. Die erfolgreiche Browser-Einbettung ist
+kein Nachweis fuer diesen noch offenen Clientpfad. Private Endpunkte, Album-
+und Fotokennungen, Tokens und Screenshots bleiben ausserhalb des Repositories.
