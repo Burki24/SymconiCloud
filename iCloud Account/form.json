@@ -25,6 +25,67 @@
         {
             "type": "Label",
             "caption": "Use the account password, not an app-specific password. Save settings before signing in."
+        },
+        {
+            "type": "ExpansionPanel",
+            "caption": "iCloud Photos (optional)",
+            "items": [
+                {
+                    "type": "CheckBox",
+                    "name": "EnablePhotos",
+                    "caption": "Enable read-only Photos access"
+                },
+                {
+                    "type": "Select",
+                    "name": "PhotoCacheProfile",
+                    "caption": "Photo resource profile",
+                    "options": [
+                        {
+                            "caption": "Compact: 50 images / 100 MiB",
+                            "value": "compact"
+                        },
+                        {
+                            "caption": "Standard: 250 images / 500 MiB",
+                            "value": "standard"
+                        },
+                        {
+                            "caption": "Large: 1000 images / 2 GiB",
+                            "value": "large"
+                        },
+                        {
+                            "caption": "Custom limits",
+                            "value": "custom"
+                        }
+                    ]
+                },
+                {
+                    "type": "NumberSpinner",
+                    "name": "PhotoCacheImages",
+                    "caption": "Custom maximum cached images",
+                    "minimum": 1,
+                    "maximum": 100000
+                },
+                {
+                    "type": "NumberSpinner",
+                    "name": "PhotoCacheMiB",
+                    "caption": "Custom disk cache in MiB",
+                    "minimum": 1,
+                    "maximum": 65536
+                },
+                {
+                    "type": "Label",
+                    "caption": "One disk cache per account. The first count or byte limit reached applies. Older images are evicted as needed; larger albums remain browsable. Custom limits apply only to the Custom profile."
+                },
+                {
+                    "type": "Label",
+                    "caption": "Photos require iCloud web access. Advanced Data Protection may require approval on a trusted device. This module does not change Apple protection settings."
+                },
+                {
+                    "type": "Button",
+                    "caption": "Check Photos access and load albums",
+                    "onClick": "ICAC_RefreshPhotoAlbums($id);"
+                }
+            ]
         }
     ],
     "actions": [

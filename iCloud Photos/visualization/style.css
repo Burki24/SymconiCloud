@@ -1,0 +1,33 @@
+* { box-sizing: border-box; }
+body { color: var(--symc-text); background: var(--symc-background); }
+#photo-widget { gap: 6px; --symc-responsive-padding: 8px; }
+#photo-frame { flex: 1; min-height: 0; min-width: 0; margin: 0; position: relative; display: grid; place-items: center; overflow: hidden; border: 1px solid var(--symc-border); border-radius: 10px; background: var(--photo-page, var(--symc-surface)); }
+#photo { width: 100%; height: 100%; min-height: 0; position: absolute; inset: 0; object-fit: contain; }
+#empty { margin: 10px; text-align: center; color: var(--symc-subheading); }
+#photo-toolbar { display: flex; flex: none; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
+#photo-caption { min-width: 0; max-height: 3em; overflow: auto; overflow-wrap: anywhere; scrollbar-width: thin; }
+nav { display: flex; flex: none; gap: 5px; }
+button { min-width: 38px; min-height: 36px; font: inherit; cursor: pointer; border: 1px solid var(--symc-border); border-radius: 7px; background: var(--symc-surface); color: var(--symc-text); }
+button:hover, button[aria-pressed="true"] { background: var(--symc-surface-raised); color: var(--photo-active-text, var(--symc-heading)); }
+button:focus-visible { outline: 2px solid var(--symc-accent); }
+button:disabled { opacity: .5; cursor: default; }
+#photo-error { flex: none; margin: 0; max-height: 3em; overflow: auto; font-size: .85rem; color: var(--symc-warning); }
+[hidden] { display: none !important; }
+html.ipsview-mode {
+    --symc-font-family: var(--ipsview-role-font-family);
+    --symc-background: var(--ipsview-role-view-background);
+    --symc-text: var(--ipsview-role-text-primary);
+    --symc-heading: var(--ipsview-role-text-label);
+    --symc-subheading: var(--ipsview-role-text-inactive);
+    --symc-surface: var(--ipsview-role-control-background);
+    --symc-surface-raised: var(--ipsview-role-control-active-background);
+    --symc-border: var(--ipsview-role-border);
+    --symc-warning: var(--ipsview-role-warning);
+    --symc-accent: var(--ipsview-role-accent);
+    --photo-page: var(--ipsview-role-page-background);
+    --photo-active-text: var(--ipsview-role-text-active);
+    font-style: var(--ipsview-role-font-style);
+    font-weight: var(--ipsview-role-font-weight);
+}
+html.ipsview-mode #photo-frame, html.ipsview-mode button { border-width: var(--ipsview-role-border-width); box-shadow: var(--ipsview-role-shadow); }
+@container photos (max-width: 230px) { #photo-toolbar { flex-wrap: wrap; } nav { margin-inline-start: auto; } }

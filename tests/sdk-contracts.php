@@ -160,7 +160,7 @@ foreach (glob($root . '/*/module.json') as $file) {
 foreach ($knownModules as $moduleID => $folder) {
     $module = json_decode(file_get_contents($folder . '/module.json'), true, 512, JSON_THROW_ON_ERROR);
     $instanceID = IPS_CreateInstance($moduleID);
-    if (in_array($module['prefix'], ['ICWI', 'ICPR'], true)) {
+    if (in_array($module['prefix'], ['ICWI', 'ICPR', 'ICPH'], true)) {
         IPS_SetProperty($instanceID, 'EnableIPSView', true);
         IPS_ApplyChanges($instanceID);
     }

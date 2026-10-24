@@ -29,6 +29,14 @@
 
 ## Neu
 
+- **iCloud Fotos**: lesender Albumzugriff über das vorhandene Konto, Einzelbild
+  und Diashow als Kachel-/IPSView-Widget mit unabhängigen Designern, Farbzuordnung,
+  Bildwechsel, Pause, Beschriftung und Erhalt des Clientzustands bei Updates.
+  Der gemeinsame Kontocache bietet Kompakt (50/100 MiB), Standard (250/500 MiB),
+  Groß (1000/2 GiB) und eigene Grenzen, LRU-Verdrängung sowie bedarfsgerechtes
+  Nachladen größerer Alben. Apple-Sitzungen und Download-Adressen bleiben privat.
+
+
 - Die Geräteinstanz ergänzt **Verloren-Modus deaktivieren** mit eigenem
   Ja/Nein-Dialog und `ICID_DeactivateLostMode()`. Auch Skripte benötigen eine
   ausdrückliche Bestätigung. Der Auftrag verwendet feste Ausschaltwerte ohne

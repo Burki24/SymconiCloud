@@ -3,11 +3,13 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../libs/AppleClient.php';
+require_once __DIR__ . '/../libs/PhotosAccount.php';
 require_once __DIR__ . '/../libs/helper/ConfigurationFormHelper.php';
 require_once __DIR__ . '/../libs/helper/DataFlowHelper.php';
 
 class iCloudAccount extends IPSModuleStrict
 {
+    use \SymconiCloud\PhotosAccount;
     use \Burki24\SymconModuleHelper\ConfigurationFormHelper;
     use \Burki24\SymconModuleHelper\DataFlowHelper;
 
@@ -18,6 +20,7 @@ class iCloudAccount extends IPSModuleStrict
     public function Create(): void
     {
         parent::Create();
+        $this->RegisterPhotosAccount();
         $this->RegisterPropertyBoolean('Enabled', false);
         $this->RegisterPropertyString('Username', '');
         $this->RegisterPropertyString('Password', '');
@@ -46,6 +49,16 @@ class iCloudAccount extends IPSModuleStrict
             if (!$this->ReadPropertyBoolean('Enabled')) {
                 $this->clearState();
             }
+            if (!$this->ReadPropertyBoolean('EnablePhotos')) {
+                $this->ClearPhotoState();
+            }
+            else {
+                try {
+                    $this->PhotoCache()->trim();
+                } catch (Throwable) {
+                    $this->WriteAttributeString('PhotoError', $this->Translate('Photo cache unavailable or configured limits are invalid.'));
+                }
+            }
             $this->updateState();
         } finally {
             IPS_SemaphoreLeave('SymconiCloud.' . $this->InstanceID);
@@ -60,6 +73,7 @@ class iCloudAccount extends IPSModuleStrict
         $state = $this->readSession()['state'] ?? 'signedOut';
         $form['actions'][0]['caption'] = $this->Translate('Session state') . ': ' . $this->Translate((string) $state);
         $form['actions'][1]['caption'] = $this->errorMessage($this->ReadAttributeString('LastError'));
+        $form['actions'][] = ['type' => 'Label', 'caption' => $this->ReadAttributeString('PhotoError')];
         $form['actions'] = $this->SetFormFieldVisibility($form['actions'], ['TwoFactor'], $state === 'awaiting2FA');
         return $this->EncodeConfigurationForm($form);
     }
@@ -115,6 +129,9 @@ class iCloudAccount extends IPSModuleStrict
     {
         try {
             $request = $this->DecodeDataFlowMessage($JSONString, self::REQUEST_DATA);
+            if (in_array($request['Command'] ?? '', ['GetPhotoAlbums', 'RefreshPhotoAlbums', 'GetPhotoPage', 'GetPhotoImage'], true)) {
+                return json_encode($this->ForwardPhotosRequest($request), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+            }
             if (($request['Command'] ?? '') === 'PlaySound') {
                 if (!is_string($request['DeviceID'] ?? null) || array_diff(array_keys($request), ['DataID', 'Command', 'DeviceID']) !== []) {
                     throw new InvalidArgumentException();
@@ -334,6 +351,7 @@ class iCloudAccount extends IPSModuleStrict
 
     private function clearState(): void
     {
+        $this->ClearPhotoState();
         $this->WriteAttributeString('Session', '{}');
         $this->WriteAttributeString('DeviceCache', '{"devices":[],"updatedAt":0}');
         $this->WriteAttributeString('LastError', '');

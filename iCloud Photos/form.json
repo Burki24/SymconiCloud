@@ -1,0 +1,60 @@
+{
+    "elements": [
+        {
+            "type": "CheckBox",
+            "name": "Enabled",
+            "caption": "Enable photo widget"
+        },
+        {
+            "type": "Select",
+            "name": "AlbumID",
+            "caption": "Album",
+            "options": [
+                {
+                    "caption": "Select album",
+                    "value": ""
+                }
+            ]
+        },
+        {
+            "type": "NumberSpinner",
+            "name": "RefreshInterval",
+            "caption": "Photo metadata refresh interval in seconds",
+            "minimum": 300,
+            "maximum": 86400
+        },
+        {
+            "type": "Label",
+            "caption": "Enable Photos in the account, load albums, select an album and apply the configuration. Photos are read only. Hidden photos and videos are excluded."
+        }
+    ],
+    "actions": [
+        {
+            "type": "Button",
+            "caption": "Load albums",
+            "onClick": "ICPH_RefreshAlbums($id);"
+        },
+        {
+            "type": "Button",
+            "caption": "Refresh photos",
+            "onClick": "ICPH_Refresh($id);"
+        }
+    ],
+    "status": [
+        {
+            "code": 102,
+            "icon": "active",
+            "caption": "Ready"
+        },
+        {
+            "code": 104,
+            "icon": "inactive",
+            "caption": "Disabled or incomplete selection"
+        },
+        {
+            "code": 202,
+            "icon": "error",
+            "caption": "Photos unavailable."
+        }
+    ]
+}

@@ -6,6 +6,7 @@ namespace SymconiCloud;
 
 require_once __DIR__ . '/AppleHttpClient.php';
 require_once __DIR__ . '/AppleSrp.php';
+require_once __DIR__ . '/PhotosLibrary.php';
 
 /** Account/session protocol; never exposes raw service responses to children. */
 final class AppleClient
@@ -165,6 +166,17 @@ final class AppleClient
         ], 'lostModeStopRejected');
     }
 
+    /** Read-only Photos catalog; the session and every service URL remain account-private. */
+    public function photoAlbums(): array
+    {
+        return (new PhotosLibrary(fn (string $path, array $body): array => $this->photoRequest($path, $body)))->albums();
+    }
+
+    public function photoPage(array $album, int $offset): array
+    {
+        return (new PhotosLibrary(fn (string $path, array $body): array => $this->photoRequest($path, $body)))->page($album, $offset);
+    }
+
     /** One authenticated POST, never token renewal, password login or an automatic retry. */
     private function sendDeviceCommand(string $deviceID, string $command, array $payload, string $rejectedReason): void
     {
@@ -250,6 +262,20 @@ final class AppleClient
         }
         $this->session['dsid'] = (string) $dsid;
         $this->session['findme'] = rtrim($url, '/');
+        $this->session['photos'] = '';
+        $photos = $data['webservices']['ckdatabasews']['url'] ?? '';
+        if (is_string($photos) && $photos !== '') {
+            try {
+                AppleHttpClient::assertURL($photos);
+                $photoParts = parse_url($photos);
+                if (str_ends_with(strtolower($photoParts['host']), '.icloud.com') && !isset($photoParts['query'])
+                    && in_array($photoParts['path'] ?? '', ['', '/'], true)) {
+                    $this->session['photos'] = rtrim($photos, '/');
+                }
+            } catch (AppleException) {
+                // An unavailable optional Photos service must not break Find My.
+            }
+        }
         $this->session['state'] = 'authenticated';
         $this->session['challengeAt'] = 0;
     }
@@ -262,6 +288,37 @@ final class AppleClient
         return $this->call('POST', $url, [], ['clientContext' => [
             'fmly' => true, 'shouldLocate' => false, 'selectedDevice' => 'all', 'deviceListVersion' => 1
         ]]);
+    }
+
+    private function photoRequest(string $path, array $body): array
+    {
+        if ($this->session['state'] !== 'authenticated') {
+            throw new AppleException('authentication');
+        }
+        if (empty($this->session['photos'])) {
+            // Discover an optional service using the existing token, never a password login.
+            $this->accountLogin();
+        }
+        if ($this->session['state'] !== 'authenticated') {
+            throw new AppleException('authentication');
+        }
+        if (empty($this->session['photos'])) {
+            throw new AppleException('photosUnavailable');
+        }
+        $response = $this->call('POST', $this->session['photos'] . '/database/1/com.apple.photos.cloud/production/private/' . $path . '?' . http_build_query([
+            'clientId' => $this->session['clientId'], 'dsid' => $this->session['dsid'] ?? '', 'remapEnums' => 'true', 'getCurrentSyncToken' => 'true'
+        ]), [], $body);
+        if (in_array($response['status'], [401, 421, 450], true)) {
+            $this->session['state'] = 'expired';
+        }
+        if ($response['status'] === 403) {
+            throw new AppleException('photosAccess');
+        }
+        $this->expect($response, [200]);
+        if (isset($response['body']['serverErrorCode'])) {
+            throw new AppleException('photosAccess');
+        }
+        return $response['body'];
     }
 
     private function auth(string $method, string $path, ?array $body): array

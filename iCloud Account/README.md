@@ -65,6 +65,27 @@ als Boolean oder null. Bestehende Cachefelder und Abfrageintervalle bleiben
 unverändert. Rohantworten, Befehlsdaten und zusätzliche Kennungen werden nicht
 an Kinder weitergereicht.
 
+## Optionaler Fotozugriff
+
+Unter **iCloud Fotos (optional)** wird der lesende Fotozugriff ausdrücklich
+aktiviert und das gemeinsame Ressourcenprofil gewählt: **Kompakt** (Standard:
+50 Bilder/100 MiB), **Standard** (250/500 MiB), **Groß** (1000/2 GiB) oder
+**Eigene Grenzen** (`PhotoCacheImages` und `PhotoCacheMiB`). Es gilt jeweils die
+zuerst erreichte Grenze; das Konto entfernt länger nicht verwendete Vorschauen.
+Diese Grenzen gelten gemeinsam für alle verbundenen Foto-Widgets.
+
+Nach dem Übernehmen **Fotozugriff prüfen und Alben laden** wählen. Bestehende
+Sitzungen entdecken den Fotodienst mit ihrem Sitzungstoken; ein Passwort-Login
+wird dabei nicht automatisch gestartet. Fehlender Foto-Webzugriff verhindert
+keine WoIst-Geräteabfrage. Die [Fotoanleitung](../iCloud%20Photos/README.md)
+beschreibt Einrichtung, Apple-Freigaben, Datenschutz und Cachegrenzen.
+
+`ICAC_RefreshPhotoAlbums($InstanceID)` aktualisiert den Albumkatalog lesend;
+`ICAC_GetPhotoAlbums($InstanceID)` liest ausschließlich dessen lokalen Stand,
+Zugriffsstatus und Cacheauslastung. Zugangsdaten und signierte Bildadressen
+werden nicht ausgegeben. Abmelden, deaktivierter Fotozugriff und geänderte
+Zugangsdaten entfernen auch lokale Fotodaten.
+
 ## Lizenz
 
 PolyForm Noncommercial License 1.0.0; siehe [LICENSE](../LICENSE).

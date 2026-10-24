@@ -1,5 +1,64 @@
 # Entwicklungsstand
 
+## iCloud Fotos: erste lesende Version und Ressourcenprofile (2026-10-24)
+
+Neues Modul `iCloud Photos` / „iCloud Fotos“, Präfix `ICPH`, als Konto-Kind.
+Persönliche Alben, Favoriten und alle Fotos verwenden die optionale
+`ckdatabasews`-Capability der bestehenden Apple-Sitzung. Abfragen sind auf
+CloudKit-Index-/Album-/Metadaten-Queries beschränkt; keine Mutationsrouten,
+Uploads, Löschungen oder automatische Passwort-Neuanmeldung. Nicht freigegebener
+Webzugriff, ADP-Freigabe und laufende Indizierung haben eigene Fehlermeldungen.
+Das bestehende Find-My-Verhalten bleibt unabhängig von der optionalen Capability.
+
+Einzelbild-/Diashow-Widgets für Kachel und IPSView besitzen getrennte Designer,
+Beschriftung, contain/cover, Vor/Zurück, Pause, Intervall und seitenweisen Zufall.
+Albumseiten werden bedarfsgerecht geladen. Das Backend fordert JPEG-Vorschauen
+an und filtert Videos, versteckte und gelöschte Einträge. Ein Client hält jeweils
+nur ein Bild als Blob, keine komplette Mediathek oder vorab gefüllten Bildspeicher.
+
+Ressourcenprofile gelten pro Konto, unabhängig von einer angenommenen Hardware:
+Kompakt (Standard) 50 Bilder/100 MiB, Standard 250/500 MiB, Groß 1000/2 GiB,
+Eigene Grenzen 1–100000 Bilder und 1–65536 MiB. Die zuerst erreichte Anzahl-/
+Bytegrenze gilt. Der geteilte private Festplatten-Cache verwendet LRU, atomare
+Dateien und räumt abgebrochene Cache-Schreibvorgänge auf. Reduzierte Grenzen
+werden beim Übernehmen durchgesetzt. Kleine Indexdateien kommen zum Bildbudget.
+Einzelne Vorschauen sind auf 8 MiB/20 Millionen Pixel begrenzt. Disk- und
+Netzwerkfehler werden angezeigt; Serverfehler erhalten eine Fotobackoffzeit.
+
+Apple-Sitzung und signierte Downloadadressen bleiben ausschließlich im Konto.
+Album- und Bildanfragen der Browser sind an die konfigurierte Quelle gebunden,
+der HTTP-Hook verlangt ein Token im Header. Der öffentliche Seitenschirm enthält
+keine Fotometadaten und kein Token. Lokale Bilder werden selbst bei einem
+Cachetreffer nur mit aktuellem Kontozugriff ausgeliefert. Album-/Kontowechsel
+rotieren das Widget-Token; Deaktivierung und Abmeldung leeren den Kontocache.
+
+Wiederverwendet werden die regulär verteilten zentralen Helper für Themen,
+IPSView-Stile, responsive Kacheltitelabstände, HTTP-Antworten, Origin-Ermittlung,
+Mausrad und HTML-WebContent. Die bestehende librarylokale IPSView-Einbettung und
+Farbkartenstruktur werden ebenfalls verwendet. Foto-Protokoll, Cache und
+Widgetlogik verbleiben gemäß der Zwei-Libraries-Regel in SymconiCloud.
+`libs/helper` und seine Verteilungs-/Hashverträge wurden nicht verändert.
+Beide Designer enthalten zum Foto-Widget passende deutsche/englische Farbkarten.
+
+Nachweise mit synthetischen Daten: gemeinsamer Download zweier Widgets,
+Anzahl-/Bytegrenzen, LRU, Verkleinern des Budgets, Crash-Aufräumen, Seitenwechsel,
+Ausschluss versteckter Bilder, Host-/MIME-Prüfung, widerrufener Zugriff trotz
+vorhandener Cachedatei, Tokenwechsel, Backoff und unveränderte Formularverträge.
+JavaScript-Tests prüfen Auswahl, Pause, Beschriftungs-Scrollposition, langsame
+Downloads, neue Daten, Quellenwechsel und Wiederverbindung einschließlich
+Sitzungsspeicher. Headless Edge rendert die echten Modulvorlagen lokal mit
+synthetischen HTTP-Antworten: native Kachel und IPSView-Seite, Mausrad,
+230 × 240 Pixel, heller/dunkler Zentralstil, Ausfall/Wiederanlauf und Entzug des
+Zugriffs ohne Browserfehler. Ein bei dieser Prüfung gefundener stehenbleibender
+Verbindungshinweis wurde korrigiert und mit einem Regressionstest abgesichert.
+
+Grenzen: Keine Live-Installation, keine Apple-Anmeldung und kein Zugriff auf
+reale Fotos. MCP-Praxisprüfung auf Symcon und in der nativen IPSView-App sowie
+Apple-Freigabe/Album-/Vorschaudaten mit dem realen Konto sind nach dem Update
+noch offen. Der lokale Browsernachweis ersetzt diese Praxisprüfungen nicht.
+Die vollständige Offline-Suite mit GD/Exif, Struktur-/Helper-Hashes, StylePHP und
+php-cs-fixer dienen als Übergabeprüfungen; Version/Build bleiben unverändert.
+
 ## Kompakte Anwesenheitswidgets (2026-10-23)
 
 Native HTML-Kachel und optionale IPSView-WebContent-Variable zeigen

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="{{HTML_LANGUAGE}}" class="{{HTML_CLASSES}}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="{{VIEWPORT_CONTENT}}">
+    <meta name="referrer" content="no-referrer">
+    <title>{{DOCUMENT_TITLE}}</title>
+    <style>html { font-size: {{ROOT_FONT_SIZE}}; }</style>
+    <style id="photo-theme">{{VISUALIZATION_THEME}}{{IPSVIEW_STYLE}}</style>
+    <style>{{RESPONSIVE_CSS}}{{MODULE_STYLE}}</style>
+</head>
+<body>
+    <main id="photo-widget" aria-label="{{DOCUMENT_TITLE}}">
+        <figure id="photo-frame"><img id="photo" alt="" hidden><p id="empty"></p></figure>
+        <div id="photo-toolbar">
+            <div id="photo-caption" aria-live="polite"></div>
+            <nav><button id="previous" type="button">‹</button><button id="pause" type="button">Ⅱ</button><button id="next" type="button">›</button></nav>
+        </div>
+        <p id="photo-error" role="status" hidden></p>
+    </main>
+    <script type="application/json" id="photo-bootstrap">{{BOOTSTRAP_JSON}}</script>
+    <script>{{HTTP_ORIGIN_SCRIPT}}</script>
+    <script>{{MODULE_SCRIPT}}</script>
+</body>
+</html>
