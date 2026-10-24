@@ -1716,3 +1716,72 @@ ohne Aktionsvariable. Dort erfolgten deshalb weder eine Installation noch ein
 Suchton-Aufruf. Die reale Abnahme fand ausschliesslich am aktualisierten
 Produktivclient statt. Private Endpunkte und Geraetekennungen bleiben ausserhalb
 des versionierten Pruefberichts.
+
+### Bestaetigte Aktivierung des Verloren-Modus (2026-10-24)
+
+Die Geraeteinstanz erhaelt im Aktionsbereich des Formulars einen eigenen
+Abschnitt fuer den Verloren-Modus mit angezeigtem Zielgeraet, optionaler
+Rueckrufnummer, Sperrbildschirmnachricht und optionalem neuem Geraetecode.
+Der native Button-confirm-Vertrag fordert vor jedem Formularauftrag eine
+Ja/Nein-Bestaetigung. Die neue oeffentliche Funktion ICID_ActivateLostMode
+verlangt zusaetzlich einen ausdruecklichen Confirmed-Parameter je Aufruf;
+false erreicht weder das Konto noch Apple. Es gibt keine gespeicherte
+Freigabe und keinen unbestaetigten Kacheltaster fuer diese Sperraktion.
+
+Kontaktangaben und Code sind ausschliesslich fluechtige Formularaktionen,
+keine Properties oder Variablen. Der Code wird maskiert eingegeben. Nach dem
+Aufruf leert die Instanz die drei Eingabefelder per UpdateFormField; gespeichert
+wird nur eine bereinigte Ergebnisnachricht. Ein bestehender Geraetecode wird
+durch ein leeres Codefeld weiterverwendet; fuer neue Codes sind vier oder sechs
+Ziffern zulaessig, einschliesslich fuehrender Nullen. Telefonnummern sind auf
+40 Zeichen und Nachrichten auf 160 Unicode-Zeichen ohne Steuerzeichen begrenzt.
+Geraete- und familienabhaengige zusaetzliche Apple-Anforderungen bleiben bei
+Apple; das Modul umgeht diese nicht. Deaktivierung erfolgt in diesem Stand
+ueber Wo ist? beziehungsweise durch Entsperren gemaess Apples Anleitung.
+
+Das Konto prueft seine Konfiguration, Sitzung, Sperrfrist und den Zielgeraete-
+Eintrag im eigenen Cache. Nur ausdruecklich gemeldete lostModeCapable=true
+erlaubt die Aktivierung; unbekannte Unterstuetzung und bereits aktivierter
+Verloren-Modus werden abgewiesen. Der erlaubte Datenfluss umfasst nur die
+festen Aktionsfelder, keine fremde URL oder zusaetzliche Zielangaben. Konto-
+Semaphore, Sitzungsbehandlung und Cooldown werden mit dem Suchton gemeinsam
+verwendet. Der AppleClient sendet genau einen lostDevice-POST ohne Login,
+Token-Erneuerung oder automatischen Retry. Eine Annahme wird ausdruecklich
+nicht als abgeschlossene Aktivierung gemeldet; LostModeEnabled folgt weiterhin
+den regulaer gelieferten Apple-Geraetedaten. Bestehende Variablen-IDs bleiben
+unveraendert.
+
+Vor der Umsetzung wurden die kanonischen Helper und vergleichbare Formular-
+aktionen geprueft. ConfigurationFormHelper, DataFlowHelper und
+ParentConnectionHelper werden unveraendert verwendet. Die iCloud-spezifische
+Aktionslogik verbleibt in SymconiCloud; es entsteht weder ein neuer zentraler
+Helper noch eine lokale Aenderung am automatisch verteilten Helper-Paket.
+
+Nachweise: Der neue gezielte Test scheiterte zunaechst an der fehlenden Aktion.
+Die Integration mit synthetischem Apple-Transport prueft Bestaetigung, exakte
+Zielzuordnung und Payload, fehlende/unguenstige Geraeteunterstuetzung, bereits
+aktiven Modus, Eingabegrenzen, fuehrende Nullen, fluechtige Felder samt SDK-
+Ruecksetzen, Geheimnisschutz, tatsaechlich gemeldeten Status, Konto-/Sitzungs-
+wechsel, HTTP-/Anwendungsfehler und gemeinsame Sperrfristen. Ein gesonderter
+Transportfehler prueft genau einen Sendeversuch ohne Wiederholung. Der
+dokumentbasierte Formularvertrag validiert die Callback-Signatur einschliesslich
+des expliziten booleschen Literals und der nicht leeren Bestaetigung.
+
+Protokollreferenz (keine Codeuebernahme):
+https://github.com/picklepete/pyicloud/blob/master/pyicloud/services/findmyiphone.py
+Apple-Verhalten und Grenzen:
+https://support.apple.com/de-de/guide/icloud/mmfc0f0165/icloud
+Nativer Bestaetigungsdialog und fluechtige Formularfelder:
+https://www.symcon.de/de/service/dokumentation/entwicklerbereich/sdk-tools/sdk-php/konfigurationsformulare/button/
+https://www.symcon.de/de/service/dokumentation/entwicklerbereich/sdk-tools/sdk-php/konfigurationsformulare/passwordtextbox/
+
+Es wurden keine Dateien auf einem laufenden Symcon-System installiert und kein
+echtes Geraet gesperrt. Die Ja/Nein-Bedienung im echten Benutzerclient sowie die
+Apple-Praxisabnahme bleiben nach dem Update gesondert zu pruefen; Offline-
+Vertraege ersetzen diese nicht.
+
+Abschliessend bestanden unter PHP 8.5.10 die vollstaendige Offline-Suite
+einschliesslich neuer Lost-Mode-Vertraege, bisherigem Suchton, Formularaktionen,
+Helper-Hashes, JavaScript- und Syntaxpruefungen sowie der JSON-Check.
+php-cs-fixer im Pruefmodus meldete 0 von 40 Dateien mit Aenderungsbedarf;
+git diff --check war ebenfalls erfolgreich.

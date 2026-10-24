@@ -44,6 +44,61 @@
             "name": "SoundResult",
             "caption": "",
             "visible": false
+        },
+        {
+            "type": "ExpansionPanel",
+            "name": "LostMode",
+            "caption": "Lost Mode",
+            "items": [
+                {
+                    "type": "Label",
+                    "name": "LostModeTarget",
+                    "caption": "Target device"
+                },
+                {
+                    "type": "Label",
+                    "caption": "Lost Mode locks the device and may suspend Apple Pay. Contact information appears on its Lock Screen. Offline devices may activate it later."
+                },
+                {
+                    "type": "ValidationTextBox",
+                    "name": "LostModePhone",
+                    "caption": "Contact number (optional)",
+                    "value": ""
+                },
+                {
+                    "type": "ValidationTextBox",
+                    "name": "LostModeMessage",
+                    "caption": "Lock Screen message (optional, maximum 160 characters)",
+                    "value": ""
+                },
+                {
+                    "type": "PasswordTextBox",
+                    "name": "LostModePasscode",
+                    "caption": "New device passcode (optional, 4 or 6 digits)",
+                    "value": ""
+                },
+                {
+                    "type": "Label",
+                    "caption": "Leave the passcode empty to keep an existing device code. Only enter a new code if required; keep it safe to unlock the device. Contact data and code are not saved as settings."
+                },
+                {
+                    "type": "Button",
+                    "name": "ActivateLostMode",
+                    "caption": "Activate Lost Mode",
+                    "confirm": "Activate Lost Mode for the displayed device? This can lock it and suspend Apple Pay. The contact information will be sent to Apple and displayed on the device. Keep any new passcode safe. Offline devices may activate it later.",
+                    "onClick": "ICID_ActivateLostMode($id, true, $LostModePhone, $LostModeMessage, $LostModePasscode);"
+                },
+                {
+                    "type": "Label",
+                    "caption": "To turn Lost Mode off, use Find My or unlock the device as described by Apple. An accepted request does not confirm activation; the status variable follows the next account update."
+                }
+            ]
+        },
+        {
+            "type": "Label",
+            "name": "LostModeResult",
+            "caption": "",
+            "visible": false
         }
     ],
     "status": [

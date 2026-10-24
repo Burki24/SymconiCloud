@@ -217,4 +217,18 @@ $soundRejection = new ScriptedAppleTransport([['POST', '/playSound?', 200, ['suc
 fails(fn () => (new AppleClient($soundRejection, $soundSession))->playSound('synthetic-device'), 'soundRejected');
 $soundRejection->complete();
 
+$lostFailure = new ScriptedAppleTransport([
+    ['POST', '/lostDevice?', 200, [], [], static function (): void
+    {
+        throw new AppleException('network');
+    }]
+]);
+fails(fn () => (new AppleClient($lostFailure, $soundSession))->activateLostMode('synthetic-device', '', '', ''), 'network');
+$lostFailure->complete();
+check(count($lostFailure->calls) === 1, 'An uncertain Lost Mode submission must never be automatically repeated.');
+$invalidLostInput = new ScriptedAppleTransport([]);
+fails(fn () => (new AppleClient($invalidLostInput, $soundSession))->activateLostMode('synthetic-device', '', '', 'bad'), 'lostModeInput');
+check($invalidLostInput->calls === [], 'Invalid input must also be rejected at the protocol boundary.');
+$invalidLostInput->complete();
+
 echo "PASS: independent SRP vectors, 2FA lifecycle, inventory, renewal, failures, origins, explicit sound without retries\n";

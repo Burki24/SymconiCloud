@@ -131,28 +131,55 @@ final class AppleClient
     /** Explicit side effect: submit once, without retrying an uncertain result. */
     public function playSound(string $deviceID): void
     {
+        $this->sendDeviceCommand($deviceID, 'playSound', [
+            'subject' => 'Find My iPhone Alert', 'clientContext' => ['fmly' => true]
+        ], 'soundRejected');
+    }
+
+    /** Validates transient contact information and an optional new numeric device passcode. */
+    public static function validateLostModeInput(string $phoneNumber, string $message, string $newPasscode): void
+    {
+        if (preg_match('/\A[0-9+() .-]{0,40}\z/D', $phoneNumber) !== 1
+            || ($phoneNumber !== '' && preg_match('/[0-9]/', $phoneNumber) !== 1)
+            || preg_match('/\A[^\x00-\x1F\x7F]{0,160}\z/uD', $message) !== 1
+            || preg_match('/\A(?:[0-9]{4}|[0-9]{6})?\z/D', $newPasscode) !== 1) {
+            throw new AppleException('lostModeInput');
+        }
+    }
+
+    /** Explicit activation only; contact information/passcode never become session state. */
+    public function activateLostMode(string $deviceID, string $phoneNumber, string $message, string $newPasscode): void
+    {
+        self::validateLostModeInput($phoneNumber, $message, $newPasscode);
+        $this->sendDeviceCommand($deviceID, 'lostDevice', [
+            'text'            => $message, 'userText' => true, 'ownerNbr' => $phoneNumber,
+            'lostModeEnabled' => true, 'trackingEnabled' => true, 'passcode' => $newPasscode
+        ], 'lostModeRejected');
+    }
+
+    /** One authenticated POST, never token renewal, password login or an automatic retry. */
+    private function sendDeviceCommand(string $deviceID, string $command, array $payload, string $rejectedReason): void
+    {
         if ($this->session['state'] !== 'authenticated') {
             throw new AppleException('authentication');
         }
         if ($deviceID === '' || strlen($deviceID) > 4096 || preg_match('/[\x00-\x1F\x7F]/', $deviceID)) {
             throw new AppleException('deviceUnknown');
         }
-        $url = ($this->session['findme'] ?? '') . '/fmipservice/client/web/playSound?' . http_build_query([
+        $url = ($this->session['findme'] ?? '') . '/fmipservice/client/web/' . $command . '?' . http_build_query([
             'clientId' => $this->session['clientId'], 'dsid' => $this->session['dsid'] ?? ''
         ]);
-        $response = $this->call('POST', $url, [], [
-            'device' => $deviceID, 'subject' => 'Find My iPhone Alert', 'clientContext' => ['fmly' => true]
-        ]);
+        $response = $this->call('POST', $url, [], ['device' => $deviceID] + $payload);
         if (in_array($response['status'], [401, 421, 450], true)) {
             $this->session['state'] = 'expired';
         }
         $this->expect($response, [200, 202, 204]);
         $code = $response['body']['statusCode'] ?? null;
         if ($code !== null && !in_array($code, [200, '200', 202, '202', 204, '204'], true)) {
-            throw new AppleException('soundRejected');
+            throw new AppleException($rejectedReason);
         }
         if (($response['body']['success'] ?? null) === false || !empty($response['body']['error'])) {
-            throw new AppleException('soundRejected');
+            throw new AppleException($rejectedReason);
         }
     }
 

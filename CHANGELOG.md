@@ -29,6 +29,14 @@
 
 ## Neu
 
+- Die Geräteinstanz bietet die Aktivierung des **Verloren-Modus** mit
+  Rückrufnummer, Sperrbildschirmnachricht und optionalem neuem Gerätecode.
+  Ein Ja/Nein-Dialog sichert jeden Formularauftrag ab; Skriptaufrufe benötigen
+  eine ausdrückliche Bestätigung. Eingaben bleiben flüchtig. Das Kontomodul
+  prüft Gerätezuordnung und Unterstützung und sendet ohne automatische
+  Wiederholung. Die Statusvariable folgt weiterhin den Apple-Gerätedaten;
+  eine Auftragsannahme wird nicht als abgeschlossene Aktivierung angezeigt.
+
 - Die Geräteinstanz bietet **Handy suchen (Ton abspielen)** und
   `ICID_PlaySound()` für das konfigurierte Gerät. Die zusätzliche Aktionsvariable
   **Handy suchen** lässt sich direkt als Kachel mit dem Taster **Ton abspielen**

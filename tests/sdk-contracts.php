@@ -75,6 +75,8 @@ function validateButtonScript(string|array $script, array $scope, array $module)
                     throw new RuntimeException('Only JSON encoding a known form field is supported.');
                 }
                 $arguments[] = json_encode($scope[substr($variable[1], 1)], JSON_THROW_ON_ERROR);
+            } elseif ($token[0] === T_STRING && in_array(strtolower($token[1]), ['true', 'false'], true)) {
+                $arguments[] = strtolower($token[1]) === 'true';
             } elseif ($token[0] === T_LNUMBER) {
                 $arguments[] = (int) $token[1];
             } else {

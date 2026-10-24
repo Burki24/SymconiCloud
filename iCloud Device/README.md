@@ -38,6 +38,45 @@ gelten gemeinsam für alle Anfragen dieses Kontos.
 Formularöffnung, Konfigurationsübernahme, Cacheupdates und Timer spielen keinen
 Ton ab. Die Gerätevariablen bleiben lesbar und behalten ihre bisherigen IDs.
 
+### Verloren-Modus
+
+Im Instanzformular unter **Verloren-Modus** das angezeigte Zielgerät prüfen.
+Bei Bedarf eine **Rückrufnummer** und eine **Nachricht auf dem Sperrbildschirm**
+(höchstens 160 Zeichen, einzeilig) eingeben. Die Angaben werden beim Auslösen
+an Apple gesendet und können auf dem verlorenen Gerät erscheinen.
+
+**Neuer Gerätecode** bleibt bei einem bereits vorhandenen Code leer. Nur wenn
+Apple für das Gerät einen neuen Code benötigt, einen vier- oder sechsstelligen
+Zifferncode eingeben und sicher zum späteren Entsperren aufbewahren. Apple kann
+für bestimmte Geräte oder Familienfreigaben weitere Schritte verlangen; diese
+gegebenenfalls direkt in **Wo ist?** durchführen. Das Modul umgeht keine
+Apple-Zugriffsbeschränkungen.
+
+**Verloren-Modus aktivieren** öffnet vor jedem Auftrag einen Ja/Nein-Dialog.
+Erst **Ja** sendet die Aktivierung für das gespeicherte Gerät. Der Modus kann
+das Gerät sperren und Apple Pay aussetzen. Bei nicht erreichbaren Geräten kann
+die Aktivierung später erfolgen. Abbrechen oder **Nein** sendet keinen Auftrag.
+Die Felder sind flüchtige Aktionsdaten, keine gespeicherten Einstellungen;
+nach einem Aufruf werden sie geleert. Kontaktangaben, Gerätecode und rohe
+Apple-Antworten werden nicht im Modulzustand oder in Diagnosemeldungen abgelegt.
+
+Die Aktion verlangt ein angemeldetes Konto und ein Gerät aus dessen Cache mit
+ausdrücklich gemeldeter Verloren-Modus-Unterstützung. Fehlende oder unbekannte
+Unterstützung und ein bereits aktivierter Modus werden abgewiesen. Das Formular
+meldet Annahme oder Fehler. **Verloren-Modus aktiviert** (`LostModeEnabled`)
+wird nicht anhand der Auftragsannahme gesetzt, sondern erst mit dem nächsten
+regulären Kontoupdate aus dem gemeldeten Gerätezustand übernommen.
+
+Bei Fehlern oder unbestätigtem Ergebnis gibt es keine automatische Wiederholung.
+Vor einem weiteren Auftrag den Zustand in **Wo ist?** prüfen. Sitzung,
+Kontosperrfristen und Gerätezuordnung gelten wie beim Suchton. Formularöffnung,
+Konfigurationsübernahme, Cacheupdates und Timer aktivieren den Modus nicht.
+Es gibt keinen unbestätigten Verloren-Modus-Taster in der Kachel.
+
+Zum Deaktivieren **Wo ist?** verwenden oder das Gerät gemäß Apple entsperren;
+das Modul bietet in diesem Stand ausschließlich die bestätigte Aktivierung.
+Siehe [Apples Anleitung zum Verloren-Modus](https://support.apple.com/de-de/guide/icloud/mmfc0f0165/icloud).
+
 ### Adresse aus WoIst
 
 Für die Variable **Adresse** muss in einer [WoIst-Karte](../iCloud%20WoIst/README.md#optionale-adressauflösung)
@@ -116,8 +155,9 @@ Geräteinstanzkonfiguration erneut übernehmen.
 Nach dem Update die Geräteinstanzkonfiguration übernehmen. Alte Kontocaches
 bleiben lesbar; die neuen Angaben zeigen zunächst **Nicht verfügbar**, bis die
 nächste erfolgreiche Geräteabfrage im Konto die zusätzlichen Felder liefert.
-Die Geräteinstanz selbst startet dafür keinen Netzwerkabruf und bietet keine
-Aktionen zum Sperren, Löschen oder Aktivieren des Verloren-Modus an.
+Die Geräteinstanz selbst startet für diese Statusanzeigen keinen Netzwerkabruf.
+Suchton und bestätigte Aktivierung des Verloren-Modus sind getrennte,
+ausdrücklich auszulösende Aktionen.
 
 Anders als die bisherigen historischen Koordinaten werden die neuen
 Statusangaben und die technische Modellkennung bei fehlenden Daten, abgelaufener
@@ -158,6 +198,15 @@ Tastendruck wieder einen ausdrücklichen Auftrag auslösen kann. Fehler werden
 bei der Variablenaktion an den Client zurückgemeldet; der letzte Hinweis bleibt
 auch im Instanzformular sichtbar. Ein direktes Setzen eines Wertes ersetzt
 keinen Aktionsaufruf und startet keine Wiedergabe.
+
+`ICID_ActivateLostMode(int $InstanceID, bool $Confirmed, string $PhoneNumber,
+string $Message, string $NewPasscode): bool` aktiviert den Verloren-Modus für
+das konfigurierte Gerät. `$Confirmed` ist bei jedem Aufruf ausdrücklich
+anzugeben; `false` führt keine Anfrage aus. Die übrigen Parameter können leer
+sein. `true` als Ergebnis bestätigt ausschließlich die Annahme durch Apple.
+Skripte müssen die Bestätigung vor dem Aufruf selbst einholen; der PHP-Aufruf
+öffnet keinen Dialog. Kontaktangaben und Code nicht in Skripten fest hinterlegen
+oder protokollieren. Bestehende Variablen und ihre IDs bleiben erhalten.
 
 ## Lizenz
 
