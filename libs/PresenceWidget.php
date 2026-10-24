@@ -13,6 +13,7 @@ require_once __DIR__ . '/helper/VisualizationThemeConfigurationHelper.php';
 require_once __DIR__ . '/helper/IPSViewStyleConfigurationHelper.php';
 require_once __DIR__ . '/helper/ResponsiveVisualizationHelper.php';
 require_once __DIR__ . '/helper/HttpResponseHelper.php';
+require_once __DIR__ . '/helper/RasterImageHelper.php';
 require_once __DIR__ . '/IPSViewFrame.php';
 
 /**
@@ -23,6 +24,7 @@ require_once __DIR__ . '/IPSViewFrame.php';
 trait PresenceWidget
 {
     use IPSViewFrame;
+    use \Burki24\SymconModuleHelper\RasterImageHelper;
 
     private const PRESENCE_WIDGET_TEXT = [
         'tile'                 => 'Tile designer', 'ipsview' => 'IPSView designer', 'layout' => 'Layout and content',
@@ -33,10 +35,12 @@ trait PresenceWidget
         'urlHint'              => 'Normally the server address is detected automatically. Only enter an HTTP(S) origin without a path if the client cannot provide it.',
         'connection'           => 'Live updates unavailable. Retrying...', 'empty' => 'No devices selected.',
         'loader'               => 'Unable to open the IPSView widget. Check the server URL and apply the instance configuration.',
-        'imageSizeError'       => 'Picture exceeds 128 KiB. Choose a smaller file; this picture will not be displayed.',
+        'imageSizeError'       => 'Picture exceeds the 10 MiB upload limit. Choose a smaller file.',
         'imageFormatError'     => 'Invalid picture. Choose a PNG, JPEG, GIF or WebP file; this picture will not be displayed.',
-        'imageDimensionsError' => 'Picture exceeds 1024 x 1024 pixels. Reduce its dimensions; this picture will not be displayed.',
-        'imageHint'            => 'Optional pictures: choose a Symcon image medium or a file from the computer running the console for each device. Use PNG, JPEG, GIF or WebP, at most 128 KiB and 1024 x 1024 pixels. Invalid pictures use initials.'
+        'imageDimensionsError' => 'Picture exceeds 8192 pixels per side or 16 million pixels. Choose a smaller image.',
+        'imageUnavailable'     => 'Automatic picture preparation requires PHP GD on the Symcon server.',
+        'imageConversionError' => 'The picture could not be prepared. Choose another image.',
+        'imageHint'            => 'Optional PNG, JPEG, GIF or WebP pictures: choose a Symcon medium or a local file. Uploads up to 10 MiB and 16 million pixels are automatically reduced to at most 512 pixels per side and 128 KiB. Images are not enlarged. Invalid pictures use initials.'
     ];
 
     /** Call from Create(); volatile hook registration must survive output toggles. */
@@ -55,6 +59,7 @@ trait PresenceWidget
         }
         $this->RegisterPropertyInteger('TileWidgetFontSize', 14);
         $this->RegisterAttributeString('StatusWidgetState', '{}');
+        $this->RegisterAttributeString('StatusWidgetPictures', '{}');
         $this->RegisterAttributeString('StatusWidgetToken', '');
         $this->RegisterAttributeInteger('StatusWidgetConnection', 0);
         $this->SetVisualizationType(1);
@@ -66,6 +71,7 @@ trait PresenceWidget
     /** Call from ApplyChanges before publishing data; never changes domain state. */
     protected function ConfigureStatusWidget(string $ident, string $caption): void
     {
+        $this->WriteAttributeString('StatusWidgetPictures', '{}');
         $this->SetVisualizationType(1);
         $this->RegisterIPSViewStyleMediaMessages();
         $this->MaintainIPSViewHTMLVariable($ident, $caption, 2000, '', false);
@@ -204,28 +210,27 @@ trait PresenceWidget
 
     private function InspectStatusWidgetUpload(string $content): array
     {
-        if ($content === '') {
-            return ['image' => '', 'issue' => ''];
+        $key = hash('sha256', $content);
+        $cache = json_decode($this->ReadAttributeString('StatusWidgetPictures'), true);
+        $cache = is_array($cache) ? $cache : [];
+        if (isset($cache[$key])) {
+            return $cache[$key];
         }
-        if (strlen($content) > 174764) {
-            return ['image' => '', 'issue' => self::PRESENCE_WIDGET_TEXT['imageSizeError']];
+        $result = $this->PrepareRasterImage($content);
+        $issues = ['input_size' => 'imageSizeError', 'format' => 'imageFormatError', 'pixels' => 'imageDimensionsError',
+            'unavailable'       => 'imageUnavailable', 'conversion' => 'imageConversionError'];
+        $value = ['image' => $result['content'] === '' ? '' : 'data:' . $result['mime'] . ';base64,' . $result['content'],
+            'issue'       => $result['error'] === '' ? '' : self::PRESENCE_WIDGET_TEXT[$issues[$result['error']]]];
+        // Bounded to the maximum number of configured devices. Only compact
+        // results and input fingerprints persist, never another original photo.
+        if (count($cache) >= 64) {
+            array_shift($cache);
         }
-        $bytes = base64_decode($content, true);
-        if (!is_string($bytes)) {
-            return ['image' => '', 'issue' => self::PRESENCE_WIDGET_TEXT['imageFormatError']];
+        if ($result['error'] !== 'unavailable') {
+            $cache[$key] = $value;
+            $this->WriteAttributeString('StatusWidgetPictures', json_encode($cache, JSON_THROW_ON_ERROR));
         }
-        if (strlen($bytes) > 131072) {
-            return ['image' => '', 'issue' => self::PRESENCE_WIDGET_TEXT['imageSizeError']];
-        }
-        $size = @getimagesizefromstring($bytes);
-        if ($size === false || $size[0] < 1 || $size[1] < 1
-            || !in_array($size['mime'], ['image/png', 'image/jpeg', 'image/gif', 'image/webp'], true)) {
-            return ['image' => '', 'issue' => self::PRESENCE_WIDGET_TEXT['imageFormatError']];
-        }
-        if ($size[0] > 1024 || $size[1] > 1024) {
-            return ['image' => '', 'issue' => self::PRESENCE_WIDGET_TEXT['imageDimensionsError']];
-        }
-        return ['image' => 'data:' . $size['mime'] . ';base64,' . base64_encode($bytes), 'issue' => ''];
+        return $value;
     }
 
     /** The unauthenticated HTTP shell must never contain device data or its access token. */

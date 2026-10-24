@@ -214,11 +214,23 @@ Unter **Geräte** das gewünschte Gerät bearbeiten und die **Bildquelle** wähl
   Das Bild wird mit dem Listeneintrag und anschließend **Übernehmen** in der
   Instanzkonfiguration gespeichert; ein vorheriger Import in Symcon ist nicht nötig.
 
-Unterstützt werden PNG, JPEG, GIF und WebP bis 128 KiB und 1024 × 1024 Pixel.
-Kleine quadratische Bilder sind geeignet. Der Gerätedialog zeigt diese Grenzen
-direkt an und meldet nach der Dateiauswahl zu große Dateien, unzulässige Inhalte
-oder zu große Abmessungen. Solche Bilder werden nicht automatisch verkleinert:
-die Datei vorher mit einem Bildprogramm reduzieren und erneut auswählen.
+Unterstützt werden PNG, JPEG, GIF und WebP. **Lokale Uploads werden automatisch
+verkleinert und komprimiert**: bis 10 MiB, 8192 Pixel pro Seite und 16 Millionen
+Pixel als Eingabe, höchstens 512 Pixel pro Seite und 128 KiB als Ausgabe.
+Seitenverhältnis und Transparenz bleiben erhalten; es wird nicht beschnitten oder
+hochskaliert. Bereits passende Bilder bleiben unverändert. Die Dateiauswahl zeigt
+nach der Aufbereitung den kompakteren Inhalt; dieser wird beim Bestätigen und
+Übernehmen gespeichert. Die Originaldatei auf dem Rechner bleibt unverändert.
+Auch bereits gespeicherte größere Uploads werden für die Ausgabe aufbereitet.
+Die Ergebnisse bleiben im Instanzcache, statt bei jedem Datenupdate neu berechnet
+zu werden. Ein Konfigurationswechsel leert veraltete Cacheinhalte.
+
+Die Verarbeitung erfolgt lokal mit PHP GD; die Ausrichtung von JPEG-Handyfotos
+wird bei vorhandener EXIF-Unterstützung berücksichtigt. Neu codierte Bilder
+enthalten keine übernommenen EXIF-Metadaten. Bei umzuwandelnden animierten Bildern
+wird das erste Bild verwendet. Fehlende Unterstützung, unzulässige Inhalte oder
+überschrittene Eingabegrenzen werden im Gerätedialog konkret gemeldet.
+Für Symcon-Bildmedien gilt weiterhin die bisherige Eingabegrenze von 128 KiB.
 Zum Ersetzen eine andere Datei auswählen;
 zum Abschalten wieder **Symcon-Medium** wählen und die Medienauswahl leeren.
 Bestehende Konfigurationen verwenden weiterhin ihre bisherigen Symcon-Bildmedien.

@@ -79,9 +79,11 @@
             "Symcon medium": "Symcon-Medium",
             "File from computer": "Datei vom Rechner",
             "Picture file from computer (optional)": "Bilddatei vom Rechner (optional)",
-            "Picture exceeds 128 KiB. Choose a smaller file; this picture will not be displayed.": "Das Bild ist größer als 128 KiB. Bitte eine kleinere Datei auswählen; dieses Bild wird nicht angezeigt.",
+            "Picture exceeds the 10 MiB upload limit. Choose a smaller file.": "Das Bild überschreitet die Uploadgrenze von 10 MiB. Bitte eine kleinere Datei auswählen.",
             "Invalid picture. Choose a PNG, JPEG, GIF or WebP file; this picture will not be displayed.": "Ungültiges Bild. Bitte eine PNG-, JPEG-, GIF- oder WebP-Datei auswählen; dieses Bild wird nicht angezeigt.",
-            "Picture exceeds 1024 x 1024 pixels. Reduce its dimensions; this picture will not be displayed.": "Das Bild ist größer als 1024 × 1024 Pixel. Bitte die Abmessungen verkleinern; dieses Bild wird nicht angezeigt.",
+            "Picture exceeds 8192 pixels per side or 16 million pixels. Choose a smaller image.": "Das Bild überschreitet 8192 Pixel pro Seite oder 16 Millionen Pixel. Bitte ein kleineres Bild auswählen.",
+            "Automatic picture preparation requires PHP GD on the Symcon server.": "Die automatische Bildaufbereitung benötigt PHP GD auf dem Symcon-Server.",
+            "The picture could not be prepared. Choose another image.": "Das Bild konnte nicht aufbereitet werden. Bitte ein anderes Bild auswählen.",
             "Presence for IPSView": "Anwesenheit für IPSView",
             "Distance to reference zone": "Entfernung zur Referenzzone",
             "Stay": "Aufenthalt",
@@ -102,7 +104,7 @@
             "Live updates unavailable. Retrying...": "Live-Aktualisierungen nicht verfügbar. Neuer Versuch…",
             "Unable to open the IPSView widget. Check the server URL and apply the instance configuration.": "Die IPSView-Widgetseite kann nicht geöffnet werden. Serveradresse prüfen und Instanzkonfiguration übernehmen.",
             "No devices selected.": "Keine Geräte ausgewählt.",
-            "Optional pictures: choose a Symcon image medium or a file from the computer running the console for each device. Use PNG, JPEG, GIF or WebP, at most 128 KiB and 1024 x 1024 pixels. Invalid pictures use initials.": "Optionale Bilder: Je Gerät ein Symcon-Bildmedium oder eine Datei vom Rechner auswählen, auf dem die Konsole geöffnet ist. PNG, JPEG, GIF oder WebP mit höchstens 128 KiB und 1024 × 1024 Pixeln verwenden. Ungültige Bilder werden durch Initialen ersetzt."
+            "Optional PNG, JPEG, GIF or WebP pictures: choose a Symcon medium or a local file. Uploads up to 10 MiB and 16 million pixels are automatically reduced to at most 512 pixels per side and 128 KiB. Images are not enlarged. Invalid pictures use initials.": "Optionale PNG-, JPEG-, GIF- oder WebP-Bilder: Symcon-Medium oder lokale Datei auswählen. Uploads bis 10 MiB und 16 Millionen Pixel werden automatisch auf höchstens 512 Pixel pro Seite und 128 KiB verkleinert. Bilder werden nicht vergrößert. Ungültige Bilder werden durch Initialen ersetzt."
         }
     }
 }

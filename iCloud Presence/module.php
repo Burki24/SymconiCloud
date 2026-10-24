@@ -242,6 +242,13 @@ class iCloudPresence extends IPSModuleStrict
     public function ValidatePictureUpload(string $PictureSource, string $PictureUpload): void
     {
         $issue = $PictureSource === 'upload' ? $this->StatusWidgetUploadIssue($PictureUpload) : '';
+        if ($PictureSource === 'upload' && $PictureUpload !== '' && $issue === '') {
+            $image = $this->StatusWidgetUpload($PictureUpload);
+            $prepared = substr($image, strpos($image, ',') + 1);
+            if ($prepared !== $PictureUpload) {
+                $this->UpdateFormField('pictureUpload', 'value', $prepared);
+            }
+        }
         $this->UpdateFormField('PictureUploadError', 'caption', $issue === '' ? '' : $this->Translate($issue));
         $this->UpdateFormField('PictureUploadError', 'visible', $issue !== '');
     }

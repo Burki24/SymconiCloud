@@ -21,6 +21,14 @@
 
 ## Neu
 
+- Gerätebilder der Anwesenheit werden beim lokalen Upload automatisch skaliert
+  und komprimiert. Der zentrale `RasterImageHelper` verarbeitet Bilder bis
+  10 MiB und 16 Millionen Pixel auf höchstens 512 Pixel pro Seite und 128 KiB.
+  Proportionen, Transparenz und unterstützte JPEG-Ausrichtung bleiben erhalten.
+  Ein Cache verhindert erneute Komprimierung bei Datenupdates. Das neue
+  Helper-Abonnement muss vor Installation über die automatische Verteilung
+  übernommen werden.
+
 - **iCloud Anwesenheit** kann Gerätebilder direkt vom Rechner laden, auf dem die
   Konsole geöffnet ist. Je Gerät lässt sich zwischen Symcon-Medium und lokalem
   Datei-Upload wählen. Beide Wege prüfen PNG, JPEG, GIF und WebP auf höchstens

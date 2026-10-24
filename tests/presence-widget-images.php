@@ -13,7 +13,17 @@ function checkImage(mixed $expected, mixed $actual, string $message): void
 
 final class StatusWidgetImageHarness
 {
-    use \SymconiCloud\PresenceWidget;
+    use \SymconiCloud\PresenceWidget {
+        PrepareRasterImage as private uncachedPrepareRasterImage;
+    }
+    public int $preparations = 0;
+
+    private string $pictures = '{}';
+
+    public function cacheSize(): int
+    {
+        return count(json_decode($this->pictures, true));
+    }
 
     public function image(int $id): string
     {
@@ -28,6 +38,22 @@ final class StatusWidgetImageHarness
     public function issue(string $content): string
     {
         return $this->StatusWidgetUploadIssue($content);
+    }
+
+    protected function PrepareRasterImage(string $content): array
+    {
+        $this->preparations++;
+        return $this->uncachedPrepareRasterImage($content);
+    }
+
+    protected function ReadAttributeString(string $name): string
+    {
+        return $this->pictures;
+    }
+
+    protected function WriteAttributeString(string $name, string $value): void
+    {
+        $this->pictures = $value;
     }
 }
 
@@ -48,18 +74,22 @@ function IPS_GetMediaContent(int $id): string
 $widget = new StatusWidgetImageHarness();
 checkImage('', $widget->issue($imageContent), 'Valid uploads do not show an error.');
 checkImage('', $widget->issue(''), 'Removing an optional upload clears its error.');
-checkImage(true, str_contains($widget->issue(base64_encode(str_repeat('x', 203100))), '128 KiB'), 'The reported 203 kB upload must explain the size limit.');
+checkImage(true, str_contains($widget->issue(base64_encode(str_repeat('x', 10485761))), '10 MiB'), 'Oversized source uploads must explain the input limit.');
 checkImage(true, str_contains($widget->issue('invalid'), 'PNG'), 'Invalid contents must explain supported image formats.');
 checkImage('data:image/gif;base64,' . $imageContent, $widget->upload($imageContent), 'Console file contents use the same safe inline image format.');
+$preparedCount = $widget->preparations;
+$widget->upload($imageContent);
+$widget->issue($imageContent);
+checkImage($preparedCount, $widget->preparations, 'Rendering and validation reuse the prepared image cache.');
 foreach (['', 'not base64', base64_encode('<svg onload="alert(1)"></svg>'), base64_encode('https://example.invalid/image')] as $invalid) {
     checkImage('', $widget->upload($invalid), 'Empty or invalid uploads use initials without network or filesystem reads.');
 }
-checkImage('', $widget->upload(base64_encode(str_repeat('x', 131073))), 'Uploads exceeding 128 KiB are rejected.');
+checkImage('', $widget->upload(base64_encode(str_repeat('x', 131073))), 'Arbitrary bytes cannot bypass image validation.');
 // A GIF header with excessive dimensions must be rejected before browser decoding.
 $wide = base64_decode($imageContent);
-$wide = substr_replace($wide, pack('v', 1025), 6, 2);
-checkImage('', $widget->upload(base64_encode($wide)), 'Uploads wider than 1024 pixels are rejected.');
-checkImage(true, str_contains($widget->issue(base64_encode($wide)), '1024'), 'Oversized dimensions need a separate correction message.');
+$wide = substr_replace($wide, pack('v', 8193), 6, 2);
+checkImage('', $widget->upload(base64_encode($wide)), 'Unsafe source dimensions are rejected before decoding.');
+checkImage(true, str_contains($widget->issue(base64_encode($wide)), '8192'), 'Unsafe dimensions need a separate correction message.');
 checkImage('', $widget->image(0), 'No picture uses initials.');
 checkImage('', $widget->image(2), 'Deleted media uses initials.');
 checkImage('data:image/gif;base64,' . $imageContent, $widget->image(1), 'Supported image content is embedded.');
@@ -75,4 +105,8 @@ $imageContent = base64_encode('https://example.invalid/private-image');
 checkImage('', $widget->image(1), 'Remote URLs are never loaded.');
 $imageContent = 'not base64';
 checkImage('', $widget->image(1), 'Malformed media fails safely.');
+for ($index = 0; $index < 70; $index++) {
+    $widget->upload(base64_encode(base64_decode('R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=') . str_repeat("\0", $index)));
+}
+checkImage(64, $widget->cacheSize(), 'Prepared image cache remains bounded.');
 echo "Status widget image validation passed.\n";

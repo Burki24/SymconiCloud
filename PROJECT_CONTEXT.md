@@ -1192,3 +1192,46 @@ Regression mit synthetischem 203100-Byte-Inhalt und uebergrossen Abmessungen;
 vollstaendige Offline-Suite, JSON, Struktur/Hash/LF und PHP-CS-Fixer bestanden.
 Keine Installation auf einem laufenden System. Der neue Inlinehinweis ist noch
 in der aktualisierten echten Konsole abzunehmen.
+
+## Automatische Bildaufbereitung, zentraler Helper (2026-10-24)
+
+Auf ausdruecklichen Benutzerwunsch wird RasterImageHelper schon mit dieser
+ersten nutzenden Library zentral umgesetzt. Diese bewusste Ausnahme ist im
+AGENTS.md des Helper-Repositories dokumentiert; die allgemeine Regel, erst bei
+zwei tatsaechlich nutzenden Libraries zu zentralisieren, bleibt bestehen.
+
+Lokale PNG/JPEG/GIF/WebP-Uploads bis 10 MiB, 8192 Pixel pro Seite und 16 Millionen
+Pixel werden auf maximal 512 Pixel Kantenlaenge und 128 KiB aufbereitet. Keine
+Hochskalierung oder Beschneidung; Transparenz bleibt erhalten. WebP wird bevorzugt,
+JPEG/PNG dienen als Fallbacks. JPEG-EXIF-Ausrichtung wird bei verfuegbarer EXIF-
+Erweiterung angewendet, Metadaten werden bei Neucodierung nicht uebernommen.
+Umzuwandelnde Animationen verwenden das erste Bild. Unveraendert passende Bilder
+bleiben erhalten. GD ist fuer notwendige Umwandlungen erforderlich.
+
+Die Formularaktion ersetzt ausschliesslich den ungespeicherten SelectFile-Wert
+durch das kompakte Ergebnis. Erst OK und Uebernehmen speichern die Geraetezeile.
+Bereits gespeicherte groessere Uploads funktionieren ebenfalls: Die Ausgabe
+verwendet den zentral aufbereiteten Inhalt. StatusWidgetPictures cached maximal
+64 Ergebnisse anhand des Inhalts-Hashes und wird beim Anwenden der Konfiguration
+geleert. Bilder werden bei Datenupdates nicht erneut konvertiert. Quelle, Zonen,
+GPS-Zustaende und Variablen-IDs bleiben vom Formularpfad unberuehrt.
+
+RasterImageHelper ist als neue Subscription eingetragen; keine Abhaengigkeiten
+oder weiteren Ressourcen. Das vollstaendige kanonische Paket wurde mit der echten
+Metadaten- und Bundle-Logik in einer isolierten temporaeren Kopie aufgebaut.
+Beide kompletten PHP-Suiten, Paket-/Hash-/Ressourcenpruefung, Verteilungs-,
+Metadaten- und Auto-Merge-Vertraege sowie Stilpruefungen bestanden unter PHP 8.5.10
+mit GD/EXIF. Keine Testkopien verbleiben unter libs/helper; der neue Helper muss
+vor der Installation ueber die regulaere Verteilung eintreffen.
+
+MCP: Reiner In-Memory-Rechentest des zentralen Helpers auf dem angeschlossenen
+Symcon mit PHP 8.5.8 und GD/EXIF: synthetisches transparentes Bild von 209131 Byte
+auf 512 x 256 Pixel und 592 Byte WebP reduziert; Alpha erhalten, erneute
+Aufbereitung unveraendert. Keine Quellen installiert, keine Instanzkonfiguration
+geaendert. Der echte Dateidialog muss nach dem regulaeren Update abgenommen werden.
+
+Rollout: Zuerst die neue Subscription in SymconiCloud/dev bekannt machen, danach
+den zentralen Helper freigeben und automatisch verteilen. Das komplette Modul
+erst nach dem eingegangenen Helper-Bundle installieren. Bis zur Verteilung ist
+der neue Helper im normalen lokalen Consumer-Arbeitsbaum noch nicht vorhanden;
+die Verhaltensnachweise stammen ausdruecklich aus dem isolierten Gesamtpaket.
