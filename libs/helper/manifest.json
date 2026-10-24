@@ -394,6 +394,12 @@
             "sha256": "a52906069249fb98ec1fcdd6cd7230aa265ae96358f906ee5bbb567624b3dba2",
             "path": "libs/helper/GeofenceHelper.php",
             "source_sha": "351fb65539c79fe51d682bf5598ce832749f52d3"
+        },
+        "RasterImageHelper": {
+            "version": "1.0.0",
+            "sha256": "2c9f18d6ad9809015e6415f510106c02f1bb709b1d37e8acba4a6ad4ef151a81",
+            "path": "libs/helper/RasterImageHelper.php",
+            "source_sha": "d64feed9d8a817000ef5bac0aecc2a16ee8b5b4e"
         }
     }
 }
