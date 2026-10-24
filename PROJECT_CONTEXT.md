@@ -1785,3 +1785,30 @@ einschliesslich neuer Lost-Mode-Vertraege, bisherigem Suchton, Formularaktionen,
 Helper-Hashes, JavaScript- und Syntaxpruefungen sowie der JSON-Check.
 php-cs-fixer im Pruefmodus meldete 0 von 40 Dateien mit Aenderungsbedarf;
 git diff --check war ebenfalls erfolgreich.
+
+### MCP-Abnahme des Verloren-Modus-Dialogs und Abbruchs (2026-10-24)
+
+Nach dem Modulupdate wurde die bestehende Geraeteinstanz auf dem angeschlossenen
+Windows-Testsystem per MCP und in der echten Symcon-Verwaltungskonsole geprueft.
+Die neue Funktion und der Formularbereich waren geladen. Die Statusvariable
+LostModeEnabled meldete vor der Pruefung "Nein"; die Instanz war aktiv.
+
+Ein Klick auf "Verloren-Modus aktivieren" oeffnete den nativen deutschen
+Ja/Nein-Bestaetigungsdialog. Der Dialog zeigte die Hinweise auf Geraetesperre,
+Apple Pay, Kontaktangaben, neuen Geraetecode und eine moegliche spaetere
+Aktivierung bei nicht erreichbaren Geraeten. Anschliessend wurde ausdruecklich
+"Nein" angeklickt. Der Dialog schloss sich und das Formular blieb bedienbar.
+"Ja" wurde nicht angeklickt; es wurden weder Kontaktangaben noch ein Code
+eingegeben und keine Aktivierungsfunktion direkt aufgerufen.
+
+Der anschliessende MCP-Vergleich bestaetigte, dass LostModeResult weiterhin leer
+und unsichtbar war. Damit wurde der Aktivierungs-Callback beim Abbrechen nicht
+ausgefuehrt. LostModeEnabled blieb "Nein", und die Instanz blieb aktiv. Es wurde
+kein Sperrauftrag ausgeloest und kein iPhone gesperrt. Konfiguration,
+Moduldateien und Variablen wurden bei der Praxispruefung nicht veraendert.
+
+Damit sind der zuvor offene echte Bestaetigungsdialog und das sichere Abbrechen
+abgenommen. Eine bestaetigte Aktivierung bei Apple sowie das anschliessende
+Entsperren waren ausdruecklich nicht Teil dieser Pruefung und bleiben ungeprueft.
+Private Endpunkte, Geraetekennungen und lokale Screenshots werden nicht in den
+versionierten Projektkontext uebernommen.
