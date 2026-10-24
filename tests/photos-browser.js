@@ -10,7 +10,8 @@ const root = path.join(__dirname, '..');
 const native = execFileSync('php', [path.join(__dirname, 'render-photos-fixture.php')], {cwd: root}).toString('utf8');
 const ips = execFileSync('php', [path.join(__dirname, 'render-photos-fixture.php'), 'ipsview'], {cwd: root}).toString('utf8');
 const ipsDark = execFileSync('php', [path.join(__dirname, 'render-photos-fixture.php'), 'ipsview-dark'], {cwd: root}).toString('utf8');
-const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD1sAAAAASUVORK5CYII=', 'base64');
+const png = Buffer.concat([Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD1sAAAAASUVORK5CYII=', 'base64'), require('node:crypto').randomBytes(1300000)]);
+const chunks = png.toString('base64').match(/.{1,131072}/g);
 const model = {success: true, source: 'browser-fixture', state: {items: [{id: 'photo-1', name: 'Synthetic first photo.jpg', date: 1700000000}, {id: 'photo-2', name: 'Synthetic second photo.jpg', date: 1700000000}], offset: 0, next: null, total: 2}};
 let offline = false, denied = false, images = 0;
 const server = http.createServer(async (req, res) => {
@@ -19,8 +20,13 @@ const server = http.createServer(async (req, res) => {
     assert.equal(req.headers['x-photo-token'], 'f'.repeat(64));
     if (offline || denied) { res.writeHead(denied ? 403 : 503); res.end(); return; }
     const request = JSON.parse(body);
-    if (request.operation === 'image') { images++; res.writeHead(200, {'Content-Type': 'image/png'}); res.end(png); }
-    else { res.writeHead(200, {'Content-Type': 'application/json'}); res.end(JSON.stringify(model)); }
+    let value = model;
+    if (request.operation === 'image') { images++; value = {success: true, mime: 'image/png', bytes: png.length, transfer: {Token: 'c'.repeat(32), PageCount: chunks.length, ItemCount: chunks.length}}; }
+    if (request.operation === 'imagePage') value = {success: true, Token: 'c'.repeat(32), Page: request.page, PageCount: chunks.length, ItemCount: chunks.length, Complete: request.page === chunks.length - 1, Items: [chunks[request.page]]};
+    if (request.operation === 'imageClear') value = {success: true};
+    const response = JSON.stringify(value);
+    assert.ok(Buffer.byteLength(response) < 245760, 'Every HTTP response must respect the Symcon buffer boundary.');
+    res.writeHead(200, {'Content-Type': 'application/json'}); res.end(response);
 });
 (async () => {
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));

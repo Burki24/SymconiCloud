@@ -66,7 +66,7 @@
             global.history.replaceState(null, '', global.location.pathname + global.location.search);
         } catch (_) { /* Display an access error if authorization is missing. */ }
     }
-    async function request(body, binary = false) {
+    async function request(body) {
         const controller = new AbortController(); controllers.add(controller);
         const timeout = global.setTimeout(() => controller.abort(), 35000);
         try {
@@ -82,8 +82,36 @@
                 try { const detail = await response.json(); if (typeof detail.error === 'string') failure.photoMessage = detail.error.slice(0, 512); } catch (_) { /* A transport error need not contain JSON. */ }
                 throw failure;
             }
-            return binary ? await response.blob() : await response.json();
+            return await response.json();
         } finally { global.clearTimeout(timeout); controllers.delete(controller); }
+    }
+    async function readImage(id, current) {
+        const start = await request({operation: 'image', id});
+        const transfer = start.transfer;
+        if (!start.success || !transfer || !/^[a-f0-9]{32}$/.test(transfer.Token) || !Number.isInteger(transfer.PageCount)
+            || transfer.PageCount < 1 || transfer.PageCount > 100 || !Number.isInteger(transfer.ItemCount) || transfer.ItemCount < 1 || transfer.ItemCount > 100
+            || !Number.isInteger(start.bytes) || start.bytes < 1 || start.bytes > 8388608 || !/^image\/(jpeg|png|webp)$/.test(start.mime)) throw new Error('Invalid image transfer');
+        const chunks = []; let bytes = 0, items = 0;
+        try {
+            for (let number = 0; number < transfer.PageCount; number++) {
+                if (stopped || current !== generation) throw new Error('Image selection changed');
+                const page = await request({operation: 'imagePage', id, token: transfer.Token, page: number});
+                if (!page.success || page.Token !== transfer.Token || page.Page !== number || page.PageCount !== transfer.PageCount
+                    || page.ItemCount !== transfer.ItemCount || !Array.isArray(page.Items) || page.Complete !== (number === transfer.PageCount - 1)) throw new Error('Invalid image page');
+                for (const encoded of page.Items) {
+                    if (typeof encoded !== 'string' || encoded.length > 131072 || !/^[A-Za-z0-9+/]+={0,2}$/.test(encoded)) throw new Error('Invalid image chunk');
+                    const decoded = global.atob(encoded);
+                    bytes += decoded.length; items++;
+                    if (bytes > start.bytes || items > transfer.ItemCount) throw new Error('Image exceeds declared limits');
+                    chunks.push(Uint8Array.from(decoded, value => value.charCodeAt(0)));
+                }
+            }
+            if (bytes !== start.bytes || items !== transfer.ItemCount) throw new Error('Incomplete image transfer');
+            return new global.Blob(chunks, {type: start.mime});
+        } finally {
+            // The central helper also expires abandoned encrypted transfers after five minutes.
+            try { await request({operation: 'imageClear', id, token: transfer.Token}); } catch (_) { /* May already be revoked or offline. */ }
+        }
     }
     async function show() {
         controls();
@@ -100,7 +128,7 @@
         const current = ++generation, key = state.source + ':' + state.id;
         shown = key;
         try {
-            const blob = await request({operation: 'image', id: item.id}, true);
+            const blob = await readImage(item.id, current);
             if (stopped || current !== generation) return;
             if (!/^image\/(jpeg|png|webp)$/.test(blob.type) || blob.size > 8388608) throw new Error('Invalid preview');
             blobURL = global.URL.createObjectURL(blob); image.src = blobURL; image.alt = item.name || ''; image.hidden = false; shown = key;

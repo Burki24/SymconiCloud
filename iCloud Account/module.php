@@ -129,7 +129,7 @@ class iCloudAccount extends IPSModuleStrict
     {
         try {
             $request = $this->DecodeDataFlowMessage($JSONString, self::REQUEST_DATA);
-            if (in_array($request['Command'] ?? '', ['GetPhotoAlbums', 'RefreshPhotoAlbums', 'GetPhotoPage', 'GetPhotoImage'], true)) {
+            if (in_array($request['Command'] ?? '', ['GetPhotoAlbums', 'RefreshPhotoAlbums', 'GetPhotoPage', 'GetPhotoImage', 'GetPhotoImagePage', 'ClearPhotoImageTransfer'], true)) {
                 return json_encode($this->ForwardPhotosRequest($request), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
             }
             if (($request['Command'] ?? '') === 'PlaySound') {

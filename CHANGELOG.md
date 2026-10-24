@@ -2,6 +2,12 @@
 
 ## Fixes
 
+- iCloud Fotos überträgt große Vorschauen mit dem zentralen
+  `ChunkedJsonTransferHelper` in begrenzten JSON-Seiten bis zum Browser.
+  Der HTTP-Seitenaufbau verwendet einen expliziten Ressourcenpfad auch im
+  synthetischen Symcon-WebHook-Kontext. Bildauswahl und Pause bleiben bei
+  Metadatenupdates und vorübergehenden Verbindungsunterbrechungen erhalten.
+
 - Die Anwesenheitskachel zeigt keine Schaltflächen zur Variantenwahl mehr.
   **Widget** und **WidgetCompact** werden ausschließlich im Kacheldesigner
   ausgewählt; bisherige lokale Sitzungswerte überschreiben diese Auswahl nicht.

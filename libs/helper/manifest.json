@@ -400,6 +400,12 @@
             "sha256": "2c9f18d6ad9809015e6415f510106c02f1bb709b1d37e8acba4a6ad4ef151a81",
             "path": "libs/helper/RasterImageHelper.php",
             "source_sha": "d64feed9d8a817000ef5bac0aecc2a16ee8b5b4e"
+        },
+        "ChunkedJsonTransferHelper": {
+            "version": "1.1.0",
+            "sha256": "13e009dac28cda9bbf22638db00bd8d562a522a10fd592d9c770a7c5f22cf1fb",
+            "path": "libs/helper/ChunkedJsonTransferHelper.php",
+            "source_sha": "d64feed9d8a817000ef5bac0aecc2a16ee8b5b4e"
         }
     }
 }

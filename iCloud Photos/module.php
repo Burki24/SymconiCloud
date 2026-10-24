@@ -145,13 +145,19 @@ class iCloudPhotos extends IPSModuleStrict
         $this->Refresh();
     }
 
+    /** WebHook evaluation has a synthetic reflection filename; keep the central asset loader. */
+    protected function VisualizationAssetDirectory(): string
+    {
+        return __DIR__ . '/visualization';
+    }
+
     /** Fixed account commands; browser input cannot select a different album or URL. */
     protected function PhotoAccountRequest(string $command, array $arguments = []): array
     {
         if (!$this->HasParent()) {
             return ['success' => false, 'albums' => [], 'error' => $this->Translate('Connect an account first.')];
         }
-        if (in_array($command, ['GetPhotoPage', 'GetPhotoImage'], true)) {
+        if (in_array($command, ['GetPhotoPage', 'GetPhotoImage', 'GetPhotoImagePage', 'ClearPhotoImageTransfer'], true)) {
             $arguments['AlbumID'] = $this->ReadPropertyString('AlbumID');
         }
         try {

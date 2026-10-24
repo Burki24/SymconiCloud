@@ -34,7 +34,7 @@ function harness(input = sample, fragment = false) {
     const window = {document: {getElementById: id => nodes[id]},
         sessionStorage: {getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value)},
         addEventListener: (name, fn) => { events[name] = fn; },
-        URL: PhotoURL, setTimeout(fn, ms) { tasks.set(++seq, {fn, ms}); return seq; }, clearTimeout(id) { tasks.delete(id); },
+        URL: PhotoURL, Blob, atob, setTimeout(fn, ms) { tasks.set(++seq, {fn, ms}); return seq; }, clearTimeout(id) { tasks.delete(id); },
         SymconHTTPOrigin: {resolve: () => 'http://symcon.example.invalid'},
         SymconVisualizationInteraction: {registerWheelRegion(_node, fn) { this.wheel = fn; }, delta: event => event},
         location: {hash: fragment ? '#token=' + 'a'.repeat(64) : '', pathname: '/hook/photos/page', search: ''}, history: {replaceState(_a, _b, value) { this.value = value; }},
@@ -42,13 +42,19 @@ function harness(input = sample, fragment = false) {
             const request = JSON.parse(configuration.body); requests.push({request, configuration});
             if (!available) throw new Error('Offline');
             if (request.operation === 'image' && binaryDelay) await new Promise(resolve => { waiting = resolve; });
-            return {ok: status === 200, status, json: async () => request.operation === 'model' ? {success: true, state: page, source: 'source-one'} : {success: true, items: [{id: 'later', name: 'Later'}], offset: request.offset, next: null}, blob: async () => ({type: 'image/jpeg', size: 100})};
+            const token = 'c'.repeat(32);
+            const value = request.operation === 'model' ? {success: true, state: page, source: 'source-one'}
+                : request.operation === 'image' ? {success: true, mime: 'image/jpeg', bytes: 100, transfer: {Token: token, PageCount: 1, ItemCount: 1}}
+                : request.operation === 'imagePage' ? {success: true, Token: token, Page: 0, PageCount: 1, ItemCount: 1, Complete: true, Items: [Buffer.alloc(100).toString('base64')]}
+                : request.operation === 'imageClear' ? {success: true}
+                : {success: true, items: [{id: 'later', name: 'Later'}], offset: request.offset, next: null};
+            return {ok: status === 200, status, json: async () => value};
         }
     };
     vm.runInNewContext(fs.readFileSync(file, 'utf8'), {window, URL: PhotoURL, URLSearchParams, AbortController, console});
     return {window, nodes, tasks, events, requests, revoked, offline: value => { available = !value; }, deny: () => { status = 403; }, delay: () => { binaryDelay = true; }, release: () => { binaryDelay = false; if (waiting) waiting(); }};
 }
-const tick = async () => { for (let i = 0; i < 30; i++) await Promise.resolve(); };
+const tick = async () => { for (let i = 0; i < 80; i++) await Promise.resolve(); };
 const poll = async h => { const entry = [...h.tasks].find(([, task]) => task.ms === 5000); assert.ok(entry, 'Poll must be scheduled.'); h.tasks.delete(entry[0]); await entry[1].fn(); await tick(); };
 (async () => {
     const h = harness(); await tick();

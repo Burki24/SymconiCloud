@@ -152,29 +152,39 @@ trait PhotosWidget
                 throw new \InvalidArgumentException();
             }
             $request = json_decode($input, true, 16, JSON_THROW_ON_ERROR);
-            if (!is_array($request) || array_diff(array_keys($request), ['operation', 'offset', 'id', 'view']) !== []
+            if (!is_array($request) || array_diff(array_keys($request), ['operation', 'offset', 'id', 'view', 'token', 'page']) !== []
                 || !in_array($request['view'] ?? 'tile', ['tile', 'ipsview'], true)
-                || !is_string($request['operation'] ?? null) || !is_int($request['offset'] ?? 0) || !is_string($request['id'] ?? '')) {
+                || !is_string($request['operation'] ?? null) || !is_int($request['offset'] ?? 0) || !is_string($request['id'] ?? '')
+                || !is_string($request['token'] ?? '') || strlen($request['token'] ?? '') > 32 || !is_int($request['page'] ?? 0)) {
                 throw new \InvalidArgumentException();
             }
-            $result = $this->ReadPhotoWidget($request['operation'], $request['offset'] ?? 0, $request['id'] ?? '');
+            $result = in_array($request['operation'], ['imagePage', 'imageClear'], true)
+                ? $this->ReadPhotoTransfer($request['id'] ?? '', $request['token'] ?? '', $request['page'] ?? 0, $request['operation'] === 'imageClear')
+                : $this->ReadPhotoWidget($request['operation'], $request['offset'] ?? 0, $request['id'] ?? '');
             if (($result['success'] ?? false) && $request['operation'] === 'model') {
                 $result['options'] = $this->PhotoBootstrap(($request['view'] ?? 'tile') === 'ipsview', true)['options'];
             }
-            if (($result['success'] ?? false) && $request['operation'] === 'image') {
-                $bytes = base64_decode($result['image'], true);
-                $mime = ApplePhotoDownload::mime($bytes === false ? '' : $bytes);
-                // Central text responses add a charset; image bodies must retain their binary MIME.
-                http_response_code(200);
-                header('Content-Type: ' . $mime);
-                header('Cache-Control: no-store');
-                echo $bytes;
-            } else {
-                $this->SendResponse(($result['success'] ?? false) ? 200 : (($result['revoked'] ?? false) ? 403 : 503), 'application/json', json_encode($result, JSON_THROW_ON_ERROR));
-            }
+            $this->SendResponse(($result['success'] ?? false) ? 200 : (($result['revoked'] ?? false) ? 403 : 503), 'application/json', json_encode($result, JSON_THROW_ON_ERROR));
         } catch (\Throwable) {
             $this->SendPlainTextResponse(400, 'Invalid photo request.');
         }
+    }
+
+    /** Transfer pages remain bound to this widget's current account and album. */
+    protected function ReadPhotoTransfer(string $photoID, string $token, int $page, bool $clear): array
+    {
+        $access = $this->ReadPhotoWidget('model');
+        if (!($access['success'] ?? false)) {
+            return $access;
+        }
+        if ($photoID === '' || strlen($photoID) > 512 || preg_match('/\A[a-f0-9]{32}\z/D', $token) !== 1 || $page < 0 || $page > 100) {
+            return ['success' => false];
+        }
+        $arguments = ['PhotoID' => $photoID, 'Token' => $token];
+        if (!$clear) {
+            $arguments['Page'] = $page;
+        }
+        return $this->PhotoAccountRequest($clear ? 'ClearPhotoImageTransfer' : 'GetPhotoImagePage', $arguments);
     }
 
     protected function PhotoWidgetForm(array $form): array

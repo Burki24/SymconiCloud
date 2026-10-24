@@ -6,10 +6,12 @@ namespace SymconiCloud;
 
 require_once __DIR__ . '/PhotoDiskCache.php';
 require_once __DIR__ . '/ApplePhotoDownload.php';
+require_once __DIR__ . '/helper/ChunkedJsonTransferHelper.php';
 
 /** Library-local Photos capability and shared account cache; never changes the media library. */
 trait PhotosAccount
 {
+    use \Burki24\SymconModuleHelper\ChunkedJsonTransferHelper;
     /** Normalized catalog only. Reading this method never initiates Apple authentication. */
     public function GetPhotoAlbums(): string
     {
@@ -48,6 +50,10 @@ trait PhotosAccount
 
     protected function ClearPhotoState(): void
     {
+        foreach ($this->photoTransfers() as $token => $transfer) {
+            $this->ClearChunkedJsonTransfer($transfer['scope'], $token);
+        }
+        $this->SetBuffer('PhotoImageTransfers', '');
         $this->WriteAttributeString('PhotoAlbums', '{"albums":[],"updatedAt":0}');
         $this->WriteAttributeString('PhotoAssets', '{}');
         $this->WriteAttributeString('PhotoError', '');
@@ -88,8 +94,14 @@ trait PhotosAccount
         if ($command === 'GetPhotoPage') {
             $allowed[] = 'Offset';
         }
-        if ($command === 'GetPhotoImage') {
+        if (in_array($command, ['GetPhotoImage', 'GetPhotoImagePage', 'ClearPhotoImageTransfer'], true)) {
             $allowed[] = 'PhotoID';
+        }
+        if (in_array($command, ['GetPhotoImagePage', 'ClearPhotoImageTransfer'], true)) {
+            $allowed[] = 'Token';
+        }
+        if ($command === 'GetPhotoImagePage') {
+            $allowed[] = 'Page';
         }
         if (array_diff(array_keys($request), $allowed) !== []) {
             throw new \InvalidArgumentException();
@@ -102,10 +114,15 @@ trait PhotosAccount
         }
         if (!is_string($request['AlbumID'] ?? null) || strlen($request['AlbumID']) > 512
             || ($command === 'GetPhotoPage' && (!is_int($request['Offset'] ?? null) || $request['Offset'] < 0 || $request['Offset'] > 1000000000))
-            || ($command === 'GetPhotoImage' && (!is_string($request['PhotoID'] ?? null) || strlen($request['PhotoID']) > 512))) {
+            || (in_array($command, ['GetPhotoImage', 'GetPhotoImagePage', 'ClearPhotoImageTransfer'], true) && (!is_string($request['PhotoID'] ?? null) || strlen($request['PhotoID']) > 512))
+            || (in_array($command, ['GetPhotoImagePage', 'ClearPhotoImageTransfer'], true) && (!is_string($request['Token'] ?? null) || preg_match('/\A[a-f0-9]{32}\z/D', $request['Token']) !== 1))
+            || ($command === 'GetPhotoImagePage' && (!is_int($request['Page'] ?? null) || $request['Page'] < 0 || $request['Page'] > 100))) {
             throw new \InvalidArgumentException();
         }
-        return $this->operatePhotos($command === 'GetPhotoImage' ? 'image' : 'page', $request['AlbumID'], $request['Offset'] ?? 0, $request['PhotoID'] ?? '');
+        $operation = match ($command) {
+            'GetPhotoImage' => 'image', 'GetPhotoImagePage' => 'imagePage', 'ClearPhotoImageTransfer' => 'imageClear', default => 'page'
+        };
+        return $this->operatePhotos($operation, $request['AlbumID'], $request['Offset'] ?? 0, $request['PhotoID'] ?? '', $request['Token'] ?? '', $request['Page'] ?? 0);
     }
 
     private function assertPhotosAccount(): void
@@ -116,7 +133,7 @@ trait PhotosAccount
         }
     }
 
-    private function operatePhotos(string $operation, string $albumID = '', int $offset = 0, string $photoID = ''): array
+    private function operatePhotos(string $operation, string $albumID = '', int $offset = 0, string $photoID = '', string $token = '', int $pageNumber = 0): array
     {
         if (!IPS_SemaphoreEnter('SymconiCloud.' . $this->InstanceID, 1000)) {
             return ['success' => false, 'error' => $this->Translate('Account request already running.')];
@@ -151,6 +168,20 @@ trait PhotosAccount
             }
             if ($album === null) {
                 throw new AppleException('photosAlbum');
+            }
+            $scope = 'PhotoImage.' . substr(hash('sha256', $this->credentialFingerprint() . "\0" . $albumID . "\0" . $photoID), 0, 40);
+            if (in_array($operation, ['imagePage', 'imageClear'], true)) {
+                $transfers = $this->photoTransfers();
+                if (($transfers[$token]['scope'] ?? '') !== $scope) {
+                    throw new AppleException('photosAlbum');
+                }
+                if ($operation === 'imageClear') {
+                    $this->ClearChunkedJsonTransfer($scope, $token);
+                    unset($transfers[$token]);
+                    $this->SetBuffer('PhotoImageTransfers', json_encode($transfers, JSON_THROW_ON_ERROR));
+                    return ['success' => true];
+                }
+                return ['success' => true] + $this->ReadChunkedJsonTransferPage($scope, $token, $pageNumber);
             }
             $assets = json_decode($this->ReadAttributeString('PhotoAssets'), true, 512, JSON_THROW_ON_ERROR);
             if ($operation === 'page') {
@@ -190,8 +221,20 @@ trait PhotosAccount
                     throw new AppleException('photosCache');
                 }
             }
-            return ['success' => true, 'mime' => ApplePhotoDownload::mime($bytes), 'image' => base64_encode($bytes)];
+            $transfers = $this->photoTransfers();
+            foreach ($transfers as $oldToken => $old) {
+                if ($old['expiresAt'] <= time()) {
+                    $this->ClearChunkedJsonTransfer($old['scope'], $oldToken);
+                    unset($transfers[$oldToken]);
+                }
+            }
+            $this->SetBuffer('PhotoImageTransfers', json_encode($transfers, JSON_THROW_ON_ERROR));
+            $metadata = $this->CreateChunkedJsonTransfer($scope, str_split(base64_encode($bytes), 131072));
+            $transfers[$metadata['Token']] = ['scope' => $scope, 'expiresAt' => $metadata['ExpiresAt']];
+            $this->SetBuffer('PhotoImageTransfers', json_encode($transfers, JSON_THROW_ON_ERROR));
+            return ['success' => true, 'mime' => ApplePhotoDownload::mime($bytes), 'bytes' => strlen($bytes), 'transfer' => $metadata];
         } catch (\Throwable $exception) {
+            $this->SendDebug('PhotoTransfer', $exception instanceof AppleException ? $exception->reason : $exception->getMessage(), 0);
             $reason = $exception instanceof AppleException ? $exception->reason : 'photosCache';
             if (in_array($reason, ['network', 'server', 'photoDownload', 'photosCache'], true)) {
                 $this->WriteAttributeInteger('PhotoRetryAt', time() + 60);
@@ -227,5 +270,10 @@ trait PhotosAccount
                 $this->notifyChildren();
             }
         }
+    }
+
+    private function photoTransfers(): array
+    {
+        return json_decode($this->GetBuffer('PhotoImageTransfers') ?: '{}', true, 32, JSON_THROW_ON_ERROR);
     }
 }

@@ -1963,3 +1963,45 @@ Damit sind der echte Deaktivierungsdialog und das sichere Abbrechen abgenommen.
 Die tatsaechliche Deaktivierung durch Apple war ausdruecklich nicht Teil dieser
 Pruefung und bleibt ungeprueft. Private Endpunkte, Geraetekennungen und lokale
 Screenshots bleiben ausserhalb der versionierten Dokumentation.
+
+### Fotos: HTTP-Seite, grosse Vorschauen und Wiederverbindung (2026-10-24)
+
+Zwei Fehler wurden auf dem angeschlossenen Windows-Testsystem reproduziert und
+behoben: komplette Base64-Vorschauen ueberschritten das Symcon-Ausgabelimit von
+1 MiB; die HTTP-Seite blieb im synthetischen WebHook-Klassenkontext leer.
+Die Fotoinstanz gibt dem vorhandenen zentralen Ressourcenloader nun ihren
+expliziten Visualisierungspfad. Bilddaten werden mit dem unveraenderten,
+bereits veroeffentlichten ChunkedJsonTransferHelper von Konto bis Browser in
+kleinen JSON-Seiten uebertragen. Die neue regulaere Helper-Subscription ist
+einschliesslich Manifest und generierter Dokumentation eingebunden.
+
+Die MCP-Abnahme erfolgte mit echtem lesendem Fotozugriff und Albumauswahl,
+der nativen Symcon-Kachel in der Hauptansicht und der gespeicherten
+IPSView-HTML-Einbettung im Browser. Automatischer Bildwechsel und Pause wurden
+in beiden Darstellungen bestaetigt. Nach einem erfolgreichen Metadatenrefresh
+blieben Bild, Blob-URL und Pause unveraendert. Ein nur fuer die Testclients
+geschaltetes HTTP-/WebSocket-Relay unterbrach danach bestehende Verbindungen
+und blockierte neue Anfragen. IPSView hielt das pausierte Bild sichtbar;
+Symcon ersetzte seinen Kachelrenderer bei der Wiederverbindung. Danach zeigte
+auch dieser wieder dasselbe Bild und blieb pausiert. Beide Verbindungshinweise
+verschwanden. Die Messung bestaetigte neue WebSockets, erfolgreiche Modellabrufe
+und 14 vollstaendig freigegebene Bildtransfers ohne verbleibende Transferdateien.
+Die native IPSView-App war nicht Gegenstand dieser Browserpruefung.
+
+Bei der Vorbereitung mussten nach temporaeren Quelldateiaenderungen die
+WebHook-Handler neu geladen werden. Alte Hintergrundkacheln und Autorisierungen
+im Testrelay stoerten Zwischenmessungen; fuer die abschliessende Abnahme wurden
+frische Clients ohne parallele Hintergrundvorschau verwendet. Album und
+Autorisierung blieben waehrend der erfolgreichen Unterbrechungspruefung stabil.
+Es wurden keine Fotos, Alben oder Apple-Zugangsdaten veraendert.
+
+Regressionen pruefen eine Vorschau mit mehr als 2 MiB, die exakte Rekonstruktion,
+Seiten unter 240 KiB, Bindung an die Fotoidentitaet, Tokenfreigabe und den
+synthetischen WebHook-Pfad. Offline-Gesamttests, Struktur-/Helper-Hashpruefung,
+JSON-Pruefung und PHP-CS-Fixer sind erfolgreich. Die temporaeren Serverdateien
+wurden bytegleich wiederhergestellt, die unveraenderte neue Helperdatei entfernt,
+die vollstaendige Fotokonfiguration wiederhergestellt und die zusaetzliche
+IPSView-Variable entfernt. Relay und Testclients sind beendet; die
+Kontositzung bleibt angemeldet. Die dauerhafte Uebernahme erfolgt ueber den
+regulaeren Modulupdateweg. Die vom Benutzer erneuerten Zugangsdaten wurden
+bei der Wiederherstellung ausdruecklich beibehalten.

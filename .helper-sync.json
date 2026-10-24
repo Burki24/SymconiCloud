@@ -51,6 +51,9 @@
         },
         "GeofenceHelper": {
             "target": "libs/helper/GeofenceHelper.php"
+        },
+        "ChunkedJsonTransferHelper": {
+            "target": "libs/helper/ChunkedJsonTransferHelper.php"
         }
     }
 }

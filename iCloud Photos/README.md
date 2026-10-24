@@ -73,6 +73,12 @@ Größere Alben bleiben durch bedarfsgerechtes Nachladen von Metadaten erreichba
 Der Browser hält nur das aktuelle Bild als Blob; er lädt nicht den kompletten
 Kontocache in den Arbeitsspeicher. Pro Bild gelten 8 MiB und 20 Millionen Pixel
 als feste Sicherheitsgrenzen. Nicht passende Vorschauen werden übersprungen.
+Bilddaten werden über den zentralen `ChunkedJsonTransferHelper` in kleinen
+JSON-Seiten zwischen Konto, Fotoinstanz und Browser übertragen. Auch größere
+Vorschauen überschreiten dadurch nicht das Symcon-Ausgabelimit von 1 MiB.
+Temporäre Transferdateien sind mit OpenSSL AES-256-GCM verschlüsselt und werden
+nach dem Abruf freigegeben; abgebrochene Transfers laufen nach fünf Minuten ab.
+Die PHP-Installation benötigt dafür OpenSSL mit AES-256-GCM.
 Die Ressourcenprofile erkennen keine Hardware automatisch und reservieren
 keinen RAM. Ausreichend freien Speicherplatz selbst sicherstellen.
 
