@@ -1874,3 +1874,33 @@ Abschliessend bestanden unter PHP 8.5.10 die vollstaendige Offline-Suite mit
 Aktivierungs-, Deaktivierungs-, Suchton-, Formular-, Helper-Hash-, JavaScript-
 und Syntaxpruefungen sowie der JSON-Check. php-cs-fixer im Pruefmodus meldete
 0 von 41 Dateien mit Aenderungsbedarf. git diff --check war erfolgreich.
+
+### MCP-Abnahme des Deaktivierungsdialogs und sicheren Abbruchs (2026-10-24)
+
+Nach dem Modulupdate wurde der neue Deaktivierungsdialog der bestehenden
+Geraeteinstanz auf dem angeschlossenen Windows-Testsystem per MCP und in der
+echten Symcon-Verwaltungskonsole geprueft. Der Server lieferte die neue
+ICID_DeactivateLostMode-Funktion und den Button samt Bestaetigung. Ein noch
+geoeffneter Reiter zeigte zunaechst das alte Formular; nach dem erneuten Oeffnen
+durch den Benutzer war der Deaktivierungsbutton auch in der Konsole vorhanden.
+
+Ein Klick auf "Verloren-Modus deaktivieren" oeffnete den nativen deutschen
+Ja/Nein-Dialog. Dieser erlaeuterte das Beenden des Verloren-Modus-Schutzes,
+eine moeglicherweise weiter bestehende Geraetesperre, den Erhalt von
+Geraetecode und Aktivierungssperre sowie eine moegliche spaetere Verarbeitung
+bei nicht erreichbaren Geraeten. Anschliessend wurde ausschliesslich "Nein"
+angeklickt. Der Dialog schloss sich; der Deaktivierungsbutton blieb im
+bedienbaren Formular vorhanden.
+
+Der MCP-Vergleich vor und nach dem Abbruch bestaetigte eine unveraendert leere,
+unsichtbare LostModeResult-Anzeige. Es wurde kein Aktions-Callback ausgefuehrt.
+LostModeEnabled blieb "Nein", und die Instanz blieb aktiv. Weder "Ja" noch
+eine direkte Aktivierungs- oder Deaktivierungsfunktion wurden ausgeloest.
+Es wurden keine Kontaktangaben oder Codes eingegeben, keine Einstellungen
+geaendert und keine Geraeteauftraege gesendet. Das iPhone wurde weder gesperrt
+noch sein Verloren-Modus veraendert.
+
+Damit sind der echte Deaktivierungsdialog und das sichere Abbrechen abgenommen.
+Die tatsaechliche Deaktivierung durch Apple war ausdruecklich nicht Teil dieser
+Pruefung und bleibt ungeprueft. Private Endpunkte, Geraetekennungen und lokale
+Screenshots bleiben ausserhalb der versionierten Dokumentation.
