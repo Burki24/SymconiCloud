@@ -1429,3 +1429,15 @@ Offline-Suite einschliesslich UI-/Transport-, Struktur-/Hash-/LF- und
 Syntaxpruefungen sowie JSON-Check und php-cs-fixer im Pruefmodus sind unter
 PHP 8.5.10 erfolgreich. Kein neuer MCP- oder nativer Client-Test fuer diese
 reine Designer-Ressourcenaenderung.
+
+### Praxisabnahme der vereinfachten Farbzuordnung (2026-10-24)
+
+Der Benutzer bestaetigt mit "Funktioniert" die erfolgreiche Pruefung der
+vereinfachten Farbzuordnung im IPSView-Designer der WoIst-Karte. Damit ist die
+reduzierte Darstellung mit den Zuordnungen 1 bis 19 ohne die OpenFreeMap-
+Markierungen 20 bis 25 und deren Legendeneintraege in der Praxis abgenommen.
+Die schematische Karte und die OpenFreeMap-Farbeinstellungen bleiben erhalten.
+
+Nachweisquelle ist die ausdrueckliche Benutzerbestaetigung. Dieser Schritt
+dokumentiert die Praxisabnahme; es wurde kein neuer MCP- oder Client-Test
+ausgefuehrt. Die zuvor dokumentierten Offline-Nachweise bleiben davon getrennt.
