@@ -6,15 +6,23 @@ require_once __DIR__ . '/../libs/helper/ConfigurationFormHelper.php';
 require_once __DIR__ . '/../libs/helper/DataFlowHelper.php';
 require_once __DIR__ . '/../libs/helper/ParentConnectionHelper.php';
 require_once __DIR__ . '/../libs/ContactsDirectory.php';
+require_once __DIR__ . '/../libs/ContactsRecipientTransfer.php';
 
 class iCloudContacts extends IPSModuleStrict
 {
     use \Burki24\SymconModuleHelper\ConfigurationFormHelper;
     use \Burki24\SymconModuleHelper\DataFlowHelper;
     use \Burki24\SymconModuleHelper\ParentConnectionHelper;
+    use \SymconiCloud\ContactsRecipientTransfer;
 
     private const REQUEST_DATA = '{1E60F0BE-03E4-4AA4-A1CE-AA838725A4E2}';
     private const NOTIFICATION_DATA = '{FCE7780F-9520-4E52-92F3-60034FFAED6D}';
+
+    public function Create(): void
+    {
+        parent::Create();
+        $this->RegisterRecipientTransfer();
+    }
 
     public function GetCompatibleParents(): string
     {
@@ -25,6 +33,7 @@ class iCloudContacts extends IPSModuleStrict
     public function ApplyChanges(): void
     {
         parent::ApplyChanges();
+        $this->InvalidateRecipientTransfer();
         $this->Reload();
     }
 
@@ -104,7 +113,7 @@ class iCloudContacts extends IPSModuleStrict
         $form['actions'][1]['value'] = $this->GetBuffer('ContactSearch');
         $form['actions'][2]['values'] = $this->rows($result);
         $form['actions'][4]['enabled'] = $result['nextOffset'] !== null;
-        return $this->EncodeConfigurationForm($form);
+        return $this->EncodeConfigurationForm($this->ConfigureRecipientForm($form, $result));
     }
 
     public function Reload(): bool
@@ -113,6 +122,7 @@ class iCloudContacts extends IPSModuleStrict
         $this->UpdateFormField('ContactResult', 'caption', $this->caption($result));
         $this->UpdateFormField('ContactList', 'values', json_encode($this->rows($result), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE));
         $this->UpdateFormField('ContactNextPage', 'enabled', $result['nextOffset'] !== null);
+        $this->UpdateFormField('TransferContactID', 'options', json_encode($this->RecipientContactOptions($result), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE));
         return $result['success'];
     }
 

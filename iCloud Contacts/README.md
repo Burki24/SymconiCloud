@@ -83,6 +83,52 @@ dieses Verzeichnisses.
 | `ICCT_SearchContacts(int $InstanceID, string $Query)` | Formularsuche setzen und zur ersten Seite wechseln |
 | `ICCT_FirstContacts(int $InstanceID)` / `ICCT_NextContacts(int $InstanceID)` | Formularseiten wechseln |
 | `ICCT_Reload(int $InstanceID)` | Formular aus dem vorhandenen Cache neu aufbauen |
+| `ICCT_PreviewRecipientTransfer(int $InstanceID, int $TargetID, string $ContactID, string $Phone, string $Email, string $UserID, int $Level, int $Action)` | Eine Empfängeränderung vorbereiten; `bool` |
+| `ICCT_GetRecipientTransferPreview(int $InstanceID)` | JSON mit `ready`, übersetzter `message` und `changes` (`Field`, `Before`, `After`) |
+| `ICCT_ApplyRecipientTransfer(int $InstanceID, bool $Confirmed)` | Genau eine aktuelle Vorschau nach Bestätigung übernehmen; `false` ändert nichts |
+
+## Empfänger an Mitteilungen oder Benachrichtigung übergeben
+
+Unter **Empfängerübernahme** die installierte **Mitteilungen**-Instanz
+(IPSymconNotice / Notice Base) oder **Benachrichtigung** auswählen. Einen Kontakt
+aus der aktuellen Verzeichnisseite wählen und die gewünschte Telefonnummer
+beziehungsweise E-Mail-Adresse ausdrücklich auswählen. Über die bestehende
+Kontaktsuche und **Nächste Seite** sind weitere Kontakte erreichbar. Die Übernahme
+verwendet nur einen aktuellen, nicht pausierten Kontocache; sie löst keinen
+Apple-Abruf aus und umgeht keine Kontoschutzgrenzen.
+
+Bei **Mitteilungen** das **Notice-Benutzerkürzel** eines vorhandenen oder neuen
+Benutzers eingeben (1–64 Buchstaben/Ziffern). Vorhandene Kürzel werden ohne
+Unterscheidung der Groß-/Kleinschreibung gefunden; ihre gespeicherte Schreibweise
+bleibt erhalten. Übernommen werden Name und ausgewählte Adressen. Nicht
+ausgewählte Adressen, Aktivierung, Anwesenheitseinstellungen, WebFront-Zuordnung,
+Skriptparameter und andere Benutzer bleiben erhalten. Neue Benutzer werden
+zunächst **inaktiv** angelegt. Den gewünschten Versand anschließend im Zielmodul
+selbst einrichten und bewusst freigeben.
+
+Bei **Benachrichtigung** müssen Stufe und Versandaktion bereits eingerichtet sein.
+Ihre Positionen werden jeweils **ab 1** gezählt. Eine SMTP-Aktion übernimmt die
+gewählte E-Mail-Adresse, eine SMS-Aktion die Telefonnummer. Ausschließlich die
+Empfängeradresse dieser Aktion wird geändert; Versandinstanz, Vorlagen, Auslöser,
+Aktivierungszustand und andere Aktionen bleiben erhalten. Andere Aktionstypen
+werden nicht unterstützt. Die Verfügbarkeit einer Adresse richtet keinen
+Versanddienst ein und bestätigt dessen Erreichbarkeit nicht.
+
+**Empfängerübernahme vorbereiten** zeigt unter **Vorschau der Empfängerübernahme**
+die betroffenen Felder mit bisherigem und künftigem Wert. Danach **Vorgeschlagene
+Änderungen übernehmen** wählen und den Bestätigungsdialog bestätigen. Abbrechen
+ändert nichts. Die Vorschau gilt fünf Minuten und nur einmal; geänderte Eingaben,
+Konfiguration oder Quelldaten verlangen eine neue Vorschau. Ungespeicherte
+Änderungen im Zielmodul müssen zuerst dort übernommen oder verworfen werden.
+Bei einem fehlgeschlagenen Übernehmen wird die vorherige Empfängerkonfiguration
+wiederhergestellt; schlägt auch dies fehl, erscheint ein ausdrücklicher Hinweis
+zur Prüfung der Zielinstanz.
+
+Die Funktion verändert keine iCloud-Kontakte, führt keinen dauerhaften
+Synchronisationsauftrag aus und versendet keine Nachricht. Eine spätere Änderung
+des iCloud-Kontakts muss erneut ausdrücklich übernommen werden. Direkte
+Skriptaufrufe tragen die Verantwortung für die menschliche Bestätigung; der
+Formularbutton besitzt den Bestätigungsdialog.
 
 Lesefunktionen liefern `success`, `stale`, `paused`, `updatedAt` und `error`.
 `success` bedeutet, dass ein erfolgreicher Cache vorhanden ist; nur zusammen

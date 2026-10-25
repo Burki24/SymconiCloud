@@ -1,5 +1,56 @@
 # Entwicklungsstand
 
+## Empfängerübernahme aus iCloud Kontakte (2026-10-25)
+
+Die bestehende Kontaktinstanz konfiguriert nach ausdrücklicher Vorschau und
+Bestätigung ausgewählte Empfänger in IPSymconNotice / Mitteilungen und Symcon
+Benachrichtigung. Kein neues Projekt, keine vollständige Kontakt-Exportvariable,
+kein Versand und kein automatischer Abgleich. Die Adapter liegen librarylokal
+in `ContactsRecipientTransfer`; zentrale ConfigurationForm-, DataFlow- und
+ParentConnection-Helper werden unverändert genutzt. Für diese ausschließlich
+in SymconiCloud eingesetzte Integration wird kein zentraler Helper angelegt.
+
+Notice-Benutzer werden anhand eines stabilen Kürzels ergänzt/zusammengeführt;
+neue Einträge bleiben inaktiv. Vorhandene Kennungen, nicht ausgewählte Adressen,
+Flags, Zuordnungen, Skriptparameter und sonstige Einstellungen bleiben erhalten.
+Benachrichtigung ändert nur `recipientAddress` einer ausdrücklich gewählten
+vorhandenen SMTP-/SMS-Aktion, Stufen und Aktionen ab 1. Unbekannte JSON-Felder
+und Objekttypen bleiben erhalten. Vollständige Zielkonfigurationen werden weder
+in Vorschau noch Diagnose veröffentlicht; temporär gespeichert werden nur
+ausgewählte Änderungen, Argumente und Snapshot-Hashes.
+
+Bestätigungen sind einmalig und fünf Minuten gültig. Aktuelle, nicht pausierte
+Quelldaten, unveränderte Quelle/Verbindung und unveränderte Zielkonfiguration
+sind Voraussetzung. Offene Zieländerungen werden abgewiesen. Semaphore sichern
+die Übernahme zwischen Kontaktinstanzen; fehlgeschlagenes ApplyChanges versucht
+die vorherige Property wiederherzustellen. Keine automatische Apple-Anmeldung,
+kein Aktualisierungsaufruf und keine Versand-/Eskalationsfunktion.
+
+MCP-Nachweis am Windows-Testsystem mit den tatsächlich installierten Zielmodulen:
+Vorschau und Abbrechen ohne gestagte oder übernommene Zieländerungen, bestätigtes
+Ergänzen eines inaktiven Notice-Benutzers, Aktualisieren eines vorhandenen Benutzers
+bei Erhalt anderer Felder/Benutzer, SMTP-Adressübernahme bei ansonsten identischer
+Benachrichtigungskonfiguration, Einmaligkeit und Ablehnung nach Zieländerung.
+Das echte Kontaktformular enthält die explizite Bestätigung und beide Zieltypen.
+Mangels aktiviertem Kontaktzugriff diente ein synthetischer Kontakt über eine
+kurzlebige Prüfklasse als Quelle; kein echter Apple-Kontaktabruf wurde behauptet.
+Der reguläre öffentliche Aufruf weist diese nicht vorhandene Quelle korrekt ab.
+
+Auf ausdrücklichen Benutzerwunsch bleiben die gekennzeichneten Testinstanzen
+beider Zielmodule samt SMTP-Instanz ohne Zugang und inaktivem Auslöser bestehen.
+Mitteilungen bleibt deaktiviert, der neue Notice-Benutzer inaktiv;
+Benachrichtigungsstufe inaktiv, Laufzeit-Level 0, Active und Auslöser false.
+Es wurde keine Nachricht versendet. Das vorhandene Benachrichtigungsmodul sowie
+Apple-Konto, Sitzung und Kontaktfreigabe wurden nicht verändert.
+
+Offline-Regressionen prüfen zusätzlich SMS, fehlende Adressen, falsche Zieltypen,
+offene Zieländerungen, geänderte Kontakte, Pause, Ablauf, Eingabeinvalidierung,
+vollständigen Erhalt unbekannter JSON-Objekte und Rollback bei ApplyChanges-Fehlern.
+Abschluss: `php tests/run.php` einschließlich Struktur-/Formularverträgen und
+Syntaxprüfungen erfolgreich; JSON-Stilprüfung und php-cs-fixer im vollständigen
+Prüfmodus ohne Befund. Der zentrale Helperbestand und seine Hashverträge bleiben
+unverändert.
+
 ## iCloud Fotos: erste lesende Version und Ressourcenprofile (2026-10-24)
 
 Neues Modul `iCloud Photos` / „iCloud Fotos“, Präfix `ICPH`, als Konto-Kind.

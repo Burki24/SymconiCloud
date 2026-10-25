@@ -2,6 +2,13 @@
 
 ## Neue Funktionen
 
+- **iCloud Kontakte** übernimmt ausgewählte Telefonnummern und E-Mail-Adressen
+  nach Vorschau und Bestätigung in **Mitteilungen (IPSymconNotice)** oder
+  vorhandene SMTP-/SMS-Aktionen von **Benachrichtigung**. Bestehende Einstellungen
+  bleiben erhalten; neue Notice-Benutzer sind zunächst inaktiv. Veraltete oder
+  inzwischen geänderte Vorschauen werden abgewiesen. Die Übernahme versendet
+  keine Nachrichten und startet keinen zusätzlichen iCloud-Abruf.
+
 - Das Empfängerverzeichnis bietet **Geschäftlich**, **Hauptnummer**, **Privat**,
   **iPhone**, **Fax**, **Pager** und **Weitere Telefonnummern** als eigene
   Spalten. Mobilnummern stehen getrennt in **Mobil1**, **Mobil2**

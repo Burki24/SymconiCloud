@@ -7,6 +7,92 @@
         {
             "type": "Label",
             "caption": "No contact editing or message delivery. Missing numbers and email addresses are shown as Not available."
+        },
+        {
+            "type": "ExpansionPanel",
+            "caption": "Recipient transfer",
+            "items": [
+                {
+                    "type": "Label",
+                    "caption": "Choose a cached contact and explicit addresses. Notice users are merged by stable ID; notification levels and actions are numbered from 1. New Notice users are inactive."
+                },
+                {
+                    "type": "Select",
+                    "name": "TransferTargetID",
+                    "caption": "Recipient target",
+                    "options": [
+                        {
+                            "caption": "Select target",
+                            "value": 0
+                        }
+                    ],
+                    "onChange": "ICCT_InvalidateRecipientTransfer($id);"
+                },
+                {
+                    "type": "Select",
+                    "name": "TransferContactID",
+                    "caption": "Source contact",
+                    "options": [
+                        {
+                            "caption": "Select contact",
+                            "value": ""
+                        }
+                    ],
+                    "onChange": "ICCT_UpdateRecipientChoices($id, $TransferContactID);"
+                },
+                {
+                    "type": "Select",
+                    "name": "TransferPhone",
+                    "caption": "Phone number to transfer",
+                    "options": [
+                        {
+                            "caption": "Do not transfer this address",
+                            "value": ""
+                        }
+                    ],
+                    "onChange": "ICCT_InvalidateRecipientTransfer($id);"
+                },
+                {
+                    "type": "Select",
+                    "name": "TransferEmail",
+                    "caption": "Email address to transfer",
+                    "options": [
+                        {
+                            "caption": "Do not transfer this address",
+                            "value": ""
+                        }
+                    ],
+                    "onChange": "ICCT_InvalidateRecipientTransfer($id);"
+                },
+                {
+                    "type": "ValidationTextBox",
+                    "name": "TransferUserID",
+                    "caption": "Notice user ID (existing or new)",
+                    "validate": "^[0-9A-Za-z]*$",
+                    "onChange": "ICCT_InvalidateRecipientTransfer($id);"
+                },
+                {
+                    "type": "NumberSpinner",
+                    "name": "TransferLevel",
+                    "caption": "Notification level (from 1)",
+                    "minimum": 1,
+                    "maximum": 1000,
+                    "onChange": "ICCT_InvalidateRecipientTransfer($id);"
+                },
+                {
+                    "type": "NumberSpinner",
+                    "name": "TransferAction",
+                    "caption": "Notification action (from 1)",
+                    "minimum": 1,
+                    "maximum": 1000,
+                    "onChange": "ICCT_InvalidateRecipientTransfer($id);"
+                },
+                {
+                    "type": "Button",
+                    "caption": "Preview recipient transfer",
+                    "onClick": "ICCT_PreviewRecipientTransfer($id, $TransferTargetID, $TransferContactID, $TransferPhone, $TransferEmail, $TransferUserID, $TransferLevel, $TransferAction);"
+                }
+            ]
         }
     ],
     "actions": [
@@ -117,6 +203,48 @@
             "type": "Button",
             "caption": "Refresh contacts",
             "onClick": "ICCT_Refresh($id);"
+        },
+        {
+            "type": "ExpansionPanel",
+            "caption": "Recipient transfer preview",
+            "items": [
+                {
+                    "type": "Label",
+                    "name": "RecipientTransferResult",
+                    "caption": "Create a preview before applying recipient changes."
+                },
+                {
+                    "type": "List",
+                    "name": "RecipientTransferPreview",
+                    "rowCount": 5,
+                    "add": false,
+                    "delete": false,
+                    "columns": [
+                        {
+                            "name": "Field",
+                            "caption": "Field",
+                            "width": "auto"
+                        },
+                        {
+                            "name": "Before",
+                            "caption": "Before",
+                            "width": "auto"
+                        },
+                        {
+                            "name": "After",
+                            "caption": "After",
+                            "width": "auto"
+                        }
+                    ],
+                    "values": []
+                },
+                {
+                    "type": "Button",
+                    "caption": "Apply previewed recipient changes",
+                    "confirm": "Apply exactly the previewed recipient changes? No message will be sent.",
+                    "onClick": "ICCT_ApplyRecipientTransfer($id, true);"
+                }
+            ]
         }
     ],
     "status": [
