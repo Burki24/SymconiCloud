@@ -2382,8 +2382,23 @@ Schreibweisen, Leerzeichen/Klammern/Schraegstriche/Bindestriche, eigene Labels,
 mehr als drei Mobilnummern, Vorrang bekannter Kategorien, andere Vorwahlen und
 ungueltige Nummern sowie die unveraenderte API und ausbleibende Apple-Anfragen
 beim Formularaufbau. Es wurden nur synthetische Kontakte verwendet. Die
-Benutzeranzeige nach dem Modulupdate bleibt noch zu pruefen.
+Benutzeranzeige nach dem Modulupdate war zu diesem Zeitpunkt noch offen;
+die nachfolgende Benutzerabnahme schliesst diese Pruefung ab.
 
 Die vollstaendige PHP-/Node-Offlinesuite, Struktur-/Formularvertraege,
 offizieller JSON-Check, PHP-CS-Fixer im Pruefmodus (0 von 58 Dateien mit
 Aenderungsbedarf) und git diff --check bestanden fuer diesen Stand.
+
+### Benutzerabnahme der Mobilspalten und Vorwahlzuordnung (2026-10-25)
+
+Der Benutzer hat nach dem Modulupdate die Anzeige von Mobil1, Mobil2 und
+Mobil3 sowie die Vorwahlzuordnung erfolgreich geprueft und die Funktion
+ausdruecklich bestaetigt. Damit ist auch die Praxispruefung der Regel
+abgeschlossen, bisher nicht kategorisierte Nummern mit Beginn +491 oder 01
+in die Mobilspalten einzuordnen.
+
+Diese Benutzerabnahme ergaenzt die oben dokumentierten Offline- und
+Regressionstests und schliesst die dort noch offene Anzeigepruefung nach dem
+Update ab. Sie ist eine Rueckmeldung aus der Installation des Benutzers;
+es wurde dafuer kein neuer MCP-Lauf durchgefuehrt. Persoenliche Kontaktdaten
+oder Screenshots werden nicht in das Repository uebernommen.
