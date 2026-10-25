@@ -2047,11 +2047,14 @@ Objektbestand bestaetigt. Testclients und Relay wurden beendet und die
 urspruengliche Kachelansicht wieder geoeffnet. Die Kontositzung blieb angemeldet.
 Fotos, Alben, Zugangsdaten und installierte Moduldateien wurden nicht veraendert.
 
-**Offen:** Der echte IPSView-Client einschliesslich einer nativen IPSView-App
+**Zum Zeitpunkt dieser MCP-Pruefung offen:** Der echte IPSView-Client einschliesslich einer nativen IPSView-App
 wurde mit der Fotoausgabe noch nicht geprueft. Der Benutzer hat diesen Test
 ausdruecklich fuer spaeter vorgesehen. Die erfolgreiche Browser-Einbettung ist
 kein Nachweis fuer diesen noch offenen Clientpfad. Private Endpunkte, Album-
 und Fotokennungen, Tokens und Screenshots bleiben ausserhalb des Repositories.
+
+Dieser offene native Clientpfad wurde durch die unten dokumentierte
+Benutzerabnahme vom 2026-10-25 abgeschlossen.
 
 ### Kontoschutz, Sitzungspause und datensparsame Diagnose (2026-10-24)
 
@@ -2173,3 +2176,20 @@ der privaten Laufzeitdaten werden nicht im Repository gespeichert.
 Die Wirkung realer Apple-Kontosperren wurde bewusst nicht provoziert. Die
 Abnahme bestaetigt das lokale Schutzverhalten und die Pause am angemeldeten
 Konto, nicht die Ursache der zuvor beobachteten Apple-Sperren.
+
+### Benutzerabnahme der Foto-Diashow in der nativen IPSView-App (2026-10-25)
+
+Der Benutzer hat die Foto-Diashow nach den Updates auch in der nativen
+IPSView-App erfolgreich geprueft und folgende Funktionen bestaetigt:
+
+- Die Bedienung der Diashow mit dem Mausrad funktioniert.
+- Die Albumwahl funktioniert.
+- Bei Datenupdates bleiben das aktuelle Bild und der Pausenzustand erhalten.
+- Auch bei Verbindungsunterbrechung und anschliessender Wiederverbindung
+  bleiben das aktuelle Bild und der Pausenzustand erhalten.
+
+Diese ausdrueckliche Benutzerbestaetigung ergaenzt die erfolgreiche
+MCP-Nachpruefung vom 2026-10-24 fuer die echte Symcon-Kachel und die erzeugte
+IPSView-Ausgabe in der Browser-Einbettung. Der damals noch ausstehende Test
+im nativen IPSView-Client ist damit abgeschlossen. Die native App wurde vom
+Benutzer geprueft; fuer diese Abnahme wurde kein neuer MCP-Test durchgefuehrt.
