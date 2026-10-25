@@ -28,6 +28,7 @@ trait AccountProtection
             } catch (AppleException $error) {
                 $this->AccountRequestFailed('resume', $error, false);
                 $this->updateState();
+                $this->setAuthenticationFeedback('resume', $error->reason);
                 return;
             }
             $this->WriteAttributeString('AccountBlock', '');
@@ -36,6 +37,7 @@ trait AccountProtection
             }
             $this->RecordAccountDiagnostic('resume', 0, 'ok');
             $this->updateState();
+            $this->setAuthenticationFeedback('resume', 'ok');
         } finally {
             IPS_SemaphoreLeave('SymconiCloud.' . $this->InstanceID);
         }

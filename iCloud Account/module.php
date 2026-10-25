@@ -85,7 +85,12 @@ class iCloudAccount extends IPSModuleStrict
         $form = $this->LoadConfigurationForm();
         $state = $this->readSession()['state'] ?? 'signedOut';
         $form['actions'][0]['caption'] = $this->Translate('Session state') . ': ' . $this->Translate((string) $state);
-        $form['actions'][1]['caption'] = $this->errorMessage($this->ReadAttributeString('LastError'));
+        $form['actions'][1]['caption'] = $this->GetBuffer('AuthenticationFeedback')
+            ?: $this->errorMessage($this->ReadAttributeString('AccountBlock') !== '' ? 'accountBlocked' : $this->ReadAttributeString('LastError'));
+        if ($this->ReadAttributeString('AccountBlock') !== '') {
+            $form['actions'][2]['onClick'] = 'ICAC_LoginFromForm($id, true);';
+            $form['actions'][2]['confirm'] = $this->Translate('Have you checked the Apple account? Release the local hold and start one sign-in attempt? Pauses, cooldowns and attempt limits remain in effect.');
+        }
         $form['actions'][] = ['type' => 'Label', 'caption' => $this->ReadAttributeString('PhotoError')];
         $form['actions'][] = ['type' => 'Label', 'caption' => $this->errorMessage($this->ReadAttributeString('ContactsError'))];
         $form['actions'] = $this->SetFormFieldVisibility($form['actions'], ['TwoFactor'], $state === 'awaiting2FA');
@@ -113,6 +118,15 @@ class iCloudAccount extends IPSModuleStrict
     public function Login(): bool
     {
         return $this->operate('login');
+    }
+
+    /** The form may release a local hold only after the user explicitly confirms recovery. */
+    public function LoginFromForm(bool $ConfirmedRecovery): bool
+    {
+        if ($ConfirmedRecovery && $this->ReadAttributeString('AccountBlock') !== '' && !$this->ReadPropertyBoolean('PauseRequests')) {
+            $this->ResumeAccountRequests();
+        }
+        return $this->Login();
     }
 
     /** @param string $Code Six digits from a trusted Apple device. @return bool Authentication and inventory success. */
@@ -241,10 +255,14 @@ class iCloudAccount extends IPSModuleStrict
     private function operate(string $operation, string $value = ''): bool
     {
         if (!IPS_SemaphoreEnter('SymconiCloud.' . $this->InstanceID, 1000)) {
+            if ($operation !== 'devices') {
+                $this->setAuthenticationFeedback($operation, 'busy');
+            }
             return false;
         }
         $client = null;
         $success = false;
+        $feedbackReason = 'internal';
         try {
             if (!$this->configurationValid()) {
                 throw new \SymconiCloud\AppleException('configuration');
@@ -257,6 +275,7 @@ class iCloudAccount extends IPSModuleStrict
             $state = $this->readSession()['state'] ?? 'signedOut';
             if ($operation === 'login' && $state === 'authenticated') {
                 $this->RecordAccountDiagnostic('login', 0, 'sessionReused');
+                $feedbackReason = 'sessionReused';
                 return true;
             }
             if ($operation === 'login' && $state === 'awaiting2FA' && ($this->readSession()['challengeAt'] ?? 0) > time() - 600) {
@@ -291,7 +310,9 @@ class iCloudAccount extends IPSModuleStrict
             $this->WriteAttributeString('RetryReason', '');
             $this->WriteAttributeInteger('TransientFailures', 0);
             $this->RecordAccountDiagnostic($operation, 0, $success ? 'ok' : ($state === 'awaiting2FA' ? 'verificationRequired' : 'authentication'));
+            $feedbackReason = $success ? 'ok' : ($state === 'awaiting2FA' ? 'verificationRequired' : 'authentication');
         } catch (\SymconiCloud\AppleException $exception) {
+            $feedbackReason = $exception->reason;
             if (!in_array($exception->reason, ['requestsPaused', 'accountBlocked', 'challengePending', 'retryBackoff'], true)) {
                 $this->WriteAttributeString('LastError', $exception->reason);
             }
@@ -306,6 +327,9 @@ class iCloudAccount extends IPSModuleStrict
             }
             $this->updateState();
             IPS_SemaphoreLeave('SymconiCloud.' . $this->InstanceID);
+            if ($operation !== 'devices') {
+                $this->setAuthenticationFeedback($operation, $feedbackReason);
+            }
         }
         $this->notifyChildren();
         if ($operation !== 'devices') {
@@ -408,6 +432,7 @@ class iCloudAccount extends IPSModuleStrict
 
     private function clearState(): void
     {
+        $this->SetBuffer('AuthenticationFeedback', '');
         $this->ClearPhotoState();
         $this->ClearContactsState();
         $this->WriteAttributeString('Session', '{}');
@@ -491,7 +516,8 @@ class iCloudAccount extends IPSModuleStrict
             'retryBackoff'          => 'Requests are temporarily delayed after a connection or server failure. No new sign-in is needed.',
             'accessDenied'          => 'Apple denied access. Check the account in a browser.',
             'accountLocked'         => 'Apple returned a lock response. Requests are stopped. Check the Apple account before resuming.',
-            'accountBlocked'        => 'Apple requests are stopped after an authentication rejection. Check the account and explicitly resume requests.',
+            'accountBlocked'        => 'The module has a local hold after an authentication rejection. This does not prove that Apple locked your account. Click Sign in and confirm recovery after checking your Apple account.',
+            'busy'                  => 'Account request already running.',
             'requestsPaused'        => 'Apple requests are paused. The existing session and cache are retained.',
             'contactsDisabled'      => 'Enable read-only Contacts access in the connected account.',
             'contactsConfiguration' => 'Set the Contacts interval between 900 and 604800 seconds.',
@@ -518,5 +544,36 @@ class iCloudAccount extends IPSModuleStrict
             'lostModeInput'         => 'Check the contact number, message (maximum 160 characters) and optional new passcode (4 or 6 digits).',
             default                 => 'The Apple response could not be processed.'
         });
+    }
+
+    /** Fixed translated text only: no exception bodies, codes, identities, or session data. */
+    private function setAuthenticationFeedback(string $operation, string $reason): void
+    {
+        $message = match ($reason) {
+            'sessionReused'        => $this->Translate('Already signed in. The existing session is reused; no new password sign-in was sent.'),
+            'verificationRequired' => $this->Translate('Sign-in requires a verification code. Enter the code from your trusted Apple device below.'),
+            'ok'                   => $this->Translate(match ($operation) {
+                'resume' => 'Local hold released. Click Sign in to continue. Existing pauses, cooldowns and attempt limits remain in effect.',
+                'resend' => 'Verification code requested. Enter the new code below.',
+                default  => 'Sign-in successful. The session is authenticated and the device list was loaded.'
+            }),
+            default => $this->Translate('Authentication action was not completed.') . ' ' . $this->errorMessage($reason)
+        };
+        $wait = max(0, $this->ReadAttributeInteger('RetryAt') - $this->AccountProtectionTime());
+        $kind = match ($reason) {
+            'loginLimited' => 'login', 'codeLimited' => 'verify', 'resendLimited' => 'resend', default => null
+        };
+        if ($kind !== null) {
+            try {
+                $wait = max($wait, $this->AuthenticationWait($kind));
+            } catch (\SymconiCloud\AppleException) {
+                // The protection-state error is reported by the authentication action itself.
+            }
+        }
+        if ($wait > 0) {
+            $message .= ' ' . sprintf($this->Translate('Wait at least %d seconds before trying again.'), $wait);
+        }
+        $this->SetBuffer('AuthenticationFeedback', $message);
+        $this->UpdateFormField('AuthenticationResult', 'caption', $message);
     }
 }

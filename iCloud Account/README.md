@@ -16,6 +16,14 @@ Das Kontomodul verwaltet die Apple-Anmeldung, Zwei-Faktor-Bestätigung, Sitzung 
 
 Einstellungen speichern, **Anmelden** wählen und den sechsstelligen Code des vertrauenswürdigen Gerätes bestätigen. **Neuen Code anfordern** sendet eine neue Anfrage für die laufende Bestätigung. Nach zehn Minuten ist eine neue Anmeldung erforderlich. Alternative Verfahren mit SMS oder Hardware-Sicherheitsschlüsseln sind nicht enthalten.
 
+Direkt über **Anmelden** erscheint das Ergebnis der letzten Anmeldeaktion:
+erfolgreiche Anmeldung, Weiterverwendung einer vorhandenen Sitzung, benötigter
+Bestätigungscode oder eine konkrete Ablehnung. Bei einer Wartefrist werden die
+noch verbleibenden Sekunden zum Zeitpunkt des Klicks angezeigt. Die Rückmeldung
+bleibt beim Neuaufbau des Formulars erhalten und wird nicht von regelmäßigen
+Geräteabfragen überschrieben. Passwörter, Codes und technische Apple-Antworten
+werden darin nicht ausgegeben.
+
 Die Sitzung bleibt nach einem Symcon-Neustart erhalten. Eine Änderung der Zugangsdaten oder das Deaktivieren löscht die lokale Sitzung und den Gerätecache. **Lokale Sitzung löschen** meldet nur diese Instanz lokal ab; der Apple-Account wird nicht gesperrt und Geräte werden nicht verändert. Erneutes Aktivieren allein startet keine Anmeldung.
 
 ## Lesender Kontaktzugriff
@@ -71,6 +79,14 @@ entsperren. Anschließend **Nach Prüfung des Apple-Accounts wieder freigeben**
 bestätigen. Dieser Schritt sendet keine Apple-Anfrage und umgeht weder Wartefristen
 noch Versuchslimits. Eine abgelaufene Sitzung benötigt danach eine ausdrückliche
 Anmeldung; eine noch gültige Sitzung kann weiterverwendet werden.
+
+Alternativ übernimmt **Anmelden** bei einer lokalen Schutzsperre beide Schritte:
+Nach Prüfung des Apple-Kontos die Rückfrage zum Freigeben und Starten eines
+Anmeldeversuchs bestätigen. Abbrechen belässt die Schutzsperre unverändert und
+sendet nichts an Apple. Eine lokale Schutzsperre ist kein Nachweis einer
+Apple-Kontosperre. Die kombinierte Aktion respektiert weiterhin Pause,
+Wartefristen und Versuchslimits; wiederholte Klicks erlauben keine zusätzlichen
+Passwortversuche. Während einer Abfragepause wird die Sperre nicht freigegeben.
 
 HTTP 429 bleibt eine zeitlich begrenzte Drosselung nach Apples `Retry-After`
 (60 Sekunden bis 24 Stunden). Netzwerk- und Serverfehler erhalten eine getrennte,
@@ -140,6 +156,7 @@ beschrieben.
 | Funktion | Rückgabe | Bedeutung |
 | --- | --- | --- |
 | `ICAC_Login(int $InstanceID)` | bool | Vorhandene Anmeldung nutzen oder begrenzt eine neue starten; bei benötigtem Code zunächst false, sonst true nach erfolgreicher Anmeldung und Geräteabfrage |
+| `ICAC_LoginFromForm(int $InstanceID, bool $ConfirmedRecovery)` | bool | Formularaktion mit Ergebnisanzeige; nur bei `true` die vorhandene lokale Schutzsperre vor dem begrenzten Anmeldeversuch ausdrücklich freigeben; keine Umgehung von Pause oder Limits |
 | `ICAC_ResumeAccountRequests(int $InstanceID)` | void | Lokale Schutzsperre nach Kontoprüfung freigeben; keine Anmeldung und kein Zurücksetzen von Limits |
 | `ICAC_GetAccountDiagnostics(int $InstanceID)` | string | Bereinigten Diagnoseverlauf als JSON lesen |
 | `ICAC_ClearAccountDiagnostics(int $InstanceID)` | void | Nur den Diagnoseverlauf löschen |

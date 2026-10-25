@@ -126,12 +126,13 @@
         },
         {
             "type": "Label",
+            "name": "AuthenticationResult",
             "caption": ""
         },
         {
             "type": "Button",
             "caption": "Sign in",
-            "onClick": "ICAC_Login($id);"
+            "onClick": "ICAC_LoginFromForm($id, false);"
         },
         {
             "type": "ExpansionPanel",

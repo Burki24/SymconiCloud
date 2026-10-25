@@ -1,5 +1,41 @@
 # Entwicklungsstand
 
+## Rückmeldung und bestätigte Wiederanmeldung im Kontoformular (2026-10-25)
+
+Ursache des scheinbar wirkungslosen Buttons: `ICAC_Login` wurde durch den lokalen
+`AccountBlock` vor einem Apple-Aufruf abgewiesen. Der boolesche Rückgabewert des
+Formularcallbacks wurde nicht sichtbar ausgewertet; die reguläre Fehlerzeile
+konnte zugleich leer sein. Ein Browserlogin bei iCloud hebt diese lokale
+Schutzsperre nicht auf und sagt nichts über die Sitzung der Symcon-Instanz aus.
+Die per MCP gelesene Diagnose bestätigte `login / HTTP 0 / accountBlocked`.
+
+`AuthenticationResult` zeigt nun das feste, übersetzte Ergebnis der letzten
+manuellen Authentifizierungsaktion. Erfolg, Sitzungswiederverwendung, ausstehende
+2FA, Ablehnung, belegte Instanz und verbleibende Wartezeit sind unterscheidbar.
+Die Meldung enthält keine Apple-Antworttexte, Zugangsdaten oder Bestätigungscodes.
+Formularneuladen behält sie bei, Geräteabfragen überschreiben sie nicht;
+Löschen der lokalen Sitzung entfernt auch eine alte Erfolgsmeldung.
+
+Bei lokaler Schutzsperre erhält der Anmelden-Button einen Bestätigungsdialog.
+`ICAC_LoginFromForm($InstanceID, true)` verwendet nach Bestätigung die vorhandene
+lokale Freigabe und danach den regulären begrenzten Login. Ohne Bestätigung
+bleibt die Sperre bestehen; die bestehende `ICAC_Login`-Schnittstelle sowie Timer
+umgehen sie weiterhin nicht. Pause verhindert auch die Freigabe. Wartefristen,
+persistente Zähler und neue Sperren nach einer erneuten Ablehnung bleiben
+erhalten. Die lokale Konto-/Apple-Logik bleibt in dieser Library; vorhandene
+zentrale Formular- und Debug-Helper werden unverändert verwendet.
+
+Gezielte synthetische Regressionen prüfen die bestätigte Wiederanmeldung,
+Abbruch ohne Anfrage, unveränderte Limits, Pause, Cooldown, 2FA, Erfolg,
+Sitzungswiederverwendung und datensparsame Rückmeldungen. Es werden keine echten
+Anmeldungen oder künstlichen Kontosperren zu Testzwecken ausgelöst.
+Abschlussnachweis: vollständige Offline-Testsuite, Formular-/Erstellungsverträge,
+Struktur-/Helperhashprüfung, PHP-Syntaxprüfung, JSON-Stil und php-cs-fixer im
+Prüfmodus erfolgreich. Der echte Anmelde-/2FA-Abschluss und die anschließende
+Empfängerübernahme mit realen Kontakten bleiben nach Benutzerupdate und
+manueller Anmeldung zu prüfen; am verbundenen System wurde nur die bestehende
+lokale Sperre diagnostiziert.
+
 ## Empfängerübernahme aus iCloud Kontakte (2026-10-25)
 
 Die bestehende Kontaktinstanz konfiguriert nach ausdrücklicher Vorschau und

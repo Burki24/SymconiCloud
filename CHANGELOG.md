@@ -25,6 +25,13 @@
 
 ## Fixes
 
+- **Anmelden** zeigt nun das Ergebnis unmittelbar im Kontoformular, einschließlich
+  ausstehendem Bestätigungscode und verbleibender Wartezeit. Eine lokale
+  Schutzsperre wird deutlich von einer Apple-Kontosperre unterschieden. Nach
+  ausdrücklicher Bestätigung kann der Button die lokale Sperre freigeben und
+  einen begrenzten Anmeldeversuch starten. Pause und Versuchslimits bleiben
+  unverändert wirksam.
+
 - iCloud Kontakte übernimmt Telefonnummern und E-Mail-Adressen aus dem von
   iCloud gelieferten Feld `field`. Auch mehrere Nummern pro Kontakt werden
   angezeigt; vorhandene Adressen erscheinen nicht mehr fälschlich als

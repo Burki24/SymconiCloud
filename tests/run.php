@@ -6,7 +6,7 @@ declare(strict_types=1);
 // contact-transfer.php also runs Contacts, account protection and account integration scenarios.
 // compact-address.php also runs Geoapify, precision, device address and map geocoding scenarios.
 // lost-mode-deactivation.php also runs the confirmed activation contracts.
-foreach (['validate_structure.php', 'photos-cache.php', 'photos-boundaries.php', 'apple-client.php', 'contact-transfer.php', 'play-sound.php', 'lost-mode-deactivation.php', 'sdk-contracts.php', 'device-details.php', 'presence-group.php', 'presence-form.php', 'presence-widget.php', 'presence-widget-compact.php', 'presence-widget-images.php', 'map.php', 'woist-color-guide.php', 'compact-address.php'] as $test) {
+foreach (['validate_structure.php', 'photos-cache.php', 'photos-boundaries.php', 'apple-client.php', 'account-login-feedback.php', 'contact-transfer.php', 'play-sound.php', 'lost-mode-deactivation.php', 'sdk-contracts.php', 'device-details.php', 'presence-group.php', 'presence-form.php', 'presence-widget.php', 'presence-widget-compact.php', 'presence-widget-images.php', 'map.php', 'woist-color-guide.php', 'compact-address.php'] as $test) {
     $process = proc_open([PHP_BINARY, __DIR__ . '/' . $test], [STDIN, STDOUT, STDERR], $pipes, dirname(__DIR__));
     if (!is_resource($process) || proc_close($process) !== 0) {
         exit(1);
