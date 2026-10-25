@@ -70,7 +70,7 @@ final class ApplePhotoDownload
                 $url = $location;
                 continue;
             }
-            throw new AppleException('photoDownload');
+            throw new AppleException('photoDownload', $status);
         }
         throw new AppleException('photoDownload');
     }

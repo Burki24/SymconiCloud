@@ -406,6 +406,12 @@
             "sha256": "13e009dac28cda9bbf22638db00bd8d562a522a10fd592d9c770a7c5f22cf1fb",
             "path": "libs/helper/ChunkedJsonTransferHelper.php",
             "source_sha": "d64feed9d8a817000ef5bac0aecc2a16ee8b5b4e"
+        },
+        "DebugHelper": {
+            "version": "1.0.2",
+            "sha256": "3bc98238da59682b149d981e7641f1a1af8103047d05ce520dec0a2abcbe7d2b",
+            "path": "libs/helper/DebugHelper.php",
+            "source_sha": "d64feed9d8a817000ef5bac0aecc2a16ee8b5b4e"
         }
     }
 }

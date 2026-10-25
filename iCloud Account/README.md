@@ -7,6 +7,7 @@ Das Kontomodul verwaltet die Apple-Anmeldung, Zwei-Faktor-Bestätigung, Sitzung 
 | Eigenschaft | Standard | Bedeutung |
 | --- | --- | --- |
 | `Enabled` | false | Konto und regelmäßige Geräteabfrage aktivieren |
+| `PauseRequests` | false | Alle Apple-Anfragen pausieren, Sitzung und vorhandene Caches erhalten |
 | `Username` | leer | Apple-Account-Anmeldename |
 | `Password` | leer | Reguläres Apple-Passwort, kein anwendungsspezifisches Passwort |
 | `RefreshInterval` | 300 | Sekunden zwischen Geräteabfragen, 60 bis 86400 |
@@ -14,6 +15,70 @@ Das Kontomodul verwaltet die Apple-Anmeldung, Zwei-Faktor-Bestätigung, Sitzung 
 Einstellungen speichern, **Anmelden** wählen und den sechsstelligen Code des vertrauenswürdigen Gerätes bestätigen. **Neuen Code anfordern** sendet eine neue Anfrage für die laufende Bestätigung. Nach zehn Minuten ist eine neue Anmeldung erforderlich. Alternative Verfahren mit SMS oder Hardware-Sicherheitsschlüsseln sind nicht enthalten.
 
 Die Sitzung bleibt nach einem Symcon-Neustart erhalten. Eine Änderung der Zugangsdaten oder das Deaktivieren löscht die lokale Sitzung und den Gerätecache. **Lokale Sitzung löschen** meldet nur diese Instanz lokal ab; der Apple-Account wird nicht gesperrt und Geräte werden nicht verändert. Erneutes Aktivieren allein startet keine Anmeldung.
+
+## Kontoschutz und Abfragepause
+
+Für eine Unterbrechung **Apple-Abfragen pausieren (Sitzung erhalten)** aktivieren
+und die Konfiguration übernehmen. Diese Pause stoppt auch manuelle Anmeldungen,
+Fotoabfragen und Geräteaktionen. Lokale Cachelesevorgänge bleiben möglich;
+vorhandene Daten werden dadurch nicht aktualisiert. Zum Fortsetzen die Pause
+deaktivieren und übernehmen. Anders als beim Deaktivieren des Kontos bleiben
+Sitzung, Cookies, Vertrauensdaten und Gerätecache erhalten.
+
+Pro Kontoinstanz gelten feste, rollierende Grenzen:
+
+| Vorgang | Grenze |
+| --- | --- |
+| Passwort-Anmeldung | 3 Versuche je 30 Minuten, mindestens 60 Sekunden Abstand |
+| Prüfung eines sechsstelligen Bestätigungscodes | 5 Versuche je 10 Minuten |
+| Code-Anforderung einschließlich erster Zustellung bei der Anmeldung | 3 Versuche je 10 Minuten, mindestens 60 Sekunden Abstand |
+
+Auch fehlgeschlagene Anmeldeversuche zählen. Neustart, Abmeldung, Änderung der
+Zugangsdaten und Löschen des Diagnoseverlaufs setzen diese Grenzen nicht zurück.
+Bei bereits angemeldeter Sitzung startet **Anmelden** keinen weiteren
+Passwortversuch. Während einer laufenden Bestätigung wird keine neue
+Passwortanmeldung gestartet. Timer führen grundsätzlich keine Passwortanmeldung aus.
+
+Nach einer Authentifizierungs- oder Zugriffsablehnung werden weitere Apple-Anfragen
+bis zur manuellen Prüfung gestoppt. HTTP 423 gilt konservativ als Sperrantwort;
+dieser Status allein beweist keine bestimmte Apple-Sicherheitsentscheidung.
+Den Apple-Account auf einem vertrauenswürdigen Gerät prüfen und gegebenenfalls
+entsperren. Anschließend **Nach Prüfung des Apple-Accounts wieder freigeben**
+bestätigen. Dieser Schritt sendet keine Apple-Anfrage und umgeht weder Wartefristen
+noch Versuchslimits. Eine abgelaufene Sitzung benötigt danach eine ausdrückliche
+Anmeldung; eine noch gültige Sitzung kann weiterverwendet werden.
+
+HTTP 429 bleibt eine zeitlich begrenzte Drosselung nach Apples `Retry-After`
+(60 Sekunden bis 24 Stunden). Netzwerk- und Serverfehler erhalten eine getrennte,
+anwachsende Wartezeit von zunächst 60 Sekunden bis höchstens einer Stunde.
+Fehlende Foto-Webfreigaben stoppen nur den Fotozugriff; eine Ablehnung des
+gemeinsamen Sitzungstokens betrifft auch Geräteabfragen. Nicht vorübergehende
+Fehler bei der Sitzungserneuerung beenden weitere automatische Erneuerungen.
+
+Die Grenzen koordinieren keine anderen Kontoinstanzen, Symcon-Server oder
+externen iCloud-Anbindungen. Apple entscheidet über Kontosperren; das Modul
+reduziert vermeidbare Wiederholungen, kann Sperren aber nicht ausschließen.
+
+## Datensparsame Kontodiagnose
+
+Das Formular zeigt die letzten 50 Einträge mit Zeitpunkt, fester Anfrageart,
+HTTP-Status, festem Ergebnisschlüssel und verbleibender Wartezeit. HTTP-Status 0
+kennzeichnet lokale Ergebnisse oder einen Transportfehler ohne HTTP-Antwort.
+Der begrenzte Verlauf bleibt über Neustarts erhalten und lässt sich getrennt
+löschen. Die Einträge werden zusätzlich über den zentralen `DebugHelper` in den
+Symcon-Debugkanal geschrieben, sofern dieser aktiviert ist.
+
+Passwörter, Bestätigungscodes, Cookies, Tokens, Anmeldenamen, Geräte-/Albumkennungen,
+URLs und Antwortinhalte werden nicht protokolliert. Ein unlesbarer Zustand der
+Versuchszähler stoppt neue Anfragen, statt die Limits stillschweigend zurückzusetzen.
+
+| Status | Bedeutung |
+| --- | --- |
+| 206 | Apple-Drosselung bzw. bestehende Apple-Wartefrist |
+| 207 | Abfragepause, Sitzung erhalten |
+| 208 | Anfragen gestoppt, manuelle Kontoprüfung erforderlich |
+| 209 | Lokales Limit für Authentifizierungsversuche erreicht |
+| 210 | Wartezeit nach Netzwerk- oder Serverfehler |
 
 ## Status und Daten
 
@@ -46,7 +111,10 @@ beschrieben.
 
 | Funktion | Rückgabe | Bedeutung |
 | --- | --- | --- |
-| `ICAC_Login(int $InstanceID)` | bool | Anmeldung starten; bei benötigtem Code zunächst false, nach vollständig erfolgreichem Abruf true |
+| `ICAC_Login(int $InstanceID)` | bool | Vorhandene Anmeldung nutzen oder begrenzt eine neue starten; bei benötigtem Code zunächst false, sonst true nach erfolgreicher Anmeldung und Geräteabfrage |
+| `ICAC_ResumeAccountRequests(int $InstanceID)` | void | Lokale Schutzsperre nach Kontoprüfung freigeben; keine Anmeldung und kein Zurücksetzen von Limits |
+| `ICAC_GetAccountDiagnostics(int $InstanceID)` | string | Bereinigten Diagnoseverlauf als JSON lesen |
+| `ICAC_ClearAccountDiagnostics(int $InstanceID)` | void | Nur den Diagnoseverlauf löschen |
 | `ICAC_VerifyCode(int $InstanceID, string $Code)` | bool | Sechsstelligen Code bestätigen und Geräteliste abrufen |
 | `ICAC_ResendCode(int $InstanceID)` | bool | Code für die laufende Bestätigung erneut anfordern |
 | `ICAC_RefreshDevices(int $InstanceID)` | bool | Geräteliste aktualisieren; keine Passwort-Anmeldung starten |

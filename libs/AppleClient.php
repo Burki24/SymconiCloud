@@ -16,7 +16,7 @@ final class AppleClient
     private const WIDGET = 'd39ba9916b7251055b22c7f910e2ea796ee65e98b2ddecea8f5dde8d9d1a815d';
     private array $session;
 
-    public function __construct(private readonly AppleTransport $transport, array $session = [])
+    public function __construct(private readonly AppleTransport $transport, array $session = [], private readonly ?\Closure $diagnostic = null, private readonly ?\Closure $reserveCodeRequest = null)
     {
         $this->session = $session + ['state' => 'signedOut', 'clientId' => bin2hex(random_bytes(16)), 'headers' => [], 'challengeAt' => 0];
     }
@@ -84,6 +84,7 @@ final class AppleClient
     public function sendCode(): void
     {
         $this->assertChallenge();
+        ($this->reserveCodeRequest)?->__invoke();
         $this->expect($this->auth('PUT', '/verify/trusteddevice/securitycode', null), [200, 204]);
     }
 
@@ -96,14 +97,7 @@ final class AppleClient
         $response = $this->readDevices();
         if (in_array($response['status'], [401, 421, 450], true)) {
             // One token-based renewal only. Never restart password login in a timer.
-            try {
-                $this->accountLogin();
-            } catch (AppleException $exception) {
-                if (in_array($exception->reason, ['authentication', 'credentials'], true)) {
-                    $this->session['state'] = 'expired';
-                }
-                throw $exception;
-            }
+            $this->accountLogin();
             if ($this->session['state'] !== 'authenticated') {
                 throw new AppleException('authentication');
             }
@@ -111,6 +105,7 @@ final class AppleClient
         }
         if (in_array($response['status'], [401, 421, 450], true)) {
             $this->session['state'] = 'expired';
+            throw new AppleException('authentication', $response['status']);
         }
         $this->expect($response, [200]);
         $content = $response['body']['content'] ?? null;
@@ -192,6 +187,7 @@ final class AppleClient
         $response = $this->call('POST', $url, [], ['device' => $deviceID] + $payload);
         if (in_array($response['status'], [401, 421, 450], true)) {
             $this->session['state'] = 'expired';
+            throw new AppleException('authentication', $response['status']);
         }
         $this->expect($response, [200, 202, 204]);
         $code = $response['body']['statusCode'] ?? null;
@@ -223,6 +219,18 @@ final class AppleClient
 
     private function accountLogin(): void
     {
+        try {
+            $this->renewAccountSession();
+        } catch (AppleException $error) {
+            if (!in_array($error->reason, ['network', 'server', 'rateLimited'], true)) {
+                $this->session['state'] = 'expired';
+            }
+            throw $error;
+        }
+    }
+
+    private function renewAccountSession(): void
+    {
         $headers = $this->session['headers'];
         $token = $headers['x-apple-session-token'] ?? '';
         if (!is_string($token) || $token === '') {
@@ -235,6 +243,10 @@ final class AppleClient
             'extended_login'     => true,
             'trustToken'         => $headers['x-apple-twosv-trust-token'] ?? ''
         ]);
+        if (in_array($response['status'], [401, 421, 450], true)) {
+            $this->session['state'] = 'expired';
+            throw new AppleException('authentication', $response['status']);
+        }
         $this->expect($response, [200]);
         $data = $response['body'];
         $info = $data['dsInfo'] ?? [];
@@ -310,6 +322,7 @@ final class AppleClient
         ]), [], $body);
         if (in_array($response['status'], [401, 421, 450], true)) {
             $this->session['state'] = 'expired';
+            throw new AppleException('authentication', $response['status']);
         }
         if ($response['status'] === 403) {
             throw new AppleException('photosAccess');
@@ -343,13 +356,40 @@ final class AppleClient
 
     private function call(string $method, string $url, array $headers, ?array $body): array
     {
-        $response = $this->transport->request($method, $url, $headers, $body);
+        $path = (string) parse_url($url, PHP_URL_PATH);
+        $operation = match (true) {
+            str_ends_with($path, '/signin/init')                       => 'signinInit',
+            str_ends_with($path, '/signin/complete')                   => 'signinComplete',
+            str_ends_with($path, '/accountLogin')                      => 'sessionRenewal',
+            str_ends_with($path, '/refreshClient')                     => 'devices',
+            str_ends_with($path, '/verify/trusteddevice/securitycode') => $method === 'PUT' ? 'requestCode' : 'verifyCode',
+            str_ends_with($path, '/2sv/trust')                         => 'trustBrowser',
+            str_contains($path, '/com.apple.photos.cloud/')            => 'photos',
+            str_contains($path, '/fmipservice/')                       => 'deviceAction',
+            default                                                    => 'authChallenge'
+        };
+        try {
+            $response = $this->transport->request($method, $url, $headers, $body);
+        } catch (\Throwable $error) {
+            $this->diagnose($operation, 0, $error instanceof AppleException ? $error->reason : 'internal');
+            throw $error;
+        }
+        $this->diagnose($operation, $response['status'], $response['status'] < 400 ? 'ok' : 'response');
         foreach (['scnt', 'x-apple-id-session-id', 'x-apple-session-token', 'x-apple-twosv-trust-token', 'x-apple-id-account-country'] as $name) {
             if (isset($response['headers'][$name])) {
                 $this->session['headers'][$name] = $response['headers'][$name];
             }
         }
         return $response;
+    }
+
+    private function diagnose(string $operation, int $status, string $reason): void
+    {
+        try {
+            ($this->diagnostic)?->__invoke($operation, $status, $reason);
+        } catch (\Throwable) {
+            // A diagnostic failure must never retry or alter an Apple request.
+        }
     }
 
     private function expect(array $response, array $allowed): void
@@ -359,7 +399,8 @@ final class AppleClient
             return;
         }
         $reason = match (true) {
-            $status === 429 || $status === 423  => 'rateLimited',
+            $status === 429                     => 'rateLimited',
+            $status === 423                     => 'accountLocked',
             $status === 401                     => 'credentials',
             in_array($status, [421, 450], true) => 'authentication',
             $status === 403                     => 'accessDenied',

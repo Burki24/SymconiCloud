@@ -120,6 +120,8 @@ try {
     $check($forward('GetPhotoImage', ['AlbumID' => 'synthetic-album', 'PhotoID' => 'photo-2'])['success'], 'Already cached images remain usable during photo-specific network backoff.');
     $persistence = $photoAccount->GetPersistence();
     $persistence['attributes']['PhotoRetryAt'] = 0;
+    // Begin the independent token-expiry scenario after both cooldowns elapsed.
+    $photoAccount->clock = $persistence['attributes']['RetryAt'] + 1;
     $photoAccount->ApplyPersistence($persistence);
     $catalog(401);
     $check(!$photoAccount->RefreshPhotoAlbums(), 'An expired Apple session must stop Photos operations.');

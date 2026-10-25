@@ -188,7 +188,13 @@ foreach ($knownModules as $moduleID => $folder) {
                 if (isset($item['name'])) {
                     $scope[$item['name']] = $defaults[$item['name']] ?? (($item['type'] ?? '') === 'PasswordTextBox' ? '123456' : '');
                     if (($item['type'] ?? '') === 'List') {
-                        $scope[$item['name']] = json_decode($scope[$item['name']], true, 512, JSON_THROW_ON_ERROR);
+                        // Read-only action lists have values, but no configuration property.
+                        $scope[$item['name']] = array_key_exists($item['name'], $defaults)
+                            ? json_decode($defaults[$item['name']], true, 512, JSON_THROW_ON_ERROR)
+                            : ($item['values'] ?? []);
+                        if (!is_array($scope[$item['name']])) {
+                            throw new RuntimeException('A list must provide an array of values.');
+                        }
                     }
                 }
                 foreach (['onClick', 'onChange', 'onAdd', 'onEdit', 'onDelete'] as $event) {

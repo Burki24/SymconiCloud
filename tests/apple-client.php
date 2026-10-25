@@ -171,7 +171,7 @@ $transport = new ScriptedAppleTransport([
     ['POST', '/refreshClient?', 401], ['POST', '/accountLogin', 200, $account], ['POST', '/refreshClient?', 401]
 ]);
 $client = new AppleClient($transport, $authenticated);
-fails(fn () => $client->devices(), 'credentials');
+fails(fn () => $client->devices(), 'authentication');
 check($client->session()['state'] === 'expired', 'Repeated rejection did not expire session');
 $transport->complete();
 

@@ -43,6 +43,12 @@ class AccountFixtureModule extends iCloudAccount
     public ?AccountFixtureTransport $transport = null;
     /** @var list<array<string, mixed>> */
     public array $restoredSessions = [];
+    public int $clock = 0;
+
+    protected function AccountProtectionTime(): int
+    {
+        return $this->clock ?: time();
+    }
 
     protected function LoadConfigurationForm(): array
     {
@@ -55,7 +61,12 @@ class AccountFixtureModule extends iCloudAccount
     {
         $this->restoredSessions[] = $session;
         $this->transport ??= new AccountFixtureTransport();
-        return new \SymconiCloud\AppleClient($this->transport, $session);
+        return new \SymconiCloud\AppleClient(
+            $this->transport,
+            $session,
+            fn ($operation, $status, $reason) => $this->RecordAccountDiagnostic($operation, $status, $reason),
+            fn () => $this->ReserveAuthenticationAttempt('resend')
+        );
     }
 }
 
@@ -168,7 +179,7 @@ foreach ([59, 86401] as $invalidInterval) {
 IPS_SetProperty($id, 'RefreshInterval', 60);
 IPS_SetProperty($id, 'Password', 'SYNTHETIC-NEW-PASSWORD');
 IPS_ApplyChanges($id);
-$check($attributes()['Session'] === '{}' && $envelope()['devices'] === [] && $attributes()['RetryAt'] === 0, 'Credential change must clear session, cache and cooldown.');
+$check($attributes()['Session'] === '{}' && $envelope()['devices'] === [] && $attributes()['RetryAt'] > time(), 'Credential change must clear session/cache but preserve the active Apple cooldown.');
 $check($timer() === 0 && !$envelope()['success'], 'Credential change must require explicit login.');
 
 // Exercise persisted session restoration in a genuinely new module object.
@@ -180,6 +191,7 @@ $restoredID = IPS_CreateInstance($accountModule);
 $restoredAccount = IPS\InstanceManager::getInstanceInterface($restoredID);
 $restoredAccount->ApplyPersistence($saved);
 $restoredAccount->ApplyChanges();
+$restoredAccount->clock = $saved['attributes']['RetryAt'] + 1;
 $restoredAccount->transport = new AccountFixtureTransport();
 $restoredAccount->transport->enqueue('POST', '/refreshClient', 200, ['content' => [$rawDevice]]);
 $check($restoredAccount->RefreshDevices(), 'New account object must refresh using persisted session without password login.');
@@ -193,3 +205,7 @@ IPS_ApplyChanges($restoredID);
 $check(!$restoredAccount->Login() && !$restoredAccount->RefreshDevices() && count($restoredAccount->transport->requests) === $before, 'Disabled account must never contact transport.');
 
 echo "Account integration checks passed.\n";
+
+// Usable baseline for independent action scenarios; cooldown persistence was
+// exercised above with a clock advanced beyond its deadline.
+$saved['attributes']['RetryAt'] = 0;

@@ -2052,3 +2052,72 @@ wurde mit der Fotoausgabe noch nicht geprueft. Der Benutzer hat diesen Test
 ausdruecklich fuer spaeter vorgesehen. Die erfolgreiche Browser-Einbettung ist
 kein Nachweis fuer diesen noch offenen Clientpfad. Private Endpunkte, Album-
 und Fotokennungen, Tokens und Screenshots bleiben ausserhalb des Repositories.
+
+### Kontoschutz, Sitzungspause und datensparsame Diagnose (2026-10-24)
+
+Die Apple-spezifische Schutzlogik liegt librarylokal in AccountProtection und
+wird vom Konto fuer Anmeldung, 2FA, Geraeteaktionen und Fotos verwendet. Vor der
+Umsetzung wurden die zentralen Helper geprueft. Der bereits veroeffentlichte
+DebugHelper wird unveraendert ueber die regulaere Subscription samt generiertem
+Hashmanifest und README eingebunden. Es gibt keinen neuen zentralen
+Authentifizierungshelper und keine Aenderung an Symcon_ModuleHelper.
+
+Passwort-Anmeldungen sind auf drei Versuche je rollierenden 30 Minuten mit
+mindestens 60 Sekunden Abstand begrenzt. Code-Pruefungen sind auf fuenf,
+Code-Zustellungen auf drei je zehn Minuten begrenzt; Zustellungen haben
+mindestens 60 Sekunden Abstand. Auch die erste Code-Zustellung waehrend einer
+Anmeldung zaehlt. Die Zaehler sind persistent und werden durch Logout,
+Zugangsdatenwechsel, explizite Freigabe oder Diagnosebereinigung nicht geloescht.
+Eine bereits angemeldete Sitzung wird ohne erneuten Passwortversuch verwendet;
+eine laufende 2FA-Bestaetigung startet keine neue Passwortanmeldung.
+
+Abgelehnte Authentifizierung und HTTP 423 setzen eine persistente lokale
+Schutzsperre und stoppen weitere Apple-Anfragen. Die Freigabe nach ausdruecklich
+bestaetigter Kontopruefung ist eine lokale Aktion ohne HTTP oder automatischen
+Login. Bestehende Wartezeiten und Versuchslimits bleiben wirksam. HTTP 423 ist
+eine konservativ behandelte Sperrantwort, kein Beweis fuer die genaue Ursache
+einer Apple-Kontosperre. HTTP 429 bleibt eine zeitlich begrenzte Drosselung nach
+Retry-After; Netzwerk-/Serverfehler nutzen getrennte anwachsende Wartezeiten.
+Sitzungstoken-Ablehnungen werden nicht als falsches Passwort bezeichnet.
+Nicht voruebergehende Fehler bei der Token-Erneuerung beenden automatische
+Erneuerungen. Fehlende Foto-Webfreigaben bleiben vom Find-My-Zugang getrennt.
+
+Die neue Property PauseRequests hat den kompatiblen Default false. Eine
+uebernommene Pause stoppt auch explizite Apple-Anfragen und Geraeteaktionen,
+erhaelt aber Sitzung, Vertrauensdaten und Caches. Cachelesevorgaenge bleiben
+moeglich. Deaktivieren des Kontos bleibt davon getrennt und loescht weiterhin
+die Sitzung. Die neuen Instanzstatus 207 bis 210 und die Formularhinweise
+unterscheiden Pause, manuelle Schutzsperre, lokale Versuchslimits und temporaere
+Verbindungswartezeiten. Bestehende Objekt- und Datenflussidentitaeten bleiben
+erhalten; zweimaliges ApplyChanges mit historischen Einstellungen ist abgedeckt.
+
+Der Diagnoseverlauf speichert hoechstens 50 allowlist-basierte Eintraege mit
+Zeitpunkt, fester Anfrageart, HTTP-Status, festem Ergebniscode und Wartezeit.
+Die gleichen bereinigten Felder gehen ueber SendSafeDebug an den Debugkanal.
+Keine URLs, Accountnamen, Codes, Cookies, Tokens, Geraete-/Albumkennungen,
+Antwortinhalte oder rohen Exceptions gelangen in diesen Verlauf. Formular und
+oeffentliche Diagnosefunktionen lesen nur lokalen Zustand; Bereinigung setzt
+keinen Kontoschutz zurueck. Defekte Versuchsdaten stoppen Anfragen konservativ.
+
+Regressionen verwenden ausschliesslich synthetische Apple-Antworten und eine
+kontrollierte Uhr. Sie pruefen Mindestabstaende, Fenstergrenzen, Wiederherstellung
+nach Neustart, Umgehungsversuche durch Logout/Passwortwechsel, 2FA-Limits,
+Pause ohne Sitzungs-/Cacheverlust, abgelehnte Token-Erneuerung ohne Wiederholung,
+423 gegenueber 429, Foto-Freigabe gegenueber gemeinsamem Tokenverlust,
+gestaffelte Netzwerkwartezeiten, Diagnosegrenzen und Geheimnisausschluss.
+Bestehende Aktionsszenarien lassen ihre synthetische Wartezeit ablaufen, bevor
+sie eine unabhaengige Folgeantwort pruefen; die Keine-Retry-Vertraege bleiben
+erhalten. Der zentrale CI-Einstieg fuehrt die neuen Regressionen mit aus.
+
+Die Limits gelten je Kontoinstanz und koordinieren keine weiteren Server oder
+externen iCloud-Anbindungen. Eine Verhinderung jeder Apple-Kontosperre ist nicht
+zugesagt. Es wurden keine realen Apple-Anmeldungen oder Geraeteaktionen
+ausgeloest und keine Live-Dateien veraendert. Die Praxispruefung des neuen
+Formulars und Schutzverhaltens bleibt nach dem regulaeren Update offen.
+
+Abschliessend bestanden die vollstaendige Offline-Suite unter PHP 8.5.10
+einschliesslich der neuen Schutzregressionen, bestehender Geraeteaktionen,
+Foto-/Anwesenheits-/Kartenpruefungen und dokumentbasierter Formularvertraege.
+Die Strukturpruefung bestaetigte auch die neue Helper-Subscription und deren
+Hashes. JSON-Check und git diff --check waren erfolgreich; PHP-CS-Fixer im
+Pruefmodus meldete 0 von 54 Dateien mit Aenderungsbedarf.

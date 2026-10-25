@@ -52,6 +52,7 @@ $check(count($soundTransport->requests) === 1, 'Subsequent cache updates must no
 $soundTransport->enqueue('POST', '/playSound?', 503, ['private' => 'SYNTHETIC-SOUND-SECRET']);
 $check(!$device->PlaySound() && count($soundTransport->requests) === 2, 'HTTP errors must fail without an automatic retry.');
 $check(json_decode($soundAccount->GetDevices(), true)['success'], 'A sound service error must not invalidate otherwise usable location data.');
+$soundAccount->clock = $soundAccount->GetPersistence()['attributes']['RetryAt'];
 $soundTransport->enqueue('POST', '/playSound?', 200, ['statusCode' => '500']);
 $check(!$device->PlaySound() && count($soundTransport->requests) === 3, 'An Apple command error inside HTTP 200 must not be reported as accepted.');
 

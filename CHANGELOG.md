@@ -2,6 +2,14 @@
 
 ## Fixes
 
+- Das Kontomodul begrenzt Passwort-Anmeldungen und 2FA-Versuche dauerhaft je
+  Kontoinstanz. Ablehnungen der Authentifizierung und HTTP-Sperrantworten stoppen
+  weitere Anfragen bis zur manuellen Prüfung; Drosselung, Sitzungablauf,
+  Foto-Freigabe und Netzwerkfehler werden getrennt behandelt. Eine neue
+  Abfragepause erhält die Sitzung und Caches. Die letzten 50 datensparsamen
+  Diagnoseeinträge sind im Formular verfügbar; der vorhandene zentrale
+  `DebugHelper` ist regulär eingebunden.
+
 - iCloud Fotos überträgt große Vorschauen mit dem zentralen
   `ChunkedJsonTransferHelper` in begrenzten JSON-Seiten bis zum Browser.
   Der HTTP-Seitenaufbau verwendet einen expliziten Ressourcenpfad auch im

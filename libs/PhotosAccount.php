@@ -139,19 +139,24 @@ trait PhotosAccount
             return ['success' => false, 'error' => $this->Translate('Account request already running.')];
         }
         $client = null;
+        $diagnosticOperation = match ($operation) {
+            'catalog' => 'photoCatalog', 'page' => 'photoPage', default => 'photoImage'
+        };
         $previousState = $this->readSession()['state'] ?? 'signedOut';
         try {
             $this->assertPhotosAccount();
             $cache = $this->PhotoCache();
             $cache->trim();
             if ($operation === 'catalog') {
-                if (max($this->ReadAttributeInteger('RetryAt'), $this->ReadAttributeInteger('PhotoRetryAt')) > time()) {
+                $this->AssertAccountRequestsAllowed();
+                if ($this->ReadAttributeInteger('PhotoRetryAt') > $this->AccountProtectionTime()) {
                     throw new AppleException('rateLimited');
                 }
                 $client = $this->CreateAppleClient($this->readSession());
                 $catalog = ['albums' => $client->photoAlbums(), 'updatedAt' => time()];
                 $this->WriteAttributeString('PhotoAlbums', json_encode($catalog, JSON_THROW_ON_ERROR));
                 $this->WriteAttributeString('PhotoError', '');
+                $this->WriteAttributeInteger('TransientFailures', 0);
                 $this->WriteAttributeBoolean('PhotoAccess', true);
                 return ['success' => true] + $catalog;
             }
@@ -185,7 +190,8 @@ trait PhotosAccount
             }
             $assets = json_decode($this->ReadAttributeString('PhotoAssets'), true, 512, JSON_THROW_ON_ERROR);
             if ($operation === 'page') {
-                if (max($this->ReadAttributeInteger('RetryAt'), $this->ReadAttributeInteger('PhotoRetryAt')) > time()) {
+                $this->AssertAccountRequestsAllowed();
+                if ($this->ReadAttributeInteger('PhotoRetryAt') > $this->AccountProtectionTime()) {
                     throw new AppleException('rateLimited');
                 }
                 $client = $this->CreateAppleClient($this->readSession());
@@ -202,6 +208,7 @@ trait PhotosAccount
                 }
                 $this->WriteAttributeString('PhotoAssets', json_encode($assets, JSON_THROW_ON_ERROR));
                 $this->WriteAttributeString('PhotoError', '');
+                $this->WriteAttributeInteger('TransientFailures', 0);
                 return ['success' => true, 'album' => $album['name'], 'updatedAt' => time()] + $page;
             }
             $asset = $assets[hash('sha256', $albumID . "\0" . $photoID)] ?? null;
@@ -211,7 +218,8 @@ trait PhotosAccount
             $key = $photoID . ':' . $asset['revision'];
             $bytes = $cache->get($key);
             if ($bytes === null) {
-                if (max($this->ReadAttributeInteger('RetryAt'), $this->ReadAttributeInteger('PhotoRetryAt')) > time()) {
+                $this->AssertAccountRequestsAllowed();
+                if ($this->ReadAttributeInteger('PhotoRetryAt') > $this->AccountProtectionTime()) {
                     throw new AppleException('rateLimited');
                 }
                 ApplePhotoDownload::assertURL($asset['url']);
@@ -220,6 +228,7 @@ trait PhotosAccount
                 if (!$cache->put($key, $bytes)) {
                     throw new AppleException('photosCache');
                 }
+                $this->RecordAccountDiagnostic('photoImage', 200, 'ok');
             }
             $transfers = $this->photoTransfers();
             foreach ($transfers as $oldToken => $old) {
@@ -234,18 +243,19 @@ trait PhotosAccount
             $this->SetBuffer('PhotoImageTransfers', json_encode($transfers, JSON_THROW_ON_ERROR));
             return ['success' => true, 'mime' => ApplePhotoDownload::mime($bytes), 'bytes' => strlen($bytes), 'transfer' => $metadata];
         } catch (\Throwable $exception) {
-            $this->SendDebug('PhotoTransfer', $exception instanceof AppleException ? $exception->reason : $exception->getMessage(), 0);
             $reason = $exception instanceof AppleException ? $exception->reason : 'photosCache';
+            if ($exception instanceof AppleException) {
+                $this->AccountRequestFailed($diagnosticOperation, $exception, $client !== null || $operation === 'image');
+            } else {
+                $this->RecordAccountDiagnostic($diagnosticOperation, 0, 'photosCache');
+            }
             if (in_array($reason, ['network', 'server', 'photoDownload', 'photosCache'], true)) {
-                $this->WriteAttributeInteger('PhotoRetryAt', time() + 60);
+                $this->WriteAttributeInteger('PhotoRetryAt', $this->AccountProtectionTime() + 60);
             }
             if (in_array($reason, ['photosAccess', 'photosUnavailable', 'photosIndexing', 'photosDisabled', 'authentication', 'credentials'], true)) {
                 $this->WriteAttributeBoolean('PhotoAccess', false);
             }
-            if ($exception instanceof AppleException && $exception->retryAfter > 0) {
-                $this->WriteAttributeInteger('RetryAt', time() + $exception->retryAfter);
-            }
-            $message = $this->Translate(match ($reason) {
+            $message = in_array($reason, ['requestsPaused', 'accountBlocked', 'accountLocked', 'rateLimited', 'retryBackoff', 'credentials', 'authentication', 'accessDenied', 'protectionState'], true) ? $this->errorMessage($reason) : $this->Translate(match ($reason) {
                 'photosDisabled'               => 'Enable Photos and sign in to the account first.',
                 'photosUnavailable'            => 'The Photos service is not available for this account.',
                 'photosIndexing'               => 'The iCloud photo library is still being prepared.',

@@ -57,6 +57,7 @@ foreach ([false, null] as $capability) {
 }
 $lostAccount->ApplyPersistence($lostSaved);
 foreach ([[503, []], [200, ['statusCode' => '500']], [200, ['success' => false]], [200, ['error' => 'SYNTHETIC-STOP-SECRET']]] as [$status, $body]) {
+    $lostAccount->clock = max(time(), $lostAccount->GetPersistence()['attributes']['RetryAt']);
     $stopTransport->enqueue('POST', '/lostDevice?', $status, $body);
     $check(!$stop() && count($stopTransport->requests) === ++$count, 'Deactivation failures must never retry or fall back to activation.');
     $check(json_decode($lostAccount->GetDevices(), true)['success'], 'A stop error must preserve an otherwise available inventory.');

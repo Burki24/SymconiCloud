@@ -6,6 +6,15 @@
             "caption": "Enable account"
         },
         {
+            "type": "CheckBox",
+            "name": "PauseRequests",
+            "caption": "Pause Apple requests (keep session)"
+        },
+        {
+            "type": "Label",
+            "caption": "Pause stops Apple requests, including sign-in and device commands, without deleting the session or cache. Apply the configuration to change the pause."
+        },
+        {
             "type": "ValidationTextBox",
             "name": "Username",
             "caption": "Apple account"
@@ -135,6 +144,16 @@
             "caption": "Delete local session",
             "onClick": "ICAC_Logout($id);",
             "confirm": "Delete the local session and cached device data?"
+        },
+        {
+            "type": "Label",
+            "caption": "Account protection: at most 3 password logins per 30 minutes, at least 60 seconds apart; 5 code checks and 3 code requests per 10 minutes. Limits persist after restart, logout and credential changes."
+        },
+        {
+            "type": "Button",
+            "caption": "Resume after checking the Apple account",
+            "onClick": "ICAC_ResumeAccountRequests($id);",
+            "confirm": "Have you checked or unlocked the Apple account? This only releases the local hold. Existing cooldowns and attempt limits remain; no sign-in is started."
         }
     ],
     "status": [
@@ -177,6 +196,26 @@
             "code": 206,
             "icon": "error",
             "caption": "Apple requests a pause"
+        },
+        {
+            "code": 207,
+            "icon": "inactive",
+            "caption": "Apple requests paused (session retained)"
+        },
+        {
+            "code": 208,
+            "icon": "error",
+            "caption": "Account requests stopped: manual review required"
+        },
+        {
+            "code": 209,
+            "icon": "error",
+            "caption": "Local authentication attempt limit reached"
+        },
+        {
+            "code": 210,
+            "icon": "error",
+            "caption": "Temporary connection retry pause"
         }
     ]
 }

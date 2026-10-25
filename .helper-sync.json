@@ -54,6 +54,9 @@
         },
         "ChunkedJsonTransferHelper": {
             "target": "libs/helper/ChunkedJsonTransferHelper.php"
+        },
+        "DebugHelper": {
+            "target": "libs/helper/DebugHelper.php"
         }
     }
 }

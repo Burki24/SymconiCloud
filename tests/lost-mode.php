@@ -115,6 +115,7 @@ foreach ([false, null, true] as $capability) {
 }
 $lostAccount->ApplyPersistence($lostSaved);
 foreach ([[503, []], [200, ['statusCode' => '500']], [200, ['success' => false]]] as [$status, $body]) {
+    $lostAccount->clock = max(time(), $lostAccount->GetPersistence()['attributes']['RetryAt']);
     $lostTransport->enqueue('POST', '/lostDevice?', $status, $body);
     $check(!$invoke() && count($lostTransport->requests) === ++$count, 'A rejected activation must fail without retries.');
     $check(json_decode($lostAccount->GetDevices(), true)['success'], 'Lost Mode service errors must preserve otherwise usable cached data.');
