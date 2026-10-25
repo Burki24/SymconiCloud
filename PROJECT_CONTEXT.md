@@ -2316,3 +2316,41 @@ mit dem aktualisierten Modul steht noch aus.
 Die vollstaendige PHP-/Node-Offlinesuite, Struktur-/Formularvertraege,
 offizieller JSON-Check, PHP-CS-Fixer im Pruefmodus (0 von 58 Dateien mit
 Aenderungsbedarf) und git diff --check bestanden nach der Korrektur.
+
+### Telefonspalten im Kontaktverzeichnis (2026-10-25)
+
+Der Benutzer bestaetigte nach dem Update die erfolgreiche Uebernahme der
+Telefonnummern und wuenschte getrennte Spalten nach iCloud-Bezeichnung.
+Die Formularanzeige bietet jetzt Mobil, Geschaeftlich, Hauptnummer, Privat,
+iPhone, Fax, Pager und Weitere Telefonnummern. Die lokalen deutschen
+Uebersetzungen sind Teil der Modul-locale.json. Bestehende zentrale Helper
+fuer Formular, Datenfluss und Elternverbindung werden weiterverwendet.
+Die iCloud-spezifische Zuordnung bleibt eine lokale Darstellungsmethode im
+Kontaktmodul, da kein zweiter Library-Verbraucher besteht.
+
+Kanonische Labels werden ohne Beachtung der Gross-/Kleinschreibung zugeordnet;
+Apples interne Labelklammern sowie Leerzeichen, Unterstriche und Bindestriche
+bei Faxlabels werden erkannt. Die Zuordnung verwendet exakte Labels und keine
+Teilwortsuche oder Nummernvorwahlen. Mehrere Nummern derselben Kategorie
+werden vollstaendig zusammen angezeigt. Faxuntertypen bleiben erkennbar.
+Unbeschriftete Nummern und benutzerdefinierte Labels erscheinen in Weitere
+Telefonnummern, eigene Labels bleiben dabei unveraendert sichtbar. Leere
+Kategorien nutzen die vorhandene Kennzeichnung Nicht verfuegbar.
+
+Nur das Konsolenformular und seine formatierten Zeilen wurden erweitert.
+Die API behaelt phones mit label/value, alle urspruenglichen Labels,
+Kennungen, Suche, Cache und Kontoschutz bei. Die Spalten werden aus dem
+bestehenden Cache aufgebaut; nach dem Update genuegt erneutes Oeffnen des
+Formulars. Es entstehen keine zusaetzlichen Apple-Abfragen.
+
+tests/contacts.php prueft die getrennten Spalten im echten synthetischen
+Konto-/Kind-Formularpfad, mehrere Mobilnummern, Standardlabels, Labelklammern,
+Faxuntertypen, Pager, unbeschriftete und benutzerdefinierte Nummern sowie die
+unveraenderte oeffentliche API. Der neue Spaltentest schlug vor der Umsetzung
+fehl und bestand danach. Private Benutzerkontakte oder Screenshots wurden
+nicht als Testdaten verwendet; kein Zugriff auf ein laufendes Apple-Konto.
+
+Die vollstaendige PHP-/Node-Offlinesuite, Struktur-/Formularvertraege,
+offizieller JSON-Check, PHP-CS-Fixer im Pruefmodus (0 von 58 Dateien mit
+Aenderungsbedarf) und git diff --check bestanden. Die sichtbare Abnahme in der
+installierten Konsole bleibt fuer den Stand nach dem Modulupdate offen.

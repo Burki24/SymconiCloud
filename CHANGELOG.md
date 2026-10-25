@@ -2,6 +2,11 @@
 
 ## Neue Funktionen
 
+- Das Empfängerverzeichnis trennt Telefonnummern in die Spalten **Mobil**,
+  **Geschäftlich**, **Hauptnummer**, **Privat**, **iPhone**, **Fax**, **Pager**
+  und **Weitere Telefonnummern**. Mehrere Nummern derselben Kategorie und
+  eigene Bezeichnungen bleiben erhalten; die lesende Kontakt-API bleibt kompatibel.
+
 - **iCloud Kontakte** stellt ein lesendes Empfängerverzeichnis mit Suche,
   Telefonnummern und E-Mail-Adressen bereit. Der optionale Abruf verwendet
   die bestehende Kontositzung, einen gemeinsamen begrenzten Cache und einen

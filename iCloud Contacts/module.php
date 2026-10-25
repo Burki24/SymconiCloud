@@ -155,7 +155,31 @@ class iCloudContacts extends IPSModuleStrict
     private function rows(array $result): array
     {
         return array_map(fn ($contact) => ['ContactID' => $contact['id'], 'Name' => $contact['displayName'] === 'Unnamed contact' ? $this->Translate('Unnamed contact') : $contact['displayName'],
-            'Company'                                  => $contact['company'], 'Phones' => $this->addressList($contact['phones']), 'Emails' => $this->addressList($contact['emails'])], $result['contacts']);
+            'Company'                                  => $contact['company'], 'Emails' => $this->addressList($contact['emails'])] + $this->phoneColumns($contact['phones']), $result['contacts']);
+    }
+
+    /** Presentation only: recipient values and original labels in the public API remain unchanged. */
+    private function phoneColumns(array $phones): array
+    {
+        $groups = array_fill_keys(['Mobile', 'Work', 'Main', 'Home', 'IPhone', 'Fax', 'Pager', 'OtherPhones'], []);
+        foreach ($phones as $phone) {
+            $label = trim($phone['label']);
+            if (preg_match('/\A_\$!<([^<>]+)>!\$_\z/D', $label, $wrapped) === 1) {
+                $label = $wrapped[1];
+            }
+            $label = strtoupper(trim(preg_replace('/[\s_-]+/u', ' ', $label)));
+            $column = match ($label) {
+                'MOBILE'                                   => 'Mobile', 'WORK' => 'Work', 'MAIN' => 'Main', 'HOME' => 'Home', 'IPHONE' => 'IPhone',
+                'FAX', 'HOME FAX', 'WORK FAX', 'OTHER FAX' => 'Fax', 'PAGER' => 'Pager', default => 'OtherPhones'
+            };
+            if ($column !== 'OtherPhones') {
+                $phone['label'] = match ($label) {
+                    'HOME FAX' => $this->Translate('Home fax'), 'WORK FAX' => $this->Translate('Work fax'), 'OTHER FAX' => $this->Translate('Other fax'), default => ''
+                };
+            }
+            $groups[$column][] = $phone;
+        }
+        return array_map(fn ($entries) => $this->addressList($entries), $groups);
     }
 
     private function addressList(array $entries): string

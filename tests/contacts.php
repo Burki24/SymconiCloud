@@ -91,8 +91,31 @@ $check(json_decode(ICCT_GetContacts($childID, 'Alex', 0, 100), true)['total'] ==
 $check(json_decode(ICCT_GetContact($childID, 'synthetic-contact-1'), true)['contact']['id'] === 'synthetic-contact-1', 'The messaging seam must resolve the exact contact ID.');
 $form = json_decode(IPS_GetConfigurationForm($childID), true);
 $check($form['actions'][2]['values'][0]['Name'] === 'Alex Example', 'The console directory must show normalized recipients.');
-$check(str_contains($form['actions'][2]['values'][0]['Phones'], '+49 170 1234567') && str_contains($form['actions'][2]['values'][0]['Phones'], '+49 30 1234567')
+$check(($form['actions'][2]['values'][0]['Mobile'] ?? '') === '+49 170 1234567' && ($form['actions'][2]['values'][0]['Work'] ?? '') === '+49 30 1234567'
     && str_contains($form['actions'][2]['values'][0]['Emails'], 'alex@example.invalid'), 'The real account/child form path must display both iCloud phone fields and the email field.');
+$columns = array_column($form['actions'][2]['columns'], 'name');
+$check(in_array('Mobile', $columns, true) && in_array('Work', $columns, true) && in_array('Main', $columns, true) && in_array('Home', $columns, true)
+    && in_array('OtherPhones', $columns, true) && !in_array('Phones', $columns, true), 'The form must expose separate phone columns rather than an aggregate phone cell.');
+$beforeCategorization = $attrs($a)['ContactsCache'];
+$categories = $row;
+$categories['phones'] = [
+    ['label' => 'MOBILE', 'field' => '+49 170 1000001'], ['label'      => 'mobile', 'field' => '+49 170 1000002'],
+    ['label' => '_$!<Work>!$_', 'field' => '+49 30 1000003'], ['label' => 'MAIN', 'field' => '+49 30 1000004'],
+    ['label' => 'Home', 'field' => '+49 30 1000005'], ['label'         => 'iPhone', 'field' => '+49 170 1000006'],
+    ['label' => 'HOME_FAX', 'field' => '+49 30 1000007'], ['label'     => 'WORK FAX', 'field' => '+49 30 1000008'],
+    ['label' => 'PAGER', 'field' => '+49 170 1000009'], ['field'       => '+49 30 1000010'],
+    ['label' => 'old number', 'field' => '+49 170 1000011'], ['label'  => 'Mobile backup', 'field' => '+49 170 1000012']
+];
+$setAttribute($a, 'ContactsCache', json_encode(['contacts' => \SymconiCloud\ContactsDirectory::normalize([$categories]), 'updatedAt' => $a->clock], JSON_THROW_ON_ERROR));
+$categoryForm = json_decode(IPS_GetConfigurationForm($childID), true);
+$categorized = $categoryForm['actions'][2]['values'][0];
+$check($categorized['Mobile'] === '+49 170 1000001; +49 170 1000002' && $categorized['Work'] === '+49 30 1000003'
+    && $categorized['Main'] === '+49 30 1000004' && $categorized['Home'] === '+49 30 1000005' && $categorized['IPhone'] === '+49 170 1000006', 'Canonical labels, capitalization and Apple label wrappers must select the correct column without guessing from the number.');
+$check(str_contains($categorized['Fax'], '+49 30 1000007') && str_contains($categorized['Fax'], '+49 30 1000008')
+    && $categorized['Pager'] === '+49 170 1000009', 'Fax subtypes and pager numbers must remain visible.');
+$check($categorized['OtherPhones'] === '+49 30 1000010; old number: +49 170 1000011; Mobile backup: +49 170 1000012', 'Unlabelled and custom-labelled numbers must stay visible without being classified by substrings.');
+$check(json_decode($child->GetContact('synthetic-contact-1'), true)['contact']['phones'] === \SymconiCloud\ContactsDirectory::normalize([$categories])[0]['phones'], 'Column formatting must not change the public recipient schema or provider labels.');
+$setAttribute($a, 'ContactsCache', $beforeCategorization);
 ICCT_SearchContacts($childID, 'not-present');
 $check(json_decode(IPS_GetConfigurationForm($childID), true)['actions'][2]['values'] === [], 'Search must update the local read-only list.');
 $check(count($a->transport->requests) === 2, 'Connecting, browsing, API reads and form opening must be free of Apple traffic.');

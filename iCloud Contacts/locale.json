@@ -21,7 +21,18 @@
             "Matches": "Treffer",
             "Last successful refresh": "Letzte erfolgreiche Aktualisierung",
             "Not available": "Nicht verfügbar",
-            "Unnamed contact": "Unbenannter Kontakt"
+            "Unnamed contact": "Unbenannter Kontakt",
+            "Mobile": "Mobil",
+            "Work": "Geschäftlich",
+            "Main": "Hauptnummer",
+            "Home": "Privat",
+            "iPhone": "iPhone",
+            "Fax": "Fax",
+            "Pager": "Pager",
+            "Other phone numbers": "Weitere Telefonnummern",
+            "Home fax": "Privatfax",
+            "Work fax": "Geschäftliches Fax",
+            "Other fax": "Weiteres Fax"
         }
     }
 }

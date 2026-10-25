@@ -40,14 +40,49 @@
                     "width": "180px"
                 },
                 {
-                    "name": "Phones",
-                    "caption": "Phone numbers",
-                    "width": "auto"
+                    "name": "Mobile",
+                    "caption": "Mobile",
+                    "width": "180px"
+                },
+                {
+                    "name": "Work",
+                    "caption": "Work",
+                    "width": "180px"
+                },
+                {
+                    "name": "Main",
+                    "caption": "Main",
+                    "width": "180px"
+                },
+                {
+                    "name": "Home",
+                    "caption": "Home",
+                    "width": "180px"
+                },
+                {
+                    "name": "IPhone",
+                    "caption": "iPhone",
+                    "width": "180px"
+                },
+                {
+                    "name": "Fax",
+                    "caption": "Fax",
+                    "width": "180px"
+                },
+                {
+                    "name": "Pager",
+                    "caption": "Pager",
+                    "width": "180px"
+                },
+                {
+                    "name": "OtherPhones",
+                    "caption": "Other phone numbers",
+                    "width": "180px"
                 },
                 {
                     "name": "Emails",
                     "caption": "Email addresses",
-                    "width": "auto"
+                    "width": "240px"
                 },
                 {
                     "name": "ContactID",
