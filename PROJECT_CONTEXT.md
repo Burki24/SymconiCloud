@@ -2121,3 +2121,55 @@ Foto-/Anwesenheits-/Kartenpruefungen und dokumentbasierter Formularvertraege.
 Die Strukturpruefung bestaetigte auch die neue Helper-Subscription und deren
 Hashes. JSON-Check und git diff --check waren erfolgreich; PHP-CS-Fixer im
 Pruefmodus meldete 0 von 54 Dateien mit Aenderungsbedarf.
+
+### MCP-Abnahme von Kontoschutz, Abfragepause und Diagnose (2026-10-25)
+
+Nach dem regulaeren Modulupdate wurden die installierten Konto-, Schutz-,
+Client- und Fotoquellen sowie der zentrale DebugHelper auf dem angeschlossenen
+Windows-Testsystem per Hash mit dem Repository-Stand abgeglichen. Sie stimmten
+ueberein. Das echte Konto war angemeldet, die Abfragepause ausgeschaltet und
+der regulaere Timer auf 300 Sekunden eingestellt. Die neuen Diagnosefunktionen,
+das Pausefeld und die hinterlegte Freigabebestaetigung waren vorhanden. Dies
+belegt die ausgelieferte Formularkonfiguration; am echten Konto wurde kein
+Freigabedialog ausgefuehrt.
+
+Am echten Konto wurde ausschliesslich PauseRequests voruebergehend aktiviert.
+Die Instanz wechselte zu Status 207 und der Timer auf Intervall 0. Ein danach
+aufgerufener Geraeterefresh wurde lokal mit requestsPaused abgefangen. Der Cache
+blieb lesbar. Sitzung einschliesslich Cookies, Vertrauensdaten und Client-ID
+sowie Geraetecache blieben vor und nach der Pause bytegleich. Versuchshistorie,
+bestehende Schutzsperre und Wartefrist wurden nicht veraendert. Die entstandenen
+Pruefeintraege enthielten nur lokale Ergebnisse mit HTTP-Status 0.
+
+Anmeldelimits und Sperrantworten wurden getrennt an einer temporaeren,
+deaktivierten Kontoinstanz ohne Benutzername oder Passwort geprueft. Eine nur
+im Pruefskript vorhandene Testklasse verwendete eine kontrollierte Uhr und
+verhinderte die Erzeugung eines Netzwerkclients. Lokale Methodenaufrufe
+bestaetigten Mindestabstand, rollierendes Passwortlimit und den Erhalt der
+Zaehler bei einer neuen Objektbindung. Synthetische 423- und 429-Ergebnisse
+prueften Schutzsperre gegenueber Wartefrist. Die lokale Freigabe setzte weder
+Versuchslimits noch eine laufende Wartefrist zurueck. Es wurde kein echter
+Apple-Anmeldeversuch und keine Apple-Kontosperre ausgeloest.
+
+In derselben isolierten Instanz wurde der Diagnoseverlauf ueber 50 Eintraege
+hinaus befuellt. Er blieb auf 50 Eintraege mit exakt den erlaubten Feldern
+begrenzt; unzulaessige synthetische Anfrage-/Ergebniswerte wurden durch feste
+Ersatzwerte ersetzt. Das Loeschen des Diagnoseverlaufs funktionierte und liess
+Schutzsperre, Versuchshistorie und Wartefrist unveraendert. Das echte Konto
+behielt seinen Verlauf; nur die lokalen Pause-/Pruef-/Fortsetzungseintraege
+wurden ergaenzt. Die ausgelieferte schreibgeschuetzte Diagnoseliste zeigte diese
+Eintraege mit den vorgesehenen fuenf Spalten. Die bestehenden synthetischen
+Kontoschutz-Regressionen wurden zusaetzlich erneut erfolgreich ausgefuehrt.
+
+Die vollstaendige Konfiguration des echten Kontos wurde im finally-Pfad
+wiederhergestellt und mit dem Ausgangsstand verglichen. Sitzung, Geraetecache,
+Versuchshistorie, Schutzsperre und Wartefrist blieben unveraendert. Abschliessend
+war das Konto weiterhin angemeldet, die Pause ausgeschaltet, der Status 102
+und der Timer wieder auf 300 Sekunden eingestellt. Die temporaere Instanz
+wurde vollstaendig entfernt; installierte Dateien und Zugangsdaten wurden
+nicht veraendert. Private Endpunkte, Kennungen, Sitzungsinhalte und Hashwerte
+der privaten Laufzeitdaten werden nicht im Repository gespeichert.
+
+Die Wirkung realer Apple-Kontosperren wurde bewusst nicht provoziert. Die
+Abnahme bestaetigt das lokale Schutzverhalten und die Pause am angemeldeten
+Konto, nicht die Ursache der zuvor beobachteten Apple-Sperren.
