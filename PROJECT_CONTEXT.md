@@ -2277,3 +2277,42 @@ vorhandenen PHP-Installation geladen, ohne die System-php.ini zu veraendern.
 Live-Installation, echte Kontaktantworten und Konsolenbedienung nach dem Update
 bleiben als Praxispruefung offen. Es wurden weder echte Apple-Anmeldungen noch
 private Kontaktabfragen ausgefuehrt.
+
+### Korrektur der Kontaktadressfelder nach Benutzerpruefung (2026-10-25)
+
+Der Benutzer meldete anhand zweier Beispiele, dass Kontakte samt Namen/Firma
+vorhanden waren, Telefonnummern im Empfaengerverzeichnis jedoch als Nicht
+verfuegbar erschienen. Die iCloud-Anzeige enthielt eine beziehungsweise mehrere
+Nummern. Ursache war eine fehlerhafte Feldzuordnung im librarylokalen
+ContactsDirectory: Erwartet wurden phoneNumber/emailAddress statt des von
+iCloud fuer beide Adresstypen verwendeten Schluessels field. Die urspruenglichen
+synthetischen Testdaten verwendeten dieselben falschen Schluessel und erkannten
+diesen Protokollfehler daher nicht.
+
+Die Protokollform ist auch im primaeren PyiCloud-README fuer phones und in
+Kontaktbeispielen anderer iCloud-Clients belegt:
+https://github.com/picklepete/pyicloud#contacts und
+https://github.com/ElyaConrad/iCloud-API#contacts.
+Der Normalisierer verwendet jetzt field als massgeblichen Wert. Die bisherige
+benannte Variante bleibt nur bei fehlendem field kompatibel. Ein vorhandenes,
+aber leeres/ungueltiges field wird nicht durch einen anderen Wert ersetzt.
+Labels, alle gueltigen Nummern und E-Mail-Adressen sowie die vorhandenen
+Laengen-/Groessengrenzen und der Kontoschutz bleiben erhalten.
+
+tests/contacts.php verwendet nun die reale Drahtstruktur mit field, zwei
+unterschiedlichen Telefonnummern und einer E-Mail-Adresse. Der Test scheiterte
+vor der Korrektur am fehlenden normalisierten Telefonnummernwert und bestand
+danach. Zusaetzlich werden die Anzeige aller drei Adressen im echten
+Konto-/Kind-Formulardatenfluss, die Kompatibilitaetsvariante und leere/ungueltige
+kanonische Felder geprueft. Ausschliesslich synthetische Daten; persoenliche
+Kontakte aus den Benutzerbildern werden nicht in Testdaten uebernommen.
+
+Nach dem Modulupdate muss der Kontaktbestand einmal neu von Apple geladen
+werden; ausgelassene Werte koennen nicht aus dem alten normalisierten Cache
+rekonstruiert werden. Es wurden keine Live-Dateien veraendert und keine echte
+Apple-Anmeldung oder Kontaktabfrage ausgefuehrt. Die erneute Benutzerpruefung
+mit dem aktualisierten Modul steht noch aus.
+
+Die vollstaendige PHP-/Node-Offlinesuite, Struktur-/Formularvertraege,
+offizieller JSON-Check, PHP-CS-Fixer im Pruefmodus (0 von 58 Dateien mit
+Aenderungsbedarf) und git diff --check bestanden nach der Korrektur.

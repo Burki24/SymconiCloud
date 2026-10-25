@@ -10,6 +10,11 @@
 
 ## Fixes
 
+- iCloud Kontakte übernimmt Telefonnummern und E-Mail-Adressen aus dem von
+  iCloud gelieferten Feld `field`. Auch mehrere Nummern pro Kontakt werden
+  angezeigt; vorhandene Adressen erscheinen nicht mehr fälschlich als
+  **Nicht verfügbar**. Nach dem Update den Kontaktbestand einmal aktualisieren.
+
 - Das Kontomodul begrenzt Passwort-Anmeldungen und 2FA-Versuche dauerhaft je
   Kontoinstanz. Ablehnungen der Authentifizierung und HTTP-Sperrantworten stoppen
   weitere Anfragen bis zur manuellen Prüfung; Drosselung, Sitzungablauf,

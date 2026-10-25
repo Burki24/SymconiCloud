@@ -26,9 +26,15 @@ Suche, das Blättern und die öffentlichen Lesefunktionen fragen Apple nicht ab.
 ## Anzeige und Verfügbarkeit
 
 **Kontakte suchen** durchsucht Namen, Firma, Telefonnummern und E-Mail-Adressen.
+Mehrere Telefonnummern beziehungsweise E-Mail-Adressen werden mit ihren
+Bezeichnungen gemeinsam angezeigt.
 **Nächste Seite** zeigt weitere Treffer; **Erste Seite** setzt das Blättern zurück.
 Fehlende Nummern und E-Mail-Adressen erscheinen als **Nicht verfügbar**.
 Es werden keine bevorzugte Nummer und kein Versandkanal automatisch geraten.
+
+Falls vor einem Modulupdate vorhandene Adressen als **Nicht verfügbar** angezeigt
+wurden, den Bestand danach mit **Kontakte aktualisieren** erneut laden. Der
+bisherige Cache enthält die zuvor ausgelassenen Adresswerte nicht.
 
 Status 201 bedeutet, dass kein Konto verbunden ist. Status 202 bedeutet, dass
 noch kein Kontaktbestand verfügbar ist. Status 203 kennzeichnet einen

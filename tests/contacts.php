@@ -7,11 +7,19 @@ require __DIR__ . '/account-protection.php';
 ob_end_clean();
 
 $row = ['contactId'  => 'synthetic-contact-1', 'firstName' => 'Alex', 'lastName' => 'Example', 'companyName' => 'Example Ltd',
-    'phones'         => [['label' => 'mobile', 'phoneNumber' => '+49 170 1234567']],
-    'emailAddresses' => [['label' => 'home', 'emailAddress' => 'alex@example.invalid']],
+    'phones'         => [['label' => 'mobile', 'field' => '+49 170 1234567'], ['label' => 'work', 'field' => '+49 30 1234567']],
+    'emailAddresses' => [['label' => 'home', 'field' => 'alex@example.invalid']],
     'notes'          => 'PRIVATE-NOTE', 'birthday' => 'PRIVATE-BIRTHDAY', 'photo' => ['url' => 'https://private.invalid']];
 $normalized = \SymconiCloud\ContactsDirectory::normalize([$row, ['contactId' => 'empty']]);
 $check($normalized[0]['displayName'] === 'Alex Example' && $normalized[0]['phones'][0] === ['label' => 'mobile', 'value' => '+49 170 1234567'], 'Names and labelled addresses must retain user spelling without guessing a preferred route.');
+$check(count($normalized[0]['phones']) === 2 && $normalized[0]['phones'][1] === ['label' => 'work', 'value' => '+49 30 1234567'], 'Every iCloud field-based phone number must survive normalization.');
+$check($normalized[0]['emails'] === [['label' => 'home', 'value' => 'alex@example.invalid']], 'iCloud emailAddresses also stores the destination in field.');
+$variants = $row;
+$variants['phones'] = [['label' => 'mobile', 'phoneNumber' => '+49 170 7654321'], ['label' => 'canonical', 'field' => '+49 30 7654321', 'phoneNumber' => 'WRONG-FALLBACK'], ['label' => 'empty', 'field' => '', 'phoneNumber' => 'WRONG-FALLBACK']];
+$variants['emailAddresses'] = [['label' => 'work', 'emailAddress' => 'work@example.invalid'], ['field' => 'invalid-email'], ['field' => null, 'emailAddress' => 'wrong@example.invalid']];
+$variants = \SymconiCloud\ContactsDirectory::normalize([$variants])[0];
+$check(array_column($variants['phones'], 'value') === ['+49 170 7654321', '+49 30 7654321'], 'Named-key compatibility must not override or fill an explicitly empty canonical field.');
+$check(array_column($variants['emails'], 'value') === ['work@example.invalid'], 'Invalid and explicitly missing canonical email fields must remain unavailable.');
 $check($normalized[1]['phones'] === [] && $normalized[1]['emails'] === [] && $normalized[1]['displayName'] === 'Unnamed contact', 'Absent fields must be explicit empty values.');
 $check(array_keys($normalized[0]) === ['id', 'displayName', 'firstName', 'lastName', 'company', 'phones', 'emails'], 'Only the recipient allowlist may leave the provider adapter.');
 $check(\SymconiCloud\ContactsDirectory::page($normalized, 'EXAMPLE.INVALID', 0, 10)['total'] === 1, 'Search must include email addresses and be case insensitive.');
@@ -83,6 +91,8 @@ $check(json_decode(ICCT_GetContacts($childID, 'Alex', 0, 100), true)['total'] ==
 $check(json_decode(ICCT_GetContact($childID, 'synthetic-contact-1'), true)['contact']['id'] === 'synthetic-contact-1', 'The messaging seam must resolve the exact contact ID.');
 $form = json_decode(IPS_GetConfigurationForm($childID), true);
 $check($form['actions'][2]['values'][0]['Name'] === 'Alex Example', 'The console directory must show normalized recipients.');
+$check(str_contains($form['actions'][2]['values'][0]['Phones'], '+49 170 1234567') && str_contains($form['actions'][2]['values'][0]['Phones'], '+49 30 1234567')
+    && str_contains($form['actions'][2]['values'][0]['Emails'], 'alex@example.invalid'), 'The real account/child form path must display both iCloud phone fields and the email field.');
 ICCT_SearchContacts($childID, 'not-present');
 $check(json_decode(IPS_GetConfigurationForm($childID), true)['actions'][2]['values'] === [], 'Search must update the local read-only list.');
 $check(count($a->transport->requests) === 2, 'Connecting, browsing, API reads and form opening must be free of Apple traffic.');
@@ -191,7 +201,7 @@ $check(count(array_unique($seen)) === 30 && count($seen) === 30, 'Byte-limited c
 
 // Unsupported destinations and unusually large contacts must fail instead of creating a changed recipient or an endless page.
 $oversized = $row;
-$oversized['phones'][0]['phoneNumber'] = str_repeat('1', 257);
+$oversized['phones'][0]['field'] = str_repeat('1', 257);
 try {
     \SymconiCloud\ContactsDirectory::normalize([$oversized]);
     throw new RuntimeException('A destination was silently shortened.');

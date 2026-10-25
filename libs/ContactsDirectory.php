@@ -85,7 +85,9 @@ final class ContactsDirectory
             if (!is_array($entry)) {
                 continue;
             }
-            $raw = $entry[$field] ?? '';
+            // iCloud uses the same "field" key for phone and email values.
+            // Retain the earlier named-key variant only when the canonical key is absent.
+            $raw = array_key_exists('field', $entry) ? $entry['field'] : ($entry[$field] ?? '');
             if (!is_string($raw) || preg_match('//u', $raw) !== 1 || preg_match('/[\x00-\x1f\x7f]/u', $raw) === 1) {
                 continue;
             }
