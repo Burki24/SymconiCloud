@@ -161,7 +161,8 @@ class iCloudContacts extends IPSModuleStrict
     /** Presentation only: recipient values and original labels in the public API remain unchanged. */
     private function phoneColumns(array $phones): array
     {
-        $groups = array_fill_keys(['Mobile', 'Work', 'Main', 'Home', 'IPhone', 'Fax', 'Pager', 'OtherPhones'], []);
+        $groups = array_fill_keys(['Mobile1', 'Mobile2', 'Mobile3', 'Work', 'Main', 'Home', 'IPhone', 'Fax', 'Pager', 'OtherPhones'], []);
+        $mobileSlot = 1;
         foreach ($phones as $phone) {
             $label = trim($phone['label']);
             if (preg_match('/\A_\$!<([^<>]+)>!\$_\z/D', $label, $wrapped) === 1) {
@@ -176,6 +177,16 @@ class iCloudContacts extends IPSModuleStrict
                 $phone['label'] = match ($label) {
                     'HOME FAX' => $this->Translate('Home fax'), 'WORK FAX' => $this->Translate('Work fax'), 'OTHER FAX' => $this->Translate('Other fax'), default => ''
                 };
+            } else {
+                // User-defined display rule, applied only when no explicit category matched.
+                $number = preg_replace('/[\s().\/-]+/u', '', $phone['value']);
+                if (preg_match('/\A(?:\+491|01)[0-9]+\z/D', $number) === 1) {
+                    $column = 'Mobile';
+                }
+            }
+            if ($column === 'Mobile') {
+                // Keep every mobile destination in the mobile columns, including overflow.
+                $column .= min($mobileSlot++, 3);
             }
             $groups[$column][] = $phone;
         }

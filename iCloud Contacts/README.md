@@ -26,16 +26,22 @@ Suche, das Blättern und die öffentlichen Lesefunktionen fragen Apple nicht ab.
 ## Anzeige und Verfügbarkeit
 
 **Kontakte suchen** durchsucht Namen, Firma, Telefonnummern und E-Mail-Adressen.
-Telefonnummern werden anhand ihrer iCloud-Bezeichnung in **Mobil**,
-**Geschäftlich**, **Hauptnummer**, **Privat**, **iPhone**, **Fax** und **Pager**
-aufgeteilt. Mehrere Nummern derselben Kategorie stehen gemeinsam in der
-jeweiligen Spalte. **Weitere Telefonnummern** enthält unbeschriftete Nummern
-und eigene Bezeichnungen; eigene Labels bleiben sichtbar. Privat- und
+Telefonnummern werden anhand ihrer iCloud-Bezeichnung in **Mobil1**, **Mobil2**,
+**Mobil3**, **Geschäftlich**, **Hauptnummer**, **Privat**, **iPhone**, **Fax** und **Pager**
+aufgeteilt. Die Mobilnummern werden in der gespeicherten Reihenfolge verteilt:
+die erste in **Mobil1**, die zweite in **Mobil2**, die dritte und alle weiteren
+gemeinsam in **Mobil3**. Mehrere Nummern anderer Kategorien stehen gemeinsam
+in der jeweiligen Spalte. Eigene Labels bleiben sichtbar. Privat- und
 Geschäftsfax werden in der Faxspalte zusätzlich bezeichnet. Die E-Mail-Adressen
 bleiben mit ihren Bezeichnungen in einer gemeinsamen Spalte.
 
-Leere Kategorien erscheinen als **Nicht verfügbar**. Die Aufteilung verwendet
-die Bezeichnung, nicht die Vorwahl. Suche und öffentliche Kontaktfunktionen
+Leere Kategorien erscheinen als **Nicht verfügbar**. Bekannte iCloud-Kategorien
+haben Vorrang. Kann eine Nummer keiner bekannten Kategorie zugeordnet werden,
+wird sie bei Beginn mit **+491** oder **01** als Mobilnummer
+einsortiert. Für diesen Vergleich werden Leerzeichen, Klammern, Punkte,
+Schrägstriche und Bindestriche ausgeblendet; die angezeigte Nummer bleibt
+unverändert. Sonstige Nummern bleiben unter **Weitere Telefonnummern**.
+Suche und öffentliche Kontaktfunktionen
 berücksichtigen weiterhin alle Nummern. Nach dem Modulupdate das Formular neu
 öffnen, um die zusätzlichen Spalten zu sehen.
 **Nächste Seite** zeigt weitere Treffer; **Erste Seite** setzt das Blättern zurück.

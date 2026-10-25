@@ -32,7 +32,10 @@
             "Other phone numbers": "Weitere Telefonnummern",
             "Home fax": "Privatfax",
             "Work fax": "Geschäftliches Fax",
-            "Other fax": "Weiteres Fax"
+            "Other fax": "Weiteres Fax",
+            "Mobile1": "Mobil1",
+            "Mobile2": "Mobil2",
+            "Mobile3": "Mobil3"
         }
     }
 }

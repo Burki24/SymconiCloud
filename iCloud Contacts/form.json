@@ -40,8 +40,18 @@
                     "width": "180px"
                 },
                 {
-                    "name": "Mobile",
-                    "caption": "Mobile",
+                    "name": "Mobile1",
+                    "caption": "Mobile1",
+                    "width": "180px"
+                },
+                {
+                    "name": "Mobile2",
+                    "caption": "Mobile2",
+                    "width": "180px"
+                },
+                {
+                    "name": "Mobile3",
+                    "caption": "Mobile3",
                     "width": "180px"
                 },
                 {

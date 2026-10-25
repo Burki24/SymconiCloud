@@ -2354,3 +2354,36 @@ Die vollstaendige PHP-/Node-Offlinesuite, Struktur-/Formularvertraege,
 offizieller JSON-Check, PHP-CS-Fixer im Pruefmodus (0 von 58 Dateien mit
 Aenderungsbedarf) und git diff --check bestanden. Die sichtbare Abnahme in der
 installierten Konsole bleibt fuer den Stand nach dem Modulupdate offen.
+
+### Drei Mobilspalten und explizit gewuenschte Vorwahlregel (2026-10-25)
+
+Nach dem erfolgreichen Update der getrennten Telefonspalten wuenschte der
+Benutzer die Spalten Mobil1, Mobil2 und Mobil3 sowie eine zusaetzliche
+Zuordnung ueber die Vorwahl. Diese Vorgabe erweitert ausdruecklich die zuvor
+ausschliesslich labelbasierte Darstellungsregel: Nur wenn keine bekannte
+iCloud-Kategorie erkannt wurde, werden Nummern mit Beginn +491 oder 01 nach
+Ausblenden ueblicher Formatierungszeichen unter Mobil einsortiert. Fuer
+explizite Kategorien wie WORK, HOME, MAIN, IPHONE, FAX oder PAGER gilt dieser
+Fallback nicht. Daraus wird keine Erreichbarkeit oder Messenger-Registrierung
+abgeleitet.
+
+Mobil1 und Mobil2 enthalten die ersten beiden Mobilnummern in der gespeicherten
+Reihenfolge. Mobil3 enthaelt die dritte und gegebenenfalls weitere Nummern,
+damit alle erkannten Mobilnummern in den Mobilspalten erhalten bleiben. Eigene
+Labels bleiben sichtbar; Originalnummern werden fuer die Anzeige und API nicht
+umgeschrieben. Nummern anderer Vorwahlen und ungueltige Zeichenfolgen bleiben
+ohne bekannte Kategorie unter Weitere Telefonnummern. Die Aufteilung ist
+weiterhin eine librarylokale Formularfunktion; gemeinsame Helper und die
+oeffentliche phones-Struktur bleiben unveraendert.
+
+Der gezielte Test fuer die neuen Spalten scheiterte vor der Umsetzung und
+bestand danach. tests/contacts.php prueft internationale und nationale
+Schreibweisen, Leerzeichen/Klammern/Schraegstriche/Bindestriche, eigene Labels,
+mehr als drei Mobilnummern, Vorrang bekannter Kategorien, andere Vorwahlen und
+ungueltige Nummern sowie die unveraenderte API und ausbleibende Apple-Anfragen
+beim Formularaufbau. Es wurden nur synthetische Kontakte verwendet. Die
+Benutzeranzeige nach dem Modulupdate bleibt noch zu pruefen.
+
+Die vollstaendige PHP-/Node-Offlinesuite, Struktur-/Formularvertraege,
+offizieller JSON-Check, PHP-CS-Fixer im Pruefmodus (0 von 58 Dateien mit
+Aenderungsbedarf) und git diff --check bestanden fuer diesen Stand.
