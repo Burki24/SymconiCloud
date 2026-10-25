@@ -54,7 +54,7 @@ foreach (glob($root . '/*/module.json') as $file) {
     $walk($form['actions']);
 }
 $account = $modules['{10BF9A03-98A3-495A-B0FA-A4FA0B1002D5}'];
-$assert(count($modules) === 6 && $account['type'] === 2, 'Account splitter, device, configurator, map, presence and photos required');
+$assert(count($modules) === 7 && $account['type'] === 2, 'Account splitter, device, configurator, map, presence, photos and contacts required');
 $assert($account['parentRequirements'] === [], 'HTTPS account needs no artificial I/O parent');
 foreach ($modules as $module) {
     if ($module['id'] === $account['id']) {
@@ -69,6 +69,8 @@ $presence = $modules['{00438FA2-CF5C-45B0-AFF0-A5A5CE66595E}'];
 $assert($presence['name'] === 'iCloud Presence' && $presence['prefix'] === 'ICPR' && $presence['type'] === 3, 'Presence evaluation identity');
 $photos = $modules['{7F1383D4-5B82-4F95-A52B-664E56FA5C3A}'];
 $assert($photos['name'] === 'iCloud Photos' && $photos['prefix'] === 'ICPH' && $photos['type'] === 3, 'Read-only Photos widget identity');
+$contacts = $modules['{D9D8872B-3323-41AC-BB8F-D2756D5694E1}'];
+$assert($contacts['name'] === 'iCloud Contacts' && $contacts['prefix'] === 'ICCT' && $contacts['type'] === 3, 'Read-only Contacts directory identity');
 $vendorRoot = $root . '/libs/vendor/leaflet/';
 foreach ($json($vendorRoot . 'manifest.json')['files'] as $name => $hash) {
     $assert(hash_file('sha256', $vendorRoot . $name) === $hash, 'Leaflet vendor integrity: ' . $name);

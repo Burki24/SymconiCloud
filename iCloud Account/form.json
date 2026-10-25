@@ -95,6 +95,28 @@
                     "onClick": "ICAC_RefreshPhotoAlbums($id);"
                 }
             ]
+        },
+        {
+            "type": "ExpansionPanel",
+            "caption": "iCloud Contacts (optional)",
+            "items": [
+                {
+                    "type": "CheckBox",
+                    "name": "EnableContacts",
+                    "caption": "Enable read-only Contacts access"
+                },
+                {
+                    "type": "NumberSpinner",
+                    "name": "ContactsRefreshInterval",
+                    "caption": "Contacts refresh interval in seconds",
+                    "minimum": 900,
+                    "maximum": 604800
+                },
+                {
+                    "type": "Label",
+                    "caption": "Contacts use the existing account session and protection limits. No password sign-in is started by the Contacts timer."
+                }
+            ]
         }
     ],
     "actions": [
@@ -154,6 +176,11 @@
             "caption": "Resume after checking the Apple account",
             "onClick": "ICAC_ResumeAccountRequests($id);",
             "confirm": "Have you checked or unlocked the Apple account? This only releases the local hold. Existing cooldowns and attempt limits remain; no sign-in is started."
+        },
+        {
+            "type": "Button",
+            "caption": "Refresh contacts",
+            "onClick": "ICAC_RefreshContacts($id);"
         }
     ],
     "status": [

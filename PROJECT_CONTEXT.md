@@ -2193,3 +2193,87 @@ MCP-Nachpruefung vom 2026-10-24 fuer die echte Symcon-Kachel und die erzeugte
 IPSView-Ausgabe in der Browser-Einbettung. Der damals noch ausstehende Test
 im nativen IPSView-Client ist damit abgeschlossen. Die native App wurde vom
 Benutzer geprueft; fuer diese Abnahme wurde kein neuer MCP-Test durchgefuehrt.
+
+### Lesendes iCloud-Kontaktverzeichnis fuer Nachrichten (2026-10-25)
+
+Das neue Modul iCloud Contacts (Alias iCloud Kontakte, Praefix ICCT) ist ein
+lesendes Empfaengerverzeichnis. Es verwendet die zentralen Helper
+ConfigurationFormHelper, DataFlowHelper und ParentConnectionHelper. Der
+vorhandene zentrale DebugHelper bleibt die Basis der datensparsamen
+Kontodiagnose. Apple-Protokoll, Kontaktschema und Konto-Cache bleiben in
+SymconiCloud; eine tatsaechliche Verwendung durch eine zweite Library besteht
+noch nicht und rechtfertigt daher keine neue Zentralisierung.
+
+Der Benutzer aktiviert den optionalen Zugriff im bestehenden Konto mit
+EnableContacts. ContactsRefreshInterval liegt standardmaessig bei 3600 Sekunden
+und erlaubt 900 bis 604800 Sekunden. Ein eigener Kontotimer liest den gemeinsamen
+Bestand unabhaengig von der Geraeteabfrage; mehrere Kontaktinstanzen teilen
+diesen Cache. ApplyChanges, Formulare, Suche, Blaettern, Push-Nachrichten und
+oeffentliche Lesefunktionen starten keinen Apple-Abruf. Manuelle
+Aktualisierungsversuche erhalten mindestens 60 Sekunden Abstand.
+
+AppleClient uebernimmt den optionalen contacts-Dienst aus accountLogin. Fuer
+alte Sitzungen ohne diese Adresse erfolgt hoechstens eine tokenbasierte
+Dienstermittlung pro zugelassenem Abruf, niemals eine Passwortanmeldung oder
+eine automatische Wiederholung nach einer Authentifizierungsablehnung.
+Die festen lesenden Pfade /co/startup und /co/contacts verwenden dieselbe
+Cookie-Sitzung und HTTPS-Originpruefung. Telefonnummern werden ausdruecklich
+angefordert; Kontaktbilder nicht. Pref-/Sync-Tokens und sonstige
+Provider-Antwortfelder verlassen den Protokolladapter nicht.
+
+Der Cache wird erst nach Pruefung des vollstaendigen Bestands ersetzt. Ein
+erfolgreicher leerer Bestand ist gueltig und entfernt zuvor vorhandene Kontakte.
+Fehlerhafte/zu grosse Antworten behalten den letzten vollstaendigen Cache.
+Bis zu 10000 Kontakte, 4 MiB Antwort-/Cachegroesse, 20 Eintraege je Adresstyp und
+30000 JSON-Bytes je normalisiertem Kontakt sind zugelassen. Namen und Labels
+sind begrenzt; Versandadressen werden bei Ueberlaenge abgelehnt statt gekuerzt.
+Oeffentliche Seiten enthalten hoechstens 100 Kontakte und etwa 32 kB
+Kontaktdaten. nextOffset ist der verbindliche Fortsetzungswert; es wird keine
+Vollkopie des Adressbuchs in einer Statusvariablen oder jedem Kind gespeichert.
+
+Kontoschutz, Semaphore, Pause, manuelle Sperre und Retry-After/Backoff werden
+vor einer Transporterzeugung geprueft. Die Pause erhaelt Sitzung und Kontakte
+bytegleich, stoppt den Kontakttimer und erlaubt weiterhin lokale Cacheleser.
+401/421/450 markieren die gemeinsame Sitzung als abgelaufen; 423 setzt eine
+manuell zu pruefende Kontosperre. 429 und Netzwerk-/Serverfehler verwenden die
+gemeinsamen Wartefristen. Eine reine Kontaktablehnung mit 403 betrifft dagegen
+nur den Kontaktdienst. Deaktivieren des Kontaktzugriffs, Abmelden, Deaktivieren
+des Kontos und Uebernehmen anderer Zugangsdaten entfernen den Kontaktcache.
+Diagnosen speichern nur feste Kategorien, Status und Zeiten, keine Kontakte,
+Adressen, Abfrage-URLs, Tokens oder Antwortinhalte.
+
+ICCT_GetContacts bietet lokale Suche nach Namen, Firma, Nummern und E-Mails;
+ICCT_GetContact liefert einen Kontakt ausschliesslich anhand seiner ID.
+success kennzeichnet einen vorhandenen erfolgreichen Cache; stale, paused,
+updatedAt und error machen Aktualitaet und Abrufprobleme sichtbar. Fehlende
+Adressen sind leere Listen und erscheinen im Formular als Nicht verfuegbar;
+fehlende exakte Kennungen liefern contact: null. Eine Umbenennung aendert die
+Kennung nicht. Kontakte, Notizen und andere persoenliche Felder werden weder
+geschrieben noch an Apple zurueckgesendet.
+
+Fuer das geplante Nachrichten-Modul ist die Kombination aus Kontaktinstanz-ID
+und Kontakt-ID der Empfaengerschluessel. Versandadresse und Kanal muessen dort
+ausdruecklich ausgewaehlt und Regeln fuer veraltete Daten festgelegt werden.
+Keine Zuordnung allein nach Namen, kein Ersatz geloeschter Kontakte durch
+gleichnamige Personen und keine angenommene Messenger-Registrierung aus einer
+Telefonnummer. Kontaktbilder, Gruppen, CardDAV und Nachrichtenversand sind
+nicht Teil dieses Schritts.
+
+Offline-Nachweise: tests/contacts.php prueft den echten Konto-/Kind-Datenfluss
+mit synthetischem HTTPS-Transport, tokenbasierte Dienstermittlung ohne Passwort,
+Normalisierung, fehlende/fehlerhafte Felder, exakte Kennungen und Loeschungen,
+groessenbegrenzte Seiten ohne Luecken, Scopewechsel, Neustart, wiederholtes
+ApplyChanges, konkurrierende Abrufe, unsichere Endpunkte, Pause, 401/403/423/429,
+Serverfehler und datensparsame Diagnose. Der Test ist in tests/run.php
+eingebunden und fuehrt auch die bestehenden Kontoschutztests aus.
+
+Die vollstaendige PHP-/Node-Offlinesuite (tests/run.php), Struktur- und
+Formularvertraege sowie der offizielle JSON-Check bestanden. Der PHP-CS-Fixer
+mit offizieller StylePHP-Konfiguration meldete im Pruefmodus 0 von 58 Dateien
+mit Aenderungsbedarf; git diff --check bestand ebenfalls.
+Ein erster lokaler Gesamtlauf stoppte am bestehenden Bildtest wegen nicht
+geladener GD-Erweiterung; GD und EXIF wurden nur fuer die Testprozesse aus der
+vorhandenen PHP-Installation geladen, ohne die System-php.ini zu veraendern.
+Live-Installation, echte Kontaktantworten und Konsolenbedienung nach dem Update
+bleiben als Praxispruefung offen. Es wurden weder echte Apple-Anmeldungen noch
+private Kontaktabfragen ausgefuehrt.

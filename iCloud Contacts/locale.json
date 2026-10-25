@@ -1,0 +1,27 @@
+{
+    "translations": {
+        "de": {
+            "Connect an iCloud account and enable read-only Contacts access there. Search and browsing use the cache; only Refresh contacts contacts Apple.": "Ein iCloud-Konto verbinden und dort den lesenden Kontaktzugriff aktivieren. Suche und Blättern verwenden den Cache; nur Kontakte aktualisieren fragt Apple ab.",
+            "No contact editing or message delivery. Missing numbers and email addresses are shown as Not available.": "Kontakte können nicht bearbeitet und Nachrichten nicht versendet werden. Fehlende Nummern und E-Mail-Adressen werden als Nicht verfügbar angezeigt.",
+            "No contact snapshot available.": "Noch kein Kontaktbestand verfügbar.",
+            "Search contacts": "Kontakte suchen",
+            "Recipients": "Empfängerverzeichnis",
+            "Name": "Name",
+            "Company": "Firma",
+            "Phone numbers": "Telefonnummern",
+            "Email addresses": "E-Mail-Adressen",
+            "Contact ID": "Kontakt-ID",
+            "First page": "Erste Seite",
+            "Next page": "Nächste Seite",
+            "Refresh contacts": "Kontakte aktualisieren",
+            "Contact directory is current.": "Kontaktverzeichnis ist aktuell.",
+            "No iCloud account connected.": "Kein iCloud-Konto verbunden.",
+            "Cached contacts are not current.": "Gespeicherte Kontakte sind nicht aktuell.",
+            "Contact directory unavailable. Check the connected account.": "Kontaktverzeichnis nicht verfügbar. Das verbundene Konto prüfen.",
+            "Matches": "Treffer",
+            "Last successful refresh": "Letzte erfolgreiche Aktualisierung",
+            "Not available": "Nicht verfügbar",
+            "Unnamed contact": "Unbenannter Kontakt"
+        }
+    }
+}

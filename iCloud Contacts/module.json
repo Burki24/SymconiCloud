@@ -1,0 +1,18 @@
+{
+    "id": "{D9D8872B-3323-41AC-BB8F-D2756D5694E1}",
+    "name": "iCloud Contacts",
+    "type": 3,
+    "vendor": "Apple",
+    "aliases": [
+        "iCloud Kontakte"
+    ],
+    "parentRequirements": [
+        "{1E60F0BE-03E4-4AA4-A1CE-AA838725A4E2}"
+    ],
+    "childRequirements": [],
+    "implemented": [
+        "{FCE7780F-9520-4E52-92F3-60034FFAED6D}"
+    ],
+    "prefix": "ICCT",
+    "url": "https://github.com/Burki24/SymconiCloud/blob/main/iCloud%20Contacts/README.md"
+}

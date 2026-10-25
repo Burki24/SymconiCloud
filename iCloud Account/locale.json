@@ -150,7 +150,18 @@
             "waitSeconds": "Wartezeit (s)",
             "Local authentication attempt limit reached": "Lokales Limit für Authentifizierungsversuche erreicht",
             "Temporary connection retry pause": "Vorübergehende Wartezeit nach Verbindungsfehler",
-            "Requests are temporarily delayed after a connection or server failure. No new sign-in is needed.": "Anfragen werden nach einem Verbindungs- oder Serverfehler vorübergehend verzögert. Eine neue Anmeldung ist nicht erforderlich."
+            "Requests are temporarily delayed after a connection or server failure. No new sign-in is needed.": "Anfragen werden nach einem Verbindungs- oder Serverfehler vorübergehend verzögert. Eine neue Anmeldung ist nicht erforderlich.",
+            "iCloud Contacts (optional)": "iCloud Kontakte (optional)",
+            "Enable read-only Contacts access": "Lesenden Kontaktzugriff aktivieren",
+            "Contacts refresh interval in seconds": "Kontakt-Aktualisierungsintervall in Sekunden",
+            "Contacts use the existing account session and protection limits. No password sign-in is started by the Contacts timer.": "Kontakte verwenden die vorhandene Kontositzung und Schutzgrenzen. Der Kontakttimer startet keine Passwortanmeldung.",
+            "Refresh contacts": "Kontakte aktualisieren",
+            "Enable read-only Contacts access in the connected account.": "Lesenden Kontaktzugriff im verbundenen Konto aktivieren.",
+            "Set the Contacts interval between 900 and 604800 seconds.": "Das Kontaktintervall zwischen 900 und 604800 Sekunden einstellen.",
+            "Contacts are unavailable for this account. Check iCloud Contacts web access.": "Kontakte sind für dieses Konto nicht verfügbar. Den Webzugriff auf iCloud Kontakte prüfen.",
+            "Apple denied Contacts access. Existing device and Photos access is retained.": "Apple hat den Kontaktzugriff abgelehnt. Der vorhandene Geräte- und Fotozugriff bleibt erhalten.",
+            "The contact directory exceeds the supported size. The previous cache is retained.": "Das Kontaktverzeichnis überschreitet die unterstützte Größe. Der bisherige Cache bleibt erhalten.",
+            "Wait at least 60 seconds between contact refresh attempts.": "Zwischen Kontakt-Aktualisierungsversuchen mindestens 60 Sekunden warten."
         }
     }
 }

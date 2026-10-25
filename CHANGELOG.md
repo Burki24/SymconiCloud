@@ -1,5 +1,13 @@
 # Unveröffentlicht
 
+## Neue Funktionen
+
+- **iCloud Kontakte** stellt ein lesendes Empfängerverzeichnis mit Suche,
+  Telefonnummern und E-Mail-Adressen bereit. Der optionale Abruf verwendet
+  die bestehende Kontositzung, einen gemeinsamen begrenzten Cache und einen
+  separaten Aktualisierungstimer. Kontoschutz und Abfragepause gelten auch
+  für Kontakte; fehlende und veraltete Daten sind ausdrücklich erkennbar.
+
 ## Fixes
 
 - Das Kontomodul begrenzt Passwort-Anmeldungen und 2FA-Versuche dauerhaft je

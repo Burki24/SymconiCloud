@@ -2,7 +2,7 @@
 
 SymconiCloud verbindet Apple-iCloud-Dienste mit IP-Symcon. Die Library bietet Apple-Anmeldung mit Zwei-Faktor-Bestätigung, einen Gerätekonfigurator und **iCloud Gerät** zur Anzeige der von Apple gelieferten Geräte-, Akku- und Standortdaten.
 
-**[WoIst](iCloud%20WoIst/README.md)** zeigt die verfügbaren Positionen aller Geräte eines Kontos gemeinsam auf einer Karte in der Kachelvisualisierung oder als IPSView-WebContent. Beide Ausgaben besitzen einen Designer; IPSView kann das Kachel-Design übernehmen. Kalender, Kontakte und iCloud Drive sind nicht enthalten.
+**[WoIst](iCloud%20WoIst/README.md)** zeigt die verfügbaren Positionen aller Geräte eines Kontos gemeinsam auf einer Karte in der Kachelvisualisierung oder als IPSView-WebContent. Beide Ausgaben besitzen einen Designer; IPSView kann das Kachel-Design übernehmen. Kalender und iCloud Drive sind nicht enthalten.
 
 **[iCloud Anwesenheit](iCloud%20Presence/README.md)** wertet pro Instanz mehrere
 ausgewählte Geräte in gemeinsamen, frei konfigurierbaren Kreiszonen aus. Gesamt-
@@ -11,6 +11,11 @@ und Geräteanwesenheit unterscheiden
 Entfernung, Aufenthaltsdauer und GPS-Stabilisierung nutzen denselben Kontocache.
 
 **[iCloud Fotos](iCloud%20Photos/README.md)** zeigt ein Album oder Favoriten als Einzelbild oder Diashow in Kachel und IPSView. Ein gemeinsamer Kontocache mit konfigurierbaren Ressourcenprofilen lädt Vorschauen bedarfsgerecht.
+
+**[iCloud Kontakte](iCloud%20Contacts/README.md)** stellt ein lesendes, durchsuchbares
+Empfängerverzeichnis mit Telefonnummern und E-Mail-Adressen aus dem gemeinsamen
+Kontocache bereit. Die vorhandene Sitzung und der Kontoschutz werden verwendet.
+Ein Nachrichtenversand ist darin nicht enthalten.
 
 ## Voraussetzungen
 

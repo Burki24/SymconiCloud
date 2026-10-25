@@ -11,10 +11,34 @@ Das Kontomodul verwaltet die Apple-Anmeldung, Zwei-Faktor-Bestätigung, Sitzung 
 | `Username` | leer | Apple-Account-Anmeldename |
 | `Password` | leer | Reguläres Apple-Passwort, kein anwendungsspezifisches Passwort |
 | `RefreshInterval` | 300 | Sekunden zwischen Geräteabfragen, 60 bis 86400 |
+| `EnableContacts` | false | Lesenden Kontaktzugriff einschalten |
+| `ContactsRefreshInterval` | 3600 | Sekunden zwischen Kontaktabfragen, 900 bis 604800 |
 
 Einstellungen speichern, **Anmelden** wählen und den sechsstelligen Code des vertrauenswürdigen Gerätes bestätigen. **Neuen Code anfordern** sendet eine neue Anfrage für die laufende Bestätigung. Nach zehn Minuten ist eine neue Anmeldung erforderlich. Alternative Verfahren mit SMS oder Hardware-Sicherheitsschlüsseln sind nicht enthalten.
 
 Die Sitzung bleibt nach einem Symcon-Neustart erhalten. Eine Änderung der Zugangsdaten oder das Deaktivieren löscht die lokale Sitzung und den Gerätecache. **Lokale Sitzung löschen** meldet nur diese Instanz lokal ab; der Apple-Account wird nicht gesperrt und Geräte werden nicht verändert. Erneutes Aktivieren allein startet keine Anmeldung.
+
+## Lesender Kontaktzugriff
+
+Unter **iCloud Kontakte (optional)** den Zugriff aktivieren und die Konfiguration
+übernehmen. **Kontakte aktualisieren** liest das iCloud-Adressbuch mit derselben
+Kontositzung. Ein eigener Timer aktualisiert es standardmäßig stündlich;
+manuelle Versuche benötigen mindestens 60 Sekunden Abstand. Weder der Timer
+noch die Lesefunktionen starten eine Passwortanmeldung.
+
+Die Instanz [iCloud Kontakte](../iCloud%20Contacts/README.md) zeigt den gemeinsamen
+Cache als Empfängerverzeichnis. Der Kontaktzugriff beachtet Pause, Schutzsperre
+und Wartefristen des Kontos. Eine nur auf Kontakte beschränkte Zugriffsablehnung
+lässt Geräte und Fotos weiter nutzbar. Eine abgelehnte gemeinsame Sitzung
+stoppt dagegen auch die anderen Abfragen.
+
+`ICAC_GetContacts($InstanceID, $Query, $Offset, $Limit)` liest eine begrenzte
+JSON-Seite aus dem Cache; `ICAC_GetContact($InstanceID, $ContactID)` sucht exakt
+nach einer Kennung. `ICAC_RefreshContacts($InstanceID)` aktualisiert ausdrücklich
+den gemeinsamen Kontaktbestand. Parameter und Rückgabefelder entsprechen der
+Kontakte-Anleitung. Bei Fehlern bleibt der vorherige vollständige Cache erhalten
+und wird als veraltet gekennzeichnet. Ausschalten des Kontaktzugriffs oder
+Löschen der Kontositzung entfernt ihn.
 
 ## Kontoschutz und Abfragepause
 
@@ -84,7 +108,11 @@ Versuchszähler stoppt neue Anfragen, statt die Limits stillschweigend zurückzu
 
 Das Modul besitzt keine Statusvariablen. Formular und Instanzstatus unterscheiden angemeldet, abgemeldet/deaktiviert, erforderliche 2FA-Bestätigung, abgelaufene Sitzung, ungültige Konfiguration, fehlende PHP-Erweiterungen und Abfragefehler. Bei einer Apple-Sperrfrist werden vorübergehend keine weiteren Anfragen gesendet. Ungültige Codes können innerhalb der laufenden Bestätigung korrigiert werden.
 
-Kinder erhalten nur normalisierte Gerätedaten. Bei Abfragefehlern bleibt der letzte Cache erhalten, wird aber als nicht aktuell verfügbar gekennzeichnet. Die Abfrage liest vorhandene Daten und fordert keine aktive Neuortung an.
+Kinder erhalten nur normalisierte Daten der ausdrücklich aktivierten Dienste,
+keine Zugangsdaten oder Sitzungstokens. Bei Geräteabfragefehlern bleibt der
+letzte Gerätecache erhalten, wird aber als nicht aktuell verfügbar
+gekennzeichnet. Die Geräteabfrage liest vorhandene Daten und fordert keine
+aktive Neuortung an.
 
 Die ausdrücklich ausgelöste Geräteaktion **Handy suchen** verwendet denselben
 HTTPS-Transport, dieselbe Sitzung und dieselbe Anfragesperre. Sie akzeptiert nur

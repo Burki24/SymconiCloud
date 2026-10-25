@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../libs/AppleClient.php';
 require_once __DIR__ . '/../libs/PhotosAccount.php';
+require_once __DIR__ . '/../libs/ContactsAccount.php';
 require_once __DIR__ . '/../libs/AccountProtection.php';
 require_once __DIR__ . '/../libs/helper/ConfigurationFormHelper.php';
 require_once __DIR__ . '/../libs/helper/DataFlowHelper.php';
@@ -11,6 +12,7 @@ require_once __DIR__ . '/../libs/helper/DataFlowHelper.php';
 class iCloudAccount extends IPSModuleStrict
 {
     use \SymconiCloud\PhotosAccount;
+    use \SymconiCloud\ContactsAccount;
     use \SymconiCloud\AccountProtection;
     use \Burki24\SymconModuleHelper\ConfigurationFormHelper;
     use \Burki24\SymconModuleHelper\DataFlowHelper;
@@ -23,6 +25,7 @@ class iCloudAccount extends IPSModuleStrict
     {
         parent::Create();
         $this->RegisterPhotosAccount();
+        $this->RegisterContactsAccount();
         $this->RegisterAccountProtection();
         $this->RegisterPropertyBoolean('Enabled', false);
         $this->RegisterPropertyString('Username', '');
@@ -56,6 +59,9 @@ class iCloudAccount extends IPSModuleStrict
             if (!$this->ReadPropertyBoolean('Enabled')) {
                 $this->clearState();
             }
+            if (!$this->ReadPropertyBoolean('EnableContacts')) {
+                $this->ClearContactsState();
+            }
             if (!$this->ReadPropertyBoolean('EnablePhotos')) {
                 $this->ClearPhotoState();
             }
@@ -81,6 +87,7 @@ class iCloudAccount extends IPSModuleStrict
         $form['actions'][0]['caption'] = $this->Translate('Session state') . ': ' . $this->Translate((string) $state);
         $form['actions'][1]['caption'] = $this->errorMessage($this->ReadAttributeString('LastError'));
         $form['actions'][] = ['type' => 'Label', 'caption' => $this->ReadAttributeString('PhotoError')];
+        $form['actions'][] = ['type' => 'Label', 'caption' => $this->errorMessage($this->ReadAttributeString('ContactsError'))];
         $form['actions'] = $this->SetFormFieldVisibility($form['actions'], ['TwoFactor'], $state === 'awaiting2FA');
         $block = $this->ReadAttributeString('AccountBlock');
         $form['actions'][] = ['type' => 'Label', 'caption' => $block === '' ? '' : $this->Translate('Account requests stopped: manual review required') . ': ' . $this->errorMessage($block)];
@@ -153,6 +160,9 @@ class iCloudAccount extends IPSModuleStrict
     {
         try {
             $request = $this->DecodeDataFlowMessage($JSONString, self::REQUEST_DATA);
+            if (in_array($request['Command'] ?? '', ['GetContacts', 'GetContact', 'RefreshContacts'], true)) {
+                return json_encode($this->ForwardContactsRequest($request), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+            }
             if (in_array($request['Command'] ?? '', ['GetPhotoAlbums', 'RefreshPhotoAlbums', 'GetPhotoPage', 'GetPhotoImage', 'GetPhotoImagePage', 'ClearPhotoImageTransfer'], true)) {
                 return json_encode($this->ForwardPhotosRequest($request), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
             }
@@ -209,6 +219,7 @@ class iCloudAccount extends IPSModuleStrict
             'VerifyCode'              => $this->VerifyCode(is_string($Value) ? $Value : ''),
             'ResendCode'              => $this->ResendCode(),
             'RefreshDevices'          => $this->RefreshDevices(),
+            'RefreshContacts'         => $this->RefreshContacts(),
             'Logout'                  => $this->Logout(),
             'ResumeAccountRequests'   => $this->ResumeAccountRequests(),
             'ClearAccountDiagnostics' => $this->ClearAccountDiagnostics(),
@@ -398,6 +409,7 @@ class iCloudAccount extends IPSModuleStrict
     private function clearState(): void
     {
         $this->ClearPhotoState();
+        $this->ClearContactsState();
         $this->WriteAttributeString('Session', '{}');
         $this->WriteAttributeString('DeviceCache', '{"devices":[],"updatedAt":0}');
         $this->WriteAttributeString('LastError', '');
@@ -422,6 +434,7 @@ class iCloudAccount extends IPSModuleStrict
     private function updateState(): void
     {
         $this->SetTimerInterval('Refresh', 0);
+        $this->SetTimerInterval('ContactsRefresh', 0);
         if (!$this->ReadPropertyBoolean('Enabled')) {
             $this->SetStatus(IS_INACTIVE);
             return;
@@ -441,6 +454,7 @@ class iCloudAccount extends IPSModuleStrict
         $state = $this->readSession()['state'] ?? 'signedOut';
         $error = $this->ReadAttributeString('LastError');
         if ($state === 'authenticated') {
+            $this->UpdateContactsTimer();
             $seconds = max($this->ReadPropertyInteger('RefreshInterval'), $this->ReadAttributeInteger('RetryAt') - $this->AccountProtectionTime());
             $this->SetTimerInterval('Refresh', $seconds * 1000);
         }
@@ -465,38 +479,44 @@ class iCloudAccount extends IPSModuleStrict
     private function errorMessage(string $reason): string
     {
         return $this->Translate(match ($reason) {
-            ''                     => '',
-            'configuration'        => 'Enable the account and enter valid credentials and interval.',
-            'dependency'           => 'PHP extensions curl and bcmath are required.',
-            'credentials'          => 'Apple rejected the account credentials. Sign in again.',
-            'authentication'       => 'Sign in to the Apple account first.',
-            'invalidCode'          => 'Apple rejected the verification code.',
-            'codeFormat'           => 'Enter the six-digit verification code.',
-            'challengeExpired'     => 'Verification has expired. Sign in again.',
-            'rateLimited'          => 'Apple requests a pause. Try again later.',
-            'retryBackoff'         => 'Requests are temporarily delayed after a connection or server failure. No new sign-in is needed.',
-            'accessDenied'         => 'Apple denied access. Check the account in a browser.',
-            'accountLocked'        => 'Apple returned a lock response. Requests are stopped. Check the Apple account before resuming.',
-            'accountBlocked'       => 'Apple requests are stopped after an authentication rejection. Check the account and explicitly resume requests.',
-            'requestsPaused'       => 'Apple requests are paused. The existing session and cache are retained.',
-            'loginLimited'         => 'Password login limit reached. Wait before trying again; logout does not reset this limit.',
-            'codeLimited'          => 'Verification code limit reached. Wait before trying again.',
-            'resendLimited'        => 'Code request limit reached. Wait before requesting another code.',
-            'challengePending'     => 'A verification is already pending. Enter its code instead of signing in again.',
-            'protectionState'      => 'Protection state is invalid. Requests remain stopped; contact the module maintainer.',
-            'serviceUnavailable'   => 'Find My is unavailable for this account.',
-            'network'              => 'The Apple server could not be reached securely.',
-            'server'               => 'The Apple service is temporarily unavailable.',
-            'endpoint'             => 'Apple returned an unsupported service address.',
-            'srp'                  => 'The Apple authentication challenge is unsupported or invalid.',
-            'deviceUnknown'        => 'Device not in the authenticated account cache.',
-            'soundRejected'        => 'Apple rejected the sound request.',
-            'lostModeRejected'     => 'Apple rejected the Lost Mode request. Check Find My before trying again.',
-            'lostModeStopRejected' => 'Apple rejected the Lost Mode stop request. Check Find My before trying again.',
-            'lostModeUnsupported'  => 'Lost Mode support is missing or unknown for this device. Check Find My.',
-            'lostModeActive'       => 'Lost Mode is already enabled according to the account cache. Check Find My.',
-            'lostModeInput'        => 'Check the contact number, message (maximum 160 characters) and optional new passcode (4 or 6 digits).',
-            default                => 'The Apple response could not be processed.'
+            ''                      => '',
+            'configuration'         => 'Enable the account and enter valid credentials and interval.',
+            'dependency'            => 'PHP extensions curl and bcmath are required.',
+            'credentials'           => 'Apple rejected the account credentials. Sign in again.',
+            'authentication'        => 'Sign in to the Apple account first.',
+            'invalidCode'           => 'Apple rejected the verification code.',
+            'codeFormat'            => 'Enter the six-digit verification code.',
+            'challengeExpired'      => 'Verification has expired. Sign in again.',
+            'rateLimited'           => 'Apple requests a pause. Try again later.',
+            'retryBackoff'          => 'Requests are temporarily delayed after a connection or server failure. No new sign-in is needed.',
+            'accessDenied'          => 'Apple denied access. Check the account in a browser.',
+            'accountLocked'         => 'Apple returned a lock response. Requests are stopped. Check the Apple account before resuming.',
+            'accountBlocked'        => 'Apple requests are stopped after an authentication rejection. Check the account and explicitly resume requests.',
+            'requestsPaused'        => 'Apple requests are paused. The existing session and cache are retained.',
+            'contactsDisabled'      => 'Enable read-only Contacts access in the connected account.',
+            'contactsConfiguration' => 'Set the Contacts interval between 900 and 604800 seconds.',
+            'contactsUnavailable'   => 'Contacts are unavailable for this account. Check iCloud Contacts web access.',
+            'contactsAccess'        => 'Apple denied Contacts access. Existing device and Photos access is retained.',
+            'contactsLimit'         => 'The contact directory exceeds the supported size. The previous cache is retained.',
+            'contactsWait'          => 'Wait at least 60 seconds between contact refresh attempts.',
+            'loginLimited'          => 'Password login limit reached. Wait before trying again; logout does not reset this limit.',
+            'codeLimited'           => 'Verification code limit reached. Wait before trying again.',
+            'resendLimited'         => 'Code request limit reached. Wait before requesting another code.',
+            'challengePending'      => 'A verification is already pending. Enter its code instead of signing in again.',
+            'protectionState'       => 'Protection state is invalid. Requests remain stopped; contact the module maintainer.',
+            'serviceUnavailable'    => 'Find My is unavailable for this account.',
+            'network'               => 'The Apple server could not be reached securely.',
+            'server'                => 'The Apple service is temporarily unavailable.',
+            'endpoint'              => 'Apple returned an unsupported service address.',
+            'srp'                   => 'The Apple authentication challenge is unsupported or invalid.',
+            'deviceUnknown'         => 'Device not in the authenticated account cache.',
+            'soundRejected'         => 'Apple rejected the sound request.',
+            'lostModeRejected'      => 'Apple rejected the Lost Mode request. Check Find My before trying again.',
+            'lostModeStopRejected'  => 'Apple rejected the Lost Mode stop request. Check Find My before trying again.',
+            'lostModeUnsupported'   => 'Lost Mode support is missing or unknown for this device. Check Find My.',
+            'lostModeActive'        => 'Lost Mode is already enabled according to the account cache. Check Find My.',
+            'lostModeInput'         => 'Check the contact number, message (maximum 160 characters) and optional new passcode (4 or 6 digits).',
+            default                 => 'The Apple response could not be processed.'
         });
     }
 }

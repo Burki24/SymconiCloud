@@ -3,8 +3,9 @@
 Lies `../SymconDevelopment/AGENTS.md`, `../SymconDevelopment/ARCHITECTURE.md`, die zentralen `principles/` und die relevanten Standards. Sie gelten für dieses Projekt.
 
 - Ziel: IP-Symcon 9.0 / PHP 8.5; eigenständige Library mit `IPSModuleStrict`.
-- Library: SymconiCloud. Kontomodul, allgemeiner Gerätekonfigurator, iCloud-Gerät, WoIst-Karte, iCloud-Anwesenheit und iCloud-Fotos sind getrennte Module. WoIst liest alle Geräte des verbundenen Kontocaches; Anwesenheit wertet mehrere ausgewählte Geräte eines Kontos mit gemeinsamen Zonen und Gesamtanwesenheit aus. GPS-Zustand und Aufenthaltsdauer bleiben je Gerät getrennt.
-- Öffentliche Präfixe sind vierstellig: ICAC (Konto), ICDC (Device-Konfigurator), ICID (iCloud-Gerät), ICWI (WoIst-Karte), ICPR (Anwesenheit), ICPH (Fotos).
+- Library: SymconiCloud. Kontomodul, allgemeiner Gerätekonfigurator, iCloud-Gerät, WoIst-Karte, iCloud-Anwesenheit, iCloud-Fotos und iCloud-Kontakte sind getrennte Module. WoIst liest alle Geräte des verbundenen Kontocaches; Anwesenheit wertet mehrere ausgewählte Geräte eines Kontos mit gemeinsamen Zonen und Gesamtanwesenheit aus. GPS-Zustand und Aufenthaltsdauer bleiben je Gerät getrennt.
+- Öffentliche Präfixe sind vierstellig: ICAC (Konto), ICDC (Device-Konfigurator), ICID (iCloud-Gerät), ICWI (WoIst-Karte), ICPR (Anwesenheit), ICPH (Fotos), ICCT (Kontakte).
+- iCloud Kontakte ist ein lesendes Empfängerverzeichnis mit gemeinsamem Konto-Cache. Protokoll und Normalisierung bleiben librarylokal; Kontaktabfragen verwenden die bestehende Sitzung und alle Kontoschutzgrenzen. Kein Schreiben von Kontakten und kein Nachrichtenversand.
 - Keine Implementierung aus iCloud3 übernehmen. Externe Protokollinformationen sind Quellen, keine Kopiervorlage.
 - Kontomodul besitzt Anmeldung, Sitzung, HTTPS und Gerätecache. Kinder erhalten ausschließlich normalisierte Daten, keine Zugangsdaten oder Tokens.
 - Fotos: optionaler lesender CloudKit-Zugriff im Konto, privater geteilter Festplatten-Cache mit Anzahl- und Bytegrenzen; keine Apple-URLs oder Sitzungsdaten an Widgets. Foto-Code bleibt librarylokal.

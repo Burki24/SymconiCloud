@@ -7,6 +7,7 @@ namespace SymconiCloud;
 require_once __DIR__ . '/AppleHttpClient.php';
 require_once __DIR__ . '/AppleSrp.php';
 require_once __DIR__ . '/PhotosLibrary.php';
+require_once __DIR__ . '/ContactsDirectory.php';
 
 /** Account/session protocol; never exposes raw service responses to children. */
 final class AppleClient
@@ -172,6 +173,38 @@ final class AppleClient
         return (new PhotosLibrary(fn (string $path, array $body): array => $this->photoRequest($path, $body)))->page($album, $offset);
     }
 
+    /** Reads a complete contact snapshot with the existing session; never starts password authentication. */
+    public function contacts(): array
+    {
+        if ($this->session['state'] !== 'authenticated') {
+            throw new AppleException('authentication');
+        }
+        if (empty($this->session['contacts'])) {
+            $this->accountLogin();
+        }
+        if ($this->session['state'] !== 'authenticated') {
+            throw new AppleException('authentication');
+        }
+        if (empty($this->session['contacts'])) {
+            throw new AppleException('contactsUnavailable');
+        }
+        $parameters = ['clientId' => $this->session['clientId'], 'dsid' => $this->session['dsid'], 'clientVersion' => '2.1', 'locale' => 'de_DE', 'order' => 'last,first',
+            'includePhoneNumbers' => 'true', 'includePhotos' => 'false'];
+        $startup = $this->contactsRequest('startup', $parameters);
+        foreach (['prefToken', 'syncToken'] as $name) {
+            if (!is_string($startup[$name] ?? null) || strlen($startup[$name]) > 4096) {
+                throw new AppleException('response');
+            }
+            $parameters[$name] = $startup[$name];
+        }
+        // limit=0 is the service's complete snapshot mode. The HTTP transport also enforces 4 MiB.
+        $snapshot = $this->contactsRequest('contacts', $parameters + ['limit' => 0, 'offset' => 0]);
+        if (!is_array($snapshot['contacts'] ?? null)) {
+            throw new AppleException('response');
+        }
+        return ContactsDirectory::normalize($snapshot['contacts']);
+    }
+
     /** One authenticated POST, never token renewal, password login or an automatic retry. */
     private function sendDeviceCommand(string $deviceID, string $command, array $payload, string $rejectedReason): void
     {
@@ -197,6 +230,20 @@ final class AppleClient
         if (($response['body']['success'] ?? null) === false || !empty($response['body']['error'])) {
             throw new AppleException($rejectedReason);
         }
+    }
+
+    private function contactsRequest(string $path, array $parameters): array
+    {
+        $response = $this->call('GET', $this->session['contacts'] . '/co/' . $path . '?' . http_build_query($parameters), [], null);
+        if (in_array($response['status'], [401, 421, 450], true)) {
+            $this->session['state'] = 'expired';
+            throw new AppleException('authentication', $response['status']);
+        }
+        if ($response['status'] === 403) {
+            throw new AppleException('contactsAccess', 403);
+        }
+        $this->expect($response, [200]);
+        return $response['body'];
     }
 
     private function awaitCode(): void
@@ -274,6 +321,20 @@ final class AppleClient
         }
         $this->session['dsid'] = (string) $dsid;
         $this->session['findme'] = rtrim($url, '/');
+        $this->session['contacts'] = '';
+        $contacts = $data['webservices']['contacts']['url'] ?? '';
+        if (is_string($contacts) && $contacts !== '') {
+            try {
+                AppleHttpClient::assertURL($contacts);
+                $contactParts = parse_url($contacts);
+                if (str_ends_with(strtolower($contactParts['host']), '.icloud.com') && !isset($contactParts['query'])
+                    && in_array($contactParts['path'] ?? '', ['', '/'], true)) {
+                    $this->session['contacts'] = rtrim($contacts, '/');
+                }
+            } catch (AppleException) {
+                // Optional Contacts access must not break existing device or Photos access.
+            }
+        }
         $this->session['photos'] = '';
         $photos = $data['webservices']['ckdatabasews']['url'] ?? '';
         if (is_string($photos) && $photos !== '') {
@@ -365,6 +426,7 @@ final class AppleClient
             str_ends_with($path, '/verify/trusteddevice/securitycode') => $method === 'PUT' ? 'requestCode' : 'verifyCode',
             str_ends_with($path, '/2sv/trust')                         => 'trustBrowser',
             str_contains($path, '/com.apple.photos.cloud/')            => 'photos',
+            str_contains($path, '/co/')                                => 'contacts',
             str_contains($path, '/fmipservice/')                       => 'deviceAction',
             default                                                    => 'authChallenge'
         };

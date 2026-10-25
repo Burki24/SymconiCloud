@@ -1,0 +1,99 @@
+{
+    "elements": [
+        {
+            "type": "Label",
+            "caption": "Connect an iCloud account and enable read-only Contacts access there. Search and browsing use the cache; only Refresh contacts contacts Apple."
+        },
+        {
+            "type": "Label",
+            "caption": "No contact editing or message delivery. Missing numbers and email addresses are shown as Not available."
+        }
+    ],
+    "actions": [
+        {
+            "type": "Label",
+            "name": "ContactResult",
+            "caption": "No contact snapshot available."
+        },
+        {
+            "type": "ValidationTextBox",
+            "name": "ContactSearch",
+            "caption": "Search contacts",
+            "onChange": "ICCT_SearchContacts($id, $ContactSearch);"
+        },
+        {
+            "type": "List",
+            "name": "ContactList",
+            "caption": "Recipients",
+            "rowCount": 12,
+            "add": false,
+            "delete": false,
+            "columns": [
+                {
+                    "name": "Name",
+                    "caption": "Name",
+                    "width": "220px"
+                },
+                {
+                    "name": "Company",
+                    "caption": "Company",
+                    "width": "180px"
+                },
+                {
+                    "name": "Phones",
+                    "caption": "Phone numbers",
+                    "width": "auto"
+                },
+                {
+                    "name": "Emails",
+                    "caption": "Email addresses",
+                    "width": "auto"
+                },
+                {
+                    "name": "ContactID",
+                    "caption": "Contact ID",
+                    "width": "220px"
+                }
+            ],
+            "values": []
+        },
+        {
+            "type": "Button",
+            "caption": "First page",
+            "onClick": "ICCT_FirstContacts($id);"
+        },
+        {
+            "type": "Button",
+            "name": "ContactNextPage",
+            "caption": "Next page",
+            "onClick": "ICCT_NextContacts($id);"
+        },
+        {
+            "type": "Button",
+            "caption": "Refresh contacts",
+            "onClick": "ICCT_Refresh($id);"
+        }
+    ],
+    "status": [
+        {
+            "code": 102,
+            "icon": "active",
+            "caption": "Contact directory is current."
+        },
+        {
+            "code": 201,
+            "icon": "error",
+            "caption": "No iCloud account connected."
+        },
+        {
+            "code": 202,
+            "icon": "error",
+            "caption": "No contact snapshot available."
+        },
+        {
+            "code": 203,
+            "icon": "inactive",
+            "caption": "Cached contacts are not current."
+        }
+    ]
+}
