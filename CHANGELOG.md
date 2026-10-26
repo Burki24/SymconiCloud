@@ -25,6 +25,12 @@
 
 ## Fixes
 
+- Die Benutzeranleitungen erklären Einrichtung, Kontoverbindung und Datenalter
+  verständlicher. Gerätevariablen sind mit deutschen Anzeigenamen beschrieben;
+  Statushinweise, Modulübersicht, optionale Voraussetzungen und fehlende
+  Konfigurationsangaben sind ergänzt. Ein Screenshot zeigt den Suchton-Taster.
+  Veraltete Links und Hinweise zur separaten Helper-Verteilung wurden bereinigt.
+
 - **iCloud Anwesenheit** erhält manuell ausgeblendete Gerätevariablen bei
   Datenupdates und beim Übernehmen der Konfiguration. Entfernte Geräte werden
   einmalig ausgeblendet; bei erneuter Auswahl wird nur eine vom Modul verwaltete

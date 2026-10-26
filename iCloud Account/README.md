@@ -1,6 +1,26 @@
-# iCloud Account / iCloud Konto
+# iCloud Konto
 
-Das Kontomodul verwaltet die Apple-Anmeldung, Zwei-Faktor-Bestätigung, Sitzung und gemeinsame WoIst-Geräteabfrage. Es ist ein Splitter ohne zusätzliche I/O-Instanz. Voraussetzung: Symcon 9.0, PHP 8.5 mit `curl` und `bcmath`, globaler Apple-Account sowie ein vertrauenswürdiges Gerät.
+Das Konto ist die gemeinsame Verbindung zu Apple für Geräte, WoIst-Karte,
+Anwesenheit, Fotos und Kontakte. Hier werden die Zugangsdaten einmal eingegeben;
+die anderen Module verwenden diese Verbindung ohne eigene Anmeldung.
+Voraussetzung: Symcon 9.0, PHP 8.5 mit `curl` und `bcmath`, globaler Apple-Account
+sowie ein vertrauenswürdiges Gerät. Eine zusätzliche I/O-Instanz ist nicht nötig.
+
+## Ersteinrichtung
+
+1. **iCloud Konto** als Instanz anlegen und **Konto aktivieren** einschalten.
+2. Apple-Account und reguläres Passwort eingeben. Kein anwendungsspezifisches
+   Passwort für CalDAV/CardDAV verwenden.
+3. **Übernehmen** wählen und danach **Anmelden** anklicken. Die Rückmeldung im
+   Formular zeigt das Ergebnis und einen gegebenenfalls erforderlichen nächsten Schritt.
+4. Falls Apple einen Bestätigungscode verlangt, diesen am vertrauenswürdigen
+   Gerät ablesen und im Formular unter **Zwei-Faktor-Authentifizierung** bestätigen.
+5. Nach erfolgreicher Anmeldung den
+   [Gerätekonfigurator](../iCloud%20Device%20Configurator/README.md) oder die
+   gewünschten anderen Module anlegen und mit diesem Konto verbinden.
+
+Fotos und Kontakte sind zunächst ausgeschaltet. Sie können später unabhängig
+voneinander aktiviert werden; für Geräte, Karte und Anwesenheit bleiben sie aus.
 
 ## Konfiguration
 
@@ -13,6 +33,10 @@ Das Kontomodul verwaltet die Apple-Anmeldung, Zwei-Faktor-Bestätigung, Sitzung 
 | `RefreshInterval` | 300 | Sekunden zwischen Geräteabfragen, 60 bis 86400 |
 | `EnableContacts` | false | Lesenden Kontaktzugriff einschalten |
 | `ContactsRefreshInterval` | 3600 | Sekunden zwischen Kontaktabfragen, 900 bis 604800 |
+| `EnablePhotos` | false | Lesenden Fotozugriff einschalten |
+| `PhotoCacheProfile` | `compact` | Ressourcenprofil: Kompakt, Standard, Groß oder Eigene Grenzen; siehe Fotoanleitung |
+| `PhotoCacheImages` | 50 | Eigene maximale Bildanzahl, nur beim Profil Eigene Grenzen wirksam |
+| `PhotoCacheMiB` | 100 | Eigenes Bilddateibudget in MiB, nur beim Profil Eigene Grenzen wirksam |
 
 Einstellungen speichern, **Anmelden** wählen und den sechsstelligen Code des vertrauenswürdigen Gerätes bestätigen. **Neuen Code anfordern** sendet eine neue Anfrage für die laufende Bestätigung. Nach zehn Minuten ist eine neue Anmeldung erforderlich. Alternative Verfahren mit SMS oder Hardware-Sicherheitsschlüsseln sind nicht enthalten.
 

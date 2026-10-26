@@ -1,4 +1,4 @@
-# iCloud WoIst
+# iCloud WoIst Karte
 
 WoIst zeigt die Positionen der Geräte eines iCloud-Kontos gemeinsam auf einer interaktiven Karte. Einzelne iCloud-Geräteinstanzen sind dafür nicht erforderlich. Voraussetzung sind Symcon 9.0 und ein angemeldetes iCloud-Konto dieser Library.
 
@@ -138,7 +138,24 @@ Im **Kachel-Designer** lassen sich Schriftgröße, Radius und Farben der Standor
 
 In der nativen Symcon-Kachel wird Platz für deren sichtbare Kachelüberschrift reserviert. Bei ausgeblendeter Kachelüberschrift entfällt dieser Abstand, soweit die Symcon-Version den Zustand bereitstellt. Die HTTP-Seite für IPSView reserviert keinen zusätzlichen nativen Titelbereich.
 
-Für IPSView im **IPSView-Designer** die Ausgabe aktivieren und die Konfiguration übernehmen. Das Modul erzeugt die String-Variable **WoIst für IPSView** (`IPSViewWoIst`) mit einer kleinen HTML-Einbindung. Diese lädt die eigentliche Karte als echte HTTP(S)-Seite vom Symcon-Server. Diese Variable in IPSView als WebContent einbinden. Nach einem Modulupdate die Instanzkonfiguration einmal übernehmen, damit vorhandene HTML-Ausgaben den aktuellen Datenabruf enthalten. Standardmäßig gilt **Kachel-Design verwenden**. Für unabhängige Gestaltung diese Option deaktivieren oder **Gespeichertes Kachel-Design kopieren und unabhängig bearbeiten** wählen. Die Kopieraktion übernimmt die bereits gespeicherten Kachel-Einstellungen, speichert die IPSView-Einstellungen und lädt das Formular neu.
+Für IPSView:
+
+1. Im **IPSView-Designer** die HTML-Ausgabe aktivieren und **Übernehmen** wählen.
+2. Die erzeugte String-Variable **WoIst für IPSView** (`IPSViewWoIst`) in IPSView
+   als WebContent einbinden. Sie lädt die Karte vom Symcon-Server.
+3. Falls der Client die Serveradresse nicht automatisch erkennt, die
+   **Symcon-Server-URL für IPSView** wie unten beschrieben eintragen.
+4. Farben und Schrift unter **IPSView-Stil** einstellen. Diese gelten unabhängig
+   von der Farbgestaltung der nativen Kachel.
+
+**Karteneinstellungen der Kachel verwenden** ist zunächst aktiviert. Gemeint
+sind Kartenlayout, Positionsfarben und OpenFreeMap-Profil, nicht sämtliche
+IPSView-Farben und Schriften. Für unabhängige Kartenparameter die Option
+deaktivieren oder **Gespeichertes Kachel-Design kopieren und unabhängig
+bearbeiten** wählen. Die Kopieraktion übernimmt bereits gespeicherte Werte,
+speichert die IPSView-Einstellungen und lädt das Formular neu. Nach einem
+Modulupdate die Instanzkonfiguration einmal übernehmen, damit vorhandene
+HTML-Ausgaben den aktuellen Stand enthalten.
 
 Die Kartenseite besitzt eine eigene HTTP(S)-Adresse. Dadurch können Kartenanfragen den tatsächlichen Symcon-Server-Ursprung als Referer mitsenden, auch wenn die äußere IPSView-Ausgabe als `data:`-Seite eingebettet ist. Der Kartenanbieter und dessen Nutzungsbedingungen gelten weiterhin; eine bereits bestehende Sperre wird dadurch nicht garantiert aufgehoben.
 
@@ -162,7 +179,12 @@ Sowohl **Kachel-Designer → OpenFreeMap** als auch **IPSView-Designer → OpenF
 - **Kartendetails:** Beschriftungen, Sehenswürdigkeiten/Orte, Gebäude und Verwaltungsgrenzen unabhängig anzeigen; Namen lokal, deutsch oder englisch darstellen. Fehlende Übersetzungen fallen auf vorhandene Namen zurück.
 - **Eigene Kartenfarben:** Aktivieren und anschließend getrennte helle/dunkle Farben für Land, Wasser, Grünflächen, Straßen, Gebäude und Beschriftungen wählen. Ohne diese Option gelten die Originalfarben des gewählten Stils. Die Anpassungen wirken auf passende Vektorebenen; die Quellenangabe bleibt sichtbar.
 
-**Kachel-Design verwenden** übernimmt auch das OpenFreeMap-Profil. Die Kopierfunktion kopiert alle Karten-, Farb- und Detailoptionen in das unabhängige IPSView-Profil. Daten-, Stil-, Farb- und Theme-Wechsel erhalten Zoom, Kartenausschnitt, Geräteauswahl und ein geöffnetes Gerätepopup.
+**Karteneinstellungen der Kachel verwenden** übernimmt auch das
+OpenFreeMap-Profil. Die Kopierfunktion kopiert dessen Kartenfarben und
+Detailoptionen sowie die übrigen Kartenparameter in das unabhängige
+IPSView-Profil. Der IPSView-Stil für Bedienelemente und Schrift bleibt separat.
+Daten-, Stil-, Farb- und Theme-Wechsel erhalten Zoom, Kartenausschnitt,
+Geräteauswahl und ein geöffnetes Gerätepopup.
 
 Die OpenFreeMap-Vektorkarte wird mit lokal gebündeltem MapLibre und Leaflet dargestellt. Ein Browser beziehungsweise WebView mit WebGL-Unterstützung wird benötigt.
 
@@ -195,15 +217,17 @@ Das Modul erzeugt keine Gerätevariablen; die optionale IPSView-HTML-Variable di
 
 Die native Kachel merkt sich Zoom, Kartenausschnitt, Geräteauswahl und Popup für einen iframe-Neuaufbau bei Verbindungsunterbrechungen im aktuellen Browser-Tab. Der Zustand ist nach Instanz, Kontoverbindung und Visualisierung getrennt und läuft nach vier Stunden ohne Speicherung ab. Beim Schließen des Tabs endet die Speicherung. Der Browser muss Sitzungsspeicher erlauben; ohne ihn bleibt die Karte nutzbar, kann ihre Ansicht nach einem iframe-Neuaufbau aber nicht wiederherstellen. Es werden keine Zugangsdaten gespeichert.
 
-## Lizenz
+## Serveradresse und Einbettung
 
-Eigenes Modul: [PolyForm Noncommercial License 1.0.0](../LICENSE). Leaflet 1.9.4: BSD-2-Clause, siehe [Leaflet-Lizenz](../libs/vendor/leaflet/LICENSE). Kartendaten: [© OpenStreetMap contributors](https://www.openstreetmap.org/copyright).
-
-Der interne WebHook `SymconiCloudWoIst<Instanz-ID>` wird beim Laden der Instanz unabhängig vom IPSView-Schalter registriert und nach jedem Symcon-Neustart erneut angelegt. Bei deaktivierter IPSView-Ausgabe liefert er 404; vorhandene Zugriffstokens werden ungültig. Nach einem Update auf diese Registrierung muss die Modulinstanz neu geladen werden, beispielsweise durch einen Symcon-Neustart.
+Die benötigte HTTP-Route wird vom Modul automatisch registriert. Dafür keinen
+eigenen benutzerdefinierten WebHook und kein zusätzliches Skript anlegen.
+Bei deaktivierter IPSView-Ausgabe ist der Zugriff gesperrt.
 
 Eine Server-IP wird nicht grundsätzlich benötigt: In einer HTTP(S)-Seite auf demselben Server verwendet die Einbindung automatisch den aktuellen Ursprung. Bei `data:`-/`about:`-Einbettungen verwendet die Ausgabe automatisch den verfügbaren HTTP(S)-Ursprung des einbettenden Kontexts. Native IPSView-Apps ohne solche Browserinformationen benötigen die vom Anzeigegerät erreichbare Serveradresse. Das kann auch ein DNS-Name oder eine HTTPS-Adresse über einen Reverse-Proxy sein. Eine automatisch ermittelte lokale IP wäre außerhalb des lokalen Netzes unter Umständen nicht erreichbar.
 
-Die HTTP-Kartenseite lädt ihre Assets über den zentralen Verzeichnisvertrag mit dem tatsächlichen Modulpfad. Können erforderliche Dateien nicht geladen werden, meldet sie HTTP 503 statt einer leeren erfolgreichen Antwort. Datenupdates verwenden weiterhin dieselbe Seite und erhalten die Kartenansicht.
+Bei einer Meldung über nicht verfügbare Kartendateien das vollständige
+SymconiCloud-Modulupdate installieren. Die benötigten Dateien sind enthalten
+und müssen nicht einzeln heruntergeladen werden.
 
 ### Farben und IPSView-Stil
 
@@ -211,7 +235,12 @@ Der Kachel-Designer enthält den zentralen Bereich **Kachelfarben** für Text, �
 
 Im IPSView-Designer bietet **IPSView-Stil** die zentralen Stilquellen: eigene Einstellungen, eine IPSView-Mediendatei, ein Stilprofil sowie helle, dunkle und weitere vorgegebene Farbpaletten. Einstellbar sind unter anderem Ansicht und Seitenhintergrund, aktive/inaktive Bedienelemente und Texte, Akzent- und Statusfarben, Popups, Transparenz, Schrift, Schriftgröße/-skalierung, Rahmen und Schatten. Die erweiterten nativen Farben zeigen die für Kartenbedienelemente und Popups relevanten Familien. Nicht jede Rolle wird von jeder Kartenkomponente benötigt.
 
-**Karteneinstellungen der Kachel verwenden** und die Kopieraktion betreffen Kartenlayout, Positionsmarker und OpenFreeMap-Profil. Die IPSView-Farbgestaltung und Typografie bleiben davon unabhängig; ihre Schriftgröße wird über den zentralen IPSView-Stil eingestellt. Die frühere Property `IPSViewFontSize` bleibt registriert, wird aber durch die zentrale IPSView-Typografie abgelöst. Eine gewählte Medien-Stilquelle wird bei Medienänderungen neu eingelesen. Einstellungen nach dem Bearbeiten übernehmen; bei einer geänderten Stilquelle das Formular neu öffnen, um deren passende Bearbeitungsfelder zu sehen.
+**Karteneinstellungen der Kachel verwenden** und die Kopieraktion betreffen
+Kartenlayout, Positionsmarker und OpenFreeMap-Profil. IPSView-Farben und Schrift
+bleiben davon unabhängig; die Schriftgröße wird unter **IPSView-Stil** eingestellt.
+Eine gewählte Medien-Stilquelle wird bei Medienänderungen neu eingelesen.
+Einstellungen nach dem Bearbeiten übernehmen; bei einer geänderten Stilquelle
+das Formular neu öffnen, um deren passende Bearbeitungsfelder zu sehen.
 
 Farbänderungen werden in die bestehende Karte übertragen. Zoom, Kartenausschnitt und Geräteauswahl werden dabei nicht zurückgesetzt. OpenFreeMap besitzt weiterhin einen eigenen Menüpunkt in beiden Designern und folgt im Automatikmodus der wirksamen Hintergrundhelligkeit.
 
@@ -246,4 +275,15 @@ Geräte-/Standortdaten und erscheint nur im Designer.
 
 ### Mausradbedienung in IPSView
 
-Kachel und IPSView-Ausgabe nutzen die gemeinsame Eingabebehandlung aus `Symcon_ModuleHelper`. Sie normalisiert Mausrad-Deltas und ermittelt bei von IPSView umadressierten Ereignissen den Bereich unter der letzten tatsächlichen Mausposition. Listen und Dialoginhalte scrollen innerhalb ihres Bereichs; vorhandener Karten-/Diagrammzoom bleibt komponentenspezifisch. Verschachtelte teilnehmende HTML-Frames geben ausschließlich UI-Eingaben über den zentralen Vertrag weiter. Ctrl-/Meta-Mausrad bleibt beim Host. Eine vollständige Funktionsprüfung unterscheidet den IPSView-Webclient von der nativen IPSView-App.
+Das Mausrad über der Karte ändert den Zoom. Über der Geräteliste scrollt es
+dagegen die Liste, ohne gleichzeitig die Karte zu zoomen. Den Mauszeiger dafür
+über den gewünschten Bereich bewegen. Die Bedienung wird auch in der nativen
+IPSView-App unterstützt. Tastenkombinationen mit Strg beziehungsweise Meta
+bleiben der umgebenden Anwendung überlassen.
+
+## Lizenz
+
+Eigenes Modul: [PolyForm Noncommercial License 1.0.0](../LICENSE).
+Leaflet 1.9.4: BSD-2-Clause, siehe [Leaflet-Lizenz](../libs/vendor/leaflet/LICENSE).
+Weitere Kartenkomponenten: [Lizenzhinweise](../libs/helper/maps/vendor/NOTICE.json).
+Kartendaten: [© OpenStreetMap contributors](https://www.openstreetmap.org/copyright).

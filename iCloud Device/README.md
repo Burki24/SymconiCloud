@@ -1,10 +1,96 @@
-# iCloud Device / iCloud Gerät
+# iCloud Gerät
 
-Eine Instanz zeigt die Geräte-, Akku- und Standortdaten eines Apple-Gerätes aus dem Kontocache an. Voraussetzung ist Symcon 9 und ein angemeldetes iCloud-Konto dieser Library. Geräte vorzugsweise über den iCloud-Geräte-Konfigurator anlegen. Eine Karte ist nicht Bestandteil dieser Geräteinstanz; dafür gibt es das Modul [WoIst](../iCloud%20WoIst/README.md).
+**Eine Instanz gehört zu einem Apple-Gerät.** Sie stellt dessen Akku-, Geräte-
+und Standortdaten als Symcon-Variablen bereit. Damit lassen sich zum Beispiel
+ein niedriger Akkustand anzeigen oder Standortdaten in eigenen Automationen
+verwenden. Zusätzlich können ein Suchton und der Verloren-Modus ausdrücklich
+ausgelöst werden. Welche Daten und Aktionen verfügbar sind, hängt vom Gerät
+und den von Apple gelieferten Angaben ab.
+
+Eine eigene Kartenansicht gehört nicht zu dieser Instanz. Dafür gibt es
+[WoIst](../iCloud%20WoIst/README.md). Für Zonen und Gesamtanwesenheit mehrerer
+Geräte ist [iCloud Anwesenheit](../iCloud%20Presence/README.md) zuständig.
+Beide Module funktionieren auch ohne einzelne Geräteinstanzen.
+
+- [Gerät einrichten](#einrichtung)
+- [Aktualität und fehlende Daten verstehen](#aktualität-und-fehlende-daten)
+- [Handy suchen](#handy-suchen)
+- [Verloren-Modus](#verloren-modus)
+- [Adresse anzeigen](#adresse-aus-woist)
+- [Variablen nachschlagen](#variablen)
+- [PHP-Funktionen für eigene Skripte](#öffentliche-funktionen)
+
+## Einrichtung
+
+Voraussetzung sind Symcon 9.0, PHP 8.5 und ein bereits angemeldetes
+[iCloud Konto](../iCloud%20Account/README.md) aus dieser Library.
+
+1. Den [iCloud Geräte Konfigurator](../iCloud%20Device%20Configurator/README.md)
+   öffnen und mit dem gewünschten iCloud-Konto verbinden.
+2. Das gewünschte Gerät in der Liste **Geräte** auswählen und die Instanz über
+   **Erstellen** anlegen. Die Geräte-ID wird dabei automatisch übernommen.
+3. Die angelegte Instanz **iCloud Gerät** öffnen. Prüfen, dass als übergeordnete
+   Instanz dasselbe iCloud-Konto verbunden ist, und **Übernehmen** wählen.
+   Gemeint ist die Datenverbindung; der Ordner im Objektbaum ist dafür unerheblich.
+4. Im Objektbaum unterhalb der Instanz die Variablen prüfen. **Kontodaten
+   verfügbar** zeigt an, ob das Gerät in den verfügbaren Kontodaten enthalten ist.
+5. Für ein weiteres Gerät diese Schritte wiederholen. Passwort und
+   Zwei-Faktor-Code werden ausschließlich im Konto eingegeben.
+
+Ohne Programmierung lassen sich die angelegten Variablen als einzelne Kacheln
+oder in der Listendarstellung der Instanz verwenden. Diese Geräteinstanz besitzt
+keinen eigenen Kachel- oder IPSView-Designer.
 
 ## Konfiguration
 
-`DeviceID` enthält die unveränderte Apple-Geräte-ID; Standard ist leer. Die Instanz muss physisch mit dem richtigen iCloud-Konto verbunden sein. Ein leerer Identifikator oder fehlendes Konto führt zu einem inaktiven Zustand. Die normale Datenaktualisierung liest ausschließlich gespeicherte Daten des Kontos und empfängt dessen Aktualisierungen. Apple-Anmeldung und Netzwerkzugriff bleiben im Kontomodul; nur ausdrücklich ausgelöste Geräteaktionen senden einen zusätzlichen Auftrag.
+| Einstellung | Standard | Bedeutung |
+| --- | --- | --- |
+| Übergeordnetes iCloud-Konto | keine Verbindung | Konto, dessen Geräteliste verwendet wird; nach der Anlage prüfen |
+| Geräte-ID (`DeviceID`) | leer | Wird vom Konfigurator eingetragen. Die Apple-Gerätekennung ist weder der sichtbare Gerätename noch die Seriennummer oder IMEI. |
+| WoIst-Adressquelle (optional) (`AddressSource`) | keine Auswahl | Automatische Verwendung genau einer geeigneten WoIst-Karte desselben Kontos; bei mehreren Karten eine auswählen |
+
+Die Geräte-ID normalerweise unverändert lassen. **Ein Wechsel der Geräte-ID
+oder Kontoverbindung setzt die bisherigen Gerätewerte zurück.**
+
+**Gespeicherte Kontodaten lesen** übernimmt den letzten gespeicherten Stand des
+Kontos. Dieser Zwischenspeicher wird im Folgenden auch **Kontocache** genannt.
+Der Button fragt Apple nicht ab. Neue Apple-Daten werden im Konto oder im
+Konfigurator mit **Geräte bei Apple aktualisieren** angefordert. Das Konto
+aktualisiert seine Geräteliste standardmäßig außerdem alle 300 Sekunden.
+Neue Kontodaten werden automatisch an die Geräteinstanz weitergegeben.
+
+## Aktualität und fehlende Daten
+
+**Kontodaten verfügbar**, **Online** und **Standort verfügbar** sind verschiedene
+Aussagen. Ein Gerät kann offline sein und trotzdem einen letzten bekannten
+Standort besitzen. Ein erfolgreicher Kontoabruf bedeutet umgekehrt nicht, dass
+Apple gerade eine neue GPS-Position ermittelt hat.
+
+| Anzeige | So ist sie zu lesen |
+| --- | --- |
+| Kontodaten verfügbar | Das Gerät wurde in den verfügbaren Daten seines Kontos gefunden. |
+| Online | Apple meldet Gerätestatus `200`. Dies ist kein zusätzlicher Erreichbarkeitstest durch Symcon. |
+| Standort verfügbar / Standortzeit | Koordinaten wurden geliefert; die Standortzeit zeigt, von wann die Position stammt. |
+| Standort veraltet | Apple kennzeichnet die Position als alt oder aktuell ist kein Standort verfügbar. Für eigene Altersgrenzen zusätzlich die Standortzeit auswerten. |
+| Genauigkeit | Von Apple gemeldeter Radius in Metern; ein kleinerer positiver Wert ist genauer. `0` bestätigt keine metergenaue Position. |
+| Letzter erfolgreicher Geräteabruf | Zeitpunkt des Kontoabrufs, nicht der Ermittlung der GPS-Position. |
+
+Fehlt ein Standort, bleiben die letzten gültigen Koordinaten und deren
+Zeitstempel stehen; **Standort verfügbar** wird **Nein**. Entsprechend bleibt
+bei fehlenden Akkudaten der letzte Akkustand stehen, während **Akkustand
+verfügbar** **Nein** zeigt. In Automationen immer die Verfügbarkeit und bei
+Standorten zusätzlich das Alter prüfen, bevor diese Werte verwendet werden.
+
+Das Formular unterscheidet folgende Instanzzustände:
+
+| Status | Bedeutung und nächster Schritt |
+| --- | --- |
+| 102 – Aktiv | Das Gerät ist in den verfügbaren Kontodaten vorhanden; einzelne Angaben können trotzdem fehlen. |
+| 201 – Konto und Gerät auswählen | Kontoverbindung und Geräte-ID prüfen; vorzugsweise den Konfigurator verwenden. |
+| 202 – Kontodaten nicht verfügbar | Im Konto Anmeldestatus, Abfragepause und eventuelle Wartefristen prüfen. |
+| 203 – Gerät nicht in aktueller Kontoliste | Im Konfigurator die Kontozuordnung und die gespeicherte Geräteliste prüfen. Die Instanz wird nicht automatisch gelöscht. |
+
+## Geräteaktionen
 
 ### Handy suchen
 
@@ -15,6 +101,11 @@ oder eine Verknüpfung darauf als eigene Kachel hinzufügen und die Darstellung
 **Aufzählung** verwenden; sie ist bereits vom Modul voreingestellt. In der
 Listendarstellung der Geräteinstanz ist die Aktion ebenfalls bedienbar.
 Ein zusätzliches Aktionsskript ist nicht erforderlich.
+
+![Suchton als native Symcon-Kachel mit dem Taster Ton abspielen](../docs/images/device-find-phone-tile.png)
+
+*Screenshot der nativen Kachel aus der MCP-Vorschau. Die Darstellung kann je
+nach Symcon-Version, Kachelgröße und Design abweichen.*
 
 Der Taster und der Formularbutton **Handy suchen (Ton abspielen)** senden
 denselben einmaligen Suchton-Auftrag für das
@@ -88,7 +179,7 @@ das Gerät kann weiterhin gesperrt bleiben. Falls Apple zusätzliche Schritte
 verlangt, **Wo ist?** verwenden oder das Gerät gemäß Apple entsperren.
 Siehe [Apples Anleitung zum Verloren-Modus](https://support.apple.com/de-de/guide/icloud/mmfc0f0165/icloud).
 
-### Adresse aus WoIst
+## Adresse aus WoIst
 
 Für die Variable **Adresse** muss in einer [WoIst-Karte](../iCloud%20WoIst/README.md#optionale-adressauflösung)
 am selben iCloud-Konto die Adressauflösung mit Nominatim oder Geoapify eingerichtet und aktiviert
@@ -119,34 +210,36 @@ nächsten Geräteupdate erneut geprüft.
 ## Variablen
 
 Die Statusvariablen sind ausschließlich lesbar. **Handy suchen** ist die einzige
-Aktionsvariable; ihr Wert ist kein Wiedergabestatus.
+Aktionsvariable; ihr Wert ist kein Wiedergabestatus. Die technischen Kennungen
+in der ersten Spalte sind für Skripte gedacht. Im Objektbaum erscheinen die
+deutschen Anzeigenamen wie **Akkustand**, **Standortzeit** und **Adresse**.
 
-| Ident | Typ | Bedeutung / Einheit |
-| --- | --- | --- |
-| `PlaySound` | int, Aktion | Taster **Ton abspielen**: `RequestAction($VariablenID, 1)` sendet einmalig; `0` ist der neutrale Wert und löst keinen Auftrag aus |
-| `DataAvailable` | bool | Gerät in der erfolgreich abgerufenen Kontoliste vorhanden |
-| `Online` | bool | Von Apple gemeldeter Gerätestatus 200 |
-| `DeviceName`, `Model`, `DeviceClass` | string | Gerätebezeichnung und Typ |
-| `DeviceStatus` | int | Gerätestatus von Apple |
-| `BatteryAvailable` | bool | Akkustand vorhanden |
-| `BatteryLevel` | float | Akkustand in Prozent |
-| `BatteryStatus` | string | Akkustatus von Apple |
-| `LocationAvailable` | bool | Koordinaten in der letzten Antwort vorhanden |
-| `LocationIsOld` | bool | Standort von Apple als veraltet gemeldet oder aktuell nicht verfügbar |
-| `Latitude`, `Longitude` | float | Breitengrad / Längengrad in Grad |
-| `Address` | string | Aufgelöste Adresse der aktuell verfügbaren Geräteposition aus dem ausgewählten WoIst-Cache |
-| `Accuracy` | float | Standortgenauigkeit in Metern |
-| `LocationTimestamp` | int | Unix-Zeit des Standorts |
-| `LastUpdate` | int | Unix-Zeit des letzten erfolgreichen Geräteabrufs |
-| `LowPowerMode` | int | Stromsparmodus laut Apple |
-| `LocationEnabled`, `LocationCapable` | int | Ortung aktiviert / vom Gerät unterstützt |
-| `IsLocating` | int | Ortung läuft laut Apple |
-| `LostModeEnabled`, `LostModeCapable` | int | Verloren-Modus aktiviert / vom Gerät unterstützt |
-| `ActivationLocked` | int | Aktivierungssperre laut Apple |
-| `FamilyShared` | int | Kennzeichnung der Familienfreigabe laut Apple |
-| `LocationIsInaccurate` | int | Vorhandener Standort von Apple ausdrücklich als ungenau gekennzeichnet |
-| `LocationFinished` | int | Ortung für den vorhandenen Standort laut Apple abgeschlossen |
-| `ModelIdentifier` | string | Technische Modellkennung oder **Nicht verfügbar** |
+| Anzeige | Technischer Ident | Typ | Bedeutung / Einheit |
+| --- | --- | --- | --- |
+| Handy suchen | `PlaySound` | int, Aktion | Taster **Ton abspielen**; `1` löst einmalig aus, `0` ist der neutrale Wert und kein Wiedergabestatus |
+| Kontodaten verfügbar | `DataAvailable` | bool | Gerät in der erfolgreich abgerufenen Kontoliste vorhanden |
+| Online | `Online` | bool | Von Apple gemeldeter Gerätestatus 200 |
+| Gerätename / Modell / Geräteklasse | `DeviceName`, `Model`, `DeviceClass` | string | Gerätebezeichnung und Typ |
+| Gerätestatus | `DeviceStatus` | int | Technischer Gerätestatus von Apple |
+| Akkustand verfügbar | `BatteryAvailable` | bool | Akkustand vorhanden |
+| Akkustand | `BatteryLevel` | float | Akkustand in Prozent |
+| Akkustatus | `BatteryStatus` | string | Von Apple gelieferter Statustext, beispielsweise `NotCharging` |
+| Standort verfügbar | `LocationAvailable` | bool | Koordinaten in der letzten Antwort vorhanden |
+| Standort veraltet | `LocationIsOld` | bool | Standort von Apple als veraltet gemeldet oder aktuell nicht verfügbar |
+| Breitengrad / Längengrad | `Latitude`, `Longitude` | float | Koordinaten in Grad |
+| Adresse | `Address` | string | Aufgelöste Adresse aus der ausgewählten WoIst-Karte |
+| Genauigkeit | `Accuracy` | float | Standortgenauigkeit in Metern |
+| Standortzeit | `LocationTimestamp` | int | Zeitpunkt der Position, als Datum/Uhrzeit angezeigt; für Skripte Unix-Sekunden |
+| Letzter erfolgreicher Geräteabruf | `LastUpdate` | int | Zeitpunkt des Kontoabrufs, als Datum/Uhrzeit angezeigt; für Skripte Unix-Sekunden |
+| Stromsparmodus | `LowPowerMode` | int | Von Apple gemeldeter Zustand |
+| Ortung aktiviert / Ortung unterstützt | `LocationEnabled`, `LocationCapable` | int | Aktivierung beziehungsweise Unterstützung der Ortung |
+| Ortung läuft | `IsLocating` | int | Ortung läuft laut Apple |
+| Verloren-Modus aktiviert / unterstützt | `LostModeEnabled`, `LostModeCapable` | int | Zustand beziehungsweise Unterstützung des Verloren-Modus |
+| Aktivierungssperre | `ActivationLocked` | int | Von Apple gemeldete Aktivierungssperre |
+| Familienfreigabe | `FamilyShared` | int | Kennzeichnung der Familienfreigabe laut Apple |
+| Standort von Apple als ungenau gemeldet | `LocationIsInaccurate` | int | Apples zusätzliche Kennzeichnung zur vorhandenen Position |
+| Ortung abgeschlossen | `LocationFinished` | int | Ortung für den vorhandenen Standort laut Apple abgeschlossen |
+| Technische Modellkennung | `ModelIdentifier` | string | Modellkennung oder **Nicht verfügbar** |
 
 Die zehn zusätzlichen Statusvariablen verwenden drei klar unterscheidbare Werte:
 **-1 = Nicht verfügbar**, **0 = Nein**, **1 = Ja**. Für Skripte ausdrücklich
@@ -158,10 +251,9 @@ belegt ein fehlender Wert weder Unterstützung noch Aktivierung einer Funktion.
 die metrische `Accuracy` oder die Genauigkeitsregeln der Adressauflösung.
 
 In Symcon erscheinen die lesbaren Texte **Nicht verfügbar**, **Nein** und **Ja**.
-Die numerischen Werte bleiben für Skripte und Archivierung erhalten. Die
-Darstellung verwendet den zentralen VariablePresentationHelper mit nativen
-Zahlenintervallen; nach dessen automatischer Verteilung die
-Geräteinstanzkonfiguration erneut übernehmen.
+Die numerischen Werte bleiben für Skripte und Archivierung erhalten. Nicht jedes
+Gerät liefert alle Angaben; **Nicht verfügbar** ist deshalb nicht automatisch
+ein Konfigurationsfehler.
 
 Nach dem Update die Geräteinstanzkonfiguration übernehmen. Alte Kontocaches
 bleiben lesbar; die neuen Angaben zeigen zunächst **Nicht verfügbar**, bis die
@@ -176,7 +268,12 @@ Kontositzung, entferntem Gerät oder Wechsel der Gerätezuordnung unmittelbar
 auf **Nicht verfügbar** gesetzt. Fehlt nur die Position, bleiben die übrigen
 Geräteangaben nutzbar; nur die beiden zusätzlichen Standortstatus sind unbekannt.
 
-Bei fehlendem Standort bleiben die letzten gültigen Koordinaten und deren Zeit erhalten. `LocationAvailable` zeigt dann `false`. Bei fehlendem Akkustand bleibt ebenfalls der letzte Wert erhalten; `BatteryAvailable` zeigt dessen Nichtverfügbarkeit an. Bei Kontofehlern oder einem nicht mehr gelisteten Gerät werden Verfügbarkeitsanzeigen und Online auf `false` gesetzt; alte Werte und Zeitstempel bleiben zur Einordnung erhalten. Ein Wechsel der Geräte-ID oder Kontoverbindung setzt die bisherigen Gerätewerte zurück.
+Bei Kontofehlern oder einem nicht mehr gelisteten Gerät werden die
+Verfügbarkeitsanzeigen und **Online** auf **Nein** gesetzt. Die übrigen
+gespeicherten Werte und Zeitstempel bleiben zur Einordnung erhalten; die
+zusätzlichen Statusangaben verwenden dagegen **Nicht verfügbar** wie oben
+beschrieben. Die Regeln aus [Aktualität und fehlende Daten](#aktualität-und-fehlende-daten)
+gelten auch für eigene Skripte.
 
 `Address` bleibt leer, wenn kein eindeutiger aktivierter Adresslieferant oder
 kein passender Cachetreffer vorhanden ist. Die Adresse wird bei einem

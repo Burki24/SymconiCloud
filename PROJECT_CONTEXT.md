@@ -1,5 +1,42 @@
 # Entwicklungsstand
 
+## README-Prüfung und verständliche Geräteanleitungen (2026-10-26)
+
+Bibliotheks-README und alle sieben Modul-READMEs mit Implementierung,
+Formularen und Übersetzungskatalogen abgeglichen. Schwerpunkt waren Gerät und
+Gerätekonfigurator: vollständige Erstinstallation, Datenfluss statt Ordnerbezug,
+automatische Geräte-ID, gespeicherte gegenüber neu abgerufenen Daten sowie
+Unterschiede zwischen Online, Verfügbarkeit, GPS-Zeit und Abrufzeit.
+Die Gerätevariablen nennen jetzt auch ihre deutschen Anzeigenamen; die
+Statuscodes 102/201/202/203 und ihre nächsten Bedienungsschritte sind erklärt.
+Suchton, bestätigte Verloren-Modus-Aktionen und Adressquelle bleiben vollständig
+dokumentiert. Keine Änderung an öffentlichen Funktionen oder Laufzeitcode.
+
+Die Übersicht grenzt Konto, Konfigurator, Geräteinstanz, Karte, Anwesenheit,
+Fotos und Kontakte ab. Foto-/Kontaktfreigaben, optionale PHP-Erweiterungen,
+fehlende Fotoeinstellungen und die IPSView-Fotovariable sind ergänzt.
+Der globale Grenzpuffer der Anwesenheit wird korrekt nur auf übernehmende
+Zonen bezogen. WoIst verwendet die tatsächlichen deutschen Designerbezeichnungen
+und trennt übernommene Kartenparameter vom unabhängigen IPSView-Stil.
+Lizenzabschnitte stehen am Ende; Kontakte besitzt nun einen eigenen Lizenzlink.
+Veraltete Nominatim-Anker und anwenderfremde Helper-Freigabeanweisungen wurden
+ersetzt. Interne Architektur- und Prüfhinweise verbleiben im Projektkontext.
+
+MCP las die installierten Geräte-/Konfiguratorformulare ohne Änderung der
+Konfiguration und ohne Apple-Abruf. Der PNG-Screenshot
+`docs/images/device-find-phone-tile.png` stammt aus der echten nativen
+Suchton-Variablenkachel in der MCP-Vorschau. Ladeabschluss wurde vor DOM-Abfragen
+geprüft; aufgenommen wurde ausschließlich der unkritische Kachelbereich.
+Keine nachgebildete Oberfläche und kein behaupteter neuer Versand-/Tonversuch.
+Der Screenshot wurde visuell geprüft und enthält keine Gerätenamen,
+Gerätekennungen, Objekt-IDs, Serveradressen, Standortdaten oder Zugangstokens.
+
+Abschlussprüfung: Alle acht READMEs und 57 lokale Datei-, Bild- und
+Sprungmarkenverweise geprüft. Bibliotheksstruktur, Helper-Prüfsummen,
+JSON-/LF-Verträge und `git diff --check` bestanden. Den fertigen PNG-Screenshot
+visuell kontrolliert. Für diese reine Dokumentationsänderung wurden keine
+Laufzeitaktionen ausgelöst und keine neuen Funktionstests behauptet.
+
 ## Anwesenheit: benutzereigene Variablensichtbarkeit erhalten (2026-10-26)
 
 Die Testing-Vorprüfung fand zwei wiederholte Sichtbarkeitsschreibzugriffe:

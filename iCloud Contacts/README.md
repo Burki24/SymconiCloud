@@ -1,10 +1,14 @@
-# iCloud Contacts / iCloud Kontakte
+# iCloud Kontakte
 
 Lesendes Empfängerverzeichnis für Kontakte aus dem verbundenen iCloud-Konto.
 Die Instanz zeigt Namen, Firma sowie beschriftete Telefonnummern und
 E-Mail-Adressen. Kontakte werden nicht geändert; die Instanz versendet keine
 Nachrichten. Kontakte anderer Konten, etwa Google oder Exchange, werden nicht
 automatisch übernommen.
+
+Voraussetzung sind Symcon 9.0 und ein bereits angemeldetes
+[iCloud Konto](../iCloud%20Account/README.md) dieser Library. Eigene
+Geräteinstanzen sind nicht erforderlich.
 
 ## Einrichtung
 
@@ -153,3 +157,7 @@ bei einem Messenger; dafür werden separate Versanddienste benötigt.
 Das Modul verwendet Apples Web-Endpunkte. Änderungen bei Apple können den
 Zugriff beeinträchtigen. Telefonnummern und E-Mail-Adressen sind vertrauliche
 Daten; die Lesefunktionen nur vertrauenswürdigen Skripten bereitstellen.
+
+## Lizenz
+
+PolyForm Noncommercial License 1.0.0; siehe [LICENSE](../LICENSE).

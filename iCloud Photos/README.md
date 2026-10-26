@@ -1,4 +1,4 @@
-# iCloud Photos / iCloud Fotos
+# iCloud Fotos
 
 Ein Fotoalbum als **Widget in der Kachelvisualisierung** oder als optionale
 **IPSView-WebContent-Variable**. Einzelbild und Diashow verwenden denselben
@@ -26,6 +26,10 @@ Der Server wird normalerweise automatisch erkannt. Die optionale Server-URL
 enthält nur den HTTP(S)-Ursprung mit gegebenenfalls Port, beispielsweise
 `https://symcon.example:3777`, ohne weiteren Pfad. Der Client muss ihn erreichen
 können; bei einer HTTPS-Ansicht ist ebenfalls HTTPS erforderlich.
+
+Die Geräteinstanzen und die WoIst-Karte sind dafür nicht erforderlich. Für ein
+anderes Album kann eine weitere Foto-Instanz am selben Konto verwendet werden;
+das Ressourcenbudget des Kontos gilt für alle diese Instanzen gemeinsam.
 
 ## Bedienung und Designer
 
@@ -99,6 +103,24 @@ Fotozugriffs, Abmelden und Ändern der Kontozugangsdaten leeren den Fotocache.
 Apple bietet für diese Web-Anbindung keinen stabil zugesicherten API-Vertrag.
 Fehlende Freigaben, vorbereitende Indizierung oder abgelaufene Sitzungen werden
 als Hinweis angezeigt; es erfolgt keine automatische Passwort-Neuanmeldung.
+
+## Konfiguration und IPSView-Variable
+
+| Einstellung | Standard | Bedeutung |
+| --- | --- | --- |
+| Foto-Widget aktivieren (`Enabled`) | aus | Anzeige und regelmäßige Metadatenabfrage einschalten |
+| Album (`AlbumID`) | keine Auswahl | Persönliches Album, Favoriten oder Alle Fotos |
+| Aktualisierungsintervall (`RefreshInterval`) | 900 s | Metadaten neu abrufen; 300 bis 86400 s, unabhängig vom Bildwechselintervall |
+
+Das **Diashow-Intervall** wird dagegen im jeweiligen Designer eingestellt;
+es beträgt standardmäßig 30 Sekunden. Ein Bildwechsel ist keine neue
+Passwortanmeldung. Notwendige Bildvorschauen werden bedarfsgerecht geladen.
+
+Das Modul legt keine Variablen für jedes einzelne Foto an. Bei aktivierter
+IPSView-Ausgabe dient die String-Variable **Fotos für IPSView** (`IPSViewPhotos`)
+als Einbindung. Die native Kachel wird direkt aus der Foto-Instanz dargestellt.
+Bei Status **104** Aktivierung und Albumauswahl prüfen; bei **202** die Hinweise
+zum Fotozugriff im verbundenen Konto beachten.
 
 ## PHP-Funktionen
 

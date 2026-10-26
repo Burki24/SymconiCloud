@@ -17,6 +17,24 @@ Empfängerverzeichnis mit Telefonnummern und E-Mail-Adressen aus dem gemeinsamen
 Kontocache bereit. Die vorhandene Sitzung und der Kontoschutz werden verwendet.
 Ein Nachrichtenversand ist darin nicht enthalten.
 
+## Welches Modul brauche ich?
+
+| Modul | Aufgabe | Eigene Geräteinstanzen nötig? |
+| --- | --- | --- |
+| [iCloud Konto](iCloud%20Account/README.md) | Einmalige Anmeldung, gemeinsame Datenabfrage und Kontoschutz | Nein; Ausgangspunkt für alle anderen Module |
+| [iCloud Geräte Konfigurator](iCloud%20Device%20Configurator/README.md) | Geräteinstanzen und Anwesenheitsgruppen anlegen | Nein |
+| [iCloud Gerät](iCloud%20Device/README.md) | Akku-/Standortvariablen und Aktionen für genau ein Gerät | Dies ist die Geräteinstanz; je gewünschtem Gerät eine |
+| [iCloud WoIst Karte](iCloud%20WoIst/README.md) | Alle Gerätepositionen eines Kontos auf einer Karte, optional mit Adressen | Nein |
+| [iCloud Anwesenheit](iCloud%20Presence/README.md) | Mehrere ausgewählte Geräte, gemeinsame Zonen und Gesamtanwesenheit | Nein |
+| [iCloud Fotos](iCloud%20Photos/README.md) | Album oder Diashow in Kachel und IPSView | Nein |
+| [iCloud Kontakte](iCloud%20Contacts/README.md) | Empfängerverzeichnis und bestätigte Übernahme in Benachrichtigungsmodule | Nein |
+
+**Nur die benötigten Module anlegen.** Für eine Karte oder Anwesenheitsgruppe
+muss nicht für jedes Handy zusätzlich eine Geräteinstanz erstellt werden.
+Alle gewünschten Module werden mit demselben iCloud-Konto verbunden.
+Diese Datenverbindung ist unabhängig davon, in welchem Ordner die Instanzen
+im Symcon-Objektbaum liegen.
+
 ## Voraussetzungen
 
 - IP-Symcon 9.0 mit PHP 8.5 und den PHP-Erweiterungen `curl` und `bcmath`.
@@ -24,30 +42,39 @@ Ein Nachrichtenversand ist darin nicht enthalten.
 - Das reguläre Apple-Account-Passwort; anwendungsspezifische CalDAV-Passwörter funktionieren hier nicht.
 - HTTPS-Verbindung zu Apple. Unterstützt wird der globale iCloud-Dienst; der chinesische iCloud-Dienst und Hardware-Sicherheitsschlüssel/SMS als alternative 2FA-Verfahren sind derzeit nicht implementiert.
 
+Für die automatische Aufbereitung hochgeladener Gerätebilder der Anwesenheit
+wird zusätzlich PHP GD verwendet; vorhandene EXIF-Unterstützung berücksichtigt
+die Ausrichtung von JPEG-Bildern. Der Fototransport benötigt OpenSSL mit
+AES-256-GCM. Diese optionalen Funktionen und ihre Grenzen sind in den jeweiligen
+Modulanleitungen beschrieben.
+
 Die Anbindung verwendet Apples Web-Endpunkte. Apple stellt dafür keine zugesicherte öffentliche WoIst-Entwicklerschnittstelle bereit; Änderungen bei Apple können erneute Anmeldung oder Anpassungen erfordern. Die Library befindet sich in der Testphase.
 
 ## Installation und Einrichtung
 
 1. `https://github.com/Burki24/SymconiCloud` in der Modulverwaltung als Bibliothek hinzufügen. Die erste Entwicklung liegt auf `dev`.
-2. [iCloud Account](iCloud%20Account/README.md) als **iCloud Konto** anlegen, aktivieren, Zugangsdaten speichern und **Anmelden** wählen.
+2. **[iCloud Konto](iCloud%20Account/README.md)** anlegen, aktivieren, Zugangsdaten speichern und **Anmelden** wählen.
 3. Den Code vom vertrauenswürdigen Apple-Gerät unter **Zwei-Faktor-Authentifizierung** eingeben und bestätigen. Nach erfolgreicher Anmeldung wird die Geräteliste abgerufen.
-4. [iCloud Device Configurator](iCloud%20Device%20Configurator/README.md) anlegen und mit diesem Konto verbinden.
-5. Geräte über den Konfigurator als [iCloud Device](iCloud%20Device/README.md) anlegen.
+4. Bei Bedarf den **[iCloud Geräte Konfigurator](iCloud%20Device%20Configurator/README.md)** anlegen und mit diesem Konto verbinden.
+5. Für einzelne Akku-/Standortvariablen und Geräteaktionen die gewünschten **[iCloud-Geräteinstanzen](iCloud%20Device/README.md)** über den Konfigurator anlegen.
 6. Für die Kartenansicht **iCloud WoIst Karte** anlegen, mit dem Konto verbinden und in der Kachelvisualisierung hinzufügen. Einzelne Geräteinstanzen sind für die Karte nicht erforderlich.
 7. Für Anwesenheit im Konfigurator unter **Anwesenheitsgruppen** eine Gruppe
    anlegen, Geräte auswählen, gemeinsame Zonen definieren und genau eine Referenzzone markieren. Karten- und
    Geräteinstanzen sind dafür nicht erforderlich.
+8. Optional den [Fotozugriff](iCloud%20Photos/README.md) oder
+   [Kontaktzugriff](iCloud%20Contacts/README.md) im Konto aktivieren und die
+   gewünschte Foto- beziehungsweise Kontaktinstanz mit diesem Konto verbinden.
 
 Ein Konto kann mehrere Geräte bedienen; mehrere Apple-Konten verwenden getrennte Kontoinstanzen. Das Konto speichert Sitzung und Gerätecache über Symcon-Neustarts hinweg. Passwörter und Sitzungstokens gehören zu den vertraulichen Instanzdaten; Symcon-Konfiguration und Backups entsprechend schützen.
 
 ## Verhalten
 
-WoIst kann Gerätepositionen optional über einen eigenen Nominatim-Server in
-Adressen auflösen und diese in Geräteliste und Popup anzeigen. Verbundene
+WoIst kann Gerätepositionen optional über einen eigenen Nominatim-Server oder
+Geoapify in Adressen auflösen und diese in Geräteliste und Popup anzeigen. Verbundene
 iCloud-Geräteinstanzen können dieselbe Adresse als Variable **Adresse** aus
 dem vorhandenen Cache übernehmen. Die Funktion
 ist standardmäßig aus; Serveradresse, Sprache, Datenschutz und Cache sind in
-der [WoIst-Anleitung](iCloud%20WoIst/README.md#optionale-adressauflösung-mit-nominatim)
+der [WoIst-Anleitung](iCloud%20WoIst/README.md#optionale-adressauflösung)
 beschrieben.
 
 Das Konto aktualisiert die Geräteliste nach erfolgreicher Anmeldung standardmäßig alle 300 Sekunden. Das Öffnen von Formularen oder das Lesen von Gerätevariablen startet keine Apple-Anmeldung. Nach abgelaufener Sitzung meldet das Konto den erforderlichen Anmeldeschritt; es führt keine automatischen Passwort-Anmeldeschleifen aus.

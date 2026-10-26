@@ -1,10 +1,10 @@
-# iCloud Presence / iCloud Anwesenheit
+# iCloud Anwesenheit
 
 Eine Instanz wertet **mehrere Geräte eines iCloud-Kontos** anhand gemeinsamer
 kreisförmiger Zonen aus. Jedes Gerät besitzt eine eigene Anwesenheit,
 Entfernung und Aufenthaltsdauer. Darüber steht die **Gesamtanwesenheit** der
-Gruppe. Voraussetzung sind Symcon 9, ein angemeldetes iCloud-Konto dieser
-Library und der zentral verteilte GeofenceHelper mit `AggregateGeofencePresence`.
+Gruppe. Voraussetzung sind Symcon 9.0 und ein angemeldetes iCloud-Konto dieser
+Library. Alle benötigten Bibliotheksbestandteile sind im Modulupdate enthalten.
 Eine Geräteinstanz oder WoIst-Karte ist nicht erforderlich.
 
 ## Einrichtung
@@ -129,7 +129,7 @@ Maximales Standortalter und maximale plausible Geschwindigkeit bleiben global.
 | `Zones` | `[]` | Gemeinsame Zonenliste mit genau einer Referenzzone |
 | `MaxLocationAge` | 900 s | Maximal zulässiges Standortalter, 30 bis 86.400 s |
 | `MaxAccuracy` | 100 m | Maximal zulässiger positiver Genauigkeitsradius, 1 bis 10.000 m |
-| `Hysteresis` | 25 m | Grenzpuffer, 0 bis 10.000 m; kleiner als jeder Zonenradius |
+| `Hysteresis` | 25 m | Globaler Grenzpuffer, 0 bis 10.000 m; kleiner als der Radius jeder Zone, die ihn übernimmt |
 | `ConfirmationTime` | 30 s | Wechsel mit einer weiteren späteren Position bestätigen; 0 deaktiviert die Verzögerung |
 | `MaxSpeed` | 300 km/h | Unplausible Sprünge nach Abzug beider Genauigkeitsradien verwerfen; 0 deaktiviert den Filter, maximal 2.000 km/h |
 
@@ -192,18 +192,9 @@ Sichtbarkeit bei weiteren Updates erhalten. Bereits bestehende Ausblendungen
 werden beim Modulupdate nicht pauschal aufgehoben. Eine bewusst
 leere Liste wird nicht aus der alten Geräteauswahl erneut befüllt.
 
-Die Zonenerweiterung benötigt das regulär verteilte GeofenceHelper-Update mit
-`ResolveGeofenceZoneSettings`. Zuerst den zentralen Helper freigeben und das
-automatisch erzeugte Paket integrieren, anschließend das Modul aktualisieren.
-Vorhandene Geräteauswahl, Zonengeometrie und Variablen-IDs werden nicht geändert.
-
-Vor dem fachlichen Modulupdate das regulär verteilte GeofenceHelper-Paket mit
-`AggregateGeofencePresence` integrieren. Das bestehende Helper-Abonnement reicht
-aus; es gibt keine neue Subscription oder zusätzliche Helper-Ressourcen.
-
-## Lizenz
-
-PolyForm Noncommercial License 1.0.0; siehe [LICENSE](../LICENSE).
+Ein vollständiges SymconiCloud-Modulupdate enthält auch die benötigten Helper
+und Widget-Ressourcen. Anwender müssen keine Helper einzeln herunterladen oder
+Dateien in die Library kopieren.
 
 ## Kompakte Widgets für Kachel und IPSView
 
@@ -325,10 +316,6 @@ widerruft den Zugriff; die Variable bleibt bis zur ausdrücklichen Löschung erh
 Es entstehen keine zusätzlichen Apple-Anfragen. Bilder, Designer und Widgets ändern
 weder die Zonen noch GPS-Bestätigungen, Aufenthaltsbeginn oder bestehende Variablen-IDs.
 
-### Installation und Zuständigkeit
+## Lizenz
 
-Die Anwesenheitswidgets und ihre Ressourcen gehören direkt zur Library
-SymconiCloud. Sie verwenden die vorhandenen zentralen Theme-, Stil-, Layout-,
-Interaktions- und HTTP-Helper, benötigen jedoch kein zusätzliches Helper-Abonnement
-und keine eigene zentrale Verteilung. Die Widget-Dateien werden mit dem normalen
-SymconiCloud-Modulupdate installiert. Bestehende Variablen-IDs bleiben erhalten.
+PolyForm Noncommercial License 1.0.0; siehe [LICENSE](../LICENSE).
