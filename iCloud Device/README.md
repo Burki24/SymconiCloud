@@ -50,10 +50,10 @@ Name, Modell, Online-Status, verfügbaren Akkustand sowie **Letzter bekannter
 Standort** und **Ton abspielen** gemeinsam. Die einzelne Aktionsvariable
 **Handy suchen** bleibt als einfache Tasterkachel verwendbar.
 
-![Gerätekachel mit letztem bekannten Standort und Suchton-Taster](../docs/images/device-location-tile.png)
+![Gerätekachel mit letztem bekannten Standort und Suchton-Taster](../docs/images/device-location-tile-redacted.png)
 
-*Beispiel aus der lokalen Browserprüfung mit synthetischen Geräte- und
-Adressdaten. Farben und Kachelgröße folgen der jeweiligen Visualisierung.*
+*Gerätekachel mit Standortzeit, Genauigkeit und Suchton-Rückmeldung.
+Die Adresszeile ist für die Dokumentation unkenntlich gemacht.*
 
 Wenn eine [WoIst-Adressquelle](#adresse-aus-woist) eine Adresse liefert, wird
 sie angezeigt; sonst erscheinen Breiten- und Längengrad. Standortzeit und

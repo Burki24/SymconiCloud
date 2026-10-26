@@ -2,6 +2,12 @@
 
 WoIst zeigt die Positionen der Geräte eines iCloud-Kontos gemeinsam auf einer interaktiven Karte. Einzelne iCloud-Geräteinstanzen sind dafür nicht erforderlich. Voraussetzung sind Symcon 9.0 und ein angemeldetes iCloud-Konto dieser Library.
 
+![WoIst-Kachel mit Karte, Geräteliste und Aktualisierungsaktionen](../docs/images/woist-tile-redacted.png)
+
+*Beispiel einer eingerichteten WoIst-Kachel. Die Karte bleibt unverändert
+erkennbar; Adresszeilen sind unkenntlich gemacht und die privaten
+Gerätemarkierungen für die Dokumentation entfernt.*
+
 ## Einrichtung
 
 1. **iCloud WoIst Karte** anlegen und mit dem gewünschten iCloud-Konto verbinden.
@@ -31,6 +37,75 @@ OSM-Daten. Zugangsdaten, Query und Fragment gehören nicht in dieses Feld.
 Der öffentliche Dienst `nominatim.openstreetmap.org` wird nicht unterstützt.
 Die Adresssprache ist standardmäßig `de`, alternativ beispielsweise `en` oder
 `de-DE`.
+
+Nominatim ist ein zusätzlicher Dienst mit einer eigenen OpenStreetMap-Datenbank.
+Er wird nicht durch das Anlegen einer WoIst-Instanz installiert. Die Anfragen
+kommen vom **Symcon-Server**, nicht von dem Rechner, auf dem die Konsole oder
+IPSView geöffnet ist. Nominatim liefert die Adresse; die sichtbare Karte wird
+weiterhin von OpenFreeMap bereitgestellt.
+
+#### Praxisbeispiel: Raspberry Pi mit laufendem Symcon
+
+Die Einrichtung wurde am **22.10.2026** auf einem **Raspberry Pi 5 mit 4 GiB RAM
+und Debian 12 Bookworm in 64 Bit** erfolgreich durchgeführt. Symcon lief auf
+demselben Pi weiter. Für den kleinen regionalen Datenbestand wurde kein Docker
+verwendet:
+
+| Bestandteil | Einrichtung im Beispiel |
+| --- | --- |
+| Gebiet | Geofabrik Brandenburg **einschließlich Berlin** |
+| Nominatim | Version 5.3.3, eigene Python-Umgebung unter `/srv/nominatim/venv` |
+| Datenbank | Separater PostgreSQL-15-Cluster `nominatim`, Port 5433, nur lokaler Unix-Socket |
+| HTTP-Dienst | Gunicorn mit einem Worker auf Port 8088 |
+| Import | Adressdaten, nur Koordinaten → Adresse, ein Importthread; keine laufenden OSM-Updates |
+| Datenträger | Im Praxislauf microSD; vor Beginn rund 27 GiB frei |
+| Ergebnis | Rund 6 Stunden 19 Minuten Importzeit; fertige Datenbank rund 1,5 GiB |
+
+Import, Datenbank und HTTP-Dienst teilen sich eine eigene systemd-Slice:
+höchstens **ein CPU-Kern**, **2600 MiB RAM** und **512 MiB zusätzlicher Swap**,
+dazu höchstens **8 MB/s Lesen** und **2 MB/s Schreiben** auf dem betroffenen
+Datenträger. Ein Freiplatzschutz verlangt vor dem Import mindestens 20 GiB und
+bricht ihn unter 8 GiB freiem Platz ab. Die Grenzen reduzieren die Belastung
+von Symcon; sie garantieren auf einem gemeinsam genutzten Datenträger keine
+unveränderten Reaktionszeiten. Zeit und Speicherbedarf sind Messwerte dieses
+Beispiels, keine allgemeinen Mindestwerte oder Zusagen für andere Regionen.
+
+Die [vollständige Raspberry-Pi-Anleitung ohne Docker](../docs/nominatim-raspberry-pi.md)
+beschreibt Pakete, Datenbank, Ressourcenlimits, Import, HTTP-Dienst und
+LAN-Anbindung mit den zugehörigen Befehlen. Sie ist für eine **Neuinstallation**
+gedacht; einen bereits funktionierenden Server nicht erneut importieren.
+
+#### Den laufenden Server mit WoIst verbinden
+
+1. **Adressauflösung** öffnen und **Gerätepositionen in Adressen auflösen** aktivieren.
+2. Als **Adressanbieter** **Eigener Nominatim-Server** wählen.
+3. Die **Basis-URL des eigenen Nominatim-Servers** passend zum Standort des Symcon-Servers
+   eintragen:
+
+   | Wo läuft die anfragende Symcon-Instanz? | Basis-URL |
+   | --- | --- |
+   | Auf demselben Pi wie Nominatim | `http://127.0.0.1:8088` |
+   | Auf einem anderen Rechner, etwa dem Testsystem | `http://<Pi-LAN-IP>:8088` |
+
+   `<Pi-LAN-IP>` durch die tatsächliche LAN-Adresse des Pi ersetzen. Für den
+   zweiten Fall muss der HTTP-Dienst zusätzlich auf dieser Adresse lauschen.
+   Die Anleitung erklärt die zusätzliche Bindung; die PostgreSQL-Datenbank
+   bleibt auch dann ausschließlich lokal erreichbar.
+4. **Adresssprache** auf `de` belassen oder anpassen und **Übernehmen** wählen.
+   Weder `/reverse` noch Koordinaten oder weitere Parameter an die URL anhängen.
+5. Die bereits vorhandenen Gerätepositionen werden im Hintergrund aufgelöst.
+   Verfügbare Adressen erscheinen in Geräteliste und Popup; verbundene
+   Geräteinstanzen können sie über die Variable **Adresse** verwenden.
+
+`127.0.0.1` bezeichnet immer den Rechner, der die Anfrage ausführt. Auf einem
+getrennten Testsystem würde diese URL dessen eigenen Rechner ansprechen und
+nicht den Pi. Mehrere Symcon-Systeme können denselben Nominatim-Dienst nutzen;
+ein zweiter Datenimport ist dafür nicht erforderlich.
+
+Das sparsame Pi-Beispiel verwendet bewusst `--no-updates`: Es aktualisiert
+seinen OSM-Datenbestand nicht automatisch. Neue Apple-Gerätepositionen werden
+trotzdem weiterhin aufgelöst. Regelmäßige OSM-Updates oder eine Gebietserweiterung
+benötigen eine gesondert geplante Einrichtung; Details stehen in der Anleitung.
 
 ### Geoapify ohne eigenen Server
 

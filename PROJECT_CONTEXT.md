@@ -1,5 +1,81 @@
 # Entwicklungsstand
 
+## Nominatim-Pi-Installation als Benutzeranleitung (2026-10-26)
+
+Den Abschnitt `Eigener Nominatim-Server` der WoIst-README um das am 22.10.
+erfolgreich eingerichtete Pi-Beispiel und die konkreten deutschen Formularfelder
+ergänzt. Der bestehende öffentliche Abschnittsanker bleibt erhalten.
+Die ausführliche Schrittfolge steht in `docs/nominatim-raspberry-pi.md`:
+Debian 12/aarch64, Nominatim 5.3.3, PostgreSQL 15/PostGIS, PyICU aus Debian,
+Gunicorn 25.1.0, gemeinsame Slice-Grenzen, separater Cluster/Peer-Rollen,
+Geofabrik Brandenburg mit Berlin, Einmalimport, Freiplatzschutz und HTTP/LAN.
+Die Datenträgerbezeichnung ist ausdrücklich nur ein anzupassendes Beispiel;
+private Endpunkte bleiben Platzhalter. Kein Eingriff in den laufenden Pi.
+
+Die Dateibeispiele wurden aus dem vorhandenen Installationsnachweis als
+zusammenhängende Neuinstallationsanleitung rekonstruiert; es sind keine frisch
+vom Pi exportierten Dienstdateien. Abgleich mit Nominatim 5.3.3 Installation,
+Import, Settings und Deployment, Geofabrik, Raspberry-Pi-Bootdokumentation und
+systemd-252-Ressourcenreferenz. PyPI-Metadaten bestätigen Python >=3.9 für
+Nominatim 5.3.3 und >=3.10 für Gunicorn 25.1.0; dessen Pin verhindert einen
+versehentlichen Wechsel auf einen neueren Python-Mindeststand. Der konkrete
+Falcon-Einstieg `nominatim_api.server.falcon.server:run_wsgi()` wurde zusätzlich
+im veröffentlichten 5.3.3-Paket geprüft.
+
+Wesentliche Grenzen sind erklärt: mögliche Bootunterbrechung nur bei fehlendem
+Speichercontroller, bestehende Cluster unangetastet lassen, keine Garantie
+gleichbleibender Symcon-Latenz, Mindestfreiplatz und getrennte Dateisysteme,
+keine erneuten Initialimporte auf bestehender Datenbank und keine laufenden
+OSM-Updates bei `--no-updates`. Der historische Erfolgsnachweis bleibt von
+einer noch nicht ausgeführten erneuten Installation dieser Anleitung getrennt.
+
+Prüfung der Dokumentation: 17 Bash-Blöcke und der eingebettete Guard bestehen
+`bash -n`; sechs systemd-Beispiele sind als INI gelesen und auf Benutzer,
+Slice, lokale Datenbank, HTTP-Bindung und Import-Abhängigkeiten abgeglichen.
+77 lokale README-/Anleitungslinks einschließlich Sprungmarken sind gültig.
+Struktur-/Helperhash-/JSON-/LF-Prüfung und `git diff --check` bestanden.
+Keine Pakete installiert, keine Dienste gestartet und keine Linux-/Pi-Befehle
+aus den Beispielen ausgeführt; kein neuer Praxisnachweis behauptet.
+
+## Praxisbilder in den Modul-READMEs (2026-10-26)
+
+Die fünf vom Benutzer bereitgestellten Screenshots sind in den Anleitungen
+für WoIst, Gerät, Anwesenheit (Widget und WidgetCompact) sowie Fotos eingebunden.
+Das normale Anwesenheitswidget verwendet auf Benutzerwunsch den nachgereichten
+Screenshot mit größerer Statusschrift und zwei anwesenden sowie zwei abwesenden
+Geräten (2541 × 266 Pixel). Die Datei wurde unverändert übernommen; der
+README-Bildpfad bleibt bestehen. Es enthält nur sRGB-, Gamma- und DPI-Metadaten,
+keine personenbezogenen Textmetadaten. WidgetCompact ist unverändert.
+Der Benutzer erlaubt ausdrücklich die sichtbaren Namen und die klassische,
+pixelgenaue Bildbearbeitung statt KI-Nachzeichnung. Namen, Profilbilder,
+Bedienelemente und Statusangaben bleiben unverändert. Die KI-Vorentwürfe wurden
+wegen veränderter Abmessungen und zusätzlicher Ränder verworfen und sind nicht
+im Repository enthalten.
+
+Die endgültigen PNGs unter `docs/images/*-redacted.png` haben dieselben
+Abmessungen wie die Originale. In WoIst sind alle sichtbaren Adresszeilen,
+einschließlich der angeschnittenen letzten Zeile, unkenntlich gemacht und die
+privaten Gerätemarkierungen entfernt. Auf Benutzerwunsch bleibt der eigentliche
+Kartenhintergrund scharf und unverändert; eine zunächst vollflächige
+Kartenunschärfe wurde ersetzt. Zoomtasten und vollständige Quellenangaben
+bleiben erhalten. Bei der Geräte-Kachel ist nur die Adresse
+betroffen; beim Foto-Widget der private Dateiname. Die beiden Anwesenheitsbilder
+enthalten keine Adresszeilen und bleiben pixelgleich mit der Vorlage.
+
+Klassische lokale Verarbeitung: Schriftinformationen der Schutzzeilen durch
+Verkleinerung entfernt, anschließend weichgezeichnet; die überlagerten
+Gerätemarker durch einen unkritischen Kartenausschnitt des Hintergrunds ersetzt.
+Bei den neu codierten Bildern wurden keine PNG-Metadaten übernommen. Originaldateien
+bleiben außerhalb des Repositorys unverändert. Pixelvergleich bestätigt für
+alle fünf Bilder unveränderte Inhalte außerhalb der festgelegten Schutzbereiche.
+Alle Endbilder wurden visuell geprüft; die READMEs kennzeichnen unkenntlich
+gemachte Inhalte. Keine Änderung an Modulcode, Helpern oder Versionsmetadaten.
+
+Abschlussprüfung: alle fünf PNGs gültig; Originalmaße und Pixelvergleich erneut
+am endgültigen Stand bestätigt. Alle 54 lokalen README-Datei-/Bildverweise,
+Bibliotheksstruktur, Helper-Prüfsummen, JSON-/LF-Verträge und `git diff --check`
+bestanden. Keine erneuten Funktionstests für diese reine Dokumentationsänderung.
+
 ## Geräte-Kachel mit letztem bekannten Standort (2026-10-26)
 
 Die Geräteinstanz bietet zusätzlich zur unveränderten Suchton-Variablenkachel
@@ -1131,7 +1207,7 @@ Der vorhandene `ReverseGeocodingHelper` mit `PersistentJsonCacheHelper` bleibt
 die zentrale Implementierung für HTTP und Cache. `WoIstGeocoding` steuert
 lediglich Opt-in, Hintergrundtimer und Veröffentlichung der Ergebnisse. Der
 Cache- und Aktualisierungsvertrag steht in
-[`iCloud WoIst/README.md`](iCloud%20WoIst/README.md#optionale-adressauflösung-mit-nominatim).
+[`iCloud WoIst/README.md`](iCloud%20WoIst/README.md#eigener-nominatim-server).
 Nominatim löst Adressen auf; die Kartendarstellung bleibt bei OpenFreeMap.
 
 ### Zusätzliche LAN-Bindung und Testsystem (2026-10-22)

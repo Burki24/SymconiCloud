@@ -32,6 +32,16 @@
 
 ## Fixes
 
+- Die WoIst-Anleitung erklärt den eigenen Nominatim-Server anhand der
+  Raspberry-Pi-Installation ohne Docker. Eine verlinkte Schrittfolge enthält
+  den getrennten Datenbank-Cluster, Ressourcenlimits, regionalen Import,
+  Freiplatzschutz sowie lokale und LAN-Anbindung an Symcon.
+
+- WoIst, Gerät, Anwesenheit mit Widget/WidgetCompact und Fotos sind in den
+  Benutzeranleitungen mit Praxisbildern illustriert. Adressen und der private
+  Fotodateiname sind unkenntlich gemacht. Private Gerätemarkierungen sind
+  entfernt; der Kartenhintergrund bleibt erkennbar.
+
 - Die Benutzeranleitungen erklären Einrichtung, Kontoverbindung und Datenalter
   verständlicher. Gerätevariablen sind mit deutschen Anzeigenamen beschrieben;
   Statushinweise, Modulübersicht, optionale Voraussetzungen und fehlende

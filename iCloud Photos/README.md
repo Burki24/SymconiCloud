@@ -4,6 +4,11 @@ Ein Fotoalbum als **Widget in der Kachelvisualisierung** oder als optionale
 **IPSView-WebContent-Variable**. Einzelbild und Diashow verwenden denselben
 lesenden Kontozugang. Es werden keine Bilder hochgeladen, verändert oder gelöscht.
 
+![iCloud-Fotowidget mit Bildanzeige, Aufnahmedatum und Navigation](../docs/images/photos-tile-redacted.png)
+
+*Beispiel der Fotoanzeige mit Vor-/Zurück-Schaltflächen. Der private Dateiname
+ist für die Dokumentation unkenntlich gemacht.*
+
 ## Voraussetzungen und Einrichtung
 
 Symcon 9.0, PHP 8.5 mit `curl` und `bcmath` sowie ein bereits angemeldetes

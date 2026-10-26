@@ -203,6 +203,11 @@ Einzelgeräten. Sie enthält keine Navigation und keine vollständige Dashboards
 Die Liste passt ihre Spalten an die verfügbare Breite an und scrollt innerhalb der
 Kachel. Der native Kacheltitel wird über den zentralen Layoutvertrag berücksichtigt.
 
+![Anwesenheitswidget mit Gesamtanwesenheit, Gerätebildern und Standortdetails](../docs/images/presence-widget-redacted.png)
+
+*Widget mit Gesamtanwesenheit, Zone, Entfernung und Aufenthaltsdauer je Gerät.
+Das Beispiel zeigt zwei anwesende und zwei abwesende Geräte.*
+
 Unter **Geräte** das gewünschte Gerät bearbeiten und die **Bildquelle** wählen:
 
 - **Symcon-Medium**: Unter **Bild (optional)** ein vorhandenes Bildmedium auswählen.
@@ -268,6 +273,10 @@ eine zusätzliche Variante: Je Gerät erscheinen nur Bild beziehungsweise Initia
 Name und Zone. Entfernung, Aufenthaltsdauer und Diagnosegrund entfallen. Bei
 unzuverlässigen Daten steht weiterhin **Unbekannt**. Die Gesamtanwesenheit erscheint
 als schmale Kopfzeile ohne zusätzliche Zählerzeile.
+
+![WidgetCompact mit Gesamtanwesenheit, Gerätebildern, Namen und Zonen](../docs/images/presence-widget-compact-redacted.png)
+
+*WidgetCompact zeigt Bild, Name und Zone ohne die zusätzlichen Detailangaben.*
 
 - Native Kachel: Unter **Kacheldesigner → Layout und Inhalt → Widget-Variante**
   zwischen **Widget** und **WidgetCompact** wählen und die Konfiguration
