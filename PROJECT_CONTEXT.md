@@ -1,5 +1,47 @@
 # Entwicklungsstand
 
+## Beta: automatische Versionierung und Dokumentationslinks (2026-10-26)
+
+Der Benutzer hat Beobachtungsbetrieb und Installations-/Updateprüfung als
+erledigt bestätigt. Store-Eintrag und Veröffentlichung bleiben ausdrücklich
+dem nächsten Arbeitsschritt vorbehalten.
+
+Vor der Umsetzung wurden die vorhandenen Helper, zentralen CI-Verträge und
+Versionsworkflows von OpenHomeAlarm/SymconECharts geprüft. Deren Vertrag wird
+übernommen: zweite Versionszahl pro Quellcommit erhöhen, Metadaten-Commits
+ausnehmen, Build aus den ersten sieben SHA-Hexstellen, Datum aus dem
+Quellcommit. Die wiederverwendbare Berechnung liegt neu in
+Symcon_ModuleCI/library-metadata; SymconiCloud enthält nur Workflow und
+Einbindungsvertrag. Runtime-Helper, öffentliche Modulverträge und
+Instanzkonfigurationen bleiben unverändert.
+
+Der Workflow prüft vor dem Schreiben die vollständige Modultestsuite und
+nach der Berechnung die Struktur. Nur library.json wird mit der bestehenden
+GitHub App zurückgeschrieben; Metadaten-Commits starten Folgeprüfungen ohne
+Versionierungsschleife. Wiederholungen sind idempotent, überholte Quellen
+werden übersprungen, Force-Push ist ausgeschlossen. Modul-URLs zeigen für
+alle sieben Module auf die existierende jeweilige README unter dev.
+
+Die neue zentrale Action muss vor der Consumer-Einbindung auf ModuleCI/dev
+verfügbar sein. Sie wird zunächst mit @dev erprobt und nach dem nächsten
+tatsächlichen ModuleCI-Release auf dessen Tag umgestellt. Bestehende
+Tests-/Style-Actions bleiben auf v1.0.0. Einrichtung und lokaler Pull des
+Bot-Commits sind in docs/automatic-versioning.md beschrieben. Es wurden
+keine Commits, Pushs, Releases oder Live-Updates ausgeführt.
+
+Nachweise: Der Consumer-Vertrag schlug zunächst wegen des fehlenden Workflows
+fehl und besteht nach der Einbindung. Die 12 zentralen Python-Regressionen
+decken unter anderem Push-Batches, Metadaten-Schleifen, Wiederholungen auch
+beim Wurzelcommit, überholte Quellen, ungültige Eingaben und Dry-run ab.
+Eine isolierte Kopie der echten Git-Historie bestätigt Versionsschritt,
+Build/Datum, unveränderte Identitätsfelder, idempotente Wiederholung und die
+ausschließliche Änderung von library.json ohne Commit. Die originale
+library.json wurde dabei nicht verändert. Vollständige Offline-Suite mit
+GD/EXIF, Struktur-/Manifestprüfung, JSON-Prüfung, PHP-CS-Fixer im Prüfmodus
+beider Repositories und YAML-Syntaxprüfung bestehen. Der GitHub-Lauf nach
+Push und die Verfügbarkeit der App-Variable/des Secrets bleiben remote zu
+prüfen; die lokale GitHub-CLI ist nicht angemeldet.
+
 ## Apple-Sicherheitsantworten und getrennte Sicherheitshistorie (2026-10-26)
 
 Nach erneuter Kontosperre wurden Code und vorhandene Diagnosen beider Systeme

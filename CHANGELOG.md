@@ -1,5 +1,12 @@
 # Unveröffentlicht
 
+## Release-Vorbereitung
+
+- Automatische Versionierung auf `dev` über den zentralen ModuleCI-Baustein:
+  Versionsnummer, Build und Datum werden nach erfolgreichen Tests erzeugt.
+  Die Dokumentationsschaltflächen aller sieben Module verweisen auf die
+  aktuellen Anleitungen unter `dev`.
+
 ## Neue Funktionen
 
 - **iCloud Konto** bewahrt sicherheitsrelevante Ereignisse getrennt von normalen

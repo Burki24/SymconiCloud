@@ -81,6 +81,19 @@ Das Konto aktualisiert die Geräteliste nach erfolgreicher Anmeldung standardmä
 
 Die Abfrage fordert keine aktive Neuortung an. Apple kann deshalb ältere oder keine Standortdaten liefern. Gerätevariablen zeigen die Datenverfügbarkeit und den Standortzeitpunkt gesondert an. Die Geräteinstanz kann über **Handy suchen (Ton abspielen)** ausdrücklich einen Suchton-Auftrag senden. Im Formular lässt sich außerdem der [Verloren-Modus nach Bestätigung aktivieren und deaktivieren](iCloud%20Device/README.md#verloren-modus). Datenupdates lösen diese Aktionen nicht aus. Ein Löschen des Geräts wird nicht angeboten.
 
+## Entwicklung und automatische Versionierung
+
+Auf `dev` erzeugt die CI nach erfolgreichen Tests die Versionsnummer sowie
+Build und Datum aus den gepushten Quellcommits. Der anschließende Bot-Commit
+ändert ausschließlich `library.json` und löst erneut Tests und Stilprüfung aus.
+Die Versionsfelder werden nicht von Hand gepflegt. **Vor weiteren lokalen
+Änderungen den Bot-Commit pullen**, damit der Arbeitsstand aktuell bleibt.
+Der Ablauf und die Einrichtung sind in
+[Automatische Versionierung](docs/automatic-versioning.md) beschrieben.
+
+Die Dokumentationsschaltflächen aller sieben Module führen während der
+Beta-Vorbereitung auf die aktuellen Anleitungen im Entwicklungszweig `dev`.
+
 [Änderungen](CHANGELOG.md)
 
 ## Lizenz
