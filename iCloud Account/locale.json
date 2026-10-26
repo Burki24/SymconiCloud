@@ -1,6 +1,21 @@
 {
     "translations": {
         "de": {
+            "Allow new sign-ins and verification on this system": "Neue Anmeldungen und Bestätigungen auf diesem System erlauben",
+            "New authentication disabled on this system": "Neue Anmeldung auf diesem System ausgeschaltet",
+            "For a secondary or test system, disable new authentication after signing in. The existing session and token renewal remain usable; password sign-ins, code checks and code requests are blocked. Limits and holds are local to this instance and are not shared with other servers. Pause Apple requests on unused systems.": "Auf einem Zweit- oder Testsystem nach der Anmeldung neue Anmeldungen ausschalten. Bestehende Sitzung und Token-Erneuerung bleiben nutzbar; Passwortanmeldungen, Code-Prüfungen und Code-Anforderungen sind gesperrt. Limits und Schutzsperren gelten nur für diese Instanz und werden nicht mit anderen Servern geteilt. Auf ungenutzten Systemen die Apple-Abfragen pausieren.",
+            "Account security (last 200 events, 30 days)": "Kontosicherheit (letzte 200 Ereignisse, 30 Tage)",
+            "Sign-ins, account reviews and failures are retained separately from routine reads. Only known Apple error codes are stored; no response messages or account data.": "Anmeldungen, Kontoprüfungen und Fehler werden getrennt von regulären Abfragen aufbewahrt. Gespeichert werden nur bekannte Apple-Fehlercodes, keine Antworttexte oder Kontodaten.",
+            "Clear security history": "Sicherheitsverlauf löschen",
+            "Delete security evidence? Holds, cooldowns and attempt limits remain unchanged.": "Sicherheitsnachweise löschen? Schutzsperren, Wartezeiten und Versuchslimits bleiben unverändert.",
+            "appleCode": "Apple-Fehlercode",
+            "Successful": "Erfolgreich",
+            "Existing session reused": "Bestehende Sitzung weiterverwendet",
+            "Apple rejected the sign-in credentials. This does not prove that the password is wrong. Check or unlock the account in a browser before trying again.": "Apple hat die Anmeldung mit den Zugangsdaten abgelehnt. Das beweist nicht, dass das Passwort falsch ist. Vor einem weiteren Versuch das Konto im Browser prüfen oder entsperren.",
+            "Apple returned a lock response. Requests are stopped. Check or unlock the account with Apple; a code and the existing password may suffice. A password change is not necessarily required.": "Apple hat eine Sperrantwort geliefert. Die Abfragen sind gestoppt. Das Konto bei Apple prüfen oder entsperren; dafür können ein Code und das bestehende Passwort genügen. Eine Passwortänderung ist nicht zwingend erforderlich.",
+            "Apple requires an additional account security check. Open iCloud in a browser and complete the requested steps before resuming.": "Apple verlangt eine zusätzliche Kontosicherheitsprüfung. iCloud im Browser öffnen und die angeforderten Schritte vor dem Fortsetzen abschließen.",
+            "Apple requires acceptance of updated iCloud terms. Review them in a browser before resuming. The module does not accept terms automatically.": "Apple verlangt die Zustimmung zu aktualisierten iCloud-Bedingungen. Diese vor dem Fortsetzen im Browser prüfen. Das Modul stimmt Bedingungen nicht automatisch zu.",
+            "New sign-ins and verification requests are disabled on this system. Existing sessions remain usable. Enable authentication only on the system where you intend to sign in.": "Neue Anmeldungen und Bestätigungsanfragen sind auf diesem System ausgeschaltet. Bestehende Sitzungen bleiben nutzbar. Die Anmeldung nur auf dem System erlauben, auf dem sie durchgeführt werden soll.",
             "Enable account": "Konto aktivieren",
             "Apple account": "Apple-Account",
             "Apple account password": "Apple-Account-Passwort",

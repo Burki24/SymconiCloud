@@ -255,7 +255,7 @@ trait PhotosAccount
             if (in_array($reason, ['photosAccess', 'photosUnavailable', 'photosIndexing', 'photosDisabled', 'authentication', 'credentials'], true)) {
                 $this->WriteAttributeBoolean('PhotoAccess', false);
             }
-            $message = in_array($reason, ['requestsPaused', 'accountBlocked', 'accountLocked', 'rateLimited', 'retryBackoff', 'credentials', 'authentication', 'accessDenied', 'protectionState'], true) ? $this->errorMessage($reason) : $this->Translate(match ($reason) {
+            $message = in_array($reason, ['requestsPaused', 'accountBlocked', 'accountLocked', 'accountReviewRequired', 'termsRequired', 'rateLimited', 'retryBackoff', 'credentials', 'authentication', 'accessDenied', 'protectionState'], true) ? $this->errorMessage($reason) : $this->Translate(match ($reason) {
                 'photosDisabled'               => 'Enable Photos and sign in to the account first.',
                 'photosUnavailable'            => 'The Photos service is not available for this account.',
                 'photosIndexing'               => 'The iCloud photo library is still being prepared.',

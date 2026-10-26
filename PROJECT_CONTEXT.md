@@ -1,5 +1,82 @@
 # Entwicklungsstand
 
+## Apple-Sicherheitsantworten und getrennte Sicherheitshistorie (2026-10-26)
+
+Nach erneuter Kontosperre wurden Code und vorhandene Diagnosen beider Systeme
+lesend untersucht. Die erhaltene Folge zeigt eine abgewiesene Geräteabfrage,
+genau eine abgewiesene Token-Erneuerung und danach die persistente lokale
+Schutzsperre. Eine spätere Anmeldung wurde abgewiesen, eine weitere gelang.
+Der Benutzer bestätigte die Entsperrung mit PIN und bestehendem Passwort, ohne
+Passwortänderung. Eine automatische Passwort-Anmeldeschleife wurde nicht
+nachgewiesen; die Ursache der Apple-Sperre bleibt offen. Der bisherige
+50er-Verlauf allein kann ältere Auslöser nicht rekonstruieren.
+
+Vor der Umsetzung wurden die vorhandenen zentralen Helper und ihre Verträge
+geprüft. DebugHelper und ConfigurationFormHelper werden unverändert verwendet.
+Die Apple-spezifische Antwortklassifizierung und Kontoschutzpolitik bleiben in
+SymconiCloud; es gibt keine zweite nutzende Library und deshalb keinen neuen
+zentralen Helper oder lokal abweichenden Verteilungsstand.
+
+Bekannte Dienstcodes werden an der gemeinsamen AppleClient-Antwortgrenze
+ausgewertet, bevor ein Dienst eine 403-Antwort als reine Berechtigungsfrage
+behandelt. -20209 stoppt kontoübergreifend alle Dienste dieser Instanz, auch
+bei HTTP 200 oder 409; -20101 bleibt eine Anmeldeablehnung ohne Behauptung eines
+tatsächlich falschen Passworts. Die Codes werden aus serviceErrors und den
+skalaren Fehlerfeldern errorCode/serverErrorCode gelesen. Unbekannte Codes und
+freie Meldungstexte bleiben außerhalb von Exceptions und Diagnosedaten.
+HTTP 412 im Authentifizierungsablauf sowie termsUpdateNeeded benötigen eine
+manuelle Browserprüfung und setzen ebenfalls eine Schutzsperre. Bedingungen
+werden nicht automatisch akzeptiert. HTTP 429 behält auch zusammen mit einer
+strukturierten Sicherheitsantwort seine Wartefrist. Vorhandene Limits,
+einmalige Token-Erneuerung und dienstspezifische Freigabefehler bleiben erhalten.
+
+GetAccountDiagnostics behält seine bisherigen fünf Felder und 50 Einträge.
+GetAccountSecurityDiagnostics ergänzt einen separaten persistenten Verlauf:
+höchstens 200 Ereignisse aus 30 Tagen, dieselben fünf Felder plus ausschließlich
+allowlist-basiertem appleCode. Erfolgreiche Datenabfragen und wiederholte lokale
+Polling-Abweisungen verdrängen keine Sicherheitsereignisse. Die 30-Tage-Grenze
+wird lesend gefiltert und beim nächsten Eintrag auch persistent bereinigt.
+Vorhandene relevante Alt-Einträge werden vor dem ersten neuen Eintrag bzw. vor
+einer sofortigen Bereinigung des alten Verlaufs übernommen. Ein leeres Array
+kennzeichnet eine bereits erfolgte Übernahme oder bewusste Bereinigung.
+Die neue separate Löschaktion ist zu bestätigen und verändert keine Sitzung,
+Schutzsperre, Wartefrist oder Versuchszähler. Das Formular erläutert Ergebnisse
+auf Deutsch; Öffnen und Lesen verursachen keinen Apple-Zugriff.
+
+AllowAuthentication hat den kompatiblen Standard true. Nach ausdrücklicher
+Anmeldung kann die Option auf einem Zweitsystem ausgeschaltet werden, ohne
+Sitzung oder Caches zu löschen. Bestehende Datenabfragen und Token-Erneuerung
+bleiben möglich, Passwortanmeldungen und Code-Prüfungen/-Anforderungen werden
+dagegen vor Transporterzeugung und Versuchszählung abgewiesen. Die kombinierte
+Anmelde-/Freigabeaktion löst dann keine bestehende Schutzsperre. Die Anleitung
+empfiehlt zusätzlich die bestehende Abfragepause für ungenutzte Systeme.
+Ohne nutzbare Sitzung zeigt die ausgeschaltete Anmeldung den lokalen Status
+211 statt eines Apple-Abfragefehlers; angemeldete Sitzungen bleiben aktiv.
+Sperren und Limits bleiben ausdrücklich instanzlokal; keine automatische
+Koordination oder Übertragung von Sitzungen zwischen getrennten Servern.
+
+Nachweise: Der neue Test account-security schlug vor der Umsetzung wegen der
+fehlenden separaten Sicherheitshistorie fehl. Danach bestanden die gezielten
+Regressionen einschließlich kontoweiter Sperren aus Geräten/Fotos/Kontakten,
+mehrdeutiger 403-Antworten, Sicherheitsprüfung/Bedingungen, sekundärer
+Anmeldepolitik, einmaliger Token-Erneuerung ohne Passwort-Fallback,
+Altübernahme, Wiederherstellung, getrennter Löschung, Größen-/Altersgrenzen und
+Ausschluss unbekannter Providerdaten. Die vollständige Offline-Suite unter
+PHP 8.5.10 mit GD/EXIF, Struktur-/Manifest-/LF-Prüfung sowie JSON-Stilprüfung
+bestanden. Fehlendes GD im üblichen lokalen CLI-Profil wurde ausschließlich
+für die Prüfprozesse ergänzt, ohne die globale PHP-Konfiguration zu ändern.
+Die Formatprüfung mit der offiziellen StylePHP-Konfiguration bestand ebenfalls.
+Kein Live-Deployment, kein Apple-Login, keine reale Bestätigung oder Geräteaktion
+wurde für die Umsetzung ausgelöst. Die neue Live-Formularprüfung bleibt nach
+dem regulären Modulupdate offen.
+
+Quellen für die Protokolleinordnung, keine übernommene Implementierung:
+[Apple-Kontosperren](https://support.apple.com/de-de/102640),
+[Pyicloud-Fehlercodes](https://github.com/timlaing/pyicloud/blob/main/pyicloud/const.py)
+und [Pyicloud-Antwortbehandlung](https://github.com/timlaing/pyicloud/blob/main/pyicloud/session.py).
+Die Erweiterung kann Apples interne Sperrentscheidung nicht garantieren oder
+den früheren Auslöser rückwirkend beweisen.
+
 ## Nominatim-Pi-Installation als Benutzeranleitung (2026-10-26)
 
 Den Abschnitt `Eigener Nominatim-Server` der WoIst-README um das am 22.10.

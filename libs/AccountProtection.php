@@ -13,7 +13,7 @@ trait AccountProtection
 
     private const AUTH_LIMITS = ['login' => [3, 1800, 60], 'verify' => [5, 600, 0], 'resend' => [3, 600, 60]];
     private const DIAGNOSTIC_OPERATIONS = ['login', 'verify', 'resend', 'devices', 'contacts', 'photoCatalog', 'photoPage', 'photoImage', 'PlaySound', 'ActivateLostMode', 'DeactivateLostMode', 'signinInit', 'signinComplete', 'verifyCode', 'requestCode', 'trustBrowser', 'authChallenge', 'sessionRenewal', 'photos', 'deviceAction', 'pause', 'resume', 'other'];
-    private const PROTECTION_REASONS = ['credentials', 'authentication', 'accessDenied', 'accountLocked'];
+    private const PROTECTION_REASONS = ['credentials', 'authentication', 'accessDenied', 'accountLocked', 'accountReviewRequired', 'termsRequired'];
     private const DIAGNOSTIC_REASONS = ['ok', 'sessionReused', 'verificationRequired', 'requestsPaused', 'accountBlocked', 'loginLimited', 'codeLimited', 'resendLimited', 'challengePending', 'protectionState', 'rateLimited', 'retryBackoff', 'credentials', 'authentication', 'accessDenied', 'accountLocked', 'network', 'server', 'response', 'internal', 'configuration', 'invalidCode', 'codeFormat', 'challengeExpired', 'dependency', 'srp', 'endpoint', 'serviceUnavailable', 'contactsAccess', 'contactsUnavailable', 'contactsDisabled', 'contactsConfiguration', 'contactsWait', 'contactsLimit', 'photosAccess', 'photosUnavailable', 'photosDisabled', 'photosIndexing', 'photosAlbum', 'photosCache', 'photoDownload', 'photoFormat', 'soundRejected', 'lostModeRejected', 'lostModeStopRejected', 'deviceUnknown', 'lostModeUnsupported', 'lostModeActive', 'lostModeInput'];
 
     /** Local recovery only: never logs in, clears a cooldown, or resets attempt limits. */
@@ -52,7 +52,7 @@ trait AccountProtection
         $entries = [];
         foreach (is_array($raw) ? array_slice($raw, -50) : [] as $entry) {
             if (!is_array($entry) || !is_int($entry['time'] ?? null) || !is_int($entry['httpStatus'] ?? null) || !is_int($entry['waitSeconds'] ?? null)
-                || !in_array($entry['operation'] ?? null, self::DIAGNOSTIC_OPERATIONS, true) || !in_array($entry['reason'] ?? null, self::DIAGNOSTIC_REASONS, true)) {
+                || !in_array($entry['operation'] ?? null, self::DIAGNOSTIC_OPERATIONS, true) || !$this->diagnosticReasonAllowed($entry['reason'] ?? null)) {
                 continue;
             }
             $entries[] = ['time' => max(0, $entry['time']), 'operation' => $entry['operation'], 'httpStatus' => max(0, min(599, $entry['httpStatus'])), 'reason' => $entry['reason'], 'waitSeconds' => max(0, min(86400, $entry['waitSeconds']))];
@@ -67,7 +67,43 @@ trait AccountProtection
             return;
         }
         try {
+            // Preserve legacy security evidence even if cleanup precedes the first new request.
+            $this->WriteAttributeString('AccountSecurityDiagnostics', $this->GetAccountSecurityDiagnostics());
             $this->WriteAttributeString('AccountDiagnostics', '[]');
+        } finally {
+            IPS_SemaphoreLeave('SymconiCloud.' . $this->InstanceID);
+        }
+        $this->ReloadForm();
+    }
+
+    /** Security evidence is independent of routine polling: at most 200 events for 30 days. */
+    public function GetAccountSecurityDiagnostics(): string
+    {
+        $raw = $this->ReadAttributeString('AccountSecurityDiagnostics');
+        $legacy = $raw === '';
+        $entries = json_decode($legacy ? $this->GetAccountDiagnostics() : $raw, true);
+        $safe = [];
+        foreach (is_array($entries) ? array_slice($entries, -200) : [] as $entry) {
+            if (!is_array($entry) || !is_int($entry['time'] ?? null) || !is_int($entry['httpStatus'] ?? null) || !is_int($entry['waitSeconds'] ?? null)
+                || $entry['time'] < $this->AccountProtectionTime() - 30 * 86400 || !in_array($entry['operation'] ?? null, self::DIAGNOSTIC_OPERATIONS, true)
+                || !$this->diagnosticReasonAllowed($entry['reason'] ?? null) || !$this->isSecurityEvent($entry['operation'], $entry['reason'])) {
+                continue;
+            }
+            $safe[] = ['time' => max(0, $entry['time']), 'operation' => $entry['operation'], 'httpStatus' => max(0, min(599, $entry['httpStatus'])),
+                'reason'      => $entry['reason'], 'waitSeconds' => max(0, min(86400, $entry['waitSeconds'])),
+                'appleCode'   => in_array($entry['appleCode'] ?? '', ['-20209', '-20101'], true) ? $entry['appleCode'] : ''];
+        }
+        return json_encode($safe, JSON_THROW_ON_ERROR);
+    }
+
+    /** History cleanup is deliberately separate from release of security holds and limits. */
+    public function ClearAccountSecurityDiagnostics(): void
+    {
+        if (!IPS_SemaphoreEnter('SymconiCloud.' . $this->InstanceID, 1000)) {
+            return;
+        }
+        try {
+            $this->WriteAttributeString('AccountSecurityDiagnostics', '[]');
         } finally {
             IPS_SemaphoreLeave('SymconiCloud.' . $this->InstanceID);
         }
@@ -77,9 +113,12 @@ trait AccountProtection
     protected function RegisterAccountProtection(): void
     {
         $this->RegisterPropertyBoolean('PauseRequests', false);
+        $this->RegisterPropertyBoolean('AllowAuthentication', true);
         $this->RegisterAttributeString('AuthenticationAttempts', '{}');
         $this->RegisterAttributeString('AccountBlock', '');
         $this->RegisterAttributeString('AccountDiagnostics', '[]');
+        // Empty means existing recent diagnostics have not yet been imported.
+        $this->RegisterAttributeString('AccountSecurityDiagnostics', '');
         $this->RegisterAttributeInteger('TransientFailures', 0);
         $this->RegisterAttributeString('RetryReason', '');
         $this->RegisterAttributeBoolean('WasRequestsPaused', false);
@@ -142,10 +181,10 @@ trait AccountProtection
             $this->WriteAttributeString('RetryReason', $error->reason);
             $this->WriteAttributeInteger('RetryAt', max($this->ReadAttributeInteger('RetryAt'), $this->AccountProtectionTime() + min(3600, 60 * (2 ** ($failures - 1)))));
         }
-        $this->RecordAccountDiagnostic($operation, $error->httpStatus, $error->reason);
+        $this->RecordAccountDiagnostic($operation, $error->httpStatus, $error->reason, $error->appleCode);
     }
 
-    protected function RecordAccountDiagnostic(string $operation, int $status, string $reason): void
+    protected function RecordAccountDiagnostic(string $operation, int $status, string $reason, string $appleCode = ''): void
     {
         try {
             $wait = max(0, $this->ReadAttributeInteger('RetryAt') - $this->AccountProtectionTime());
@@ -156,15 +195,35 @@ trait AccountProtection
                 $wait = max($wait, $this->AuthenticationWait($kind));
             }
             $entry = ['time'  => $this->AccountProtectionTime(), 'operation' => in_array($operation, self::DIAGNOSTIC_OPERATIONS, true) ? $operation : 'other',
-                'httpStatus'  => max(0, min(599, $status)), 'reason' => in_array($reason, self::DIAGNOSTIC_REASONS, true) ? $reason : 'internal',
+                'httpStatus'  => max(0, min(599, $status)), 'reason' => $this->diagnosticReasonAllowed($reason) ? $reason : 'internal',
                 'waitSeconds' => min(86400, $wait)];
+            // Import old security events before a routine entry can evict them.
+            $security = json_decode($this->GetAccountSecurityDiagnostics(), true, 512, JSON_THROW_ON_ERROR);
+            if ($this->isSecurityEvent($entry['operation'], $entry['reason'])) {
+                $security[] = $entry + ['appleCode' => in_array($appleCode, ['-20209', '-20101'], true) ? $appleCode : ''];
+            }
+            $this->WriteAttributeString('AccountSecurityDiagnostics', json_encode(array_slice($security, -200), JSON_THROW_ON_ERROR));
             $entries = json_decode($this->GetAccountDiagnostics(), true, 512, JSON_THROW_ON_ERROR);
             $entries[] = $entry;
             $this->WriteAttributeString('AccountDiagnostics', json_encode(array_slice($entries, -50), JSON_THROW_ON_ERROR));
-            $this->SendSafeDebug('AccountProtection', $entry, 2048);
+            $this->SendSafeDebug('AccountProtection', $entry + ['appleCode' => in_array($appleCode, ['-20209', '-20101'], true) ? $appleCode : ''], 2048);
         } catch (\Throwable) {
             // Diagnostics must never change authentication or device-command outcomes.
         }
+    }
+
+    private function diagnosticReasonAllowed(mixed $reason): bool
+    {
+        return in_array($reason, self::DIAGNOSTIC_REASONS, true) || in_array($reason, ['accountReviewRequired', 'termsRequired', 'authenticationDisabled'], true);
+    }
+
+    private function isSecurityEvent(string $operation, string $reason): bool
+    {
+        if (in_array($operation, ['login', 'verify', 'resend', 'signinInit', 'signinComplete', 'verifyCode', 'requestCode', 'trustBrowser', 'authChallenge', 'sessionRenewal', 'pause', 'resume'], true)) {
+            return true;
+        }
+        // Repeated local cache/polling refusals must not displace the original incident.
+        return !in_array($reason, ['ok', 'accountBlocked', 'requestsPaused', 'contactsWait', 'contactsDisabled', 'photosDisabled', 'authenticationDisabled'], true);
     }
 
     private function authenticationAttempts(): array

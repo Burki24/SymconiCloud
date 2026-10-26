@@ -2,6 +2,15 @@
 
 ## Neue Funktionen
 
+- **iCloud Konto** bewahrt sicherheitsrelevante Ereignisse getrennt von normalen
+  Abfragen auf: bis zu 200 Einträge aus 30 Tagen mit bekannten Apple-Fehlercodes
+  und verständlichen deutschen Ergebnissen. Eine zusätzliche Option verhindert
+  neue Anmeldungen und Code-Anfragen auf Zweitsystemen bei erhaltener Sitzung;
+  standardmäßig bleibt das bisherige Verhalten erhalten. Bekannte Kontosperren,
+  zusätzliche Kontoprüfungen und ausstehende Nutzungsbedingungen stoppen alle
+  betroffenen Kontoanfragen. Allgemeine Ablehnungen werden nicht als Beweis für
+  ein falsches Passwort ausgegeben.
+
 - **iCloud Gerät** besitzt eine instanzspezifische Kachel mit Suchton-Taster und
   letztem bekannten Standort: bevorzugt die eingerichtete Adresse, sonst
   Koordinaten, jeweils mit Standortzeit und verfügbarer Genauigkeit. Fehlende

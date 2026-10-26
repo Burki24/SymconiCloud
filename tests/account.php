@@ -64,7 +64,7 @@ class AccountFixtureModule extends iCloudAccount
         return new \SymconiCloud\AppleClient(
             $this->transport,
             $session,
-            fn ($operation, $status, $reason) => $this->RecordAccountDiagnostic($operation, $status, $reason),
+            fn ($operation, $status, $reason, $appleCode = '') => $this->RecordAccountDiagnostic($operation, $status, $reason, $appleCode),
             fn () => $this->ReserveAuthenticationAttempt('resend')
         );
     }

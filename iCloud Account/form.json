@@ -15,6 +15,15 @@
             "caption": "Pause stops Apple requests, including sign-in and device commands, without deleting the session or cache. Apply the configuration to change the pause."
         },
         {
+            "type": "CheckBox",
+            "name": "AllowAuthentication",
+            "caption": "Allow new sign-ins and verification on this system"
+        },
+        {
+            "type": "Label",
+            "caption": "For a secondary or test system, disable new authentication after signing in. The existing session and token renewal remain usable; password sign-ins, code checks and code requests are blocked. Limits and holds are local to this instance and are not shared with other servers. Pause Apple requests on unused systems."
+        },
+        {
             "type": "ValidationTextBox",
             "name": "Username",
             "caption": "Apple account"
@@ -244,6 +253,11 @@
             "code": 210,
             "icon": "error",
             "caption": "Temporary connection retry pause"
+        },
+        {
+            "code": 211,
+            "icon": "inactive",
+            "caption": "New authentication disabled on this system"
         }
     ]
 }

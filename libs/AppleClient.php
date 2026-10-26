@@ -436,7 +436,20 @@ final class AppleClient
             $this->diagnose($operation, 0, $error instanceof AppleException ? $error->reason : 'internal');
             throw $error;
         }
-        $this->diagnose($operation, $response['status'], $response['status'] < 400 ? 'ok' : 'response');
+        // Account-wide security failures precede service-specific 403 handling and
+        // even successful HTTP envelopes. Never inspect or retain provider messages.
+        $appleCode = self::responseAppleCode($response);
+        $reason = match (true) {
+            $appleCode === '-20209'                                                                                                                                                     => 'accountLocked',
+            ($response['body']['termsUpdateNeeded'] ?? false) === true                                                                                                                  => 'termsRequired',
+            $response['status'] === 412 && in_array($operation, ['signinInit', 'signinComplete', 'sessionRenewal', 'verifyCode', 'requestCode', 'trustBrowser', 'authChallenge'], true) => 'accountReviewRequired',
+            $appleCode === '-20101'                                                                                                                                                     => 'credentials',
+            default                                                                                                                                                                     => ''
+        };
+        $this->diagnose($operation, $response['status'], $reason ?: ($response['status'] < 400 ? 'ok' : 'response'), $appleCode);
+        if ($reason !== '') {
+            throw new AppleException($reason, $response['status'], $response['status'] === 429 ? self::retryAfter($response) : 0, $appleCode);
+        }
         foreach (['scnt', 'x-apple-id-session-id', 'x-apple-session-token', 'x-apple-twosv-trust-token', 'x-apple-id-account-country'] as $name) {
             if (isset($response['headers'][$name])) {
                 $this->session['headers'][$name] = $response['headers'][$name];
@@ -445,13 +458,38 @@ final class AppleClient
         return $response;
     }
 
-    private function diagnose(string $operation, int $status, string $reason): void
+    private function diagnose(string $operation, int $status, string $reason, string $appleCode = ''): void
     {
         try {
-            ($this->diagnostic)?->__invoke($operation, $status, $reason);
+            ($this->diagnostic)?->__invoke($operation, $status, $reason, $appleCode);
         } catch (\Throwable) {
             // A diagnostic failure must never retry or alter an Apple request.
         }
+    }
+
+    /** Only documented, fixed security codes may leave the response boundary. */
+    private static function responseAppleCode(array $response): string
+    {
+        $codes = [];
+        $errors = $response['body']['serviceErrors'] ?? [];
+        foreach (is_array($errors) ? $errors : [] as $error) {
+            $code = is_array($error) ? ($error['code'] ?? null) : null;
+            if (is_int($code) || is_string($code)) {
+                $codes[] = (string) $code;
+            }
+        }
+        foreach (['errorCode', 'serverErrorCode'] as $name) {
+            $code = $response['body'][$name] ?? null;
+            if (is_int($code) || is_string($code)) {
+                $codes[] = (string) $code;
+            }
+        }
+        foreach (['-20209', '-20101'] as $code) {
+            if (in_array($code, $codes, true)) {
+                return $code;
+            }
+        }
+        return '';
     }
 
     private function expect(array $response, array $allowed): void
@@ -469,10 +507,14 @@ final class AppleClient
             $status >= 500                      => 'server',
             default                             => 'response'
         };
+        throw new AppleException($reason, $status, $reason === 'rateLimited' ? self::retryAfter($response) : 0);
+    }
+
+    private static function retryAfter(array $response): int
+    {
         $retryHeader = (string) ($response['headers']['retry-after'] ?? '300');
         $retrySeconds = ctype_digit($retryHeader) ? (int) $retryHeader : max(0, (strtotime($retryHeader) ?: time() + 300) - time());
-        $retry = max(60, min(86400, $retrySeconds));
-        throw new AppleException($reason, $status, $reason === 'rateLimited' ? $retry : 0);
+        return max(60, min(86400, $retrySeconds));
     }
 
     private static function normalizeDevice(array $device): array

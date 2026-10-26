@@ -28,6 +28,7 @@ voneinander aktiviert werden; für Geräte, Karte und Anwesenheit bleiben sie au
 | --- | --- | --- |
 | `Enabled` | false | Konto und regelmäßige Geräteabfrage aktivieren |
 | `PauseRequests` | false | Alle Apple-Anfragen pausieren, Sitzung und vorhandene Caches erhalten |
+| `AllowAuthentication` | true | Neue Anmeldungen, Code-Prüfungen und Code-Anforderungen auf diesem System erlauben; bestehende Sitzungen werden auch bei false weiterverwendet |
 | `Username` | leer | Apple-Account-Anmeldename |
 | `Password` | leer | Reguläres Apple-Passwort, kein anwendungsspezifisches Passwort |
 | `RefreshInterval` | 300 | Sekunden zwischen Geräteabfragen, 60 bis 86400 |
@@ -123,6 +124,50 @@ Die Grenzen koordinieren keine anderen Kontoinstanzen, Symcon-Server oder
 externen iCloud-Anbindungen. Apple entscheidet über Kontosperren; das Modul
 reduziert vermeidbare Wiederholungen, kann Sperren aber nicht ausschließen.
 
+### Apple-Sicherheitsprüfung und Kontosperre unterscheiden
+
+Eine abgelehnte Anmeldung allein beweist kein falsches Passwort. Das Modul
+unterscheidet eine abgelaufene Sitzung, eine allgemeine Zugriffsablehnung,
+eine Sperrantwort, eine zusätzliche Kontoprüfung und ausstehende
+iCloud-Nutzungsbedingungen. Bekannte Apple-Fehlercodes werden vor der
+Auswertung einzelner Dienste geprüft: Meldet beispielsweise Fotos eine
+Kontosperre mit `-20209`, werden auch Geräte- und Kontaktabfragen gestoppt.
+Eine normale, nur auf Fotos oder Kontakte beschränkte Zugriffsablehnung bleibt
+auf diesen Dienst beschränkt. Eine Sperrantwort ohne bekannten Dienstcode
+belegt den genauen Sperrgrund nicht.
+
+Bei einer Sicherheitsprüfung iCloud im Browser öffnen und die von Apple
+angeforderten Schritte durchführen. Je nach Fall genügen eine PIN und das
+bestehende Passwort; eine Passwortänderung ist nicht immer erforderlich.
+Das Modul fordert keinen Passwortwechsel aufgrund einer bloßen HTTP-Ablehnung.
+Eine zusätzliche Kontoprüfung (HTTP 412 im Anmeldeablauf) und neue
+Nutzungsbedingungen stoppen weitere Anfragen bis zur manuellen Prüfung.
+Das Modul stimmt Bedingungen nicht automatisch zu und wiederholt keine
+Passwortanmeldung zur Umgehung einer solchen Prüfung.
+
+### Dasselbe Konto auf Test- und Produktivsystem
+
+Alle Module eines Systems möglichst mit derselben Kontoinstanz verbinden.
+Für ein zusätzliches System steht **Neue Anmeldungen und Bestätigungen auf
+diesem System erlauben** zur Verfügung:
+
+1. Das Zweitsystem bei Bedarf ausdrücklich anmelden und die Sitzung prüfen.
+2. Anschließend diese Option ausschalten und **Übernehmen** wählen.
+3. Die bestehende Sitzung bleibt erhalten. Reguläre Abfragen und die einmalige
+   Token-Erneuerung bleiben möglich; neue Passwortanmeldungen, Code-Prüfungen
+   und Code-Anforderungen werden vor jedem Apple-Zugriff lokal abgewiesen.
+4. Wird die Sitzung abgewiesen, bleibt die Schutzsperre bestehen. Nur auf dem
+   System, auf dem bewusst angemeldet werden soll, die Option wieder einschalten.
+5. Ein ungenutztes Testsystem zusätzlich über **Apple-Abfragen pausieren
+   (Sitzung erhalten)** pausieren. Diese Pause stoppt auch reguläre Abfragen.
+
+Die neue Option ist standardmäßig eingeschaltet; bestehende Installationen
+ändern ihr Anmeldeverhalten durch das Update nicht. Sie koordiniert keine
+Sperren oder Versuchszähler über getrennte Server und reduziert keine laufenden
+Datenabfragen. Eine automatische serverübergreifende Koordination würde einen
+gemeinsamen Vermittler benötigen. Das Modul richtet dafür keine neue Verbindung
+ein und überträgt keine Zugangsdaten zwischen Systemen.
+
 ## Datensparsame Kontodiagnose
 
 Das Formular zeigt die letzten 50 Einträge mit Zeitpunkt, fester Anfrageart,
@@ -131,6 +176,33 @@ kennzeichnet lokale Ergebnisse oder einen Transportfehler ohne HTTP-Antwort.
 Der begrenzte Verlauf bleibt über Neustarts erhalten und lässt sich getrennt
 löschen. Die Einträge werden zusätzlich über den zentralen `DebugHelper` in den
 Symcon-Debugkanal geschrieben, sofern dieser aktiviert ist.
+
+Daneben zeigt **Kontosicherheit (letzte 200 Ereignisse, 30 Tage)** einen
+eigenen persistenten Verlauf für Anmeldungen, Bestätigungen, Token-Erneuerungen,
+Pausen, Freigaben und Fehler. Erfolgreiche Geräte-, Kontakt- und Fotoabfragen
+verdrängen diese Ereignisse nicht; wiederholte lokale Abweisungen regulärer
+Abfragen während einer Pause oder Schutzsperre ebenfalls nicht. Im Formular
+werden Ergebnisse verständlich auf Deutsch erläutert. Der zusätzliche
+**Apple-Fehlercode** enthält ausschließlich bekannte Codes (`-20209`,
+`-20101`), niemals freie Antworttexte oder unbekannte Kennungen. `-20101`
+kennzeichnet die Ablehnung eines Anmeldeversuchs, beweist aber kein tatsächlich
+falsches Passwort.
+
+Der Verlauf zeigt höchstens 200 Ereignisse aus den letzten 30 Tagen; ältere
+gespeicherte Einträge werden beim nächsten Diagnoseeintrag bereinigt. Noch
+vorhandene sicherheitsrelevante Einträge aus dem bisherigen 50er-Verlauf werden
+beim ersten neuen Eintrag übernommen. Bereits verdrängte Ereignisse lassen
+sich nicht nachträglich rekonstruieren. Das Öffnen des Formulars löst keinen
+Apple-Zugriff aus.
+
+**Diagnoseverlauf löschen** löscht weiterhin nur den bisherigen 50er-Verlauf.
+**Sicherheitsverlauf löschen** ist separat zu bestätigen. Beide Aktionen
+lassen Sitzung, Schutzsperren, Wartezeiten und Versuchszähler unverändert.
+Für eine lesende Auswertung stehen `ICAC_GetAccountDiagnostics($InstanceID)`
+und `ICAC_GetAccountSecurityDiagnostics($InstanceID)` zur Verfügung. Der neue
+Verlauf ergänzt die bisherigen Felder um `appleCode`; Ergebnisschlüssel bleiben
+in der JSON-Ausgabe technisch eindeutig. Die bisherigen fünf Felder der
+50er-Diagnose bleiben unverändert.
 
 Passwörter, Bestätigungscodes, Cookies, Tokens, Anmeldenamen, Geräte-/Albumkennungen,
 URLs und Antwortinhalte werden nicht protokolliert. Ein unlesbarer Zustand der
@@ -143,6 +215,7 @@ Versuchszähler stoppt neue Anfragen, statt die Limits stillschweigend zurückzu
 | 208 | Anfragen gestoppt, manuelle Kontoprüfung erforderlich |
 | 209 | Lokales Limit für Authentifizierungsversuche erreicht |
 | 210 | Wartezeit nach Netzwerk- oder Serverfehler |
+| 211 | Neue Anmeldung lokal ausgeschaltet, keine angemeldete Sitzung vorhanden |
 
 ## Status und Daten
 
