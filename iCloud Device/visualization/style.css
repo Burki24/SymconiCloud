@@ -1,0 +1,14 @@
+body { color: var(--symc-text); background: var(--symc-background); }
+#device-content { overflow: auto; min-height: 0; scrollbar-gutter: stable; overflow-wrap: anywhere; }
+header { display: flex; flex-direction: column; gap: .25rem; }
+header strong { font-size: 1.15rem; }
+header span, #device-status, #location-time, #location-accuracy { color: var(--symc-muted); }
+p { margin: .5rem 0; line-height: 1.45; }
+h2 { font-size: 1rem; margin: 0; color: var(--symc-heading); }
+section { padding: .85rem; margin-block: .8rem; border: 1px solid var(--symc-border); border-radius: var(--symc-radius-small); background: var(--symc-surface); }
+#location-value { font-size: 1.05rem; }
+#location-warning, #device-error { color: var(--symc-warning); }
+button { min-height: var(--symc-responsive-touch-target); width: 100%; padding: .6rem 1rem; border: 1px solid var(--symc-border-strong); border-radius: var(--symc-radius-small); background: var(--symc-accent-soft); color: var(--symc-text); cursor: pointer; }
+button:hover:not(:disabled) { background: var(--symc-surface-hover); }
+button:disabled { opacity: .6; cursor: default; }
+[hidden] { display: none !important; }

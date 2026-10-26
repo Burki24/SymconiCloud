@@ -13,6 +13,7 @@ Geräte ist [iCloud Anwesenheit](../iCloud%20Presence/README.md) zuständig.
 Beide Module funktionieren auch ohne einzelne Geräteinstanzen.
 
 - [Gerät einrichten](#einrichtung)
+- [Gerätekachel mit Standort](#gerätekachel-mit-standort)
 - [Aktualität und fehlende Daten verstehen](#aktualität-und-fehlende-daten)
 - [Handy suchen](#handy-suchen)
 - [Verloren-Modus](#verloren-modus)
@@ -40,6 +41,40 @@ Voraussetzung sind Symcon 9.0, PHP 8.5 und ein bereits angemeldetes
 Ohne Programmierung lassen sich die angelegten Variablen als einzelne Kacheln
 oder in der Listendarstellung der Instanz verwenden. Diese Geräteinstanz besitzt
 keinen eigenen Kachel- oder IPSView-Designer.
+
+## Gerätekachel mit Standort
+
+Für die komfortable Ansicht die **Geräteinstanz** zur Kachelvisualisierung
+hinzufügen und **Instanzspezifische Darstellung** wählen. Die Gerätekachel zeigt
+Name, Modell, Online-Status, verfügbaren Akkustand sowie **Letzter bekannter
+Standort** und **Ton abspielen** gemeinsam. Die einzelne Aktionsvariable
+**Handy suchen** bleibt als einfache Tasterkachel verwendbar.
+
+![Gerätekachel mit letztem bekannten Standort und Suchton-Taster](../docs/images/device-location-tile.png)
+
+*Beispiel aus der lokalen Browserprüfung mit synthetischen Geräte- und
+Adressdaten. Farben und Kachelgröße folgen der jeweiligen Visualisierung.*
+
+Wenn eine [WoIst-Adressquelle](#adresse-aus-woist) eine Adresse liefert, wird
+sie angezeigt; sonst erscheinen Breiten- und Längengrad. Standortzeit und
+verfügbare Genauigkeit gehören immer zum angezeigten Standort. Liegt noch
+kein Standort vor, erscheint ein entsprechender Hinweis statt `0, 0`.
+
+Bei fehlenden Standortdaten oder vorübergehend nicht verfügbarem Konto bleibt
+der letzte bekannte Ort erhalten. Die Kachel warnt, wenn Apple ihn als alt
+meldet, aktuell kein Standort verfügbar ist, die Standortzeit fehlt oder mehr
+als 15 Minuten zurückliegt. Diese Warnung verändert nicht die Bedeutung der
+Variable **Standort veraltet**. Ein Geräte- oder Kontowechsel löscht den
+bisherigen Ort einschließlich seiner Adresse.
+
+Die Darstellung verwendet die Farben des Symcon-Designs, unterstützt helle und
+dunkle Ansichten und lässt sich bei kleinen Kacheln mit dem Mausrad scrollen.
+Datenupdates aktualisieren den Inhalt ohne Neuladen und erhalten die
+Scrollposition. Das Öffnen der Kachel, Standortupdates und Wiederverbindung
+spielen keinen Ton ab und lösen keinen zusätzlichen Apple-Abruf aus.
+**Ton abspielen** sendet erst beim ausdrücklichen Anklicken einen Auftrag.
+Während der Rückmeldung ist der Taster gesperrt; ein unbestätigter Auftrag wird
+nicht automatisch wiederholt. Bei nicht verfügbaren Kontodaten ist er deaktiviert.
 
 ## Konfiguration
 

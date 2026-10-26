@@ -6,6 +6,7 @@ require_once __DIR__ . '/../libs/helper/ConfigurationFormHelper.php';
 require_once __DIR__ . '/../libs/helper/DataFlowHelper.php';
 require_once __DIR__ . '/../libs/helper/ParentConnectionHelper.php';
 require_once __DIR__ . '/../libs/helper/VariablePresentationHelper.php';
+require_once __DIR__ . '/../libs/DeviceWidget.php';
 
 class iCloudDevice extends IPSModuleStrict
 {
@@ -13,6 +14,7 @@ class iCloudDevice extends IPSModuleStrict
     use \Burki24\SymconModuleHelper\DataFlowHelper;
     use \Burki24\SymconModuleHelper\ParentConnectionHelper;
     use \Burki24\SymconModuleHelper\VariablePresentationHelper;
+    use \SymconiCloud\DeviceWidget;
 
     private const ACCOUNT_MODULE = '{10BF9A03-98A3-495A-B0FA-A4FA0B1002D5}';
     private const REQUEST_DATA = '{1E60F0BE-03E4-4AA4-A1CE-AA838725A4E2}';
@@ -35,15 +37,21 @@ class iCloudDevice extends IPSModuleStrict
         $this->RegisterAttributeString('SourceIdentity', '');
         $this->RegisterAttributeString('SoundResult', '');
         $this->RegisterAttributeString('LostModeResult', '');
+        $this->RegisterAttributeString('WidgetLocation', 'null');
+        $this->RegisterAttributeInteger('WidgetSoundRevision', 0);
+        $this->SetVisualizationType(1);
     }
 
     /** Applies identity, registers status variables and the sound action, and reads cached data. */
     public function ApplyChanges(): void
     {
         parent::ApplyChanges();
+        $this->SetVisualizationType(1);
         $this->registerVariables();
         $identity = $this->GetParentID() . ':' . $this->ReadPropertyString('DeviceID');
         if ($identity !== $this->ReadAttributeString('SourceIdentity')) {
+            $this->WriteAttributeString('WidgetLocation', 'null');
+            $this->SetValue('LocationAvailable', false);
             $this->WriteAttributeString('SoundResult', '');
             $this->WriteAttributeString('LostModeResult', '');
             foreach (['Latitude', 'Longitude', 'Accuracy', 'BatteryLevel'] as $ident) {
@@ -141,6 +149,8 @@ class iCloudDevice extends IPSModuleStrict
         $this->WriteAttributeString('SoundResult', $message);
         $this->UpdateFormField('SoundResult', 'caption', $message);
         $this->UpdateFormField('SoundResult', 'visible', true);
+        $this->WriteAttributeInteger('WidgetSoundRevision', $this->ReadAttributeInteger('WidgetSoundRevision') + 1);
+        $this->PublishDeviceWidget();
         return $success;
     }
 
@@ -173,6 +183,10 @@ class iCloudDevice extends IPSModuleStrict
      */
     public function RequestAction(string $Ident, mixed $Value): void
     {
+        if ($Ident === 'GetState' && $Value === '') {
+            $this->PublishDeviceWidget();
+            return;
+        }
         if ($Ident === 'Update') {
             $this->Update();
             return;
@@ -233,6 +247,7 @@ class iCloudDevice extends IPSModuleStrict
     /** @param array<string, mixed> $data @return bool Device cache availability. */
     private function applyResult(array $data): bool
     {
+        $this->RememberDeviceLocation();
         if (($data['success'] ?? false) !== true || ($data['state'] ?? '') !== 'authenticated' || (int) ($data['updatedAt'] ?? 0) <= 0) {
             $this->markUnavailable((string) ($data['error'] ?? 'Account data unavailable.'), 202);
             return false;
@@ -264,11 +279,13 @@ class iCloudDevice extends IPSModuleStrict
                 $this->SetValue('LocationTimestamp', max(0, (int) ($location['timestamp'] ?? 0)));
             }
             $this->SetValue('Address', $valid ? $this->readAddress((float) $location['latitude'], (float) $location['longitude']) : '');
+            $this->RememberDeviceLocation();
             $this->applyDetails($device, $valid);
             $this->SetValue('LastUpdate', (int) $data['updatedAt']);
             $this->SetValue('DataAvailable', true);
             $this->WriteAttributeString('LastError', '');
             $this->SetStatus(IS_ACTIVE);
+            $this->PublishDeviceWidget();
             return true;
         }
         $this->markUnavailable('Device not in current account list.', 203);
@@ -277,6 +294,7 @@ class iCloudDevice extends IPSModuleStrict
 
     private function markUnavailable(string $error, int $status): void
     {
+        $this->RememberDeviceLocation();
         foreach (['DataAvailable', 'LocationAvailable', 'BatteryAvailable', 'Online'] as $ident) {
             $this->SetValue($ident, false);
         }
@@ -285,6 +303,7 @@ class iCloudDevice extends IPSModuleStrict
         $this->applyDetails([]);
         $this->WriteAttributeString('LastError', $this->Translate($error === '' ? 'Account data unavailable.' : $error));
         $this->SetStatus($status);
+        $this->PublishDeviceWidget();
     }
 
     private function registerVariables(): void

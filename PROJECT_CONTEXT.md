@@ -1,5 +1,63 @@
 # Entwicklungsstand
 
+## Geräte-Kachel mit letztem bekannten Standort (2026-10-26)
+
+Die Geräteinstanz bietet zusätzlich zur unveränderten Suchton-Variablenkachel
+eine instanzspezifische HTML-SDK-Kachel. Sie verbindet den ausdrücklichen
+Suchton-Taster mit Name, Modell, verfügbarer Batterie und letztem Standort.
+Eine vorhandene WoIst-Adresse hat Vorrang vor Koordinaten. Standortzeit und
+positive Genauigkeit gehören zur jeweiligen gespeicherten Position; fehlender
+Standort erzeugt keine Nullposition. Neue Koordinaten übernehmen keine ältere
+Adresse. Bei zeitweilig fehlendem GPS oder Konto bleibt der historische Ort
+sichtbar. Apple-Altersflag, fehlende aktuelle Position, fehlende Standortzeit
+und ein Alter über 15 Minuten erzeugen eine Warnung; die vorhandene Variable
+LocationIsOld bleibt in ihrer bisherigen Bedeutung unverändert.
+
+Vor Umsetzung vorhandene zentrale Renderer-, Theme-, Responsive- und
+Interaktionshelper sowie die Anwesenheits-/Kartenintegration geprüft. Die
+unveränderten Helper übernehmen Seitengerüst, sichere Bootstrap-Kodierung,
+Hostfarben, Titelabstand und Eingabeunterstützung. Fachlicher Zustand und
+Ressourcen verbleiben in `libs/DeviceWidget.php` und beim Gerät; keine neue
+Zentralisierung und keine lokalen Helper-Testkopien. Die Kachel verwendet das
+Symcon-Design ohne zusätzliche eigene Farbfelder oder Designer.
+
+GetVisualizationTile und die interne GetState-Aktion lesen nur lokale Werte.
+Datenupdates veröffentlichen SDK-Nachrichten ohne HTML-Neuladen. Ein vorhandener
+Zeitstempel erlaubt auch nach einem Update des bisherigen Moduls die Übernahme
+seiner historischen Koordinaten. Geräte-/Kontowechsel löschen den Verlauf.
+Alle bisherigen Variablen-IDs, Aktionen und Kontoschutzgrenzen bleiben erhalten.
+Der Suchton verwendet ausschließlich die bestehende PlaySound-Aktion. Bis zur
+Rückmeldung mit neuer Ergebnisrevision ist der Taster gesperrt; Promise- oder
+void-Rückgaben des SDK sind keine Bestätigung. Nach spätestens 30 Sekunden wird
+ein unbestätigter Auftrag gemeldet, ohne ihn zu wiederholen.
+
+Nachweise: gezielte PHP-Verträge für Fallback, historisches GPS, Nullkoordinaten,
+Adressbindung, Geräte-/Kontowechsel, Variablen-IDs und nebenwirkungsfreies Rendern.
+Node prüft sichere Textausgabe, Alterswarnung, Update-/Scroll-Erhalt sowie
+Bestätigung, Doppelklickschutz, void-SDK, Timeout und fehlende Wiederholung.
+Die Gesamtsuite besteht mit den vorhandenen PHP-GD-/Exif-Erweiterungen, die nur
+über eine temporäre Prüfkonfiguration geladen wurden; keine Systemänderung.
+
+MCP-Browserprüfung des echten Renderers mit synthetischem Konto und inertem
+Suchtontransport: Adresse, Koordinaten, Leerzustand, Alterswarnung, Hell/Dunkel
+und kleine/große Kacheln geprüft. Mausrad bewegt den Scrollcontainer abwärts
+von 0 auf 138 und aufwärts zurück auf 0; ein Datenupdate erhält 138 unverändert.
+Keine horizontale Überbreite bei 280 Pixeln. Der synthetische Suchton zeigt eine
+Rückmeldung, ohne Apple-/Symcon-Zugriff. Screenshot mit ausschließlich
+synthetischen Angaben unter `docs/images/device-location-tile.png`.
+In der instrumentierten srcdoc-Prüfseite meldet die Browsersteuerung weiterhin
+MutationObserver.observe; der Widget-Fehlerlistener erfasst dabei keinen Fehler.
+Die separat geladene identische Widgetseite hat keine Browserfehler. Weder
+Modulskript noch verwendetes Interaktionsskript enthalten MutationObserver.
+Die genaue Instrumentierungsquelle ist damit nicht abschließend nachgewiesen;
+kein daraus abgeleiteter Eingriff in zentrale Helper. Abnahme von echten
+nativen Live-Pushs und realem Suchton nach Installation bleibt offen.
+
+Abschluss: vollständige Offline-Suite einschließlich der neuen PHP-/Node-Tests,
+Struktur-/Helperhash-/LF-Prüfung, JSON-Stil, php-cs-fixer im Prüfmodus und
+`git diff --check` bestanden. Die englische PHP-CS-Fixer-Meldung zur fehlenden
+optionalen composer.json ist ein Hinweis; der Prüfstatus ist erfolgreich.
+
 ## README-Prüfung und verständliche Geräteanleitungen (2026-10-26)
 
 Bibliotheks-README und alle sieben Modul-READMEs mit Implementierung,

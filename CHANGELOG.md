@@ -2,6 +2,13 @@
 
 ## Neue Funktionen
 
+- **iCloud Gerät** besitzt eine instanzspezifische Kachel mit Suchton-Taster und
+  letztem bekannten Standort: bevorzugt die eingerichtete Adresse, sonst
+  Koordinaten, jeweils mit Standortzeit und verfügbarer Genauigkeit. Fehlende
+  oder veraltete Standortdaten sind gekennzeichnet. Datenupdates erhalten die
+  Scrollposition und lösen keinen Ton aus; die separate Tastervariable bleibt
+  bestehen.
+
 - **iCloud Kontakte** übernimmt ausgewählte Telefonnummern und E-Mail-Adressen
   nach Vorschau und Bestätigung in **Mitteilungen (IPSymconNotice)** oder
   vorhandene SMTP-/SMS-Aktionen von **Benachrichtigung**. Bestehende Einstellungen
