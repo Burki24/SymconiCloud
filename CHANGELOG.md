@@ -25,6 +25,12 @@
 
 ## Fixes
 
+- **iCloud Anwesenheit** erhält manuell ausgeblendete Gerätevariablen bei
+  Datenupdates und beim Übernehmen der Konfiguration. Entfernte Geräte werden
+  einmalig ausgeblendet; bei erneuter Auswahl wird nur eine vom Modul verwaltete
+  Ausblendung zurückgenommen. Manuelle Sichtbarkeitsänderungen und Variablen-IDs
+  bleiben erhalten.
+
 - **Anmelden** zeigt nun das Ergebnis unmittelbar im Kontoformular, einschließlich
   ausstehendem Bestätigungscode und verbleibender Wartezeit. Eine lokale
   Schutzsperre wird deutlich von einer Apple-Kontosperre unterschieden. Nach

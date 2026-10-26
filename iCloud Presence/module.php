@@ -53,6 +53,7 @@ class iCloudPresence extends IPSModuleStrict
         $this->RegisterAttributeString('EvaluationState', '{}'); // Legacy single-device state.
         $this->RegisterAttributeString('MemberStates', '{}');
         $this->RegisterAttributeString('MemberNames', '{}');
+        $this->RegisterAttributeString('InactiveVariableVisibility', '{}');
         $this->RegisterAttributeString('SourceIdentity', '');
         $this->RegisterAttributeInteger('LayoutVersion', 0);
         $this->RegisterAttributeString('LastError', '');
@@ -571,6 +572,8 @@ class iCloudPresence extends IPSModuleStrict
     private function synchronizeVariables(array $members): void
     {
         $active = [];
+        $visibility = $this->readState('InactiveVariableVisibility');
+        $inactive = [];
         $names = $this->readState('MemberNames');
         $index = 0;
         foreach ($members as $id => $label) {
@@ -583,14 +586,34 @@ class iCloudPresence extends IPSModuleStrict
         foreach (IPS_GetChildrenIDs($this->InstanceID) as $child) {
             $object = IPS_GetObject($child);
             $ident = $object['ObjectIdent'];
-            if ($object['ObjectType'] === 2 && preg_match('/\ADevice_[a-f0-9]{32}_(.+)\z/D', $ident, $match) === 1 && in_array($match[1], self::MEMBER_FIELDS, true) && !isset($active[$ident])) {
+            if ($object['ObjectType'] !== 2 || preg_match('/\ADevice_[a-f0-9]{32}_(.+)\z/D', $ident, $match) !== 1 || !in_array($match[1], self::MEMBER_FIELDS, true)) {
+                continue;
+            }
+            $previous = $visibility[$ident] ?? null;
+            $recorded = is_array($previous) && ($previous['id'] ?? null) === $child && is_bool($previous['hidden'] ?? null);
+            if (isset($active[$ident])) {
+                // Undo only our temporary hide; never force selected variables visible.
+                if ($recorded && !$previous['hidden'] && ($previous['restore'] ?? false) === true && $object['ObjectIsHidden']) {
+                    IPS_SetHidden($child, false);
+                }
+            } else {
                 $value = match ($match[1]) {
                     'Presence' => -1, 'Zone' => $this->Translate('Unknown'), 'ZoneID' => '', 'Reason' => $this->Translate('Device no longer selected.'),
                     'Distance' => 0.0, 'ZoneSince', 'StayDuration' => 0, default => false
                 };
                 $this->SetValue($ident, $value);
-                IPS_SetHidden($child, true);
+                $inactive[$ident] = $recorded ? $previous : ['id' => $child, 'hidden' => $object['ObjectIsHidden'], 'restore' => !$object['ObjectIsHidden']];
+                if ($recorded && !$object['ObjectIsHidden']) {
+                    $inactive[$ident]['restore'] = false;
+                }
+                // Selection changes hide once. Later user overrides remain untouched.
+                if (!$recorded && !$object['ObjectIsHidden']) {
+                    IPS_SetHidden($child, true);
+                }
             }
+        }
+        if ($inactive !== $visibility) {
+            $this->writeState('InactiveVariableVisibility', $inactive);
         }
         $this->writeState('MemberStates', array_intersect_key($this->readState('MemberStates'), $members));
     }
@@ -632,7 +655,6 @@ class iCloudPresence extends IPSModuleStrict
             if ($created && $field === 'Presence') {
                 $this->SetValue($ident, -1);
             }
-            IPS_SetHidden($this->GetIDForIdent($ident), false);
         }
     }
 }

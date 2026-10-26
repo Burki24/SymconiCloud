@@ -183,7 +183,13 @@ GPS-Zuordnung übernommen. Konto-, Zonen- oder GPS-Änderungen beginnen eine neu
 Auswertung; Ergänzen und Umordnen der Geräte setzt andere Aufenthalte nicht zurück.
 Entfernte Geräte werden nicht mehr mitgezählt. Ihre Variablen werden auf unbekannt
 bzw. nicht verfügbar gesetzt und ausgeblendet, sodass Objekt-IDs und Archivdaten
-erhalten bleiben. Erneute Auswahl verwendet diese Variablen wieder. Eine bewusst
+erhalten bleiben. Erneute Auswahl verwendet diese Variablen wieder. Dabei wird
+nur eine vom Modul verwaltete Ausblendung zurückgenommen; zuvor manuell
+ausgeblendete Variablen bleiben verborgen. Datenupdates und erneutes Übernehmen
+der Konfiguration verändern die Sichtbarkeit ausgewählter Gerätevariablen nicht.
+Auch nach dem Entfernen eines Geräts bleibt eine anschließend manuell geänderte
+Sichtbarkeit bei weiteren Updates erhalten. Bereits bestehende Ausblendungen
+werden beim Modulupdate nicht pauschal aufgehoben. Eine bewusst
 leere Liste wird nicht aus der alten Geräteauswahl erneut befüllt.
 
 Die Zonenerweiterung benötigt das regulär verteilte GeofenceHelper-Update mit

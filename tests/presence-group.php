@@ -137,4 +137,57 @@ IPS_ApplyChanges($legacyID);
 $check(IPS_GetObjectIDByIdent($legacy->GetDeviceVariableIdent('legacy-device', 'Presence'), $legacyID) === $oldPresenceID, 'Repeated application must not repeat the variable migration.');
 $check(array_diff($firstBoundary->commands, ['GetDevices']) === [], 'Grouped presence must never request a fresh Apple location.');
 
+// Visibility belongs to the user; retiring a member may hide its variables only once.
+$firstBoundary->result = $envelope;
+$firstBoundary->result['devices'] = [$makeDevice('alpha', 0), $makeDevice('beta', 0.002)];
+$visibilityID = IPS_CreateInstance($presenceModule);
+$visibility = IPS\InstanceManager::getInstanceInterface($visibilityID);
+IPS_ConnectInstance($visibilityID, $firstAccount);
+$visibleMembers = [['deviceID' => 'alpha', 'name' => 'First'], ['deviceID' => 'beta', 'name' => 'Second']];
+IPS_SetProperty($visibilityID, 'Devices', json_encode($visibleMembers, JSON_THROW_ON_ERROR));
+IPS_SetProperty($visibilityID, 'Zones', json_encode($zones, JSON_THROW_ON_ERROR));
+IPS_ApplyChanges($visibilityID);
+$variable = static fn (string $device, string $field): int => IPS_GetObjectIDByIdent($visibility->GetDeviceVariableIdent($device, $field), $visibilityID);
+$alphaPresence = $variable('alpha', 'Presence');
+$alphaDistance = $variable('alpha', 'Distance');
+$betaPresence = $variable('beta', 'Presence');
+$betaZone = $variable('beta', 'Zone');
+$betaDistance = $variable('beta', 'Distance');
+$visibilityIDs = IPS_GetChildrenIDs($visibilityID);
+IPS_SetHidden($alphaPresence, true);
+IPS_SetHidden($alphaDistance, true);
+IPS_SetHidden($betaZone, true);
+foreach (['cache', 'push', 'apply', 'apply'] as $refresh) {
+    match ($refresh) {
+        'cache' => ICPR_Update($visibilityID),
+        'push'  => $firstBoundary->broadcast(),
+        default => IPS_ApplyChanges($visibilityID)
+    };
+    $check(IPS_GetObject($alphaPresence)['ObjectIsHidden'] && IPS_GetObject($alphaDistance)['ObjectIsHidden'] && IPS_GetObject($betaZone)['ObjectIsHidden'], 'Cache, push and ApplyChanges must preserve manually hidden member variables.');
+    $check(!IPS_GetObject($betaPresence)['ObjectIsHidden'], 'Updates must also preserve visible selected member variables.');
+}
+IPS_SetProperty($visibilityID, 'Devices', json_encode([$visibleMembers[0]], JSON_THROW_ON_ERROR));
+IPS_ApplyChanges($visibilityID);
+$check(IPS_GetObject($betaPresence)['ObjectIsHidden'] && IPS_GetObject($betaZone)['ObjectIsHidden'], 'Deselection hides retired variables without losing their previous visibility.');
+IPS_SetHidden($betaDistance, false);
+ICPR_Update($visibilityID);
+$firstBoundary->broadcast();
+IPS_ApplyChanges($visibilityID);
+$check(!IPS_GetObject($betaDistance)['ObjectIsHidden'], 'Repeated retirement must preserve a user visibility override.');
+IPS_SetProperty($visibilityID, 'Devices', json_encode($visibleMembers, JSON_THROW_ON_ERROR));
+IPS_ApplyChanges($visibilityID);
+$check(!IPS_GetObject($betaPresence)['ObjectIsHidden'] && IPS_GetObject($betaZone)['ObjectIsHidden'] && !IPS_GetObject($betaDistance)['ObjectIsHidden'], 'Reselection restores only module-hidden visibility and preserves previously hidden or manually shown variables.');
+$check(IPS_GetChildrenIDs($visibilityID) === $visibilityIDs && $variable('beta', 'Presence') === $betaPresence, 'Visibility changes and reselection must retain all variable identities.');
+IPS_SetHidden($betaPresence, true);
+IPS_SetProperty($visibilityID, 'Devices', json_encode([$visibleMembers[0]], JSON_THROW_ON_ERROR));
+IPS_ApplyChanges($visibilityID);
+IPS_SetHidden($betaDistance, false);
+ICPR_Update($visibilityID);
+IPS_SetHidden($betaDistance, true);
+ICPR_Update($visibilityID);
+IPS_SetProperty($visibilityID, 'Devices', json_encode($visibleMembers, JSON_THROW_ON_ERROR));
+IPS_ApplyChanges($visibilityID);
+$check(IPS_GetObject($betaPresence)['ObjectIsHidden'] && IPS_GetObject($alphaPresence)['ObjectIsHidden'], 'A later removal cycle must retain new user visibility settings.');
+$check(IPS_GetObject($betaDistance)['ObjectIsHidden'], 'An observed manual override relinquishes module visibility ownership, including later user changes.');
+
 echo "Multi-device presence, shared zones, aggregation, identity and migration contracts passed.\n";

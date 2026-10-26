@@ -1,5 +1,49 @@
 # Entwicklungsstand
 
+## Anwesenheit: benutzereigene Variablensichtbarkeit erhalten (2026-10-26)
+
+Die Testing-Vorprüfung fand zwei wiederholte Sichtbarkeitsschreibzugriffe:
+`registerMember` blendete alle ausgewählten Gerätevariablen bei jeder
+Auswertung ein; `synchronizeVariables` blendete entfernte Variablen bei jedem
+Update erneut aus. Dadurch wurden manuelle Einstellungen überschrieben.
+
+Die vorhandenen zentralen VariablePresentation-, Formular- und
+Visualisierungshelper wurden geprüft. Sie enthalten keinen passenden Vertrag
+für diese Anwesenheitsauswahl. Die Korrektur bleibt deshalb librarylokal und
+verwendet weiterhin die unveränderten zentralen Variablendarstellungen; keine
+zusätzliche Zentralisierung oder lokale Kopie eines zentralen Helpers.
+
+Reguläre Cache-/Push-Updates und ApplyChanges schreiben die Sichtbarkeit
+ausgewählter Variablen nicht mehr. Beim erstmaligen Entfernen speichert das
+persistente Attribut `InactiveVariableVisibility` je Ident die Objekt-ID,
+vorherige Sichtbarkeit und die Berechtigung zur Rücknahme der vorübergehenden
+Modulausblendung. Weitere Updates wiederholen die Ausblendung nicht. Eine
+beobachtete manuelle Einblendung gibt diese Berechtigung ab; auch spätere
+manuelle Änderungen bleiben dadurch bei Wiederaufnahme erhalten. Die
+Wiederaufnahme stellt nur eine noch verwaltete Ausblendung zurück. Alte
+Snapshots werden danach entfernt und binden niemals eine andere Objekt-ID.
+
+Beim Update bleibt eine bereits bestehende Ausblendung erhalten. Ein vor dieser
+Korrektur überschriebener Benutzerwunsch kann mangels historischer Information
+nicht rekonstruiert werden. Geräteauswahl, Variablen-Idents/-IDs, Werte,
+Archivbezug und GPS-Auswertung werden nicht migriert oder zurückgesetzt.
+
+Regression in `tests/presence-group.php`: der alte Stand scheitert gezielt am
+Erhalt einer manuellen Ausblendung; eine zweite Red-/Green-Prüfung sichert den
+Verzicht auf Wiederherstellung nach beobachteter manueller Änderung ab.
+Geprüft werden Cacheabruf, Push, mehrfaches ApplyChanges, Entfernen,
+Wiederaufnahme, vorher verborgene Variablen, manuelle Änderungen bei entfernten
+Geräten, mehrere Auswahlzyklen und unveränderte Objekt-IDs. Die bestehenden
+Gruppen-, Aufenthalts- und Migrationsprüfungen bleiben grün.
+
+Abschlussnachweis: `php tests/run.php` unter PHP 8.5.10 vollständig erfolgreich,
+einschließlich Node-Verträgen und Syntaxprüfung. Die vorhandenen GD-/EXIF-
+Erweiterungen wurden nur für den Prüflauf geladen. Auch Struktur-/Helperhash-
+Prüfung, JSON-Stil, php-cs-fixer im Prüfmodus und `git diff --check` bestanden.
+
+Kein Live-System wurde verändert und kein neuer MCP-/Browsernachweis behauptet.
+Release-Metadaten und Store-Einreichung bleiben außerhalb dieser Korrektur.
+
 ## Rückmeldung und bestätigte Wiederanmeldung im Kontoformular (2026-10-25)
 
 Ursache des scheinbar wirkungslosen Buttons: `ICAC_Login` wurde durch den lokalen
