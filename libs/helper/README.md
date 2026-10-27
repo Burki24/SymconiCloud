@@ -8,7 +8,7 @@ The files in this directory are vendored from
 | `ChunkedJsonTransferHelper.php` | 1.1.0 | `13e009dac28cda9bbf22638db00bd8d562a522a10fd592d9c770a7c5f22cf1fb` |
 | `ConfigurationFormHelper.php` | 1.0.1 | `bd45f15a1c2f6e2800eff51eefeb3094f5745a3469434d6a57b98d54f30d363f` |
 | `DataFlowHelper.php` | 1.0.0 | `4c25828b283367692d0db1631d2b7d71ba6012883798bc5ffddb8f2d551d6dfb` |
-| `DebugHelper.php` | 1.0.2 | `3bc98238da59682b149d981e7641f1a1af8103047d05ce520dec0a2abcbe7d2b` |
+| `DebugHelper.php` | 1.0.3 | `b58cd75c9c2c01fc0a6e2610b3f41d817e9799400f08179d380eaa81791864e3` |
 | `GeofenceHelper.php` | 1.2.0 | `a52906069249fb98ec1fcdd6cd7230aa265ae96358f906ee5bbb567624b3dba2` |
 | `HelperTranslationHelper.php` | 1.0.0 | `d3deee581eca9f8eb11e9adce060170227a2dc836ee898bd134f93d27604f639` |
 | `HttpResponseHelper.php` | 1.1.0 | `be4fae4c23f757ab462237d8e74d2a9dca1b504937ed4d4b51c7ff76004cf1cd` |
@@ -20,7 +20,7 @@ The files in this directory are vendored from
 | `IPSViewFontCatalogHelper.php` | 1.1.0 | `cddb6f51b2d4ceb76d8b291204d26fa17d7ccf4711c3f4f462ec7f73f5514c25` |
 | `IPSViewStyleProfileHelper.php` | 1.0.1 | `eca6aa486d60b0db11cc7db0b486dc5b1723c49e26c23fe72465a33cf73f453d` |
 | `IPSViewStyleHelper.php` | 1.6.9 | `44140d34f866a59808948d29849de23a5bc2b1441df1fdc92df6f39d97e90e21` |
-| `OpenFreeMapHelper.php` | 1.0.1 | `5dfa302d938e3d02e4ede6b85b4758c8eafc6bf10400b849c044361d92bab2dd` |
+| `OpenFreeMapHelper.php` | 1.0.2 | `09b08d987f800a58a54b763d50144f6cf8a9f120f8f41e9432fe4bf93e972a82` |
 | `ParentConnectionHelper.php` | 1.0.0 | `d4f01dee721aa32e64410979ca15b2795a0fcc59c0232c0ad69e4702d9ff573c` |
 | `RasterImageHelper.php` | 1.0.0 | `2c9f18d6ad9809015e6415f510106c02f1bb709b1d37e8acba4a6ad4ef151a81` |
 | `ResponsiveVisualizationHelper.php` | 1.0.1 | `9b8f708fe4de4271310a50c1ac2f09166ba731f540eb829f46ad15b805f9f220` |

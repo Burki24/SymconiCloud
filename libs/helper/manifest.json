@@ -113,14 +113,14 @@
             "source_sha": "7b3bdd2634666c863061e084a68838baaa44295e"
         },
         "OpenFreeMapHelper": {
-            "version": "1.0.1",
-            "sha256": "5dfa302d938e3d02e4ede6b85b4758c8eafc6bf10400b849c044361d92bab2dd",
+            "version": "1.0.2",
+            "sha256": "09b08d987f800a58a54b763d50144f6cf8a9f120f8f41e9432fe4bf93e972a82",
             "path": "libs/helper/OpenFreeMapHelper.php",
-            "source_sha": "fb3102b210c305ea30d886b51f8c471fc266a9e0",
+            "source_sha": "68aef587ee458e0155ec04ba19c3e20855209b86",
             "assets": [
                 {
                     "path": "libs/helper/maps/openfreemap.js",
-                    "sha256": "ac4d48003881a2cb1f242e748a50129247ed809ec59618bc5c83930993e7f5a8"
+                    "sha256": "2e2117fa40f9d3104333336d99f297c2a305899bef62df02a7aa6f83f099af3d"
                 },
                 {
                     "path": "libs/helper/maps/vendor/BRIDGE-LICENSE",
@@ -408,10 +408,10 @@
             "source_sha": "d64feed9d8a817000ef5bac0aecc2a16ee8b5b4e"
         },
         "DebugHelper": {
-            "version": "1.0.2",
-            "sha256": "3bc98238da59682b149d981e7641f1a1af8103047d05ce520dec0a2abcbe7d2b",
+            "version": "1.0.3",
+            "sha256": "b58cd75c9c2c01fc0a6e2610b3f41d817e9799400f08179d380eaa81791864e3",
             "path": "libs/helper/DebugHelper.php",
-            "source_sha": "d64feed9d8a817000ef5bac0aecc2a16ee8b5b4e"
+            "source_sha": "68aef587ee458e0155ec04ba19c3e20855209b86"
         }
     }
 }
