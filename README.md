@@ -1,5 +1,11 @@
 # SymconiCloud
 
+[![Symcon](https://img.shields.io/badge/Symcon-PHPModul-brown.svg)](https://www.symcon.de)
+[![Symcon Version](https://img.shields.io/badge/Symcon%20Version-9.0%2B-blue.svg)](library.json)
+[![License](https://img.shields.io/badge/License-PolyForm%20Noncommercial%201.0.0-brightgreen.svg)](LICENSE)
+[![Check Style](https://github.com/Burki24/SymconiCloud/actions/workflows/style.yml/badge.svg?branch=dev)](https://github.com/Burki24/SymconiCloud/actions/workflows/style.yml?query=branch%3Adev)
+[![Tests](https://github.com/Burki24/SymconiCloud/actions/workflows/tests.yml/badge.svg?branch=dev)](https://github.com/Burki24/SymconiCloud/actions/workflows/tests.yml?query=branch%3Adev)
+
 SymconiCloud verbindet Apple-iCloud-Dienste mit IP-Symcon. Die Library bietet Apple-Anmeldung mit Zwei-Faktor-Bestätigung, einen Gerätekonfigurator und **iCloud Gerät** zur Anzeige der von Apple gelieferten Geräte-, Akku- und Standortdaten.
 
 **[WoIst](iCloud%20WoIst/README.md)** zeigt die verfügbaren Positionen aller Geräte eines Kontos gemeinsam auf einer Karte in der Kachelvisualisierung oder als IPSView-WebContent. Beide Ausgaben besitzen einen Designer; IPSView kann das Kachel-Design übernehmen. Kalender und iCloud Drive sind nicht enthalten.

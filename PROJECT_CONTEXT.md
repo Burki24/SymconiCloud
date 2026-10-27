@@ -1,5 +1,25 @@
 # Entwicklungsstand
 
+## README-Badges und Forumsvorlage (2026-10-27)
+
+Die Library-README enthält jetzt die fünf gewünschten Badges: Symcon/PHPModul,
+Symcon ab 9.0, tatsächliche PolyForm-Noncommercial-Lizenz sowie dynamische
+Check-Style- und Tests-Badges für SymconiCloud/dev. Das Beispielbild wurde
+nicht mit seiner abweichenden CC-Lizenz übernommen. library.json bleibt
+unverändert; eine manuell gepflegte Library-Versionsanzeige wurde nicht ergänzt.
+
+Die Pflicht gilt künftig zentral über SymconDevelopment/AGENTS.md,
+standards/README_CONTENT.md und templates/REPO_README.md für alle
+Library-READMEs. Andere Libraries wurden hier nicht geändert.
+docs/FORUM_POST.md enthält den kurzen Entwurf mit den gewünschten Abschnitten
+SymconiCloud, Funktionen, Enthaltene Instanzen, Screenshots, Voraussetzungen,
+Installation sowie Dokumentation und Changelog. Beide Benachrichtigungsmodule
+sind über ihre deutschen Store-Seiten verlinkt. Den Screenshot-Abschnitt
+befüllt der Benutzer selbst; es wurden keine Bilder in den Entwurf eingebettet.
+Der Text ist zur Verwendung
+nach tatsächlicher Beta-Veröffentlichung vorgesehen; es wurde kein
+Forumsbeitrag gesendet und nichts veröffentlicht.
+
 ## Store-Vorbereitung für die erste öffentliche Beta (2026-10-26)
 
 Nach Benutzerbestätigung der laufenden automatischen Versionierung wurde der
