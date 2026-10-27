@@ -1,5 +1,44 @@
 # Entwicklungsstand
 
+## Fehlenden DebugFlowHelper im Auslieferungspaket ergänzt (2026-10-27)
+
+Der GitHub-Testlauf 40513391537 für 733e838 scheiterte bereits an der
+Helper-Abonnementprüfung. Die automatische Versionierung scheiterte am selben
+vorgeschalteten Test. Im laufenden System verursachte der fehlende
+libs/helper/DebugFlowHelper.php einen require_once-Fatalfehler in CloudDebug.php;
+dadurch konnten die Instanzschnittstellen und Formulare nicht geladen werden.
+
+Der erfolgreiche zentrale Sync 40509315918 prüfte SymconiCloud um 14:16 Uhr
+MEZ und meldete ausdrücklich, dass DebugFlowHelper noch nicht abonniert war.
+Das Abonnement wurde erst mit 3a2542d um 14:35 Uhr MEZ gepusht. Ein bereits
+abgeschlossener zentraler Lauf reagiert nicht nachträglich auf Consumer-Commits.
+Es lag weder ein Apple-Anmeldefehler noch ein Defekt der Formularlogik vor.
+
+Das vollständige Paket wurde mit dem unveränderten zentralen Bundle-Verfahren
+aus dem veröffentlichten main a80c7b9fc1d943651a37128d174ee56be0cb275f
+(Repository 3.29.0) abgeglichen: 19 Abonnements, 67 Paketdateien. Ausschließlich
+DebugFlowHelper 1.1.0, sein Manifest-Eintrag und die automatisch erzeugte
+Helper-Dateiliste fehlten und wurden ergänzt. Keine provisorische dev-Kopie,
+kein Fallback, keine manuelle Versionierung und keine Änderungen an übrigen
+Helpern. Library- und Modul-READMEs bleiben unverändert.
+
+Die bestehende CI-Strukturprüfung benennt fehlende Abonnements und Dateien
+jetzt eindeutig und prüft auch transitive Abhängigkeiten sowie Ressourcen
+gegen ihre Hashes. Die bestehenden Sieben-Modul-Tests laden alle echten Klassen,
+erstellen Instanzen und rufen ApplyChanges und GetConfigurationForm offline auf.
+Es wurden keine laufenden Instanzen verändert und keine Apple-Anfragen ausgelöst.
+
+Prüfbelege mit PHP 8.5.10: php tests/run.php vollständig erfolgreich,
+php tests/validate_structure.php erfolgreich, offizieller php-cs-fixer-Prüflauf
+ohne Änderungen, StylePHP-JSON und git diff --check erfolgreich. Die zentralen
+Manifest- und Bundleprüfungen bestehen ebenfalls. Eine isolierte Library-Kopie
+wies gezielt einen fehlenden DebugFlowHelper-Manifesteintrag, die fehlende
+Helperdatei, eine fehlende transitive PersistentJsonCacheHelper-Abhängigkeit
+und eine beschädigte http-origin.js-Ressource mit eindeutigen Meldungen ab;
+nach Wiederherstellung bestand die Prüfung. Der lokale Arbeitsbaum enthält
+das vollständige veröffentlichte Paket. Der erneute GitHub-Lauf und die
+Live-Formularprüfung bleiben bis zum Benutzer-Push und Modulupdate offen.
+
 ## Verständliche Debug-Ausgaben nach zentralem Vertrag (2026-10-27)
 
 Die bisher zwei eigenen Debugstellen wurden durch den vereinbarten Ablauf

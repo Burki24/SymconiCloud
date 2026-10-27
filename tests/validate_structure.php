@@ -77,10 +77,27 @@ foreach ($json($vendorRoot . 'manifest.json')['files'] as $name => $hash) {
 }
 $manifest = $json($root . '/libs/helper/manifest.json');
 $subscriptions = $json($root . '/.helper-sync.json')['helpers'];
+$checkHelperFile = static function (array $entry, string $name) use ($root, $assert): void
+{
+    $path = $entry['path'] ?? '';
+    $assert($path !== '' && is_file($root . '/' . $path), 'Missing helper package file: ' . $name . ' (' . $path . ')');
+    $assert(hash_file('sha256', $root . '/' . $path) === ($entry['sha256'] ?? ''), 'Changed helper package file: ' . $name . ' (' . $path . ')');
+};
+$checkHelper = static function (array $entry, string $name) use (&$checkHelper, $checkHelperFile): void
+{
+    $checkHelperFile($entry, $name);
+    foreach ($entry['assets'] ?? [] as $asset) {
+        $checkHelperFile($asset, $name . ' resource');
+    }
+    foreach ($entry['dependencies'] ?? [] as $dependency) {
+        $checkHelper($dependency, $name . ' -> ' . $dependency['name']);
+    }
+};
 foreach ($subscriptions as $name => $subscription) {
+    $assert(isset($manifest['helpers'][$name]), 'Missing subscribed helper in manifest: ' . $name . ' (' . $subscription['target'] . ')');
     $meta = $manifest['helpers'][$name] ?? [];
-    $assert(($meta['path'] ?? '') === $subscription['target'], 'Helper subscription path');
-    $assert(hash_file('sha256', $root . '/' . $subscription['target']) === ($meta['sha256'] ?? ''), 'Changed upstream helper: ' . $name);
+    $assert(($meta['path'] ?? '') === $subscription['target'], 'Helper subscription path mismatch: ' . $name);
+    $checkHelper($meta, $name);
 }
 $workflow = file_get_contents($root . '/.github/workflows/tests.yml');
 $assert(str_contains($workflow, 'Burki24/Symcon_ModuleCI/php-tests@v1.0.0') && str_contains($workflow, "php-version: '8.5'") && str_contains($workflow, 'bcmath'), 'Pinned shared CI and dependencies');

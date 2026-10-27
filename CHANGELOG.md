@@ -56,6 +56,11 @@
 
 ## Fixes
 
+- Das Library-Paket enthält den freigegebenen DebugFlowHelper samt manifestierter
+  Abhängigkeit. Fehlende Instanzschnittstellen nach dem Debug-Update werden damit
+  behoben. Die Paketprüfung kontrolliert zusätzlich alle Helper-Abhängigkeiten
+  und Ressourcen und benennt fehlende oder veränderte Dateien eindeutig.
+
 - Alle sieben Module bieten nachvollziehbare deutsche Debug-Abläufe über den
   zentralen DebugFlowHelper: Start/Ende, Entscheidungen, Anfragen, Antworten,
   Statuswerte und konkrete Ablehnungsgründe. Private Inhalte bleiben geschützt;
