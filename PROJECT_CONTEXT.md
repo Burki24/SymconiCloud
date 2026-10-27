@@ -1,5 +1,44 @@
 # Entwicklungsstand
 
+## Store-Vorbereitung für die erste öffentliche Beta (2026-10-26)
+
+Nach Benutzerbestätigung der laufenden automatischen Versionierung wurde der
+Store-Eintrag wie bei OpenHomeAlarm vorbereitet: docs/STORE_SUBMISSION.md
+enthält die Feldwerte, eine deutsche Beschreibung, Versionsinformationen,
+Funktionsgrenzen und die Portal-Checkliste. Vorgeschlagene Bundle-ID ist
+de.burki24.symconicloud; deren Verfügbarkeit oder eine bereits vorhandene
+Vorlage und die tatsächlich angebotenen Kategorien sind im Entwicklerkonto
+noch zu bestätigen. Alle sieben Module bilden ein Library-Bundle. Nur die
+deutsche Store-Lokalisierung ist für diese erste Vorlage vorgesehen.
+
+docs/RELEASE_PROCESS.md beschreibt die Reihenfolge Benutzer-Commit/Push,
+Metadaten-Bot, Pull, Tests und Style auf genau dem finalen Metadaten-Commit,
+anschließende Auswahl des vollständigen SHA und Speichern der Vorlage.
+Der Ausgangsstand 2ae43fdf509f4b9d25357fdcbced4a18174c3686 besitzt automatisch
+erzeugte Version 0.2, Build 1563103 und Datum 1793048438. GitHub Tests
+40402032681 und Check Style 40402033011 wurden lesend als erfolgreich
+bestätigt. Versionsworkflow 40400724487 war erfolgreich; das Überspringen des
+Folgelaufs auf dem Bot-Commit ist die beabsichtigte Schleifenvermeidung.
+Nach dem Dokumentations-Commit ist ein neuer finaler Kandidat zu bestimmen.
+
+Die aktuellen offiziellen Einreichungsvorgaben wurden geprüft: Beta wird
+bereits beim Einreichen unmittelbar veröffentlicht. Deshalb wurden kein
+Store-Entwurf im Konto gespeichert, keine Einreichung, kein Merge/Tag/Release
+und kein Live-Update ausgeführt. Die Texte behaupten keine offizielle
+Apple-Unterstützung oder Garantie gegen Kontosperren und benennen optionale
+Fremddienste, vertrauliche Daten, Foto-Dateicache und bestätigte Empfänger-
+änderungen ausdrücklich. Runtime-Helper und Modulcode bleiben unverändert.
+
+Frische Nachweise: vollständige Offline-Suite mit PHP 8.5/GD/EXIF und Node,
+Struktur-/Manifest-/LF-Prüfung, JSON-Stilprüfung und offizieller PHP-CS-Fixer
+im Prüfmodus bestehen. Der statische Store-Scanner meldet null Blocker;
+ignorierte Preview-Artefakte wurden nicht zum Kandidaten gerechnet. Lokale
+Dateizugriffe, explizite Designeraktionen, Variablen-Sichtbarkeitsverwaltung und
+bestätigte Empfängerübernahme wurden als relevante Quellgrenzen betrachtet.
+Es erfolgte keine neue vollständige Live-Abnahme. Die Vorbereitung ist bedingt
+einreichungsreif: Portal-Pflichtfelder und finaler SHA samt Folge-CI sind noch
+zu bestätigen. Es wurden keine Versionsmetadaten von Hand verändert.
+
 ## Beta: automatische Versionierung und Dokumentationslinks (2026-10-26)
 
 Der Benutzer hat Beobachtungsbetrieb und Installations-/Updateprüfung als

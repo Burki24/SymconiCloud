@@ -60,4 +60,6 @@ Bei einem späteren Wechsel des Release-Zweigs sind URLs und Vertrag gemeinsam
 anzupassen.
 
 Beobachtungsbetrieb und Installations-/Updateprüfung sind vom Benutzer als
-abgeschlossen bestätigt. Der Store-Eintrag ist der nächste gesonderte Schritt.
+abgeschlossen bestätigt. Die vorbereiteten [Store-Einreichungsdaten](STORE_SUBMISSION.md)
+und der [Beta-Release-Prozess](RELEASE_PROCESS.md) beschreiben den nächsten
+Schritt. Die tatsächliche Einreichung bleibt gesondert beauftragt.
