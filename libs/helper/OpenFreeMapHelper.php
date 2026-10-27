@@ -10,7 +10,7 @@ require_once __DIR__ . '/VisualizationAssetHelper.php';
 /**
  * Shared OpenFreeMap vector-map design, assets and per-output configuration.
  *
- * @version 1.0.1
+ * @version 1.0.2
  */
 trait OpenFreeMapHelper
 {
