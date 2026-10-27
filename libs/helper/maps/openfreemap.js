@@ -210,7 +210,15 @@
             && value.center.every(Number.isFinite) && Math.abs(value.center[0]) <= 90 && Math.abs(value.center[1]) <= 180
             && Number.isFinite(value.zoom) && value.zoom >= 0 && value.zoom <= 30
             && (value.selected === null || (typeof value.selected === 'string' && value.selected.length > 0 && value.selected.length <= 512))
-            && typeof value.popup === 'boolean';
+            && typeof value.popup === 'boolean'
+            && (value.filter === undefined || (typeof value.filter === 'string' && value.filter.length <= 256))
+            && (value.scroll === undefined || (Number.isFinite(value.scroll) && value.scroll >= 0 && value.scroll <= 10000000));
+        const cleanView = value => {
+            const clean = {center: value.center, zoom: value.zoom, selected: value.selected, popup: value.popup};
+            if (value.filter !== undefined) clean.filter = value.filter;
+            if (value.scroll !== undefined) clean.scroll = value.scroll;
+            return clean;
+        };
         return {
             read() {
                 try {
@@ -220,14 +228,13 @@
                     const envelope = JSON.parse(raw);
                     if (envelope.version !== 1 || !Number.isFinite(envelope.time) || envelope.time > now()
                         || now() - envelope.time > 4 * 60 * 60 * 1000 || !valid(envelope.value)) return null;
-                    const value = envelope.value;
-                    return {center: value.center, zoom: value.zoom, selected: value.selected, popup: value.popup};
+                    return cleanView(envelope.value);
                 } catch (_) { return null; }
             },
             write(value) {
                 try {
                     if (!storageKey || !valid(value)) return;
-                    const clean = {center: value.center, zoom: value.zoom, selected: value.selected, popup: value.popup};
+                    const clean = cleanView(value);
                     environment.sessionStorage.setItem(storageKey, JSON.stringify({version: 1, time: now(), value: clean}));
                 } catch (_) { /* Sandboxing, quotas and disabled storage leave the live map usable. */ }
             }
