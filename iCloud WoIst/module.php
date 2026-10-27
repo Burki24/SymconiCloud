@@ -17,8 +17,9 @@ require_once __DIR__ . '/../libs/helper/HttpResponseHelper.php';
 require_once __DIR__ . '/../libs/helper/ReverseGeocodingHelper.php';
 require_once __DIR__ . '/../libs/WoIstGeocoding.php';
 require_once __DIR__ . '/../libs/IPSViewFrame.php';
+require_once __DIR__ . '/../libs/WoIstAccounts.php';
 
-/** One account's device positions, rendered through the authenticated HTML SDK. */
+/** Assigned account device positions, rendered through the authenticated HTML SDK. */
 class iCloudWoIst extends IPSModuleStrict
 {
     use \Burki24\SymconModuleHelper\ConfigurationFormHelper;
@@ -36,12 +37,13 @@ class iCloudWoIst extends IPSModuleStrict
     use \Burki24\SymconModuleHelper\ReverseGeocodingHelper;
     use \SymconiCloud\WoIstGeocoding;
     use \SymconiCloud\IPSViewFrame;
+    use \SymconiCloud\WoIstAccounts;
 
     private const ACCOUNT_MODULE = '{10BF9A03-98A3-495A-B0FA-A4FA0B1002D5}';
     private const REQUEST_DATA = '{1E60F0BE-03E4-4AA4-A1CE-AA838725A4E2}';
     private const NOTIFICATION_DATA = '{FCE7780F-9520-4E52-92F3-60034FFAED6D}';
 
-    /** Registers only map settings; credentials and refresh timers belong to the account. */
+    /** Registers map settings/cache polling; credentials and Apple refresh timers belong to accounts. */
     public function Create(): void
     {
         parent::Create();
@@ -51,6 +53,7 @@ class iCloudWoIst extends IPSModuleStrict
         $this->RegisterVisualizationThemeProperties();
         $this->RegisterIPSViewStyleProperties();
         $this->RegisterPropertyInteger('StaleAfter', 900);
+        $this->RegisterWoIstAccounts();
         $this->RegisterWoIstGeocoding();
         $this->RegisterPropertyString('TileURL', 'https://tile.openstreetmap.org/{z}/{x}/{y}.png');
         $this->RegisterPropertyString('TileAttribution', '© OpenStreetMap contributors');
@@ -65,6 +68,7 @@ class iCloudWoIst extends IPSModuleStrict
         $this->RegisterIPSViewStyleMediaMessages();
         $this->MaintainIPSViewHTMLVariable('IPSViewWoIst', $this->Translate('WoIst for IPSView'), 100, '', false);
         $this->ConfigureWoIstIPSViewTransport();
+        $this->SetTimerInterval('UpdateAccounts', $this->configurationValid() && count($this->WoIstAccountIDs()) > ($this->HasParent() ? 1 : 0) ? 5000 : 0);
         if (!$this->ReadPropertyBoolean('EnableAddressResolution')) {
             $this->ClearReverseGeocodingCache();
         }
@@ -122,13 +126,13 @@ class iCloudWoIst extends IPSModuleStrict
         return $this->publish($this->request('GetDevices'));
     }
 
-    /** @return bool Result of one explicit account refresh, honoring the account's cooldown. */
+    /** @return bool Availability after one explicit refresh per account, honoring each cooldown. */
     public function RefreshDevices(): bool
     {
         return $this->publish($this->request('RefreshDevices'));
     }
 
-    /** @return string Sanitized map bootstrap; reads only the connected account cache. */
+    /** @return string Sanitized map bootstrap; reads only explicitly assigned account caches. */
     public function GetState(): string
     {
         return $this->encode($this->bootstrap($this->request('GetDevices')));
@@ -161,7 +165,7 @@ class iCloudWoIst extends IPSModuleStrict
         } catch (Throwable) {
             $data = $this->unavailable();
         }
-        $this->publish($data);
+        $this->publish($this->request('GetDevices', $data));
         return '';
     }
 
@@ -188,9 +192,7 @@ class iCloudWoIst extends IPSModuleStrict
     {
         $assets = $this->OpenFreeMapAssets('/hook/' . $this->WoIstIPSViewHookName() . '/assets/maplibre-gl.js');
         $bootstrap['mode'] = $ipsView ? 'ipsview' : 'symcon';
-        if (!$ipsView) {
-            $bootstrap['options']['viewStateKey'] = 'ICWI:' . $this->InstanceID . ':' . IPS_GetInstance($this->InstanceID)['ConnectionID'];
-        }
+        $bootstrap['options']['viewStateKey'] = 'ICWI:' . $this->InstanceID . ':' . ($ipsView ? 'ipsview' : IPS_GetInstance($this->InstanceID)['ConnectionID']);
         $bootstrap['options']['openFreeMap'] = $publicShell ? null : $this->WoIstOpenFreeMap($ipsView);
         $bootstrap['options']['design'] = $this->WoIstDesign($ipsView);
         $bootstrap['options'] = array_replace($bootstrap['options'], $this->ResponsiveVisualizationLayoutOptions(!$ipsView));
@@ -226,20 +228,16 @@ class iCloudWoIst extends IPSModuleStrict
         return $this->renderPage(true, $bootstrap, true);
     }
 
-    private function request(string $command): array
+    private function request(string $command, ?array $notification = null): array
     {
         if (!$this->configurationValid()) {
             return $this->unavailable('Invalid map configuration.');
         }
-        if (!$this->HasParent()) {
+        if (!$this->HasWoIstAccounts()) {
             return $this->unavailable('No iCloud account connected.');
         }
         try {
-            $reply = $this->SendDataToParent($this->EncodeDataFlowMessage(self::REQUEST_DATA, ['Command' => $command]));
-            $data = json_decode($reply, true, 64, JSON_THROW_ON_ERROR);
-            if (is_array($data) && is_bool($data['success'] ?? null) && is_array($data['devices'] ?? null) && array_is_list($data['devices'])) {
-                return $data;
-            }
+            return $this->CollectWoIstAccounts($command, $notification);
         } catch (Throwable) {
             // Never expose account exceptions or unprocessed transport responses.
         }
@@ -250,7 +248,7 @@ class iCloudWoIst extends IPSModuleStrict
     {
         $bootstrap = $this->bootstrap($data);
         $state = $bootstrap['state'];
-        $this->SetStatus(!$this->configurationValid() ? 203 : (!$this->HasParent() ? 201 : ($state['success'] ? IS_ACTIVE : 202)));
+        $this->SetStatus(!$this->configurationValid() ? 203 : (!$this->HasWoIstAccounts() ? 201 : ($state['success'] ? IS_ACTIVE : 202)));
         $this->UpdateVisualizationValue($this->encode($bootstrap));
         $this->PublishWoIstIPSViewState($bootstrap);
         $this->ScheduleWoIstGeocoding($state);
@@ -260,7 +258,7 @@ class iCloudWoIst extends IPSModuleStrict
 
     private function bootstrap(array $data): array
     {
-        if (!$this->configurationValid() || !$this->HasParent()) {
+        if (!$this->configurationValid() || !$this->HasWoIstAccounts()) {
             $data = $this->unavailable(!$this->configurationValid() ? 'Invalid map configuration.' : 'No iCloud account connected.');
         }
         $updated = is_int($data['updatedAt'] ?? null) && $data['updatedAt'] > 0 ? $data['updatedAt'] : 0;
@@ -287,6 +285,7 @@ class iCloudWoIst extends IPSModuleStrict
                 'id'           => $device['id'], 'name' => is_string($device['name'] ?? null) ? $device['name'] : '',
                 'model'        => is_string($device['model'] ?? null) ? $device['model'] : '',
                 'online'       => ($device['deviceStatus'] ?? 0) === 200,
+                'accountId'    => $device['accountId'] ?? '', 'accountName' => $device['accountName'] ?? '', 'accountAvailable' => $device['accountAvailable'] ?? $success,
                 'batteryLevel' => $this->finiteNumber($battery) && $battery >= 0 && $battery <= 1 ? (float) $battery : null,
                 'location'     => $location, 'address' => $this->WoIstCachedAddress($location), 'addressNotice' => $this->WoIstAddressNotice($location)
             ];
@@ -296,6 +295,7 @@ class iCloudWoIst extends IPSModuleStrict
             'title'                  => 'WoIst', 'refresh' => 'Refresh from Apple', 'fit' => 'Show all positions', 'devices' => 'Devices',
             'noDevices'              => 'No devices available.', 'noLocation' => 'No position available', 'stale' => 'Last known position',
             'current'                => 'Recent position', 'offline' => 'Offline', 'battery' => 'Battery', 'updated' => 'Account updated',
+            'accounts'               => 'Account filter', 'allAccounts' => 'All accounts', 'unavailableAccount' => 'Unavailable account',
             'accuracy'               => 'Accuracy', 'mapUnavailable' => 'Map tiles unavailable. Device data is still shown.',
             'loadError'              => 'The map could not be loaded.', 'refreshing' => 'Refreshing…',
             'transportError'         => 'Live updates unavailable. Retrying…',
@@ -308,7 +308,7 @@ class iCloudWoIst extends IPSModuleStrict
             'state' => ['success' => $success, 'accountState' => is_string($data['state'] ?? null) ? $data['state'] : 'error',
                 'error'           => is_string($data['error'] ?? null) ? $data['error'] : '', 'updatedAt' => $updated,
                 'staleAfter'      => max(60, min(86400, $this->ReadPropertyInteger('StaleAfter'))), 'devices' => $devices,
-                'geocoding'       => $this->WoIstGeocodingStatus()],
+                'geocoding'       => $this->WoIstGeocodingStatus(), 'accounts' => $data['accounts'] ?? []],
             'labels'  => $labels,
             'options' => [...$this->ResponsiveVisualizationLayoutOptions(), 'design' => $this->WoIstDesign(false), 'openFreeMap' => $this->WoIstOpenFreeMap(false), 'maxZoom' => 19]
         ];
@@ -321,7 +321,12 @@ class iCloudWoIst extends IPSModuleStrict
 
     private function configurationValid(): bool
     {
-        return $this->ReadPropertyInteger('StaleAfter') >= 60 && $this->ReadPropertyInteger('StaleAfter') <= 86400;
+        try {
+            $this->WoIstAccountIDs();
+            return $this->ReadPropertyInteger('StaleAfter') >= 60 && $this->ReadPropertyInteger('StaleAfter') <= 86400;
+        } catch (Throwable) {
+            return false;
+        }
     }
 
     private function unavailable(string $error = 'Account data unavailable.'): array

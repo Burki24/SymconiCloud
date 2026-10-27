@@ -103,7 +103,15 @@
             "Private Nominatim server base URL": "Basis-URL des eigenen Nominatim-Servers",
             "Address language (e.g. de or en)": "Adresssprache (z. B. de oder en)",
             "Optional: coordinates are sent only to the configured server. Use a running private Nominatim service, not a GitHub repository or the public OSM service.": "Optional: Koordinaten werden nur an den konfigurierten Server gesendet. Benötigt einen laufenden eigenen Nominatim-Dienst; ein GitHub-Repository oder der öffentliche OSM-Dienst ist dafür nicht geeignet.",
-            "Address resolution is unavailable. Configure a private HTTP(S) server base URL and a valid language. The map remains available.": "Adressauflösung nicht verfügbar. Bitte die HTTP(S)-Basis-URL eines eigenen Servers und eine gültige Sprache eintragen. Die Karte bleibt verfügbar."
+            "Address resolution is unavailable. Configure a private HTTP(S) server base URL and a valid language. The map remains available.": "Adressauflösung nicht verfügbar. Bitte die HTTP(S)-Basis-URL eines eigenen Servers und eine gültige Sprache eintragen. Die Karte bleibt verfügbar.",
+            "Additional iCloud accounts": "Zusätzliche iCloud-Konten",
+            "Additional accounts": "Zusätzliche Konten",
+            "iCloud account": "iCloud-Konto",
+            "The connected account remains included. Add up to 20 existing iCloud accounts. Only their caches are read every five seconds; no additional login is started.": "Das verbundene Konto bleibt enthalten. Bis zu 20 vorhandene iCloud-Konten ergänzen. Alle fünf Sekunden werden ausschließlich deren Caches gelesen; es wird keine zusätzliche Anmeldung gestartet.",
+            "Account filter": "Kontofilter",
+            "All accounts": "Alle Konten",
+            "Unavailable account": "Konto nicht verfügbar",
+            "Some accounts are unavailable. Their positions are last known.": "Einige Konten sind nicht verfügbar. Deren Positionen sind die zuletzt bekannten."
         }
     }
 }

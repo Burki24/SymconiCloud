@@ -1,6 +1,6 @@
 # iCloud WoIst Karte
 
-WoIst zeigt die Positionen der Geräte eines iCloud-Kontos gemeinsam auf einer interaktiven Karte. Einzelne iCloud-Geräteinstanzen sind dafür nicht erforderlich. Voraussetzung sind Symcon 9.0 und ein angemeldetes iCloud-Konto dieser Library.
+WoIst zeigt die Positionen der Geräte eines oder mehrerer ausgewählter iCloud-Konten gemeinsam auf einer interaktiven Karte. Einzelne iCloud-Geräteinstanzen sind dafür nicht erforderlich. Voraussetzung sind Symcon 9.0 und mindestens ein angemeldetes iCloud-Konto dieser Library.
 
 ![WoIst-Kachel mit Karte, Geräteliste und Aktualisierungsaktionen](../docs/images/woist-tile-redacted.png)
 
@@ -11,12 +11,57 @@ Gerätemarkierungen für die Dokumentation entfernt.*
 ## Einrichtung
 
 1. **iCloud WoIst Karte** anlegen und mit dem gewünschten iCloud-Konto verbinden.
-2. Die Instanz zur Symcon-Kachelvisualisierung hinzufügen. Eine Instanz zeigt jeweils alle Geräte ihres verbundenen Kontos.
+2. Die Instanz zur Symcon-Kachelvisualisierung hinzufügen. Sie zeigt alle Geräte ihres verbundenen Kontos und optional zusätzlich ausgewählter Konten.
 3. Ein Gerät aus der Liste wählen: Die Karte zentriert sich auf dessen Position, hebt den Marker mit größerem Punkt und stärkerem Rand hervor und öffnet die Gerätedetails. Ein bereits näherer Zoom bleibt erhalten. **Alle Positionen anzeigen** passt den Kartenausschnitt an die verfügbaren Positionen an.
 
 Beim Wechsel wird die vorherige Markierung zurückgesetzt. Die Hervorhebung bleibt bei Datenaktualisierungen erhalten; diese verschieben den gewählten Kartenausschnitt nicht. Ein Gerät ohne verfügbare Position kann in der Liste ausgewählt werden, erzeugt aber keinen Kartenmarker und verschiebt die Karte nicht.
 
 Die Karte erhält neue Daten automatisch vom Konto. **Bei Apple aktualisieren** löst eine ausdrückliche Geräteabfrage über das Konto aus und beachtet dessen Anmeldestatus und Wartezeiten. Das Öffnen der Karte oder des Formulars liest nur den Kontocache und löst keine Apple-Anmeldung aus.
+
+## Mehrere iCloud-Konten auf einer Karte
+
+Das bisher verbundene **iCloud Konto** bleibt automatisch enthalten. Unter
+**Zusätzliche iCloud-Konten → Zusätzliche Konten** können bis zu 20 weitere
+vorhandene Kontoinstanzen über ihre Instanz-ID ausgewählt werden. Zugangsdaten
+werden ausschließlich in den jeweiligen Kontoinstanzen eingerichtet. Doppelte
+Einträge einschließlich des bereits verbundenen Kontos werden nur einmal
+berücksichtigt.
+
+Sobald mehrere Konten zugeordnet sind, erscheint in Kachel und IPSView der
+**Kontofilter**. **Alle Konten** zeigt die gemeinsame Karte; die Auswahl eines
+Kontos begrenzt Geräteliste und Marker auf dieses Konto. Zusätzlich steht der
+Kontoname bei den Gerätedetails und im Popup. Gleichnamige Geräte und identische
+Gerätekennungen verschiedener Konten bleiben getrennt.
+
+- Vorhandene Einstellungen und Gerätekennungen des verbundenen Kontos bleiben
+  erhalten. Bestehende Karten müssen nicht neu eingerichtet werden.
+- Datenupdates verändern weder Kontofilter noch Zoom, Kartenausschnitt,
+  Geräteauswahl oder Scrollposition. Der Filterwechsel verändert die Kamera
+  ebenfalls nicht; **Alle Positionen anzeigen** passt sie ausdrücklich an die
+  aktuell sichtbaren Geräte an.
+- Ein durch den Filter ausgeblendetes ausgewähltes Gerät bleibt ausgewählt
+  und wird beim Zurückwechseln wieder hervorgehoben.
+- Beim Wiederaufbau der Seite werden Ansicht, Auswahl, Filter und
+  Scrollposition über den zentralen Helper im Sitzungsspeicher desselben
+  Browser-Tabs wiederhergestellt. Dieser Speicher ist zeitlich begrenzt;
+  private Browser-/WebView-Einstellungen können ihn einschränken.
+- Zusätzliche Kontocaches werden alle fünf Sekunden lokal gelesen. Das startet
+  keine Apple-Abfrage und keine Anmeldung. Abfrageintervalle, Pausen, Limits
+  und Sitzungen bleiben pro Konto getrennt.
+- **Bei Apple aktualisieren** fordert einmal eine Aktualisierung aller
+  zugeordneten Konten an. Jede Kontoinstanz prüft ihre eigenen Schutzregeln;
+  bei mehreren Konten kann der Vorgang länger dauern.
+- Ein nicht verfügbares Konto wird im Filter und als Hinweis angezeigt.
+  Vorhandene Positionen dieses Kontos gelten als zuletzt bekannt. Gesunde
+  Konten bleiben sichtbar und aktuell. Entfernte oder falsch zugeordnete
+  Instanzen beeinträchtigen die übrigen Konten nicht.
+
+Der Filter dient der Darstellung und ist keine Zugriffsberechtigung: Wer
+Zugriff auf die gemeinsame Karte hat, kann alle zugeordneten Konten sehen.
+Bei Änderung der Kontozuordnung erneuert das Modul den IPSView-Zugriffstoken.
+Die IPSView-Ausgabe nach dem Übernehmen gegebenenfalls neu öffnen.
+Adressvariablen vorhandener Geräteinstanzen verwenden weiterhin deren
+ursprüngliche Kontozuordnung; Geräteinstanzen werden nicht zusammengeführt.
 
 ## Optionale Adressauflösung
 

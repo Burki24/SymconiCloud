@@ -9,6 +9,14 @@
 
 ## Neue Funktionen
 
+- **WoIst** kann zusätzliche vorhandene iCloud-Konten gemeinsam auf einer Karte
+  darstellen. Der Kontofilter begrenzt Karte und Geräteliste; gleichnamige
+  Geräte und identische Gerätekennungen verschiedener Konten bleiben getrennt.
+  Bestehende Einstellungen und Gerätekennungen des verbundenen Kontos bleiben
+  erhalten. Zoom, Ausschnitt, Auswahl, Filter und Scrollposition überstehen
+  Datenupdates und den Wiederaufbau der Ausgabe. Nicht verfügbare Konten
+  beeinträchtigen die übrigen Konten nicht.
+
 - **iCloud Konto** bewahrt sicherheitsrelevante Ereignisse getrennt von normalen
   Abfragen auf: bis zu 200 Einträge aus 30 Tagen mit bekannten Apple-Fehlercodes
   und verständlichen deutschen Ergebnissen. Eine zusätzliche Option verhindert

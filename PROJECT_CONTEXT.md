@@ -1,5 +1,59 @@
 # Entwicklungsstand
 
+## WoIst mit zusätzlichen Konten und Kontofilter (2026-10-27)
+
+Die öffentliche Beta und der Forumsthread wurden vom Benutzer bestätigt.
+WoIst wurde auf Wunsch um AdditionalAccounts mit bis zu 20 zusätzlichen
+Kontoinstanzen erweitert. Der bestehende Parent bleibt im regulären Datenfluss,
+zusätzliche ausdrücklich ausgewählte Konten werden nach Prüfung der Modul-GUID
+über deren öffentliche Cache-/Refresh-APIs gelesen. Ein Timer liest lokale
+Caches im Fünfsekundentakt; keine zusätzliche Anmeldung oder Apple-Abfrage
+beim Öffnen, Filtern oder Polling. Die eigene Kontoschutzlogik bleibt je Konto
+unverändert. ADR 0012 dokumentiert Grenze und Kompatibilitätsentscheidung.
+
+Primäre Gerätekennungen bleiben erhalten, zusätzliche werden nach Konto
+namensräumlich getrennt. Die gemeinsame Karte bietet Alle Konten oder einzelne
+Konten; Teilfehler werden pro Quelle dargestellt. Der zentrale OpenFreeMap-
+Speicher erhält optionale validierte Filter-/Scrollfelder, abwärtskompatibel
+zu alten Speicherständen. HTML-/Variablen-IDs bleiben stabil; IPSView-Token
+werden nur bei geänderter Kontozuordnung bzw. bestehender Tokenpolitik erneuert.
+
+MCP-Nachweis auf dem Windows-Testsystem: temporäre separate Preview-Library
+mit zwei synthetischen Konten und 28 Geräten, einschließlich identischer
+Ausgangskennungen. Kein Login-/Refresh-Transport und keine Änderungen echter
+Konten oder Karten. Die öffentliche Cache-API eines vorhandenen echten Kontos
+wurde zusätzlich lesend auf ihren Vertrag geprüft. Native Vorschau: Filter B,
+Geräteauswahl, Zoom, verschobener Ausschnitt und Mausrad-Scrollen; nach
+Seiten-Neuaufbau Auswahl/Filter/Scroll identisch und Popup-Kartenanker ohne
+Pixelabweichung. Die MCP-Vorschau beweist keinen nativen Live-Push.
+
+IPSView-HTTP-Seite: echte Cache-Updates über den Pollingtransport nachgewiesen;
+geänderter Akkustand kam an, Filter/Auswahl/Scroll und Kartenansicht blieben
+erhalten. Ein simuliert ausgefallenes Primärkonto beeinträchtigte Konto B
+nicht; Filter A zeigte nur alte Positionen. Beim Zurückfiltern blieb B gewählt.
+Nach vollständigem Dokument-Neuaufbau mit unverändertem Token wurden die
+Ansicht und die aktuellen Daten wiederhergestellt, ohne Pixelabweichung des
+Popup-Ankers oder Transportfehler. Das ist ein Wiederaufbau-Test, keine
+physische Netzwerkunterbrechung und kein Test des nativen IPSView-Clients.
+
+Der vollständige Bundle-Stand wurde isoliert über die normalen Generatoren
+erstellt (64 Dateien, 18 abonnierte Helper). Die neue Wiederaufbau-Regression
+schlägt mit dem alten Consumer-Helper erwartungsgemäß fehl. Deshalb zentrale
+Helper-Freigabe und automatische Verteilung vor der Modulfreigabe; keine
+vorläufigen Helper-Dateien oder Metadaten verbleiben in libs/helper.
+
+Abschluss: Die temporären drei Instanzen samt IPSView-Variable und die eigene
+Preview-Library wurden entfernt; Browser-Tabs wurden geschlossen. Bestehende
+echte Konto-/Karteninstanzen blieben erhalten. Vollständige Offline-Suite unter
+PHP 8.5.10 mit GD/EXIF und Node, Frontend-Wiederaufbau für beide Modi, zentrale
+Helper-Suite, Bundle-/Manifestprüfungen und offizielle PHP-Stilprüfungen bestehen
+für den isolierten vollständigen Integrationsstand. Die zuletzt ergänzte
+Regression kennzeichnet auch frische Cachekoordinaten eines ausgefallenen
+Kontos ausdrücklich als zuletzt bekannt, zusätzlich zur Markerfarbe.
+Konfigurationseinstellungen und die IPSView-Variablen-ID werden in Regressionen
+vollständig verglichen. Keine manuellen Versionsänderungen, Commits, Pushs,
+Store-Updates oder Produktivinstallation wurden durchgeführt.
+
 ## README-Badges und Forumsvorlage (2026-10-27)
 
 Die Library-README enthält jetzt die fünf gewünschten Badges: Symcon/PHPModul,

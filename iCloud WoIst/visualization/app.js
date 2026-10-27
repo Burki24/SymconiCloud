@@ -10,7 +10,8 @@
         refreshing: 'Refreshing…', cacheError: 'Account unavailable. Cached locations may be out of date.',
         ago: 'ago', unknown: 'Unknown',
         transportError: 'Live updates unavailable. Retrying…',
-        transportConfiguration: 'Configure the Symcon server URL for IPSView live updates.'
+        transportConfiguration: 'Configure the Symcon server URL for IPSView live updates.',
+        accounts: 'Account filter', allAccounts: 'All accounts', unavailableAccount: 'Unavailable account'
     };
 
     function validLocation(location) {
@@ -189,6 +190,8 @@
     let layer = null;
     let accuracy = null;
     let selected = null;
+    let accountFilter = '';
+    let selectedAccount = '';
     let fitted = false;
     let ready = false;
     let outputMode = '';
@@ -229,11 +232,12 @@
 
     function details(device) {
         const lines = [];
+        if ((state.accounts || []).length > 1 && device.accountName) lines.push(String(device.accountName));
         if (device.model) lines.push(String(device.model));
         if (device.online === false) lines.push(text('offline'));
         if (typeof device.batteryLevel === 'number' && Number.isFinite(device.batteryLevel)) lines.push(text('battery') + ': ' + Math.round(device.batteryLevel * 100) + '%');
         if (validLocation(device.location)) {
-            lines.push(text(isStale(device.location, state, now()) ? 'stale' : 'current') + ' · ' + ageText(device.location.timestamp));
+            lines.push(text(device.accountAvailable === false || isStale(device.location, state, now()) ? 'stale' : 'current') + ' · ' + ageText(device.location.timestamp));
             if (typeof device.address === 'string' && device.address) lines.push(device.address);
             if (typeof device.addressNotice === 'string' && device.addressNotice) lines.push(device.addressNotice);
             if (typeof device.location.horizontalAccuracy === 'number' && device.location.horizontalAccuracy > 0) lines.push(text('accuracy') + ': ' + Math.ceil(device.location.horizontalAccuracy) + ' m');
@@ -257,7 +261,7 @@
 
     function markerStyle(device) {
         const chosen = device.id === selected;
-        const stale = isStale(device.location, state, now());
+        const stale = device.accountAvailable === false || isStale(device.location, state, now());
         return {
             radius: (design.markerSize || 9) + (chosen ? 5 : 0),
             color: '#ffffff', weight: chosen ? 4 : 2,
@@ -270,6 +274,7 @@
         const previous = markers.get(selected);
         if (selected !== device.id && previous && typeof previous.closePopup === 'function') previous.closePopup();
         selected = device.id;
+        selectedAccount = device.accountId || '';
         for (const current of state.devices) {
             const item = current && markers.get(current.id);
             if (item) {
@@ -298,7 +303,8 @@
         const location = typeof center.wrap === 'function' ? center.wrap() : center;
         const marker = markers.get(selected);
         viewMemory.write({center: [location.lat, location.lng], zoom: map.getZoom(), selected,
-            popup: Boolean(marker && marker.isPopupOpen && marker.isPopupOpen())});
+            popup: Boolean(marker && marker.isPopupOpen && marker.isPopupOpen()), filter: accountFilter,
+            scroll: Math.max(0, Number(el('woist-devices').scrollTop) || 0)});
     }
 
     function fit() {
@@ -381,6 +387,25 @@
 
     function render() {
         if (!ready) return;
+        const scroll = Number(el('woist-devices').scrollTop) || 0;
+        let restoredScroll = null;
+        const accounts = Array.isArray(state.accounts) ? state.accounts : [];
+        const filter = el('account-filter');
+        if (filter) {
+            if (accounts.length && accountFilter && !accounts.some(account => account.id === accountFilter)) accountFilter = '';
+            filter.replaceChildren();
+            const all = node('option', '', text('allAccounts'));
+            all.value = '';
+            filter.appendChild(all);
+            for (const account of accounts) {
+                const option = node('option', '', String(account.name || text('unknown')) + (account.success === false ? ' · ' + text('unavailableAccount') : ''));
+                option.value = account.id;
+                filter.appendChild(option);
+            }
+            filter.value = accountFilter;
+            el('account-filter-label').textContent = text('accounts');
+            el('woist-account-filter').hidden = accounts.length < 2;
+        }
         const geocoding = state.geocoding || {};
         if (el('geocoding-attribution')) el('geocoding-attribution').hidden = geocoding.provider !== 'geoapify';
         if (el('geocoding-message')) {
@@ -389,23 +414,25 @@
         }
         const selectedMarker = markers.get(selected);
         const reopenPopup = selectedMarker && typeof selectedMarker.isPopupOpen === 'function' && selectedMarker.isPopupOpen();
-        const error = state.success === false ? (state.error || text('cacheError')) : '';
+        const error = state.success === false || accounts.some(account => account.success === false) ? (state.error || text('cacheError')) : '';
         el('account-message').textContent = error;
         el('account-message').hidden = !error;
         el('updated').textContent = text('updated') + ': ' + ageText(state.updatedAt);
         el('device-list').replaceChildren();
         if (accuracy && map) { map.removeLayer(accuracy); accuracy = null; }
-        const devices = state.devices.filter((device) => device && typeof device === 'object');
+        const allDevices = state.devices.filter((device) => device && typeof device === 'object');
+        const devices = allDevices.filter(device => !accountFilter || device.accountId === accountFilter);
         const locatedIDs = new Set(devices.filter((device) => validLocation(device.location)).map((device) => device.id));
         for (const [id, marker] of markers) {
             if (!locatedIDs.has(id)) { layer.removeLayer(marker); markers.delete(id); }
         }
-        if (!devices.some((device) => device.id === selected)) selected = null;
+        const missingSource = accounts.find(account => account.id === selectedAccount);
+        if (!allDevices.some((device) => device.id === selected) && state.success !== false && (!missingSource || missingSource.success !== false)) selected = null;
         el('empty').hidden = devices.length !== 0;
         el('empty').textContent = text('noDevices');
         devices.forEach((device) => {
             const located = validLocation(device.location);
-            const stale = located && isStale(device.location, state, now());
+            const stale = located && (device.accountAvailable === false || isStale(device.location, state, now()));
             const button = node('button', 'device' + (!located ? ' unlocated' : stale ? ' stale' : ''));
             button.type = 'button';
             button.dataset.id = String(device.id);
@@ -440,10 +467,20 @@
         }
         if (pendingViewSelection && state.success !== false) {
             const restored = pendingViewSelection;
-            pendingViewSelection = null;
-            const device = devices.find(entry => entry.id === restored.selected);
-            if (device) selectDevice(device, false, restored.popup);
+            const device = allDevices.find(entry => entry.id === restored.selected);
+            if (device) {
+                pendingViewSelection = null;
+                restoredScroll = restored.scroll;
+                selectDevice(device, false, restored.popup && (!accountFilter || device.accountId === accountFilter));
+            } else {
+                const source = accounts.find(account => typeof restored.selected === 'string' && restored.selected.startsWith('account:' + account.id + ':')) || accounts[0];
+                if (restored.selected === null || !source || source.success !== false) {
+                    pendingViewSelection = null;
+                    restoredScroll = restored.scroll;
+                }
+            }
         }
+        el('woist-devices').scrollTop = Number.isFinite(restoredScroll) ? restoredScroll : pendingViewSelection ? pendingViewSelection.scroll || scroll : scroll;
         saveView();
     }
 
@@ -464,11 +501,13 @@
         const transportConfiguration = bootstrap.mode === 'ipsview'
             ? consumeFragmentToken((bootstrap.options || {}).ipsViewTransport, global) : null;
         outputMode = bootstrap.mode || '';
-        if (outputMode === 'symcon' && global.SymconOpenFreeMap && global.SymconOpenFreeMap.createViewState) {
+        if (global.SymconOpenFreeMap && global.SymconOpenFreeMap.createViewState) {
             viewMemory = global.SymconOpenFreeMap.createViewState((bootstrap.options || {}).viewStateKey, global);
         }
         const restoredView = viewMemory && viewMemory.read();
         pendingViewSelection = restoredView;
+        accountFilter = restoredView && typeof restoredView.filter === 'string' ? restoredView.filter : '';
+        if (restoredView && Number.isFinite(restoredView.scroll)) el('woist-devices').scrollTop = restoredView.scroll;
         configureTileHeader(bootstrap.options || {});
         labels = Object.assign({}, fallback, bootstrap.labels || {});
         state = parseState(bootstrap.state) || state;
@@ -500,6 +539,11 @@
             el('map-message').hidden = false;
         }
         ready = true;
+        if (el('account-filter')) el('account-filter').addEventListener('change', () => {
+            accountFilter = el('account-filter').value;
+            render();
+        });
+        el('woist-devices').addEventListener('scroll', saveView, {passive: true});
         el('fit').addEventListener('click', fit);
         el('refresh').disabled = !canRefresh();
         el('refresh').addEventListener('click', () => {

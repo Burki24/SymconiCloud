@@ -17,6 +17,39 @@
         },
         {
             "type": "ExpansionPanel",
+            "name": "AdditionalAccountsPanel",
+            "caption": "Additional iCloud accounts",
+            "items": [
+                {
+                    "type": "Label",
+                    "caption": "The connected account remains included. Add up to 20 existing iCloud accounts. Only their caches are read every five seconds; no additional login is started."
+                },
+                {
+                    "type": "List",
+                    "name": "AdditionalAccounts",
+                    "caption": "Additional accounts",
+                    "rowCount": 4,
+                    "add": true,
+                    "delete": true,
+                    "columns": [
+                        {
+                            "name": "AccountID",
+                            "caption": "iCloud account",
+                            "width": "auto",
+                            "add": 0,
+                            "edit": {
+                                "type": "SelectInstance",
+                                "validModules": [
+                                    "{10BF9A03-98A3-495A-B0FA-A4FA0B1002D5}"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "ExpansionPanel",
             "name": "AddressResolution",
             "caption": "Address resolution",
             "items": [

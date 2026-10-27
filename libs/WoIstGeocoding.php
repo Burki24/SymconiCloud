@@ -16,7 +16,7 @@ trait WoIstGeocoding
         }
         foreach ($state['devices'] as $device) {
             $location = $device['location'];
-            if ($device['id'] === $DeviceID && $location !== null
+            if ($device['id'] === $DeviceID && ($device['accountAvailable'] ?? true) && $location !== null
                 && $location['latitude'] === $Latitude && $location['longitude'] === $Longitude) {
                 return $device['address'] === '' ? '' : ($device['addressNotice'] === '' ? '' : $device['addressNotice'] . ': ') . $device['address'];
             }
@@ -48,7 +48,7 @@ trait WoIstGeocoding
             }
             foreach ($state['devices'] as $device) {
                 $location = $device['location'];
-                if ($location === null) {
+                if ($location === null || ($device['accountAvailable'] ?? true) === false) {
                     continue;
                 }
                 $zoom = $this->ReverseGeocodingPrecision($location['horizontalAccuracy'])['zoom'];
@@ -197,7 +197,7 @@ trait WoIstGeocoding
         if ($configuration !== null && $state['success']) {
             foreach ($state['devices'] as $device) {
                 $location = $device['location'];
-                if ($location !== null && $this->WoIstReadAddress($configuration, $location, $this->ReverseGeocodingPrecision($location['horizontalAccuracy'])['zoom']) === null) {
+                if ($location !== null && ($device['accountAvailable'] ?? true) && $this->WoIstReadAddress($configuration, $location, $this->ReverseGeocodingPrecision($location['horizontalAccuracy'])['zoom']) === null) {
                     $pending = true;
                     break;
                 }

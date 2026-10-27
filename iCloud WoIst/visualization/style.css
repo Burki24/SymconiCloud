@@ -21,7 +21,9 @@ p { margin: 6px 0; }
     margin-block: 6px;
     overflow-wrap: anywhere;
 }
-button { min-height: var(--symc-responsive-touch-target, 44px); border: 1px solid var(--symc-border); border-radius: var(--symc-radius-small); background: var(--symc-surface); color: var(--symc-text); padding: 8px 12px; cursor: pointer; }
+button, #account-filter { min-height: var(--symc-responsive-touch-target, 44px); border: 1px solid var(--symc-border); border-radius: var(--symc-radius-small); background: var(--symc-surface); color: var(--symc-text); padding: 8px 12px; cursor: pointer; }
+#woist-account-filter { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; min-width: 0; max-width: 100%; }
+#account-filter { min-width: 0; max-width: 100%; font: inherit; }
 button:hover { background: var(--symc-surface-hover); }
 button:disabled { opacity: 0.5; cursor: default; }
 .message { flex: 0 1 auto; min-height: 0; overflow: auto; padding: 10px 12px; background: var(--symc-warning-soft); border-inline-start: 3px solid var(--symc-warning); border-radius: 4px; margin: 0 0 12px; }
@@ -75,7 +77,7 @@ html.ipsview-mode {
     font-weight: var(--ipsview-role-font-weight);
 }
 h1, h2 { color: var(--symc-heading, var(--symc-text)); }
-html.ipsview-mode button, html.ipsview-mode #map {
+html.ipsview-mode button, html.ipsview-mode #account-filter, html.ipsview-mode #map {
     border-width: var(--ipsview-role-border-width);
 }
 html.ipsview-mode .device { background: var(--ipsview-role-page-background); }

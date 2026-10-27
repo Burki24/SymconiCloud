@@ -34,6 +34,9 @@ const elements = Object.fromEntries(['woist-theme', 'woist-heading', 'woist-devi
 const timestamp = Math.floor(Date.now() / 1000);
 elements['geocoding-message'] = new Element();
 elements['geocoding-attribution'] = new Element();
+elements['woist-account-filter'] = new Element();
+elements['account-filter-label'] = new Element();
+elements['account-filter'] = new Element();
 const maliciousName = '<img src=x onerror=alert(1)>';
 const maliciousAddress = '<script>Example address</script>';
 const maliciousNotice = '<b>Approximate – area only</b>';
@@ -276,3 +279,51 @@ assert.deepEqual({center: map.center, zoom: map.zoom}, geoCamera, 'Quota updates
 window.handleMessage({state: {success: true, devices: selectionDevices, geocoding: {provider: 'nominatim', notice: ''}}});
 assert.equal(elements['geocoding-attribution'].hidden, true, 'Nominatim must not be attributed to Geoapify.');
 assert.equal(elements['geocoding-message'].hidden, true);
+
+const multiDevices = selectionDevices.map((device, index) => ({...device, location: device.location ? {...device.location, timestamp, isOld: false} : null, accountId: index === 0 ? 'one' : 'two', accountName: index === 0 ? 'First account' : 'Second account', accountAvailable: index !== 1}));
+const multiState = {success: true, updatedAt: timestamp, accounts: [{id: 'one', name: 'First account', success: true}, {id: 'two', name: 'Second account', success: false}], devices: multiDevices};
+window.handleMessage({state: multiState});
+assert.equal(elements['account-filter'].children.length, 3, 'All accounts and both explicit account filters must be available.');
+assert.equal(elements['woist-account-filter'].hidden, false);
+elements['device-list'].children[1].children[0].events.click();
+const filteredCamera = {center: map.center, zoom: map.zoom};
+elements['woist-devices'].scrollTop = 93;
+elements['account-filter'].value = 'one';
+elements['account-filter'].events.change();
+assert.equal(elements['device-list'].children.length, 1, 'Filtering affects list and marker scope only.');
+assert.deepEqual({center: map.center, zoom: map.zoom}, filteredCamera, 'An account filter must not reset the camera.');
+window.handleMessage({state: multiState});
+assert.equal(elements['account-filter'].value, 'one', 'Data updates must preserve the account filter.');
+assert.equal(elements['woist-devices'].scrollTop, 93, 'Data updates must preserve list scroll.');
+elements['account-filter'].value = '';
+elements['account-filter'].events.change();
+assert.equal(elements['device-list'].children[1].children[0].attrs['aria-pressed'], 'true', 'A hidden selection returns when its account is shown again.');
+assert.ok(elements['device-list'].children[1].children[0].className.includes('stale'), 'Only the unavailable source becomes stale in a partial failure.');
+assert.ok(elements['device-list'].children[1].children[0].children.some(line => line.textContent.startsWith('Last known location')), 'A failed account must label even fresh cached coordinates as last known.');
+assert.deepEqual({center: map.center, zoom: map.zoom}, filteredCamera);
+
+// Exercise the actual shared persistence helper rather than a mock serializer.
+for (const mode of ['symcon', 'ipsview']) {
+    const reconnectState = {...multiState, accounts: multiState.accounts.map(account => ({...account, success: true}))};
+    const restartMulti = available => {
+        elements['woist-bootstrap'].textContent = JSON.stringify({mode, options: {viewStateKey: 'multi-account-' + mode}, state: available ? reconnectState : {success: false, devices: []}});
+        markers.length = 0;
+        map.events = {};
+        vm.runInNewContext(source, {window, Date, Map, Set, Promise, URL, console});
+    };
+    restartMulti(true);
+    elements['account-filter'].value = 'two';
+    elements['account-filter'].events.change();
+    elements['device-list'].children[0].children[0].events.click();
+    map.setView([52.25, 13.5], 12);
+    map.events.moveend();
+    elements['woist-devices'].scrollTop = 75;
+    elements['woist-devices'].events.scroll();
+    restartMulti(false);
+    window.handleMessage({state: reconnectState});
+    assert.equal(elements['account-filter'].value, 'two', mode + ': iframe reconstruction must restore the source filter.');
+    assert.equal(elements['woist-devices'].scrollTop, 75, mode + ': iframe reconstruction must restore list scroll.');
+    assert.equal(elements['device-list'].children[0].children[0].attrs['aria-pressed'], 'true', mode + ': device selection must survive delayed data after reconnect.');
+    assert.deepEqual(Array.from(map.center), [52.25, 13.5]);
+    assert.equal(map.zoom, 12);
+}

@@ -31,7 +31,7 @@ trait WoIstIPSViewTransport
         }
 
         if (($uri !== $path && !$page && !$refresh) || !$this->IsIPSViewHTMLPageEnabled()
-            || !$this->WoIstIPSViewServerURLValid() || !$this->HasParent()
+            || !$this->WoIstIPSViewServerURLValid() || !$this->HasWoIstAccounts()
             || $this->ReadAttributeInteger('IPSViewTransportConnection') !== IPS_GetInstance($this->InstanceID)['ConnectionID']) {
             $this->SendPlainTextResponse(404, 'Not available.');
             return;
@@ -84,6 +84,7 @@ trait WoIstIPSViewTransport
         $this->RegisterAttributeString('IPSViewTransportToken', '');
         $this->RegisterAttributeString('IPSViewTransportState', '');
         $this->RegisterAttributeInteger('IPSViewTransportConnection', 0);
+        $this->RegisterAttributeString('IPSViewTransportAccounts', '');
         // Volatile hooks belong to Create and must survive output toggles.
         // ProcessHookData enforces activation and authorization independently.
         if (!$this->RegisterHook($this->WoIstIPSViewHookName())) {
@@ -112,18 +113,21 @@ trait WoIstIPSViewTransport
     private function ConfigureWoIstIPSViewTransport(): void
     {
         $connection = IPS_GetInstance($this->InstanceID)['ConnectionID'];
+        $accounts = $this->configurationValid() ? hash('sha256', json_encode($this->WoIstAccountIDs(), JSON_THROW_ON_ERROR)) : '';
         $enabled = $this->IsIPSViewHTMLPageEnabled() && $this->WoIstIPSViewServerURLValid();
         if (!$enabled) {
             $this->WriteAttributeString('IPSViewTransportToken', '');
             $this->WriteAttributeString('IPSViewTransportState', '');
         } else {
             if ($this->ReadAttributeString('IPSViewTransportToken') === ''
-                || $this->ReadAttributeInteger('IPSViewTransportConnection') !== $connection) {
+                || $this->ReadAttributeInteger('IPSViewTransportConnection') !== $connection
+                || $this->ReadAttributeString('IPSViewTransportAccounts') !== $accounts) {
                 $this->WriteAttributeString('IPSViewTransportToken', bin2hex(random_bytes(32)));
                 $this->WriteAttributeString('IPSViewTransportState', '');
             }
         }
         $this->WriteAttributeInteger('IPSViewTransportConnection', $connection);
+        $this->WriteAttributeString('IPSViewTransportAccounts', $accounts);
     }
 
     private function WoIstIPSViewTransportOptions(): array
