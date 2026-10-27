@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../libs/CloudDebug.php';
 require_once __DIR__ . '/../libs/helper/ConfigurationFormHelper.php';
 require_once __DIR__ . '/../libs/helper/DataFlowHelper.php';
 require_once __DIR__ . '/../libs/helper/ParentConnectionHelper.php';
@@ -11,6 +12,7 @@ require_once __DIR__ . '/../libs/PresenceWidget.php';
 
 class iCloudPresence extends IPSModuleStrict
 {
+    use \SymconiCloud\CloudDebug;
     use \Burki24\SymconModuleHelper\ConfigurationFormHelper;
     use \Burki24\SymconModuleHelper\DataFlowHelper;
     use \Burki24\SymconModuleHelper\ParentConnectionHelper;
@@ -39,51 +41,60 @@ class iCloudPresence extends IPSModuleStrict
 
     public function Create(): void
     {
-        parent::Create();
-        $this->RegisterStatusWidget();
-        $this->RegisterPropertyBoolean('Enabled', true);
-        $this->RegisterPropertyString('DeviceID', ''); // Legacy migration only; not shown in the form.
-        $this->RegisterPropertyString('Devices', '[]');
-        $this->RegisterPropertyString('Zones', '[]');
-        $this->RegisterPropertyInteger('MaxLocationAge', 900);
-        $this->RegisterPropertyInteger('MaxAccuracy', 100);
-        $this->RegisterPropertyInteger('Hysteresis', 25);
-        $this->RegisterPropertyInteger('ConfirmationTime', 30);
-        $this->RegisterPropertyInteger('MaxSpeed', 300);
-        $this->RegisterAttributeString('EvaluationState', '{}'); // Legacy single-device state.
-        $this->RegisterAttributeString('MemberStates', '{}');
-        $this->RegisterAttributeString('MemberNames', '{}');
-        $this->RegisterAttributeString('InactiveVariableVisibility', '{}');
-        $this->RegisterAttributeString('SourceIdentity', '');
-        $this->RegisterAttributeInteger('LayoutVersion', 0);
-        $this->RegisterAttributeString('LastError', '');
-        $this->RegisterTimer('Evaluate', 0, 'ICPR_Update($_IPS["TARGET"]);');
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
+        {
+            parent::Create();
+            $this->RegisterStatusWidget();
+            $this->RegisterPropertyBoolean('Enabled', true);
+            $this->RegisterPropertyString('DeviceID', ''); // Legacy migration only; not shown in the form.
+            $this->RegisterPropertyString('Devices', '[]');
+            $this->RegisterPropertyString('Zones', '[]');
+            $this->RegisterPropertyInteger('MaxLocationAge', 900);
+            $this->RegisterPropertyInteger('MaxAccuracy', 100);
+            $this->RegisterPropertyInteger('Hysteresis', 25);
+            $this->RegisterPropertyInteger('ConfirmationTime', 30);
+            $this->RegisterPropertyInteger('MaxSpeed', 300);
+            $this->RegisterAttributeString('EvaluationState', '{}'); // Legacy single-device state.
+            $this->RegisterAttributeString('MemberStates', '{}');
+            $this->RegisterAttributeString('MemberNames', '{}');
+            $this->RegisterAttributeString('InactiveVariableVisibility', '{}');
+            $this->RegisterAttributeString('SourceIdentity', '');
+            $this->RegisterAttributeInteger('LayoutVersion', 0);
+            $this->RegisterAttributeString('LastError', '');
+            $this->RegisterTimer('Evaluate', 0, 'ICPR_Update($_IPS["TARGET"]);');
+        }, true);
     }
 
     /** Converts only a known single-device persistence, retaining explicit empty selections. */
     public function Migrate(string $JSONData): string
     {
-        parent::Migrate($JSONData);
-        $data = json_decode($JSONData, true, 512, JSON_THROW_ON_ERROR);
-        $configuration = $data['configuration'] ?? [];
-        if (!is_array($configuration) || array_key_exists('Devices', $configuration) || !is_string($configuration['DeviceID'] ?? null) || $configuration['DeviceID'] === '') {
-            return '';
-        }
-        $data['configuration']['Devices'] = json_encode([['deviceID' => $configuration['DeviceID'], 'name' => '']], JSON_THROW_ON_ERROR);
-        return json_encode($data, JSON_THROW_ON_ERROR);
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($JSONData): string
+        {
+            parent::Migrate($JSONData);
+            $data = json_decode($JSONData, true, 512, JSON_THROW_ON_ERROR);
+            $configuration = $data['configuration'] ?? [];
+            if (!is_array($configuration) || array_key_exists('Devices', $configuration) || !is_string($configuration['DeviceID'] ?? null) || $configuration['DeviceID'] === '') {
+                return '';
+            }
+            $data['configuration']['Devices'] = json_encode([['deviceID' => $configuration['DeviceID'], 'name' => '']], JSON_THROW_ON_ERROR);
+            return json_encode($data, JSON_THROW_ON_ERROR);
+        });
     }
 
     public function ApplyChanges(): void
     {
-        parent::ApplyChanges();
-        $this->SetTimerInterval('Evaluate', 0);
-        $this->migrateLegacyVariables();
-        $this->registerSummary();
-        $this->ConfigureStatusWidget('IPSViewPresence', $this->Translate('Presence for IPSView'));
-        $this->Update();
-        if ($this->IsIPSViewHTMLPageEnabled()) {
-            $this->RegenerateIPSViewHTMLPages();
-        }
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
+        {
+            parent::ApplyChanges();
+            $this->CloudDebugTimer('Evaluate', 0, __FUNCTION__, __LINE__);
+            $this->migrateLegacyVariables();
+            $this->registerSummary();
+            $this->ConfigureStatusWidget('IPSViewPresence', $this->Translate('Presence for IPSView'));
+            $this->Update();
+            if ($this->IsIPSViewHTMLPageEnabled()) {
+                $this->RegenerateIPSViewHTMLPages();
+            }
+        }, true);
     }
 
     public function GetCompatibleParents(): string
@@ -94,220 +105,257 @@ class iCloudPresence extends IPSModuleStrict
     /** Reads the shared account cache once and evaluates each selected member independently. */
     public function Update(): bool
     {
-        if (!IPS_SemaphoreEnter('SymconiCloud.Presence.' . $this->InstanceID, 1000)) {
-            return false;
-        }
-        try {
-            try {
-                $members = $this->selectedMembers();
-                $this->synchronizeVariables($members);
-            } catch (Throwable) {
-                $this->synchronizeVariables([]);
-                $this->unavailable([], 'Check the device selection.', 201);
-                return false;
-            }
-            if (!$this->ReadPropertyBoolean('Enabled')) {
-                $this->unavailable($members, 'Evaluation disabled.', IS_INACTIVE);
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): bool
+        {
+            if (!IPS_SemaphoreEnter('SymconiCloud.Presence.' . $this->InstanceID, 1000)) {
+                $this->CloudDebugProblem('busy', __FUNCTION__, __LINE__);
                 return false;
             }
             try {
-                $configured = json_decode($this->ReadPropertyString('Zones'), true, 512, JSON_THROW_ON_ERROR);
-                $zones = $this->NormalizeGeofenceZones($configured);
-                $references = array_values(array_filter($configured, static fn (array $zone): bool => ($zone['reference'] ?? false) === true));
-                if (count($references) !== 1) {
-                    throw new InvalidArgumentException('Select exactly one reference zone.');
+                try {
+                    $members = $this->selectedMembers();
+                    $this->synchronizeVariables($members);
+                } catch (Throwable) {
+                    $this->synchronizeVariables([]);
+                    $this->unavailable([], 'Check the device selection.', 201);
+                    return false;
                 }
-                $reference = $references[0]['id'];
-                $settings = ['maxAge' => $this->ReadPropertyInteger('MaxLocationAge'), 'maxAccuracy' => $this->ReadPropertyInteger('MaxAccuracy'),
-                    'hysteresis'      => $this->ReadPropertyInteger('Hysteresis'), 'confirmSeconds' => $this->ReadPropertyInteger('ConfirmationTime'),
-                    'maxSpeed'        => $this->ReadPropertyInteger('MaxSpeed')];
-                $this->ResolveGeofenceZoneSettings($zones, $settings);
-                $this->EvaluateGeofence($zones, $reference, null, [], $this->PresenceNow(), $settings);
-            } catch (Throwable) {
-                $limits = $this->zoneFormLimits($this->ReadPropertyString('Zones'), $this->ReadPropertyInteger('Hysteresis'));
-                $this->unavailable($members, $limits['message'] !== '' ? $limits['message'] : 'Check the zones, reference zone and GPS settings.', 201);
-                return false;
-            }
-            $identity = hash('sha256', json_encode([$this->GetParentID(), $zones, $reference, $settings], JSON_THROW_ON_ERROR));
-            if ($identity !== $this->ReadAttributeString('SourceIdentity')) {
-                // A known legacy source can retain its observed stay when only the layout changes.
-                $legacy = $this->ReadPropertyString('DeviceID');
-                $oldIdentity = hash('sha256', json_encode([$this->GetParentID(), $legacy, $zones, $reference, $settings], JSON_THROW_ON_ERROR));
-                $states = $oldIdentity === $this->ReadAttributeString('SourceIdentity') && isset($members[$legacy])
-                    ? [$legacy => $this->readState('EvaluationState')] : [];
-                $this->writeState('MemberStates', $states);
-                $this->WriteAttributeString('SourceIdentity', $identity);
-            }
-            if (!$this->HasParent() || $members === []) {
-                $this->unavailable($members, 'Select an account and at least one device.', 201);
-                return false;
-            }
-            $this->SetTimerInterval('Evaluate', 15000);
-            try {
-                return $this->applyResult($this->ReadPresenceCache(), $members, $zones, $reference, $settings);
-            } catch (Throwable) {
-                $this->unavailable($members, 'Account data unavailable.', 202);
-                return false;
-            }
-        } finally {
-            try {
-                $this->publishWidget();
+                if (!$this->ReadPropertyBoolean('Enabled')) {
+                    $this->unavailable($members, 'Evaluation disabled.', IS_INACTIVE);
+                    return false;
+                }
+                try {
+                    $configured = json_decode($this->ReadPropertyString('Zones'), true, 512, JSON_THROW_ON_ERROR);
+                    $zones = $this->NormalizeGeofenceZones($configured);
+                    $references = array_values(array_filter($configured, static fn (array $zone): bool => ($zone['reference'] ?? false) === true));
+                    if (count($references) !== 1) {
+                        throw new InvalidArgumentException('Select exactly one reference zone.');
+                    }
+                    $reference = $references[0]['id'];
+                    $settings = ['maxAge' => $this->ReadPropertyInteger('MaxLocationAge'), 'maxAccuracy' => $this->ReadPropertyInteger('MaxAccuracy'),
+                        'hysteresis'      => $this->ReadPropertyInteger('Hysteresis'), 'confirmSeconds' => $this->ReadPropertyInteger('ConfirmationTime'),
+                        'maxSpeed'        => $this->ReadPropertyInteger('MaxSpeed')];
+                    $this->ResolveGeofenceZoneSettings($zones, $settings);
+                    $this->EvaluateGeofence($zones, $reference, null, [], $this->PresenceNow(), $settings);
+                } catch (Throwable) {
+                    $limits = $this->zoneFormLimits($this->ReadPropertyString('Zones'), $this->ReadPropertyInteger('Hysteresis'));
+                    $this->unavailable($members, $limits['message'] !== '' ? $limits['message'] : 'Check the zones, reference zone and GPS settings.', 201);
+                    return false;
+                }
+                $identity = hash('sha256', json_encode([$this->GetParentID(), $zones, $reference, $settings], JSON_THROW_ON_ERROR));
+                if ($identity !== $this->ReadAttributeString('SourceIdentity')) {
+                    // A known legacy source can retain its observed stay when only the layout changes.
+                    $legacy = $this->ReadPropertyString('DeviceID');
+                    $oldIdentity = hash('sha256', json_encode([$this->GetParentID(), $legacy, $zones, $reference, $settings], JSON_THROW_ON_ERROR));
+                    $states = $oldIdentity === $this->ReadAttributeString('SourceIdentity') && isset($members[$legacy])
+                        ? [$legacy => $this->readState('EvaluationState')] : [];
+                    $this->writeState('MemberStates', $states);
+                    $this->WriteAttributeString('SourceIdentity', $identity);
+                }
+                if (!$this->HasParent() || $members === []) {
+                    $this->unavailable($members, 'Select an account and at least one device.', 201);
+                    return false;
+                }
+                $this->CloudDebugTimer('Evaluate', 15000, __FUNCTION__, __LINE__);
+                try {
+                    return $this->applyResult($this->ReadPresenceCache(), $members, $zones, $reference, $settings);
+                } catch (Throwable) {
+                    $this->unavailable($members, 'Account data unavailable.', 202);
+                    return false;
+                }
             } finally {
-                IPS_SemaphoreLeave('SymconiCloud.Presence.' . $this->InstanceID);
+                try {
+                    $this->publishWidget();
+                } finally {
+                    IPS_SemaphoreLeave('SymconiCloud.Presence.' . $this->InstanceID);
+                }
             }
-        }
+        });
     }
 
     /** Native widget variant, sharing the already evaluated values. */
     public function GetVisualizationTile(): string
     {
-        return $this->RenderStatusWidget(false, $this->ReadPropertyString('TileWidgetVariant') === 'WidgetCompact');
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): string
+        {
+            return $this->RenderStatusWidget(false, $this->ReadPropertyString('TileWidgetVariant') === 'WidgetCompact');
+        });
     }
 
     /** Existing full WebContent widget; cached updates do not reload its document. */
     public function GetIPSViewHTML(): string
     {
-        return $this->RenderStatusWidget(true);
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): string
+        {
+            return $this->RenderStatusWidget(true);
+        });
     }
 
     /** Additional compact output; the existing full widget remains independent. */
     public function GetIPSViewCompactHTML(): string
     {
-        return $this->RenderStatusWidget(true, true);
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): string
+        {
+            return $this->RenderStatusWidget(true, true);
+        });
     }
 
     public function MessageSink(int $TimeStamp, int $SenderID, int $Message, array $Data): void
     {
-        parent::MessageSink($TimeStamp, $SenderID, $Message, $Data);
-        if ($this->IsIPSViewStyleMediaUpdate($SenderID, $Message)) {
-            $this->publishWidget();
-        }
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($TimeStamp, $SenderID, $Message, $Data): void
+        {
+            parent::MessageSink($TimeStamp, $SenderID, $Message, $Data);
+            if ($this->IsIPSViewStyleMediaUpdate($SenderID, $Message)) {
+                $this->publishWidget();
+            }
+        }, true);
     }
 
     public function ReceiveData(string $JSONString): string
     {
-        try {
-            $this->DecodeDataFlowMessage($JSONString, self::NOTIFICATION_DATA);
-        } catch (Throwable) {
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($JSONString): string
+        {
+            try {
+                $this->DecodeDataFlowMessage($JSONString, self::NOTIFICATION_DATA);
+            } catch (Throwable) {
+                return '';
+            }
+            $this->Update();
             return '';
-        }
-        $this->Update();
-        return '';
+        });
     }
 
     public function RequestAction(string $Ident, mixed $Value): void
     {
-        if ($this->HandleIPSViewHTMLPageAction($Ident, $Value)) {
-            return;
-        }
-        if ($Ident !== 'Update') {
-            throw new InvalidArgumentException('This evaluation is read only.');
-        }
-        $this->Update();
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($Ident, $Value): void
+        {
+            if ($this->HandleIPSViewHTMLPageAction($Ident, $Value)) {
+                return;
+            }
+            if ($Ident !== 'Update') {
+                throw new InvalidArgumentException('This evaluation is read only.');
+            }
+            $this->Update();
+        }, true);
     }
 
     public function GetConfigurationForm(): string
     {
-        $form = $this->LoadConfigurationForm();
-        $options = [['caption' => $this->Translate('Select device'), 'value' => '']];
-        $known = [];
-        try {
-            $data = $this->HasParent() ? $this->ReadPresenceCache() : [];
-            foreach ($data['devices'] ?? [] as $device) {
-                if (is_array($device) && is_string($device['id'] ?? null) && $device['id'] !== '' && !isset($known[$device['id']])) {
-                    $options[] = ['caption' => (string) ($device['name'] ?? $this->Translate('Device')), 'value' => $device['id']];
-                    $known[$device['id']] = true;
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): string
+        {
+            $form = $this->LoadConfigurationForm();
+            $options = [['caption' => $this->Translate('Select device'), 'value' => '']];
+            $known = [];
+            try {
+                $data = $this->HasParent() ? $this->ReadPresenceCache() : [];
+                foreach ($data['devices'] ?? [] as $device) {
+                    if (is_array($device) && is_string($device['id'] ?? null) && $device['id'] !== '' && !isset($known[$device['id']])) {
+                        $options[] = ['caption' => (string) ($device['name'] ?? $this->Translate('Device')), 'value' => $device['id']];
+                        $known[$device['id']] = true;
+                    }
                 }
-            }
-            foreach ($this->selectedMembers() as $id => $name) {
-                if (!isset($known[$id])) {
-                    $options[] = ['caption' => $name !== '' ? $name : $this->Translate('Selected device (not in cache)'), 'value' => (string) $id];
+                foreach ($this->selectedMembers() as $id => $name) {
+                    if (!isset($known[$id])) {
+                        $options[] = ['caption' => $name !== '' ? $name : $this->Translate('Selected device (not in cache)'), 'value' => (string) $id];
+                    }
                 }
+            } catch (Throwable) {
+                // No authentication, external request or configuration write while opening the form.
             }
-        } catch (Throwable) {
-            // No authentication, external request or configuration write while opening the form.
-        }
-        $form['elements'][1]['columns'][0]['edit']['options'] = $options;
-        // Keep uploaded bytes out of the table while retaining a native local file
-        // picker in the row dialog, including the current cached device options.
-        $form['elements'][1]['form'] = array_map(static fn (array $column): array => array_merge($column['edit'], [
-            'name' => $column['name'], 'caption' => $column['caption']
-        ]), $form['elements'][1]['columns']);
-        $form['elements'][1]['form'][] = ['type' => 'Label', 'caption' => $this->StatusWidgetText('imageHint')];
-        $form['elements'][1]['form'][] = ['type' => 'Label', 'name' => 'PictureUploadError', 'caption' => '', 'visible' => false];
-        $limits = $this->zoneFormLimits($this->ReadPropertyString('Zones'), $this->ReadPropertyInteger('Hysteresis'));
-        $form['elements'][3]['columns'][4]['edit']['minimum'] = $limits['minimum'];
-        $form['elements'][3]['form'] = 'return json_decode(ICPR_GetZoneEditForm($id, $Hysteresis, $MaxAccuracy, $ConfirmationTime, $Zones[\'customGPS\'] ?? false, $Zones[\'radius\'] ?? 100, $Zones[\'hysteresis\'] ?? $Hysteresis), true);';
-        $form['elements'][5]['items'][2]['maximum'] = $limits['maximum'];
-        $form['elements'][7]['caption'] = $limits['message'];
-        $form['elements'][7]['visible'] = $limits['message'] !== '';
-        $form['actions'][0]['caption'] = $this->ReadAttributeString('LastError');
-        return $this->EncodeConfigurationForm($this->StatusWidgetForm($form));
+            $form['elements'][1]['columns'][0]['edit']['options'] = $options;
+            // Keep uploaded bytes out of the table while retaining a native local file
+            // picker in the row dialog, including the current cached device options.
+            $form['elements'][1]['form'] = array_map(static fn (array $column): array => array_merge($column['edit'], [
+                'name' => $column['name'], 'caption' => $column['caption']
+            ]), $form['elements'][1]['columns']);
+            $form['elements'][1]['form'][] = ['type' => 'Label', 'caption' => $this->StatusWidgetText('imageHint')];
+            $form['elements'][1]['form'][] = ['type' => 'Label', 'name' => 'PictureUploadError', 'caption' => '', 'visible' => false];
+            $limits = $this->zoneFormLimits($this->ReadPropertyString('Zones'), $this->ReadPropertyInteger('Hysteresis'));
+            $form['elements'][3]['columns'][4]['edit']['minimum'] = $limits['minimum'];
+            $form['elements'][3]['form'] = 'return json_decode(ICPR_GetZoneEditForm($id, $Hysteresis, $MaxAccuracy, $ConfirmationTime, $Zones[\'customGPS\'] ?? false, $Zones[\'radius\'] ?? 100, $Zones[\'hysteresis\'] ?? $Hysteresis), true);';
+            $form['elements'][5]['items'][2]['maximum'] = $limits['maximum'];
+            $form['elements'][7]['caption'] = $limits['message'];
+            $form['elements'][7]['visible'] = $limits['message'] !== '';
+            $form['actions'][0]['caption'] = $this->ReadAttributeString('LastError');
+            return $this->EncodeConfigurationForm($this->StatusWidgetForm($form));
+        });
     }
 
     /** Reports rejected picture drafts without changing configuration or GPS state. */
     public function ValidatePictureUpload(string $PictureSource, string $PictureUpload): void
     {
-        $issue = $PictureSource === 'upload' ? $this->StatusWidgetUploadIssue($PictureUpload) : '';
-        if ($PictureSource === 'upload' && $PictureUpload !== '' && $issue === '') {
-            $image = $this->StatusWidgetUpload($PictureUpload);
-            $prepared = substr($image, strpos($image, ',') + 1);
-            if ($prepared !== $PictureUpload) {
-                $this->UpdateFormField('pictureUpload', 'value', $prepared);
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($PictureSource, $PictureUpload): void
+        {
+            $issue = $PictureSource === 'upload' ? $this->StatusWidgetUploadIssue($PictureUpload) : '';
+            if ($PictureSource === 'upload' && $PictureUpload !== '' && $issue === '') {
+                $image = $this->StatusWidgetUpload($PictureUpload);
+                $prepared = substr($image, strpos($image, ',') + 1);
+                if ($prepared !== $PictureUpload) {
+                    $this->UpdateFormField('pictureUpload', 'value', $prepared);
+                }
             }
-        }
-        $this->UpdateFormField('PictureUploadError', 'caption', $issue === '' ? '' : $this->Translate($issue));
-        $this->UpdateFormField('PictureUploadError', 'visible', $issue !== '');
+            $this->UpdateFormField('PictureUploadError', 'caption', $issue === '' ? '' : $this->Translate($issue));
+            $this->UpdateFormField('PictureUploadError', 'visible', $issue !== '');
+        }, true);
     }
 
     /** Updates only the open form using unsaved list and spinner values. */
     public function ValidateZoneSettings(string $Zones, int $Hysteresis): void
     {
-        $limits = $this->zoneFormLimits($Zones, $Hysteresis);
-        $this->UpdateFormField('Zones', 'columns.4.edit', json_encode(['type' => 'NumberSpinner', 'minimum' => $limits['minimum'], 'maximum' => 1000000], JSON_THROW_ON_ERROR));
-        $this->UpdateFormField('Hysteresis', 'maximum', $limits['maximum']);
-        $this->UpdateFormField('ZoneSettingsError', 'caption', $limits['message']);
-        $this->UpdateFormField('ZoneSettingsError', 'visible', $limits['message'] !== '');
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($Zones, $Hysteresis): void
+        {
+            $limits = $this->zoneFormLimits($Zones, $Hysteresis);
+            $this->UpdateFormField('Zones', 'columns.4.edit', json_encode(['type' => 'NumberSpinner', 'minimum' => $limits['minimum'], 'maximum' => 1000000], JSON_THROW_ON_ERROR));
+            $this->UpdateFormField('Hysteresis', 'maximum', $limits['maximum']);
+            $this->UpdateFormField('ZoneSettingsError', 'caption', $limits['message']);
+            $this->UpdateFormField('ZoneSettingsError', 'visible', $limits['message'] !== '');
+        }, true);
     }
 
     /** Builds a fresh native row dialog using the unsaved global defaults. */
     public function GetZoneEditForm(int $GlobalBuffer, int $GlobalAccuracy, int $GlobalConfirmation, bool $CustomGPS, int $Radius, int $ZoneBuffer): string
     {
-        $form = $this->LoadConfigurationForm()['elements'][3]['form'];
-        $effective = $CustomGPS ? $ZoneBuffer : $GlobalBuffer;
-        $form[4]['minimum'] = max(1, $effective + 1);
-        $form[7]['visible'] = $CustomGPS;
-        $form[7]['items'][0]['value'] = $GlobalBuffer;
-        $form[7]['items'][0]['maximum'] = max(0, $Radius - 1);
-        $form[7]['items'][1]['value'] = $GlobalAccuracy;
-        $form[7]['items'][2]['value'] = $GlobalConfirmation;
-        foreach ([4, 6] as $index) {
-            // The row also has an "id" field; keep the instance ID unambiguous.
-            $form[$index]['onChange'] = 'ICPR_ValidateZoneDraft(' . $this->InstanceID . ', $radius, $customGPS, $hysteresis, ' . $GlobalBuffer . ');';
-        }
-        $form[7]['items'][0]['onChange'] = $form[4]['onChange'];
-        $form[8]['caption'] = $Radius <= $effective ? $this->Translate('Increase the zone radius or reduce its effective boundary buffer.') : '';
-        $form[8]['visible'] = $Radius <= $effective;
-        // This public row-form function bypasses GetConfigurationForm's native
-        // translation step, so translate the module's captions explicitly.
-        array_walk_recursive($form, function (mixed &$value, string|int $key): void
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($GlobalBuffer, $GlobalAccuracy, $GlobalConfirmation, $CustomGPS, $Radius, $ZoneBuffer): string
         {
-            if ($key === 'caption' && is_string($value)) {
-                $value = $this->Translate($value);
+            $form = $this->LoadConfigurationForm()['elements'][3]['form'];
+            $effective = $CustomGPS ? $ZoneBuffer : $GlobalBuffer;
+            $form[4]['minimum'] = max(1, $effective + 1);
+            $form[7]['visible'] = $CustomGPS;
+            $form[7]['items'][0]['value'] = $GlobalBuffer;
+            $form[7]['items'][0]['maximum'] = max(0, $Radius - 1);
+            $form[7]['items'][1]['value'] = $GlobalAccuracy;
+            $form[7]['items'][2]['value'] = $GlobalConfirmation;
+            foreach ([4, 6] as $index) {
+                // The row also has an "id" field; keep the instance ID unambiguous.
+                $form[$index]['onChange'] = 'ICPR_ValidateZoneDraft(' . $this->InstanceID . ', $radius, $customGPS, $hysteresis, ' . $GlobalBuffer . ');';
             }
+            $form[7]['items'][0]['onChange'] = $form[4]['onChange'];
+            $form[8]['caption'] = $Radius <= $effective ? $this->Translate('Increase the zone radius or reduce its effective boundary buffer.') : '';
+            $form[8]['visible'] = $Radius <= $effective;
+            // This public row-form function bypasses GetConfigurationForm's native
+            // translation step, so translate the module's captions explicitly.
+            array_walk_recursive($form, function (mixed &$value, string|int $key): void
+            {
+                if ($key === 'caption' && is_string($value)) {
+                    $value = $this->Translate($value);
+                }
+            });
+            return json_encode($form, JSON_THROW_ON_ERROR);
         });
-        return json_encode($form, JSON_THROW_ON_ERROR);
     }
 
     /** Validates only the open row, including a switch back to inherited values. */
     public function ValidateZoneDraft(int $Radius, bool $CustomGPS, int $Buffer, int $GlobalBuffer): void
     {
-        $effective = $CustomGPS ? $Buffer : $GlobalBuffer;
-        $this->UpdateFormField('radius', 'minimum', max(1, $effective + 1));
-        $this->UpdateFormField('hysteresis', 'maximum', max(0, $Radius - 1));
-        $this->UpdateFormField('ZoneGPS', 'visible', $CustomGPS);
-        $this->UpdateFormField('ZoneDraftError', 'caption', $Radius <= $effective ? $this->Translate('Increase the zone radius or reduce its effective boundary buffer.') : '');
-        $this->UpdateFormField('ZoneDraftError', 'visible', $Radius <= $effective);
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($Radius, $CustomGPS, $Buffer, $GlobalBuffer): void
+        {
+            $effective = $CustomGPS ? $Buffer : $GlobalBuffer;
+            $this->UpdateFormField('radius', 'minimum', max(1, $effective + 1));
+            $this->UpdateFormField('hysteresis', 'maximum', max(0, $Radius - 1));
+            $this->UpdateFormField('ZoneGPS', 'visible', $CustomGPS);
+            $this->UpdateFormField('ZoneDraftError', 'caption', $Radius <= $effective ? $this->Translate('Increase the zone radius or reduce its effective boundary buffer.') : '');
+            $this->UpdateFormField('ZoneDraftError', 'visible', $Radius <= $effective);
+        }, true);
     }
 
     /** Returns a stable member variable ident for scripts without exposing IDs in variable names. */
@@ -317,6 +365,12 @@ class iCloudPresence extends IPSModuleStrict
             throw new InvalidArgumentException('Unknown device variable field.');
         }
         return 'Device_' . substr(hash('sha256', $DeviceID), 0, 32) . '_' . $Ident;
+    }
+
+    public function Destroy(): void
+    {
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
+        { parent::Destroy(); }, true);
     }
 
     /** Render each variant through the central helper's retained-variable writer. */
@@ -330,7 +384,7 @@ class iCloudPresence extends IPSModuleStrict
             $compact = $this->UpdateIPSViewHTMLVariable('IPSViewPresenceCompact', $this->GetIPSViewCompactHTML());
             return $normal && $compact;
         } catch (Throwable $exception) {
-            $this->SendDebug('IPSViewHTMLRegeneration', $exception->getMessage(), 0);
+            $this->DebugFlowException(__FUNCTION__, __LINE__, $exception);
             return false;
         }
     }
@@ -354,7 +408,7 @@ class iCloudPresence extends IPSModuleStrict
     /** Stable cache boundary for deterministic runtime and offline tests. */
     protected function ReadPresenceCache(): array
     {
-        return json_decode($this->SendDataToParent($this->EncodeDataFlowMessage(self::REQUEST_DATA, ['Command' => 'GetDevices'])), true, 512, JSON_THROW_ON_ERROR);
+        return json_decode($this->CloudDebugParent($this->EncodeDataFlowMessage(self::REQUEST_DATA, ['Command' => 'GetDevices']), __FUNCTION__, __LINE__), true, 512, JSON_THROW_ON_ERROR);
     }
 
     /** Domain adapter only: no new account reads, GPS evaluations or coordinates in the widget. */
@@ -479,6 +533,7 @@ class iCloudPresence extends IPSModuleStrict
                 'accuracy'                           => $location['horizontalAccuracy'] ?? null, 'timestamp' => $location['timestamp'] ?? null,
                 'isOld'                              => $location['isOld'] ?? false, 'isInaccurate' => $location['isInaccurate'] ?? false] : null;
             $result = $this->EvaluateGeofence($zones, $reference, $fix, is_array($states[$id] ?? null) ? $states[$id] : [], $this->PresenceNow(), $settings);
+            $this->CloudDebugProblem($result['reason'], __FUNCTION__, __LINE__, ['GerätInAuswahlliste' => $index, 'Anwesenheit' => $result['presence'], 'WechselWartet' => $result['pending']]);
             $states[$id] = $result['state'];
             $values = ['Presence'   => $result['presence'], 'ZoneID' => $result['zone'] ?? '',
                 'Zone'              => $result['zone'] === null ? $this->Translate('Unknown') : ($zoneNames[$result['zone']] ?? $this->Translate('Outside all zones')),
@@ -487,20 +542,21 @@ class iCloudPresence extends IPSModuleStrict
                 'TransitionPending' => $result['pending'], 'DataAvailable' => true,
                 'Reason'            => $this->Translate(self::REASONS[$result['reason']] ?? 'No valid position available.')];
             foreach ($values as $field => $value) {
-                $this->SetValue($this->GetDeviceVariableIdent($id, $field), $value);
+                $this->CloudDebugWrite($this->GetDeviceVariableIdent($id, $field), $value, __FUNCTION__, __LINE__);
             }
             $presence[] = $result['presence'];
         }
         $this->writeState('MemberStates', array_intersect_key($states, $members));
         $this->writeState('MemberNames', array_intersect_key($names, $members));
         $this->publishPresenceSummary($presence, true, $missing > 0 ? 'Some selected devices are missing from the account cache.' : 'Shared zones evaluated.');
-        $this->SetStatus($missing === count($members) ? 203 : IS_ACTIVE);
+        $this->CloudDebugStatus($missing === count($members) ? 203 : IS_ACTIVE, __FUNCTION__, __LINE__);
         return true;
     }
 
     private function unavailable(array $members, string $message, int $status): void
     {
-        $this->SetTimerInterval('Evaluate', $status === 202 || $status === 203 ? 15000 : 0);
+        $this->CloudDebugProblem($message, __FUNCTION__, __LINE__);
+        $this->CloudDebugTimer('Evaluate', $status === 202 || $status === 203 ? 15000 : 0, __FUNCTION__, __LINE__);
         $states = $this->readState('MemberStates');
         foreach ($members as $id => $name) {
             $states[$id] = $this->InvalidateGeofenceState(is_array($states[$id] ?? null) ? $states[$id] : []);
@@ -509,29 +565,30 @@ class iCloudPresence extends IPSModuleStrict
         $this->writeState('MemberStates', array_intersect_key($states, $members));
         $this->publishPresenceSummary(array_fill(0, count($members), -1), false, $message);
         $this->WriteAttributeString('LastError', $this->Translate($message));
-        $this->SetStatus($status);
+        $this->CloudDebugStatus($status, __FUNCTION__, __LINE__);
     }
 
     private function setUnknownMember(string $id, string $reason): void
     {
+        $this->CloudDebugProblem($reason, __FUNCTION__, __LINE__);
         foreach (self::MEMBER_FIELDS as $field) {
             $value = match ($field) {
                 'Presence' => -1, 'Zone' => $this->Translate('Unknown'), 'ZoneID' => '', 'Reason' => $this->Translate($reason),
                 'Distance' => 0.0, 'ZoneSince', 'StayDuration' => 0, default => false
             };
-            $this->SetValue($this->GetDeviceVariableIdent($id, $field), $value);
+            $this->CloudDebugWrite($this->GetDeviceVariableIdent($id, $field), $value, __FUNCTION__, __LINE__);
         }
     }
 
     private function publishPresenceSummary(array $presence, bool $available, string $reason): void
     {
-        $this->SetValue('Presence', $this->AggregateGeofencePresence($presence));
-        $this->SetValue('SelectedCount', count($presence));
+        $this->CloudDebugWrite('Presence', $this->AggregateGeofencePresence($presence), __FUNCTION__, __LINE__);
+        $this->CloudDebugWrite('SelectedCount', count($presence), __FUNCTION__, __LINE__);
         foreach (['PresentCount' => 1, 'AbsentCount' => 0, 'UnknownCount' => -1] as $ident => $state) {
-            $this->SetValue($ident, count(array_filter($presence, static fn (int $value): bool => $value === $state)));
+            $this->CloudDebugWrite($ident, count(array_filter($presence, static fn (int $value): bool => $value === $state)), __FUNCTION__, __LINE__);
         }
-        $this->SetValue('DataAvailable', $available);
-        $this->SetValue('Reason', $this->Translate($reason));
+        $this->CloudDebugWrite('DataAvailable', $available, __FUNCTION__, __LINE__);
+        $this->CloudDebugWrite('Reason', $this->Translate($reason), __FUNCTION__, __LINE__);
         $this->WriteAttributeString('LastError', '');
     }
 
@@ -601,7 +658,7 @@ class iCloudPresence extends IPSModuleStrict
                     'Presence' => -1, 'Zone' => $this->Translate('Unknown'), 'ZoneID' => '', 'Reason' => $this->Translate('Device no longer selected.'),
                     'Distance' => 0.0, 'ZoneSince', 'StayDuration' => 0, default => false
                 };
-                $this->SetValue($ident, $value);
+                $this->CloudDebugWrite($ident, $value, __FUNCTION__, __LINE__);
                 $inactive[$ident] = $recorded ? $previous : ['id' => $child, 'hidden' => $object['ObjectIsHidden'], 'restore' => !$object['ObjectIsHidden']];
                 if ($recorded && !$object['ObjectIsHidden']) {
                     $inactive[$ident]['restore'] = false;
@@ -628,7 +685,7 @@ class iCloudPresence extends IPSModuleStrict
     private function registerSummary(): void
     {
         if ($this->RegisterVariableInteger('Presence', $this->Translate('Overall presence'), $this->presencePresentation(), 0)) {
-            $this->SetValue('Presence', -1);
+            $this->CloudDebugWrite('Presence', -1, __FUNCTION__, __LINE__);
         }
         $position = 1;
         foreach (['SelectedCount', 'PresentCount', 'AbsentCount', 'UnknownCount'] as $ident) {
@@ -653,7 +710,7 @@ class iCloudPresence extends IPSModuleStrict
                 default                    => $this->RegisterVariableBoolean($ident, $caption, $this->BooleanPresentation($this->Translate('Yes'), $this->Translate('No')), $position++)
             };
             if ($created && $field === 'Presence') {
-                $this->SetValue($ident, -1);
+                $this->CloudDebugWrite($ident, -1, __FUNCTION__, __LINE__);
             }
         }
     }

@@ -65,7 +65,8 @@ class AccountFixtureModule extends iCloudAccount
             $this->transport,
             $session,
             fn ($operation, $status, $reason, $appleCode = '') => $this->RecordAccountDiagnostic($operation, $status, $reason, $appleCode),
-            fn () => $this->ReserveAuthenticationAttempt('resend')
+            fn () => $this->ReserveAuthenticationAttempt('resend'),
+            fn ($operation) => $this->CloudDebugAppleSending($operation)
         );
     }
 }

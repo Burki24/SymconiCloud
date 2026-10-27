@@ -15,25 +15,31 @@ trait PhotosAccount
     /** Normalized catalog only. Reading this method never initiates Apple authentication. */
     public function GetPhotoAlbums(): string
     {
-        try {
-            $this->assertPhotosAccount();
-            if (!$this->ReadAttributeBoolean('PhotoAccess')) {
-                throw new AppleException('photosAccess');
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): string
+        {
+            try {
+                $this->assertPhotosAccount();
+                if (!$this->ReadAttributeBoolean('PhotoAccess')) {
+                    throw new AppleException('photosAccess');
+                }
+                $catalog = json_decode($this->ReadAttributeString('PhotoAlbums'), true, 512, JSON_THROW_ON_ERROR);
+                return json_encode(['success' => true, 'albums' => $catalog['albums'], 'updatedAt' => $catalog['updatedAt'], 'cache' => $this->PhotoCache()->stats()], JSON_THROW_ON_ERROR);
+            } catch (\Throwable $exception) {
+                $fallback = $exception instanceof AppleException && $exception->reason === 'photosAccess' ? 'Check Photos access and load albums' : 'Enable Photos and sign in to the account first.';
+                return json_encode(['success' => false, 'albums' => [], 'updatedAt' => 0, 'error' => $this->ReadAttributeString('PhotoError') ?: $this->Translate($fallback)], JSON_THROW_ON_ERROR);
             }
-            $catalog = json_decode($this->ReadAttributeString('PhotoAlbums'), true, 512, JSON_THROW_ON_ERROR);
-            return json_encode(['success' => true, 'albums' => $catalog['albums'], 'updatedAt' => $catalog['updatedAt'], 'cache' => $this->PhotoCache()->stats()], JSON_THROW_ON_ERROR);
-        } catch (\Throwable $exception) {
-            $fallback = $exception instanceof AppleException && $exception->reason === 'photosAccess' ? 'Check Photos access and load albums' : 'Enable Photos and sign in to the account first.';
-            return json_encode(['success' => false, 'albums' => [], 'updatedAt' => 0, 'error' => $this->ReadAttributeString('PhotoError') ?: $this->Translate($fallback)], JSON_THROW_ON_ERROR);
-        }
+        });
     }
 
     /** Explicit read-only access check and catalog refresh. */
     public function RefreshPhotoAlbums(): bool
     {
-        $success = $this->operatePhotos('catalog')['success'];
-        $this->ReloadForm();
-        return $success;
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): bool
+        {
+            $success = $this->operatePhotos('catalog')['success'];
+            $this->ReloadForm();
+            return $success;
+        });
     }
     protected function RegisterPhotosAccount(): void
     {
@@ -75,7 +81,10 @@ trait PhotosAccount
 
     protected function DownloadPhotoPreview(string $url): string
     {
-        return ApplePhotoDownload::download($url);
+        $this->DebugFlowEvent(__FUNCTION__, __LINE__, 'SENDEN', 'Eine freigegebene Apple-Fotovorschau wird geladen. Downloadadresse und Bildinhalt bleiben geschützt.');
+        $image = ApplePhotoDownload::download($url);
+        $this->DebugFlowEvent(__FUNCTION__, __LINE__, 'EMPFANG', 'Fotodownload abgeschlossen; Cachegrenzen und Bildformat werden weiterhin geprüft.', ['BilddateiBytes' => strlen($image)]);
+        return $image;
     }
 
     protected function PhotoCache(): PhotoDiskCache
@@ -136,6 +145,7 @@ trait PhotosAccount
     private function operatePhotos(string $operation, string $albumID = '', int $offset = 0, string $photoID = '', string $token = '', int $pageNumber = 0): array
     {
         if (!IPS_SemaphoreEnter('SymconiCloud.' . $this->InstanceID, 1000)) {
+            $this->CloudDebugProblem('busy', __FUNCTION__, __LINE__);
             return ['success' => false, 'error' => $this->Translate('Account request already running.')];
         }
         $client = null;

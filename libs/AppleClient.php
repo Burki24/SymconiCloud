@@ -17,7 +17,7 @@ final class AppleClient
     private const WIDGET = 'd39ba9916b7251055b22c7f910e2ea796ee65e98b2ddecea8f5dde8d9d1a815d';
     private array $session;
 
-    public function __construct(private readonly AppleTransport $transport, array $session = [], private readonly ?\Closure $diagnostic = null, private readonly ?\Closure $reserveCodeRequest = null)
+    public function __construct(private readonly AppleTransport $transport, array $session = [], private readonly ?\Closure $diagnostic = null, private readonly ?\Closure $reserveCodeRequest = null, private readonly ?\Closure $sending = null)
     {
         $this->session = $session + ['state' => 'signedOut', 'clientId' => bin2hex(random_bytes(16)), 'headers' => [], 'challengeAt' => 0];
     }
@@ -435,6 +435,11 @@ final class AppleClient
             default                                                    => 'authChallenge'
         };
         $authentication = in_array($operation, ['signinInit', 'signinComplete', 'sessionRenewal', 'verifyCode', 'requestCode', 'trustBrowser', 'authChallenge'], true);
+        try {
+            ($this->sending)?->__invoke($operation);
+        } catch (\Throwable) {
+            // A diagnostic observer cannot suppress, duplicate or change an Apple request.
+        }
         try {
             $response = $this->transport->request($method, $url, $headers, $body);
         } catch (\Throwable $error) {

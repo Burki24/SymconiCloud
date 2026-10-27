@@ -57,6 +57,9 @@
         },
         "DebugHelper": {
             "target": "libs/helper/DebugHelper.php"
+        },
+        "DebugFlowHelper": {
+            "target": "libs/helper/DebugFlowHelper.php"
         }
     }
 }

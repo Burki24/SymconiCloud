@@ -26,13 +26,16 @@ trait DeviceWidget
     /** @return string Native instance card, separate from the existing sound variable tile. */
     public function GetVisualizationTile(): string
     {
-        $payload = $this->DeviceWidgetPayload();
-        return $this->RenderVisualizationHTMLPage(false, $payload + [
-            'title'        => $this->Translate('Find phone'), 'visualizationTheme' => $this->VisualizationThemeCSS(),
-            'language'     => $this->NormalizeHelperTranslationLanguage($this->ResolveHelperTranslationLanguage()),
-            'rootFontSize' => '14px',
-            'replacements' => ['{{RESPONSIVE_CSS}}' => $this->ResponsiveVisualizationCSS('#device-widget', 'device-widget', true)]
-        ]);
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): string
+        {
+            $payload = $this->DeviceWidgetPayload();
+            return $this->RenderVisualizationHTMLPage(false, $payload + [
+                'title'        => $this->Translate('Find phone'), 'visualizationTheme' => $this->VisualizationThemeCSS(),
+                'language'     => $this->NormalizeHelperTranslationLanguage($this->ResolveHelperTranslationLanguage()),
+                'rootFontSize' => '14px',
+                'replacements' => ['{{RESPONSIVE_CSS}}' => $this->ResponsiveVisualizationCSS('#device-widget', 'device-widget', true)]
+            ]);
+        });
     }
 
     /** Retains one location with its matching address, never a fabricated default position. */

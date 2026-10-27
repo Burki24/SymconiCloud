@@ -10,73 +10,76 @@ trait WoIstIPSViewTransport
     /** Serves public assets, authenticated cache data, or an explicitly requested account refresh. */
     protected function ProcessHookData(): void
     {
-        header('Access-Control-Allow-Origin: *');
-        header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-        header('Access-Control-Allow-Headers: Content-Type, X-WoIst-Token');
-        $path = '/hook/' . $this->WoIstIPSViewHookName();
-        $uri = $_SERVER['REQUEST_URI'] ?? '';
-        $page = $uri === $path . '/page';
-        $refresh = $uri === $path . '/refresh';
-        // The renderer is public library code, usable by native tiles even
-        // when the optional IPSView output is disabled. No cache data is read.
-        if ($uri === $path . '/assets/maplibre-gl.js') {
-            if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
-                header('Allow: GET');
-                $this->SendPlainTextResponse(405, 'Method not allowed.');
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
+        {
+            header('Access-Control-Allow-Origin: *');
+            header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+            header('Access-Control-Allow-Headers: Content-Type, X-WoIst-Token');
+            $path = '/hook/' . $this->WoIstIPSViewHookName();
+            $uri = $_SERVER['REQUEST_URI'] ?? '';
+            $page = $uri === $path . '/page';
+            $refresh = $uri === $path . '/refresh';
+            // The renderer is public library code, usable by native tiles even
+            // when the optional IPSView output is disabled. No cache data is read.
+            if ($uri === $path . '/assets/maplibre-gl.js') {
+                if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
+                    header('Allow: GET');
+                    $this->CloudDebugPlainResponse(405, 'Method not allowed.', __FUNCTION__, __LINE__);
+                    return;
+                }
+                header('Content-Encoding: gzip');
+                $this->CloudDebugResponse(200, 'application/javascript', $this->OpenFreeMapRendererAsset(), __FUNCTION__, __LINE__);
                 return;
             }
-            header('Content-Encoding: gzip');
-            $this->SendResponse(200, 'application/javascript', $this->OpenFreeMapRendererAsset());
-            return;
-        }
 
-        if (($uri !== $path && !$page && !$refresh) || !$this->IsIPSViewHTMLPageEnabled()
-            || !$this->WoIstIPSViewServerURLValid() || !$this->HasWoIstAccounts()
-            || $this->ReadAttributeInteger('IPSViewTransportConnection') !== IPS_GetInstance($this->InstanceID)['ConnectionID']) {
-            $this->SendPlainTextResponse(404, 'Not available.');
-            return;
-        }
-        if ($page) {
-            if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
-                header('Allow: GET');
-                $this->SendPlainTextResponse(405, 'Method not allowed.');
+            if (($uri !== $path && !$page && !$refresh) || !$this->IsIPSViewHTMLPageEnabled()
+                || !$this->WoIstIPSViewServerURLValid() || !$this->HasWoIstAccounts()
+                || $this->ReadAttributeInteger('IPSViewTransportConnection') !== IPS_GetInstance($this->InstanceID)['ConnectionID']) {
+                $this->CloudDebugPlainResponse(404, 'Not available.', __FUNCTION__, __LINE__);
                 return;
             }
-            $html = $this->renderIPSViewHTTPShell();
-            if ($html === '') {
-                $this->SendPlainTextResponse(503, 'Map document unavailable.');
+            if ($page) {
+                if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
+                    header('Allow: GET');
+                    $this->CloudDebugPlainResponse(405, 'Method not allowed.', __FUNCTION__, __LINE__);
+                    return;
+                }
+                $html = $this->renderIPSViewHTTPShell();
+                if ($html === '') {
+                    $this->CloudDebugPlainResponse(503, 'Map document unavailable.', __FUNCTION__, __LINE__);
+                    return;
+                }
+                header('Referrer-Policy: origin');
+                $this->CloudDebugResponse(200, 'text/html', $html, __FUNCTION__, __LINE__);
                 return;
             }
-            header('Referrer-Policy: origin');
-            $this->SendResponse(200, 'text/html', $html);
-            return;
-        }
-        if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
-            $this->SendPlainTextResponse(204, '');
-            return;
-        }
-        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
-            header('Allow: POST, OPTIONS');
-            $this->SendPlainTextResponse(405, 'Method not allowed.');
-            return;
-        }
-        $token = $this->ReadAttributeString('IPSViewTransportToken');
-        $provided = $_SERVER['HTTP_X_WOIST_TOKEN'] ?? '';
-        if ($token === '' || !is_string($provided) || !hash_equals($token, $provided)) {
-            $this->SendPlainTextResponse(403, 'Access denied.');
-            return;
-        }
-        if ($refresh) {
-            // RefreshDevices delegates authentication, serialization and cooldown
-            // to the existing account module; no generic remote action is exposed.
-            $this->RefreshDevices();
-        }
-        $state = $this->ReadAttributeString('IPSViewTransportState');
-        if ($state === '') {
-            $this->SendPlainTextResponse(503, 'State unavailable.');
-            return;
-        }
-        $this->SendResponse(200, 'application/json', $state);
+            if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
+                $this->CloudDebugPlainResponse(204, '', __FUNCTION__, __LINE__);
+                return;
+            }
+            if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+                header('Allow: POST, OPTIONS');
+                $this->CloudDebugPlainResponse(405, 'Method not allowed.', __FUNCTION__, __LINE__);
+                return;
+            }
+            $token = $this->ReadAttributeString('IPSViewTransportToken');
+            $provided = $_SERVER['HTTP_X_WOIST_TOKEN'] ?? '';
+            if ($token === '' || !is_string($provided) || !hash_equals($token, $provided)) {
+                $this->CloudDebugPlainResponse(403, 'Access denied.', __FUNCTION__, __LINE__);
+                return;
+            }
+            if ($refresh) {
+                // RefreshDevices delegates authentication, serialization and cooldown
+                // to the existing account module; no generic remote action is exposed.
+                $this->RefreshDevices();
+            }
+            $state = $this->ReadAttributeString('IPSViewTransportState');
+            if ($state === '') {
+                $this->CloudDebugPlainResponse(503, 'State unavailable.', __FUNCTION__, __LINE__);
+                return;
+            }
+            $this->CloudDebugResponse(200, 'application/json', $state, __FUNCTION__, __LINE__);
+        }, true);
     }
     private function RegisterWoIstIPSViewTransport(): void
     {

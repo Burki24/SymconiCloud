@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../libs/CloudDebug.php';
 require_once __DIR__ . '/../libs/helper/ConfigurationFormHelper.php';
 require_once __DIR__ . '/../libs/helper/DataFlowHelper.php';
 require_once __DIR__ . '/../libs/helper/ParentConnectionHelper.php';
@@ -22,6 +23,7 @@ require_once __DIR__ . '/../libs/WoIstAccounts.php';
 /** Assigned account device positions, rendered through the authenticated HTML SDK. */
 class iCloudWoIst extends IPSModuleStrict
 {
+    use \SymconiCloud\CloudDebug;
     use \Burki24\SymconModuleHelper\ConfigurationFormHelper;
     use \Burki24\SymconModuleHelper\DataFlowHelper;
     use \Burki24\SymconModuleHelper\ParentConnectionHelper;
@@ -46,45 +48,54 @@ class iCloudWoIst extends IPSModuleStrict
     /** Registers map settings/cache polling; credentials and Apple refresh timers belong to accounts. */
     public function Create(): void
     {
-        parent::Create();
-        $this->RegisterIPSViewHTMLPageProperties();
-        $this->RegisterWoIstIPSViewTransport();
-        $this->RegisterWoIstDesignProperties();
-        $this->RegisterVisualizationThemeProperties();
-        $this->RegisterIPSViewStyleProperties();
-        $this->RegisterPropertyInteger('StaleAfter', 900);
-        $this->RegisterWoIstAccounts();
-        $this->RegisterWoIstGeocoding();
-        $this->RegisterPropertyString('TileURL', 'https://tile.openstreetmap.org/{z}/{x}/{y}.png');
-        $this->RegisterPropertyString('TileAttribution', '© OpenStreetMap contributors');
-        $this->SetVisualizationType(1);
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
+        {
+            parent::Create();
+            $this->RegisterIPSViewHTMLPageProperties();
+            $this->RegisterWoIstIPSViewTransport();
+            $this->RegisterWoIstDesignProperties();
+            $this->RegisterVisualizationThemeProperties();
+            $this->RegisterIPSViewStyleProperties();
+            $this->RegisterPropertyInteger('StaleAfter', 900);
+            $this->RegisterWoIstAccounts();
+            $this->RegisterWoIstGeocoding();
+            $this->RegisterPropertyString('TileURL', 'https://tile.openstreetmap.org/{z}/{x}/{y}.png');
+            $this->RegisterPropertyString('TileAttribution', '© OpenStreetMap contributors');
+            $this->SetVisualizationType(1);
+        }, true);
     }
 
     /** Activates the HTML tile and reads the account cache without an Apple request. */
     public function ApplyChanges(): void
     {
-        parent::ApplyChanges();
-        $this->SetVisualizationType(1);
-        $this->RegisterIPSViewStyleMediaMessages();
-        $this->MaintainIPSViewHTMLVariable('IPSViewWoIst', $this->Translate('WoIst for IPSView'), 100, '', false);
-        $this->ConfigureWoIstIPSViewTransport();
-        $this->SetTimerInterval('UpdateAccounts', $this->configurationValid() && count($this->WoIstAccountIDs()) > ($this->HasParent() ? 1 : 0) ? 5000 : 0);
-        if (!$this->ReadPropertyBoolean('EnableAddressResolution')) {
-            $this->ClearReverseGeocodingCache();
-        }
-        $this->Update();
-        if ($this->IsIPSViewHTMLPageEnabled()) {
-            $this->RegenerateIPSViewHTMLPages();
-        }
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
+        {
+            parent::ApplyChanges();
+            $this->SetVisualizationType(1);
+            $this->RegisterIPSViewStyleMediaMessages();
+            $this->MaintainIPSViewHTMLVariable('IPSViewWoIst', $this->Translate('WoIst for IPSView'), 100, '', false);
+            $this->ConfigureWoIstIPSViewTransport();
+            $this->CloudDebugTimer('UpdateAccounts', $this->configurationValid() && count($this->WoIstAccountIDs()) > ($this->HasParent() ? 1 : 0) ? 5000 : 0, __FUNCTION__, __LINE__);
+            if (!$this->ReadPropertyBoolean('EnableAddressResolution')) {
+                $this->ClearReverseGeocodingCache();
+            }
+            $this->Update();
+            if ($this->IsIPSViewHTMLPageEnabled()) {
+                $this->RegenerateIPSViewHTMLPages();
+            }
+        }, true);
     }
 
     /** Refreshes the active IPSView media style without replacing the map page. */
     public function MessageSink(int $TimeStamp, int $SenderID, int $Message, array $Data): void
     {
-        parent::MessageSink($TimeStamp, $SenderID, $Message, $Data);
-        if ($this->IsIPSViewStyleMediaUpdate($SenderID, $Message)) {
-            $this->Update();
-        }
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($TimeStamp, $SenderID, $Message, $Data): void
+        {
+            parent::MessageSink($TimeStamp, $SenderID, $Message, $Data);
+            if ($this->IsIPSViewStyleMediaUpdate($SenderID, $Message)) {
+                $this->Update();
+            }
+        }, true);
     }
 
     /** @return string Official SDK descriptor for sharing an account splitter. */
@@ -96,90 +107,120 @@ class iCloudWoIst extends IPSModuleStrict
     /** @return string Static map settings without any Apple request. */
     public function GetConfigurationForm(): string
     {
-        $form = $this->LoadConfigurationForm();
-        foreach ($form['elements'] as &$element) {
-            if (($element['name'] ?? '') === 'AddressResolution') {
-                foreach ($element['items'] as &$item) {
-                    if (($item['name'] ?? '') === 'GeocodingConfigurationWarning') {
-                        $item['visible'] = $this->ReadPropertyBoolean('EnableAddressResolution') && $this->WoIstGeocodingConfiguration() === null;
-                    }
-                    if (($item['name'] ?? '') === 'GeoapifyUsage') {
-                        $item['visible'] = $this->ReadPropertyBoolean('EnableAddressResolution') && $this->ReadPropertyString('AddressProvider') === 'geoapify';
-                        $limit = $this->ReadPropertyInteger('GeoapifyDailyLimit');
-                        if ($limit >= 0 && $limit <= 1000000) {
-                            $usage = $this->GeoapifyDailyUsage($limit);
-                            $item['caption'] = $usage['available'] && $usage['used'] !== PHP_INT_MAX ? sprintf($this->Translate('Geoapify requests today (UTC): %d / %d'), $usage['used'], $limit)
-                                : $this->Translate('Geoapify usage counter unavailable. New requests are blocked until the next UTC day.');
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): string
+        {
+            $form = $this->LoadConfigurationForm();
+            foreach ($form['elements'] as &$element) {
+                if (($element['name'] ?? '') === 'AddressResolution') {
+                    foreach ($element['items'] as &$item) {
+                        if (($item['name'] ?? '') === 'GeocodingConfigurationWarning') {
+                            $item['visible'] = $this->ReadPropertyBoolean('EnableAddressResolution') && $this->WoIstGeocodingConfiguration() === null;
+                        }
+                        if (($item['name'] ?? '') === 'GeoapifyUsage') {
+                            $item['visible'] = $this->ReadPropertyBoolean('EnableAddressResolution') && $this->ReadPropertyString('AddressProvider') === 'geoapify';
+                            $limit = $this->ReadPropertyInteger('GeoapifyDailyLimit');
+                            if ($limit >= 0 && $limit <= 1000000) {
+                                $usage = $this->GeoapifyDailyUsage($limit);
+                                $item['caption'] = $usage['available'] && $usage['used'] !== PHP_INT_MAX ? sprintf($this->Translate('Geoapify requests today (UTC): %d / %d'), $usage['used'], $limit)
+                                    : $this->Translate('Geoapify usage counter unavailable. New requests are blocked until the next UTC day.');
+                            }
                         }
                     }
+                    unset($item);
                 }
-                unset($item);
             }
-        }
-        unset($element);
-        return $this->EncodeConfigurationForm($this->WoIstDesignForm($form));
+            unset($element);
+            return $this->EncodeConfigurationForm($this->WoIstDesignForm($form));
+        });
     }
 
     /** @return bool True if an authenticated cached account inventory was available. */
     public function Update(): bool
     {
-        return $this->publish($this->request('GetDevices'));
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): bool
+        {
+            return $this->publish($this->request('GetDevices'));
+        });
     }
 
     /** @return bool Availability after one explicit refresh per account, honoring each cooldown. */
     public function RefreshDevices(): bool
     {
-        return $this->publish($this->request('RefreshDevices'));
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): bool
+        {
+            return $this->publish($this->request('RefreshDevices'));
+        });
     }
 
     /** @return string Sanitized map bootstrap; reads only explicitly assigned account caches. */
     public function GetState(): string
     {
-        return $this->encode($this->bootstrap($this->request('GetDevices')));
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): string
+        {
+            return $this->encode($this->bootstrap($this->request('GetDevices')));
+        });
     }
 
     /** @return string Initial HTML tile with bundled assets and escaped device data. */
     public function GetVisualizationTile(): string
     {
-        return $this->renderPage(false, $this->bootstrap($this->request('GetDevices')));
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): string
+        {
+            return $this->renderPage(false, $this->bootstrap($this->request('GetDevices')));
+        });
     }
 
     /** @return string Standalone HTML shell; data updates are delivered separately through the cache endpoint. */
     public function GetIPSViewHTML(): string
     {
-        $this->ConfigureWoIstIPSViewTransport();
-        $options = $this->WoIstIPSViewTransportOptions();
-        return $this->RenderIPSViewFrame([
-            'url'   => isset($options['url']) ? $options['url'] . '/page' : '',
-            'token' => $options['token'] ?? '',
-            'title' => $this->Translate('WoIst'),
-            'error' => $this->Translate('Configure the Symcon server URL for IPSView live updates.')
-        ]);
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): string
+        {
+            $this->ConfigureWoIstIPSViewTransport();
+            $options = $this->WoIstIPSViewTransportOptions();
+            return $this->RenderIPSViewFrame([
+                'url'   => isset($options['url']) ? $options['url'] . '/page' : '',
+                'token' => $options['token'] ?? '',
+                'title' => $this->Translate('WoIst'),
+                'error' => $this->Translate('Configure the Symcon server URL for IPSView live updates.')
+            ]);
+        });
     }
 
     /** @param string $JSONString Normalized account notification. @return string Empty acknowledgement. */
     public function ReceiveData(string $JSONString): string
     {
-        try {
-            $data = $this->DecodeDataFlowMessage($JSONString, self::NOTIFICATION_DATA);
-        } catch (Throwable) {
-            $data = $this->unavailable();
-        }
-        $this->publish($this->request('GetDevices', $data));
-        return '';
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($JSONString): string
+        {
+            try {
+                $data = $this->DecodeDataFlowMessage($JSONString, self::NOTIFICATION_DATA);
+            } catch (Throwable) {
+                $data = $this->unavailable();
+            }
+            $this->publish($this->request('GetDevices', $data));
+            return '';
+        });
     }
 
     /** @param string $Ident Allowlisted HTML-SDK/form action. @param mixed $Value Unused action payload. */
     public function RequestAction(string $Ident, mixed $Value): void
     {
-        if ($this->HandleIPSViewHTMLPageAction($Ident, $Value)) {
-            return;
-        }
-        match ($Ident) {
-            'GetState', 'Update' => $this->Update(),
-            'RefreshDevices'     => $this->RefreshDevices(),
-            default              => throw new InvalidArgumentException('Unsupported map action.')
-        };
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($Ident, $Value): void
+        {
+            if ($this->HandleIPSViewHTMLPageAction($Ident, $Value)) {
+                return;
+            }
+            match ($Ident) {
+                'GetState', 'Update' => $this->Update(),
+                'RefreshDevices'     => $this->RefreshDevices(),
+                default              => throw new InvalidArgumentException('Unsupported map action.')
+            };
+        }, true);
+    }
+
+    public function Destroy(): void
+    {
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
+        { parent::Destroy(); }, true);
     }
 
     /** Symcon WebHooks evaluate classes with a synthetic reflection filename. */
@@ -248,7 +289,7 @@ class iCloudWoIst extends IPSModuleStrict
     {
         $bootstrap = $this->bootstrap($data);
         $state = $bootstrap['state'];
-        $this->SetStatus(!$this->configurationValid() ? 203 : (!$this->HasWoIstAccounts() ? 201 : ($state['success'] ? IS_ACTIVE : 202)));
+        $this->CloudDebugStatus(!$this->configurationValid() ? 203 : (!$this->HasWoIstAccounts() ? 201 : ($state['success'] ? IS_ACTIVE : 202)), __FUNCTION__, __LINE__);
         $this->UpdateVisualizationValue($this->encode($bootstrap));
         $this->PublishWoIstIPSViewState($bootstrap);
         $this->ScheduleWoIstGeocoding($state);
@@ -331,6 +372,7 @@ class iCloudWoIst extends IPSModuleStrict
 
     private function unavailable(string $error = 'Account data unavailable.'): array
     {
+        $this->CloudDebugProblem($error, __FUNCTION__, __LINE__);
         return ['success' => false, 'state' => 'error', 'updatedAt' => 0, 'devices' => [], 'error' => $this->Translate($error)];
     }
 

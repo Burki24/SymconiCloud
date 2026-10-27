@@ -24,22 +24,28 @@ trait WoIstDesign
     /** Copies saved Tile settings and switches IPSView to independent editing. */
     public function CopyTileDesignToIPSView(): void
     {
-        foreach (self::MAP_DESIGN as $name => [$default]) {
-            IPS_SetProperty($this->InstanceID, 'IPSView' . $name, is_bool($default)
-                ? $this->ReadPropertyBoolean('Tile' . $name) : $this->ReadPropertyInteger('Tile' . $name));
-        }
-        $this->CopyOpenFreeMapProperties('Tile', 'IPSView');
-        IPS_SetProperty($this->InstanceID, 'IPSViewUseTileDesign', false);
-        IPS_ApplyChanges($this->InstanceID);
-        $this->ReloadForm();
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
+        {
+            foreach (self::MAP_DESIGN as $name => [$default]) {
+                IPS_SetProperty($this->InstanceID, 'IPSView' . $name, is_bool($default)
+                    ? $this->ReadPropertyBoolean('Tile' . $name) : $this->ReadPropertyInteger('Tile' . $name));
+            }
+            $this->CopyOpenFreeMapProperties('Tile', 'IPSView');
+            IPS_SetProperty($this->InstanceID, 'IPSViewUseTileDesign', false);
+            IPS_ApplyChanges($this->InstanceID);
+            $this->ReloadForm();
+        }, true);
     }
 
     /** Updates editor availability without saving settings or querying Apple. */
     public function UpdateIPSViewDesignAvailability(bool $UseTileDesign): void
     {
-        foreach (array_merge(array_diff(array_keys(self::MAP_DESIGN), ['FontSize']), $this->OpenFreeMapPropertyNames()) as $name) {
-            $this->UpdateFormField('IPSView' . $name, 'enabled', !$UseTileDesign);
-        }
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($UseTileDesign): void
+        {
+            foreach (array_merge(array_diff(array_keys(self::MAP_DESIGN), ['FontSize']), $this->OpenFreeMapPropertyNames()) as $name) {
+                $this->UpdateFormField('IPSView' . $name, 'enabled', !$UseTileDesign);
+            }
+        }, true);
     }
 
     /** Only native color families used by the map's controls and popups are shown. */

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../libs/CloudDebug.php';
 require_once __DIR__ . '/../libs/helper/ConfigurationFormHelper.php';
 require_once __DIR__ . '/../libs/helper/DataFlowHelper.php';
 require_once __DIR__ . '/../libs/helper/ParentConnectionHelper.php';
@@ -10,6 +11,7 @@ require_once __DIR__ . '/../libs/DeviceWidget.php';
 
 class iCloudDevice extends IPSModuleStrict
 {
+    use \SymconiCloud\CloudDebug;
     use \Burki24\SymconModuleHelper\ConfigurationFormHelper;
     use \Burki24\SymconModuleHelper\DataFlowHelper;
     use \Burki24\SymconModuleHelper\ParentConnectionHelper;
@@ -30,43 +32,49 @@ class iCloudDevice extends IPSModuleStrict
     /** Registers immutable device identity configuration. */
     public function Create(): void
     {
-        parent::Create();
-        $this->RegisterPropertyString('DeviceID', '');
-        $this->RegisterPropertyInteger('AddressSource', 0);
-        $this->RegisterAttributeString('LastError', '');
-        $this->RegisterAttributeString('SourceIdentity', '');
-        $this->RegisterAttributeString('SoundResult', '');
-        $this->RegisterAttributeString('LostModeResult', '');
-        $this->RegisterAttributeString('WidgetLocation', 'null');
-        $this->RegisterAttributeInteger('WidgetSoundRevision', 0);
-        $this->SetVisualizationType(1);
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
+        {
+            parent::Create();
+            $this->RegisterPropertyString('DeviceID', '');
+            $this->RegisterPropertyInteger('AddressSource', 0);
+            $this->RegisterAttributeString('LastError', '');
+            $this->RegisterAttributeString('SourceIdentity', '');
+            $this->RegisterAttributeString('SoundResult', '');
+            $this->RegisterAttributeString('LostModeResult', '');
+            $this->RegisterAttributeString('WidgetLocation', 'null');
+            $this->RegisterAttributeInteger('WidgetSoundRevision', 0);
+            $this->SetVisualizationType(1);
+        }, true);
     }
 
     /** Applies identity, registers status variables and the sound action, and reads cached data. */
     public function ApplyChanges(): void
     {
-        parent::ApplyChanges();
-        $this->SetVisualizationType(1);
-        $this->registerVariables();
-        $identity = $this->GetParentID() . ':' . $this->ReadPropertyString('DeviceID');
-        if ($identity !== $this->ReadAttributeString('SourceIdentity')) {
-            $this->WriteAttributeString('WidgetLocation', 'null');
-            $this->SetValue('LocationAvailable', false);
-            $this->WriteAttributeString('SoundResult', '');
-            $this->WriteAttributeString('LostModeResult', '');
-            foreach (['Latitude', 'Longitude', 'Accuracy', 'BatteryLevel'] as $ident) {
-                $this->SetValue($ident, 0.0);
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
+        {
+            parent::ApplyChanges();
+            $this->SetVisualizationType(1);
+            $this->registerVariables();
+            $identity = $this->GetParentID() . ':' . $this->ReadPropertyString('DeviceID');
+            if ($identity !== $this->ReadAttributeString('SourceIdentity')) {
+                $this->WriteAttributeString('WidgetLocation', 'null');
+                $this->CloudDebugWrite('LocationAvailable', false, __FUNCTION__, __LINE__);
+                $this->WriteAttributeString('SoundResult', '');
+                $this->WriteAttributeString('LostModeResult', '');
+                foreach (['Latitude', 'Longitude', 'Accuracy', 'BatteryLevel'] as $ident) {
+                    $this->CloudDebugWrite($ident, 0.0, __FUNCTION__, __LINE__);
+                }
+                foreach (['LastUpdate', 'LocationTimestamp', 'DeviceStatus'] as $ident) {
+                    $this->CloudDebugWrite($ident, 0, __FUNCTION__, __LINE__);
+                }
+                foreach (['DeviceName', 'Model', 'DeviceClass', 'BatteryStatus', 'Address'] as $ident) {
+                    $this->CloudDebugWrite($ident, '', __FUNCTION__, __LINE__);
+                }
+                $this->applyDetails([]);
+                $this->WriteAttributeString('SourceIdentity', $identity);
             }
-            foreach (['LastUpdate', 'LocationTimestamp', 'DeviceStatus'] as $ident) {
-                $this->SetValue($ident, 0);
-            }
-            foreach (['DeviceName', 'Model', 'DeviceClass', 'BatteryStatus', 'Address'] as $ident) {
-                $this->SetValue($ident, '');
-            }
-            $this->applyDetails([]);
-            $this->WriteAttributeString('SourceIdentity', $identity);
-        }
-        $this->Update();
+            $this->Update();
+        }, true);
     }
 
     /** @return string SDK parent descriptor allowing connections to shared accounts. */
@@ -78,80 +86,92 @@ class iCloudDevice extends IPSModuleStrict
     /** @return string Form without any external request. */
     public function GetConfigurationForm(): string
     {
-        $form = $this->LoadConfigurationForm();
-        $form['actions'][0]['caption'] = $this->ReadAttributeString('LastError');
-        foreach ($form['actions'] as &$action) {
-            if (in_array($action['name'] ?? '', ['SoundResult', 'LostModeResult'], true)) {
-                $action['caption'] = $this->ReadAttributeString($action['name']);
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): string
+        {
+            $form = $this->LoadConfigurationForm();
+            $form['actions'][0]['caption'] = $this->ReadAttributeString('LastError');
+            foreach ($form['actions'] as &$action) {
+                if (in_array($action['name'] ?? '', ['SoundResult', 'LostModeResult'], true)) {
+                    $action['caption'] = $this->ReadAttributeString($action['name']);
+                }
+                if (($action['name'] ?? '') === 'LostMode') {
+                    $action['items'][0]['caption'] = $this->Translate('Target device') . ': ' . $this->GetValue('DeviceName');
+                }
             }
-            if (($action['name'] ?? '') === 'LostMode') {
-                $action['items'][0]['caption'] = $this->Translate('Target device') . ': ' . $this->GetValue('DeviceName');
+            unset($action);
+            foreach (['SoundResult', 'LostModeResult'] as $field) {
+                $form['actions'] = $this->SetFormFieldVisibility($form['actions'], [$field], $this->ReadAttributeString($field) !== '');
             }
-        }
-        unset($action);
-        foreach (['SoundResult', 'LostModeResult'] as $field) {
-            $form['actions'] = $this->SetFormFieldVisibility($form['actions'], [$field], $this->ReadAttributeString($field) !== '');
-        }
-        return $this->EncodeConfigurationForm($form);
+            return $this->EncodeConfigurationForm($form);
+        });
     }
 
     /** @return bool True when this device was found in the authenticated account cache. */
     public function Update(): bool
     {
-        if (!$this->HasParent() || trim($this->ReadPropertyString('DeviceID')) === '') {
-            $this->markUnavailable('Select an account and device.', 201);
-            return false;
-        }
-        try {
-            $response = $this->SendDataToParent($this->EncodeDataFlowMessage(self::REQUEST_DATA, ['Command' => 'GetDevices']));
-            $data = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
-            if (is_array($data)) {
-                return $this->applyResult($data);
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): bool
+        {
+            if (!$this->HasParent() || trim($this->ReadPropertyString('DeviceID')) === '') {
+                $this->markUnavailable('Select an account and device.', 201);
+                return false;
             }
-        } catch (Throwable) {
-            // The account owns transport diagnostics; raw responses are private.
-        }
-        $this->markUnavailable('Account data unavailable.', 202);
-        return false;
+            try {
+                $response = $this->CloudDebugParent($this->EncodeDataFlowMessage(self::REQUEST_DATA, ['Command' => 'GetDevices']), __FUNCTION__, __LINE__);
+                $data = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
+                if (is_array($data)) {
+                    return $this->applyResult($data);
+                }
+            } catch (Throwable) {
+                // The account owns transport diagnostics; raw responses are private.
+            }
+            $this->markUnavailable('Account data unavailable.', 202);
+            return false;
+        });
     }
 
     /** @param string $JSONString Account notification containing normalized devices. */
     public function ReceiveData(string $JSONString): string
     {
-        try {
-            $this->applyResult($this->DecodeDataFlowMessage($JSONString, self::NOTIFICATION_DATA));
-        } catch (Throwable) {
-            $this->markUnavailable('Account data unavailable.', 202);
-        }
-        return '';
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($JSONString): string
+        {
+            try {
+                $this->applyResult($this->DecodeDataFlowMessage($JSONString, self::NOTIFICATION_DATA));
+            } catch (Throwable) {
+                $this->markUnavailable('Account data unavailable.', 202);
+            }
+            return '';
+        });
     }
 
     /** @return bool Apple accepted a single sound request; audible playback is not confirmed. */
     public function PlaySound(): bool
     {
-        $success = false;
-        $message = $this->Translate('Sound request could not be confirmed. Check the device before trying again.');
-        if (!$this->HasParent() || trim($this->ReadPropertyString('DeviceID')) === '') {
-            $message = $this->Translate('Select an account and device.');
-        } else {
-            try {
-                $result = json_decode($this->SendDataToParent($this->EncodeDataFlowMessage(self::REQUEST_DATA, [
-                    'Command' => 'PlaySound', 'DeviceID' => $this->ReadPropertyString('DeviceID')
-                ])), true, 512, JSON_THROW_ON_ERROR);
-                $success = ($result['success'] ?? false) === true;
-                if (is_string($result['message'] ?? null) && $result['message'] !== '') {
-                    $message = $result['message'];
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): bool
+        {
+            $success = false;
+            $message = $this->Translate('Sound request could not be confirmed. Check the device before trying again.');
+            if (!$this->HasParent() || trim($this->ReadPropertyString('DeviceID')) === '') {
+                $message = $this->Translate('Select an account and device.');
+            } else {
+                try {
+                    $result = json_decode($this->CloudDebugParent($this->EncodeDataFlowMessage(self::REQUEST_DATA, [
+                        'Command' => 'PlaySound', 'DeviceID' => $this->ReadPropertyString('DeviceID')
+                    ]), __FUNCTION__, __LINE__), true, 512, JSON_THROW_ON_ERROR);
+                    $success = ($result['success'] ?? false) === true;
+                    if (is_string($result['message'] ?? null) && $result['message'] !== '') {
+                        $message = $result['message'];
+                    }
+                } catch (Throwable) {
+                    // The account owns transport errors; never repeat an uncertain sound request.
                 }
-            } catch (Throwable) {
-                // The account owns transport errors; never repeat an uncertain sound request.
             }
-        }
-        $this->WriteAttributeString('SoundResult', $message);
-        $this->UpdateFormField('SoundResult', 'caption', $message);
-        $this->UpdateFormField('SoundResult', 'visible', true);
-        $this->WriteAttributeInteger('WidgetSoundRevision', $this->ReadAttributeInteger('WidgetSoundRevision') + 1);
-        $this->PublishDeviceWidget();
-        return $success;
+            $this->WriteAttributeString('SoundResult', $message);
+            $this->UpdateFormField('SoundResult', 'caption', $message);
+            $this->UpdateFormField('SoundResult', 'visible', true);
+            $this->WriteAttributeInteger('WidgetSoundRevision', $this->ReadAttributeInteger('WidgetSoundRevision') + 1);
+            $this->PublishDeviceWidget();
+            return $success;
+        });
     }
 
     /**
@@ -163,9 +183,12 @@ class iCloudDevice extends IPSModuleStrict
      */
     public function ActivateLostMode(bool $Confirmed, string $PhoneNumber, string $Message, string $NewPasscode): bool
     {
-        return $this->changeLostMode($Confirmed, true, [
-            'PhoneNumber' => $PhoneNumber, 'Message' => $Message, 'NewPasscode' => $NewPasscode
-        ]);
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($Confirmed, $PhoneNumber, $Message, $NewPasscode): bool
+        {
+            return $this->changeLostMode($Confirmed, true, [
+                'PhoneNumber' => $PhoneNumber, 'Message' => $Message, 'NewPasscode' => $NewPasscode
+            ]);
+        });
     }
 
     /**
@@ -174,7 +197,10 @@ class iCloudDevice extends IPSModuleStrict
      */
     public function DeactivateLostMode(bool $Confirmed): bool
     {
-        return $this->changeLostMode($Confirmed, false);
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($Confirmed): bool
+        {
+            return $this->changeLostMode($Confirmed, false);
+        });
     }
 
     /**
@@ -183,36 +209,46 @@ class iCloudDevice extends IPSModuleStrict
      */
     public function RequestAction(string $Ident, mixed $Value): void
     {
-        if ($Ident === 'GetState' && $Value === '') {
-            $this->PublishDeviceWidget();
-            return;
-        }
-        if ($Ident === 'Update') {
-            $this->Update();
-            return;
-        }
-        if ($Ident !== 'PlaySound' || !in_array($Value, ['', 0, 1], true)) {
-            throw new InvalidArgumentException('Unsupported device action.');
-        }
-        if ($Value === 0) {
-            $this->SetValue('PlaySound', 0);
-            return;
-        }
-        try {
-            $success = $this->PlaySound();
-        } finally {
-            if ($Value === 1) {
-                $this->SetValue('PlaySound', 0);
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($Ident, $Value): void
+        {
+            if ($Ident === 'GetState' && $Value === '') {
+                $this->PublishDeviceWidget();
+                return;
             }
-        }
-        if (!$success && $Value === 1) {
-            throw new RuntimeException($this->ReadAttributeString('SoundResult'));
-        }
+            if ($Ident === 'Update') {
+                $this->Update();
+                return;
+            }
+            if ($Ident !== 'PlaySound' || !in_array($Value, ['', 0, 1], true)) {
+                throw new InvalidArgumentException('Unsupported device action.');
+            }
+            if ($Value === 0) {
+                $this->CloudDebugWrite('PlaySound', 0, __FUNCTION__, __LINE__);
+                return;
+            }
+            try {
+                $success = $this->PlaySound();
+            } finally {
+                if ($Value === 1) {
+                    $this->CloudDebugWrite('PlaySound', 0, __FUNCTION__, __LINE__);
+                }
+            }
+            if (!$success && $Value === 1) {
+                throw new RuntimeException($this->ReadAttributeString('SoundResult'));
+            }
+        }, true);
+    }
+
+    public function Destroy(): void
+    {
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
+        { parent::Destroy(); }, true);
     }
 
     /** Uses the same account boundary for two separately confirmed, fixed Lost Mode commands. */
     private function changeLostMode(bool $confirmed, bool $enabled, array $input = []): bool
     {
+        $this->DebugFlowEvent(__FUNCTION__, __LINE__, 'AKTION', $confirmed ? 'Der Auftrag zum Verloren-Modus wurde ausdrücklich bestätigt. Eingaben bleiben geschützt.' : 'Bestätigung fehlt oder wurde abgebrochen. Es wird kein Auftrag zum Verloren-Modus gesendet.', ['Aktivieren' => $enabled, 'Bestätigt' => $confirmed]);
         $success = false;
         $message = $this->Translate($enabled ? 'Confirm Lost Mode activation explicitly.' : 'Confirm Lost Mode deactivation explicitly.');
         try {
@@ -221,10 +257,10 @@ class iCloudDevice extends IPSModuleStrict
                 if (!$this->HasParent() || trim($this->ReadPropertyString('DeviceID')) === '') {
                     $message = $this->Translate('Select an account and device.');
                 } else {
-                    $result = json_decode($this->SendDataToParent($this->EncodeDataFlowMessage(self::REQUEST_DATA, [
+                    $result = json_decode($this->CloudDebugParent($this->EncodeDataFlowMessage(self::REQUEST_DATA, [
                         'Command'  => $enabled ? 'ActivateLostMode' : 'DeactivateLostMode',
                         'DeviceID' => $this->ReadPropertyString('DeviceID'), 'Confirmed' => true
-                    ] + $input)), true, 512, JSON_THROW_ON_ERROR);
+                    ] + $input), __FUNCTION__, __LINE__), true, 512, JSON_THROW_ON_ERROR);
                     $success = ($result['success'] ?? false) === true;
                     if (is_string($result['message'] ?? null) && $result['message'] !== '') {
                         $message = $result['message'];
@@ -257,34 +293,34 @@ class iCloudDevice extends IPSModuleStrict
                 continue;
             }
             foreach (['DeviceName' => 'name', 'Model' => 'model', 'DeviceClass' => 'deviceClass', 'BatteryStatus' => 'batteryStatus'] as $ident => $key) {
-                $this->SetValue($ident, (string) ($device[$key] ?? ''));
+                $this->CloudDebugWrite($ident, (string) ($device[$key] ?? ''), __FUNCTION__, __LINE__);
             }
-            $this->SetValue('DeviceStatus', (int) ($device['deviceStatus'] ?? 0));
-            $this->SetValue('Online', (int) ($device['deviceStatus'] ?? 0) === 200);
+            $this->CloudDebugWrite('DeviceStatus', (int) ($device['deviceStatus'] ?? 0), __FUNCTION__, __LINE__);
+            $this->CloudDebugWrite('Online', (int) ($device['deviceStatus'] ?? 0) === 200, __FUNCTION__, __LINE__);
             $battery = $device['batteryLevel'] ?? null;
             $batteryAvailable = is_numeric($battery) && (float) $battery >= 0 && (float) $battery <= 1;
-            $this->SetValue('BatteryAvailable', $batteryAvailable);
+            $this->CloudDebugWrite('BatteryAvailable', $batteryAvailable, __FUNCTION__, __LINE__);
             if ($batteryAvailable) {
-                $this->SetValue('BatteryLevel', (float) $battery * 100);
+                $this->CloudDebugWrite('BatteryLevel', (float) $battery * 100, __FUNCTION__, __LINE__);
             }
             $location = $device['location'] ?? null;
             $valid = is_array($location) && is_numeric($location['latitude'] ?? null) && is_numeric($location['longitude'] ?? null)
                 && abs((float) $location['latitude']) <= 90 && abs((float) $location['longitude']) <= 180;
-            $this->SetValue('LocationAvailable', $valid);
-            $this->SetValue('LocationIsOld', !$valid || (bool) ($location['isOld'] ?? false));
+            $this->CloudDebugWrite('LocationAvailable', $valid, __FUNCTION__, __LINE__);
+            $this->CloudDebugWrite('LocationIsOld', !$valid || (bool) ($location['isOld'] ?? false), __FUNCTION__, __LINE__);
             if ($valid) {
-                $this->SetValue('Latitude', (float) $location['latitude']);
-                $this->SetValue('Longitude', (float) $location['longitude']);
-                $this->SetValue('Accuracy', max(0.0, (float) ($location['horizontalAccuracy'] ?? 0)));
-                $this->SetValue('LocationTimestamp', max(0, (int) ($location['timestamp'] ?? 0)));
+                $this->CloudDebugWrite('Latitude', (float) $location['latitude'], __FUNCTION__, __LINE__);
+                $this->CloudDebugWrite('Longitude', (float) $location['longitude'], __FUNCTION__, __LINE__);
+                $this->CloudDebugWrite('Accuracy', max(0.0, (float) ($location['horizontalAccuracy'] ?? 0)), __FUNCTION__, __LINE__);
+                $this->CloudDebugWrite('LocationTimestamp', max(0, (int) ($location['timestamp'] ?? 0)), __FUNCTION__, __LINE__);
             }
-            $this->SetValue('Address', $valid ? $this->readAddress((float) $location['latitude'], (float) $location['longitude']) : '');
+            $this->CloudDebugWrite('Address', $valid ? $this->readAddress((float) $location['latitude'], (float) $location['longitude']) : '', __FUNCTION__, __LINE__);
             $this->RememberDeviceLocation();
             $this->applyDetails($device, $valid);
-            $this->SetValue('LastUpdate', (int) $data['updatedAt']);
-            $this->SetValue('DataAvailable', true);
+            $this->CloudDebugWrite('LastUpdate', (int) $data['updatedAt'], __FUNCTION__, __LINE__);
+            $this->CloudDebugWrite('DataAvailable', true, __FUNCTION__, __LINE__);
             $this->WriteAttributeString('LastError', '');
-            $this->SetStatus(IS_ACTIVE);
+            $this->CloudDebugStatus(IS_ACTIVE, __FUNCTION__, __LINE__);
             $this->PublishDeviceWidget();
             return true;
         }
@@ -294,15 +330,16 @@ class iCloudDevice extends IPSModuleStrict
 
     private function markUnavailable(string $error, int $status): void
     {
+        $this->CloudDebugProblem($error, __FUNCTION__, __LINE__);
         $this->RememberDeviceLocation();
         foreach (['DataAvailable', 'LocationAvailable', 'BatteryAvailable', 'Online'] as $ident) {
-            $this->SetValue($ident, false);
+            $this->CloudDebugWrite($ident, false, __FUNCTION__, __LINE__);
         }
-        $this->SetValue('LocationIsOld', true);
-        $this->SetValue('Address', '');
+        $this->CloudDebugWrite('LocationIsOld', true, __FUNCTION__, __LINE__);
+        $this->CloudDebugWrite('Address', '', __FUNCTION__, __LINE__);
         $this->applyDetails([]);
         $this->WriteAttributeString('LastError', $this->Translate($error === '' ? 'Account data unavailable.' : $error));
-        $this->SetStatus($status);
+        $this->CloudDebugStatus($status, __FUNCTION__, __LINE__);
         $this->PublishDeviceWidget();
     }
 
@@ -331,16 +368,16 @@ class iCloudDevice extends IPSModuleStrict
         ];
         foreach (array_merge(array_keys(self::OPTIONAL_FLAGS), ['LocationIsInaccurate', 'LocationFinished']) as $ident) {
             if ($this->RegisterVariableInteger($ident, $this->Translate($ident), $this->IntegerOptionsPresentation($options), $position++)) {
-                $this->SetValue($ident, -1);
+                $this->CloudDebugWrite($ident, -1, __FUNCTION__, __LINE__);
             }
         }
         if ($this->RegisterVariableString('ModelIdentifier', $this->Translate('ModelIdentifier'), $this->TextPresentation(), $position++)) {
-            $this->SetValue('ModelIdentifier', $this->Translate('Not available'));
+            $this->CloudDebugWrite('ModelIdentifier', $this->Translate('Not available'), __FUNCTION__, __LINE__);
         }
         $this->RegisterVariableInteger('PlaySound', $this->Translate('Find phone'), $this->EnumerationPresentation([
             ['Value' => 1, 'Caption' => $this->Translate('Play sound')]
         ], 1), $position++);
-        $this->SetValue('PlaySound', 0);
+        $this->CloudDebugWrite('PlaySound', 0, __FUNCTION__, __LINE__);
         $this->EnableAction('PlaySound');
     }
 
@@ -354,11 +391,11 @@ class iCloudDevice extends IPSModuleStrict
         $flags['LocationIsInaccurate'] = $locationAvailable ? ($device['location']['isInaccurate'] ?? null) : null;
         $flags['LocationFinished'] = $locationAvailable ? ($device['location']['finished'] ?? null) : null;
         foreach ($flags as $ident => $value) {
-            $this->SetValue($ident, is_bool($value) ? (int) $value : -1);
+            $this->CloudDebugWrite($ident, is_bool($value) ? (int) $value : -1, __FUNCTION__, __LINE__);
         }
         $model = $device['modelIdentifier'] ?? null;
-        $this->SetValue('ModelIdentifier', is_string($model) && preg_match('/\A[^\x00-\x1F\x7F]{1,128}\z/uD', $model) === 1
-            ? $model : $this->Translate('Not available'));
+        $this->CloudDebugWrite('ModelIdentifier', is_string($model) && preg_match('/\A[^\x00-\x1F\x7F]{1,128}\z/uD', $model) === 1
+            ? $model : $this->Translate('Not available'), __FUNCTION__, __LINE__);
     }
 
     /** Reads one account-scoped WoIst cache; no device-level HTTP or polling. */
@@ -379,10 +416,15 @@ class iCloudDevice extends IPSModuleStrict
                 }
             }
             if (count($candidates) === 1) {
-                return ICWI_GetDeviceAddress($candidates[0], $this->ReadPropertyString('DeviceID'), $latitude, $longitude);
+                $this->DebugFlowEvent(__FUNCTION__, __LINE__, 'SENDEN', 'Eine passende Adresse wird nur aus dem WoIst-Cache gelesen; es wird keine Geräte-HTTP-Abfrage gestartet.', ['AdressquelleInstanz' => $candidates[0]]);
+                $address = ICWI_GetDeviceAddress($candidates[0], $this->ReadPropertyString('DeviceID'), $latitude, $longitude);
+                $this->DebugFlowEvent(__FUNCTION__, __LINE__, 'EMPFANG', $address === '' ? 'Für diese Messung liegt noch keine passende Adresse im Cache vor. Adressauflösung der WoIst-Instanz prüfen; Gerätewerte bleiben nutzbar.' : 'Eine passende Cacheadresse liegt vor; der Adressinhalt wird nicht protokolliert.');
+                return $address;
             }
-        } catch (Throwable) {
+            $this->DebugFlowEvent(__FUNCTION__, __LINE__, 'AKTION', 'Es wurde keine eindeutige freigegebene Adressquelle desselben Kontos gefunden. Eine WoIst-Instanz mit aktivierter Adressauflösung zuordnen; Gerätewerte bleiben nutzbar.', ['PassendeQuellen' => count($candidates)]);
+        } catch (Throwable $exception) {
             // An unavailable optional address source must not disable device data.
+            $this->DebugFlowException(__FUNCTION__, __LINE__, $exception);
         }
         return '';
     }

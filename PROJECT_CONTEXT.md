@@ -1,5 +1,63 @@
 # Entwicklungsstand
 
+## Verständliche Debug-Ausgaben nach zentralem Vertrag (2026-10-27)
+
+Die bisher zwei eigenen Debugstellen wurden durch den vereinbarten Ablauf
+ersetzt. 106 libraryeigene Einstiege in allen sieben Modulen einschließlich
+Fach-Traits, Lebenszyklus, Timer, Bedienung, Exporten und eigener WebHooks
+erhalten Start/Ende über den vorhandenen zentralen DebugFlowHelper. Der Helper
+erhält eine rückgabewert-/ausnahmetreue Callback-API sowie optionale sichere
+Schreibmetadaten; Formatierung und Maskierung bleiben zentral. CloudDebug
+enthält nur iCloud-Fachmeldungen. Der Umfang und die beiden reinen Getter-
+Ausnahmen sind intern in docs/DEBUG_CONTRACT.md dokumentiert.
+
+Deutsche Erklärungen umfassen Pause, Schutzsperren, Codeanforderung und
+HTTP-Ergebnisse, fehlende Quellen, Cachezustand, GPS-Stabilisierung, Einheiten,
+Adressquellen, Suchton-/Verloren-Modus-Annahme, Empfängervorschau/-abbruch/
+Übernahme, Downloadumfang und WebHook-Ablehnungen. Keine neue Anmeldung,
+Netzwerk-/Geräteaktion oder Messwertabfrage wird für Debug erzeugt. Private
+Inhalte und beliebige Exception-Texte werden nicht an den Kanal übergeben;
+der bisherige direkte Exception-Text der Anwesenheit wurde entfernt.
+
+Gezielte Offline-Prüfungen sichern die realen sieben Module, ausgeglichene
+Start-/Endpaare auch bei Fehlern, korrekte Instanz-IDs, gemeinsame verschachtelte
+Vorgänge, neue äußere/Standalone-Vorgänge, unveränderte Rückgaben/Ausnahmen,
+Geheimnisschutz sowie das Weiterarbeiten trotz absichtlich defektem Debugkanal.
+GPS-/Kontakt-/Empfänger-Fixtures bleiben synthetisch. Es wurden weder echte
+Apple-Anmeldungen noch Nachrichten oder Geräteaktionen ausgelöst und keine
+laufende Instanz geändert. Die echten Debug-Fenster und Laufzeitkosten bleiben
+für die Abnahme nach dem Benutzerupdate offen.
+
+Eine zusätzlich erstellte Anwender-Debuganleitung und deren README-Verweise
+wurden nach Benutzerkorrektur vollständig entfernt. Library-/Modul-READMEs
+bleiben für dieses Arbeitspaket unverändert. Implementierungsvertrag und
+Prüfbelege gehören ausschließlich in diese interne Dokumentation; AGENTS.md
+verweist darauf und die CI-Vertragsprüfungen sichern die Einbindung.
+
+Der gleichzeitig gemeldete GitHub-Fehler des Commits 25fb0cd wurde lesend
+eingegrenzt: Tests 40499565709, Job 122173543613 scheitert an
+tests/map-ui.js:324 (Wiederherstellung des Kontofilters). Die 2FA-Tests bestehen.
+Die Versionierung 40499565807 scheitert am selben vorgeschalteten Test, nicht
+an ihrer Metadatenlogik. Die Karten-Speichererweiterung lag bei der Prüfung nur
+auf dem zentralen dev, nicht im freigegebenen main. Der Benutzer übernimmt
+die Helper-Freigabe; kein Test wurde dafür entfernt oder abgeschwächt.
+
+Auch die neuen DebugFlow-APIs benötigen die zentrale Freigabe und reguläre
+Verteilung vor dem Consumer-Update. Der integrierte Stand wird nur temporär
+über die normalen Generatoren geprüft (67 Dateien, 19 Abonnements); im
+Arbeitsbaum bleiben keine provisorischen Helperkopien und library.json wird
+nicht manuell angepasst. Keine Commits, Pushs, Merges oder Live-Updates.
+
+Abschlussnachweis: Die vollständigen Helper- und Consumer-Suiten mit PHP 8.5.10,
+GD/EXIF und Node, Metadaten-/Bundleprüfung, offizieller JSON-Check sowie
+PHP-CS-Fixer im Prüfmodus (0 von 74 Library- bzw. 77 Helper-Dateien) bestehen.
+Der vollständige Integrationslog enthält sämtliche neuen Debugfälle ohne
+PHP-Warnungen oder Notices. UTF-8/LF und git diff --check sind geprüft.
+Auch die zusätzlichen README-API-Ergänzungen im Helper-Projekt wurden zugunsten
+interner Dokumentation entfernt; sämtliche READMEs beider Repositories bleiben
+in diesem Arbeitspaket unverändert. Die neue Helper-API steht intern in
+Symcon_ModuleHelper/docs/DEBUG_FLOW_CONTRACT.md und im PHPDoc.
+
 ## 2FA: ausdrücklich gültige HTTP-409-Codes und unvollständige HTTP-202-Schritte (2026-10-27)
 
 Der öffentliche Beta-Forumsthread meldete eine nach Codeeingabe weiterhin offene

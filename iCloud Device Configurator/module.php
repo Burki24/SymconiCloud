@@ -2,12 +2,14 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../libs/CloudDebug.php';
 require_once __DIR__ . '/../libs/helper/ConfigurationFormHelper.php';
 require_once __DIR__ . '/../libs/helper/DataFlowHelper.php';
 require_once __DIR__ . '/../libs/helper/ParentConnectionHelper.php';
 
 class iCloudDeviceConfigurator extends IPSModuleStrict
 {
+    use \SymconiCloud\CloudDebug;
     use \Burki24\SymconModuleHelper\ConfigurationFormHelper;
     use \Burki24\SymconModuleHelper\DataFlowHelper;
     use \Burki24\SymconModuleHelper\ParentConnectionHelper;
@@ -21,8 +23,11 @@ class iCloudDeviceConfigurator extends IPSModuleStrict
     /** Applies the configuration without starting an Apple request. */
     public function ApplyChanges(): void
     {
-        parent::ApplyChanges();
-        $this->updateForm($this->request('GetDevices'));
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
+        {
+            parent::ApplyChanges();
+            $this->updateForm($this->request('GetDevices'));
+        }, true);
     }
 
     /** @return string SDK parent descriptor allowing connections to shared accounts. */
@@ -34,25 +39,34 @@ class iCloudDeviceConfigurator extends IPSModuleStrict
     /** @return string Configuration form populated from the account cache only. */
     public function GetConfigurationForm(): string
     {
-        $form = $this->LoadConfigurationForm();
-        $result = $this->request('GetDevices');
-        $this->SetStatus(!$this->HasParent() ? 201 : (($result['success'] ?? false) === true ? IS_ACTIVE : 202));
-        $form['elements'][0]['values'] = $this->buildValues($result);
-        $form['elements'][1]['values'] = $this->buildPresenceValues($result);
-        $form['actions'][0]['caption'] = $this->resultCaption($result);
-        return $this->EncodeConfigurationForm($form);
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): string
+        {
+            $form = $this->LoadConfigurationForm();
+            $result = $this->request('GetDevices');
+            $this->CloudDebugStatus(!$this->HasParent() ? 201 : (($result['success'] ?? false) === true ? IS_ACTIVE : 202), __FUNCTION__, __LINE__);
+            $form['elements'][0]['values'] = $this->buildValues($result);
+            $form['elements'][1]['values'] = $this->buildPresenceValues($result);
+            $form['actions'][0]['caption'] = $this->resultCaption($result);
+            return $this->EncodeConfigurationForm($form);
+        });
     }
 
     /** @return bool True if an authenticated account cache was available. */
     public function Reload(): bool
     {
-        return $this->updateForm($this->request('GetDevices'));
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): bool
+        {
+            return $this->updateForm($this->request('GetDevices'));
+        });
     }
 
     /** @return bool True if the explicit Apple device request succeeded. */
     public function RefreshDevices(): bool
     {
-        return $this->updateForm($this->request('RefreshDevices'));
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): bool
+        {
+            return $this->updateForm($this->request('RefreshDevices'));
+        });
     }
 
     /**
@@ -61,32 +75,51 @@ class iCloudDeviceConfigurator extends IPSModuleStrict
      */
     public function RequestAction(string $Ident, mixed $Value): void
     {
-        match ($Ident) {
-            'Reload'         => $this->Reload(),
-            'RefreshDevices' => $this->RefreshDevices(),
-            default          => throw new InvalidArgumentException('Unsupported action.')
-        };
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($Ident, $Value): void
+        {
+            match ($Ident) {
+                'Reload'         => $this->Reload(),
+                'RefreshDevices' => $this->RefreshDevices(),
+                default          => throw new InvalidArgumentException('Unsupported action.')
+            };
+        }, true);
     }
 
     /** @param string $JSONString Account notification; never triggers a request. */
     public function ReceiveData(string $JSONString): string
     {
-        try {
-            $this->updateForm($this->DecodeDataFlowMessage($JSONString, self::NOTIFICATION_DATA));
-        } catch (Throwable) {
-            $this->SetStatus(202);
-        }
-        return '';
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($JSONString): string
+        {
+            try {
+                $this->updateForm($this->DecodeDataFlowMessage($JSONString, self::NOTIFICATION_DATA));
+            } catch (Throwable) {
+                $this->CloudDebugStatus(202, __FUNCTION__, __LINE__);
+            }
+            return '';
+        });
+    }
+
+    public function Create(): void
+    {
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
+        { parent::Create(); }, true);
+    }
+
+    public function Destroy(): void
+    {
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
+        { parent::Destroy(); }, true);
     }
 
     /** @return array<string, mixed> Account result or a local transport error. */
     private function request(string $command): array
     {
         if (!$this->HasParent()) {
+            $this->CloudDebugProblem('No iCloud account connected.', __FUNCTION__, __LINE__);
             return ['success' => false, 'devices' => [], 'error' => $this->Translate('No iCloud account connected.')];
         }
         try {
-            $response = $this->SendDataToParent($this->EncodeDataFlowMessage(self::REQUEST_DATA, ['Command' => $command]));
+            $response = $this->CloudDebugParent($this->EncodeDataFlowMessage(self::REQUEST_DATA, ['Command' => $command]), __FUNCTION__, __LINE__);
             $result = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
             if (is_array($result) && is_bool($result['success'] ?? null) && is_array($result['devices'] ?? null)) {
                 return $result;
@@ -101,7 +134,7 @@ class iCloudDeviceConfigurator extends IPSModuleStrict
     private function updateForm(array $result): bool
     {
         $success = ($result['success'] ?? false) === true;
-        $this->SetStatus(!$this->HasParent() ? 201 : ($success ? IS_ACTIVE : 202));
+        $this->CloudDebugStatus(!$this->HasParent() ? 201 : ($success ? IS_ACTIVE : 202), __FUNCTION__, __LINE__);
         $this->UpdateFormField('Devices', 'values', json_encode($this->buildValues($result), JSON_THROW_ON_ERROR));
         $this->UpdateFormField('PresenceInstances', 'values', json_encode($this->buildPresenceValues($result), JSON_THROW_ON_ERROR));
         $this->UpdateFormField('Result', 'caption', $this->resultCaption($result));

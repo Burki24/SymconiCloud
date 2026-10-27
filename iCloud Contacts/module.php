@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../libs/CloudDebug.php';
 require_once __DIR__ . '/../libs/helper/ConfigurationFormHelper.php';
 require_once __DIR__ . '/../libs/helper/DataFlowHelper.php';
 require_once __DIR__ . '/../libs/helper/ParentConnectionHelper.php';
@@ -10,6 +11,7 @@ require_once __DIR__ . '/../libs/ContactsRecipientTransfer.php';
 
 class iCloudContacts extends IPSModuleStrict
 {
+    use \SymconiCloud\CloudDebug;
     use \Burki24\SymconModuleHelper\ConfigurationFormHelper;
     use \Burki24\SymconModuleHelper\DataFlowHelper;
     use \Burki24\SymconModuleHelper\ParentConnectionHelper;
@@ -20,8 +22,11 @@ class iCloudContacts extends IPSModuleStrict
 
     public function Create(): void
     {
-        parent::Create();
-        $this->RegisterRecipientTransfer();
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
+        {
+            parent::Create();
+            $this->RegisterRecipientTransfer();
+        }, true);
     }
 
     public function GetCompatibleParents(): string
@@ -32,105 +37,144 @@ class iCloudContacts extends IPSModuleStrict
     /** Form opening, reconnection and pushes only read the existing account cache. */
     public function ApplyChanges(): void
     {
-        parent::ApplyChanges();
-        $this->InvalidateRecipientTransfer();
-        $this->Reload();
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
+        {
+            parent::ApplyChanges();
+            $this->InvalidateRecipientTransfer();
+            $this->Reload();
+        }, true);
     }
 
     public function ReceiveData(string $JSONString): string
     {
-        try {
-            $this->DecodeDataFlowMessage($JSONString, self::NOTIFICATION_DATA);
-            $this->Reload();
-        } catch (Throwable) {
-            $this->SetStatus(202);
-        }
-        return '';
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($JSONString): string
+        {
+            try {
+                $this->DecodeDataFlowMessage($JSONString, self::NOTIFICATION_DATA);
+                $this->Reload();
+            } catch (Throwable) {
+                $this->CloudDebugStatus(202, __FUNCTION__, __LINE__);
+            }
+            return '';
+        });
     }
 
     /** Returns a bounded local page; never starts an Apple request. */
     public function GetContacts(string $Query = '', int $Offset = 0, int $Limit = 100): string
     {
-        \SymconiCloud\ContactsDirectory::page([], $Query, $Offset, $Limit);
-        return json_encode($this->request('GetContacts', ['Query' => $Query, 'Offset' => $Offset, 'Limit' => $Limit]), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($Query, $Offset, $Limit): string
+        {
+            \SymconiCloud\ContactsDirectory::page([], $Query, $Offset, $Limit);
+            return json_encode($this->request('GetContacts', ['Query' => $Query, 'Offset' => $Offset, 'Limit' => $Limit]), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+        });
     }
 
     /** Scope persisted recipient references by this instance ID and the contact ID together. */
     public function GetContact(string $ContactID): string
     {
-        if ($ContactID === '' || strlen($ContactID) > 1024) {
-            throw new InvalidArgumentException('Invalid contact ID.');
-        }
-        return json_encode($this->request('GetContact', ['ContactID' => $ContactID]), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($ContactID): string
+        {
+            if ($ContactID === '' || strlen($ContactID) > 1024) {
+                throw new InvalidArgumentException('Invalid contact ID.');
+            }
+            return json_encode($this->request('GetContact', ['ContactID' => $ContactID]), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+        });
     }
 
     /** Explicit, protected refresh of the account's shared directory. */
     public function Refresh(): bool
     {
-        $result = $this->request('RefreshContacts');
-        $this->Reload();
-        return ($result['success'] ?? false) === true;
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): bool
+        {
+            $result = $this->request('RefreshContacts');
+            $this->Reload();
+            return ($result['success'] ?? false) === true;
+        });
     }
 
     public function SearchContacts(string $Query): void
     {
-        \SymconiCloud\ContactsDirectory::page([], $Query, 0, 1);
-        $this->SetBuffer('ContactSearch', $Query);
-        $this->FirstContacts();
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($Query): void
+        {
+            \SymconiCloud\ContactsDirectory::page([], $Query, 0, 1);
+            $this->SetBuffer('ContactSearch', $Query);
+            $this->FirstContacts();
+        }, true);
     }
 
     public function FirstContacts(): void
     {
-        $this->SetBuffer('ContactOffset', '0');
-        $this->Reload();
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
+        {
+            $this->SetBuffer('ContactOffset', '0');
+            $this->Reload();
+        }, true);
     }
 
     public function NextContacts(): void
     {
-        $next = $this->GetBuffer('ContactNext');
-        if ($next !== '') {
-            $this->SetBuffer('ContactOffset', $next);
-            $this->Reload();
-        }
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
+        {
+            $next = $this->GetBuffer('ContactNext');
+            if ($next !== '') {
+                $this->SetBuffer('ContactOffset', $next);
+                $this->Reload();
+            }
+        }, true);
     }
 
     public function RequestAction(string $Ident, mixed $Value): void
     {
-        match ($Ident) {
-            'Refresh'        => $this->Refresh(),
-            'SearchContacts' => $this->SearchContacts(is_string($Value) ? $Value : ''),
-            'FirstContacts'  => $this->FirstContacts(),
-            'NextContacts'   => $this->NextContacts(),
-            default          => throw new InvalidArgumentException('Unsupported directory action.')
-        };
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($Ident, $Value): void
+        {
+            match ($Ident) {
+                'Refresh'        => $this->Refresh(),
+                'SearchContacts' => $this->SearchContacts(is_string($Value) ? $Value : ''),
+                'FirstContacts'  => $this->FirstContacts(),
+                'NextContacts'   => $this->NextContacts(),
+                default          => throw new InvalidArgumentException('Unsupported directory action.')
+            };
+        }, true);
     }
 
     public function GetConfigurationForm(): string
     {
-        $form = $this->LoadConfigurationForm();
-        $result = $this->currentPage();
-        $form['actions'][0]['caption'] = $this->caption($result);
-        $form['actions'][1]['value'] = $this->GetBuffer('ContactSearch');
-        $form['actions'][2]['values'] = $this->rows($result);
-        $form['actions'][4]['enabled'] = $result['nextOffset'] !== null;
-        return $this->EncodeConfigurationForm($this->ConfigureRecipientForm($form, $result));
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): string
+        {
+            $form = $this->LoadConfigurationForm();
+            $result = $this->currentPage();
+            $form['actions'][0]['caption'] = $this->caption($result);
+            $form['actions'][1]['value'] = $this->GetBuffer('ContactSearch');
+            $form['actions'][2]['values'] = $this->rows($result);
+            $form['actions'][4]['enabled'] = $result['nextOffset'] !== null;
+            return $this->EncodeConfigurationForm($this->ConfigureRecipientForm($form, $result));
+        });
     }
 
     public function Reload(): bool
     {
-        $result = $this->currentPage();
-        $this->UpdateFormField('ContactResult', 'caption', $this->caption($result));
-        $this->UpdateFormField('ContactList', 'values', json_encode($this->rows($result), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE));
-        $this->UpdateFormField('ContactNextPage', 'enabled', $result['nextOffset'] !== null);
-        $this->UpdateFormField('TransferContactID', 'options', json_encode($this->RecipientContactOptions($result), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE));
-        return $result['success'];
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): bool
+        {
+            $result = $this->currentPage();
+            $this->UpdateFormField('ContactResult', 'caption', $this->caption($result));
+            $this->UpdateFormField('ContactList', 'values', json_encode($this->rows($result), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE));
+            $this->UpdateFormField('ContactNextPage', 'enabled', $result['nextOffset'] !== null);
+            $this->UpdateFormField('TransferContactID', 'options', json_encode($this->RecipientContactOptions($result), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE));
+            return $result['success'];
+        });
+    }
+
+    public function Destroy(): void
+    {
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
+        { parent::Destroy(); }, true);
     }
 
     private function currentPage(): array
     {
         $result = json_decode($this->GetContacts($this->GetBuffer('ContactSearch'), (int) $this->GetBuffer('ContactOffset')), true, 512, JSON_THROW_ON_ERROR);
         $this->SetBuffer('ContactNext', $result['nextOffset'] === null ? '' : (string) $result['nextOffset']);
-        $this->SetStatus(!$this->HasParent() ? 201 : (!$result['success'] ? 202 : ($result['stale'] ? 203 : IS_ACTIVE)));
+        $this->CloudDebugStatus(!$this->HasParent() ? 201 : (!$result['success'] ? 202 : ($result['stale'] ? 203 : IS_ACTIVE)), __FUNCTION__, __LINE__);
         return $result;
     }
 
@@ -138,7 +182,7 @@ class iCloudContacts extends IPSModuleStrict
     {
         if ($this->HasParent()) {
             try {
-                $reply = $this->SendDataToParent($this->EncodeDataFlowMessage(self::REQUEST_DATA, ['Command' => $command] + $arguments));
+                $reply = $this->CloudDebugParent($this->EncodeDataFlowMessage(self::REQUEST_DATA, ['Command' => $command] + $arguments), __FUNCTION__, __LINE__);
                 $result = json_decode($reply, true, 512, JSON_THROW_ON_ERROR);
                 if (is_array($result) && is_bool($result['success'] ?? null)) {
                     if ($command === 'RefreshContacts' || ($command === 'GetContact' && array_key_exists('contact', $result))

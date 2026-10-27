@@ -56,6 +56,12 @@
 
 ## Fixes
 
+- Alle sieben Module bieten nachvollziehbare deutsche Debug-Abläufe über den
+  zentralen DebugFlowHelper: Start/Ende, Entscheidungen, Anfragen, Antworten,
+  Statuswerte und konkrete Ablehnungsgründe. Private Inhalte bleiben geschützt;
+  ungeprüfte Exception-Texte werden nicht mehr direkt ausgegeben. Debugfehler
+  verändern keine Geräteaktionen, Rückgaben, Kontoschutzgrenzen oder Abfragen.
+
 - **iCloud Konto** verarbeitet ausdrücklich gültige Bestätigungscodes auch bei
   Apples HTTP-409-Antwort. Vertrauensbestätigung und erfolgreiche Kontositzung
   bleiben erforderlich; unbestätigte Antworten und Sicherheitsablehnungen

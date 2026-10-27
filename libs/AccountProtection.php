@@ -19,95 +19,113 @@ trait AccountProtection
     /** Local recovery only: never logs in, clears a cooldown, or resets attempt limits. */
     public function ResumeAccountRequests(): void
     {
-        if (!IPS_SemaphoreEnter('SymconiCloud.' . $this->InstanceID, 1000)) {
-            return;
-        }
-        try {
-            try {
-                $this->authenticationAttempts();
-            } catch (AppleException $error) {
-                $this->AccountRequestFailed('resume', $error, false);
-                $this->updateState();
-                $this->setAuthenticationFeedback('resume', $error->reason);
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
+        {
+            if (!IPS_SemaphoreEnter('SymconiCloud.' . $this->InstanceID, 1000)) {
+                $this->CloudDebugProblem('busy', __FUNCTION__, __LINE__);
                 return;
             }
-            $this->WriteAttributeString('AccountBlock', '');
-            if (in_array($this->ReadAttributeString('LastError'), self::PROTECTION_REASONS, true)) {
-                $this->WriteAttributeString('LastError', '');
+            try {
+                try {
+                    $this->authenticationAttempts();
+                } catch (AppleException $error) {
+                    $this->AccountRequestFailed('resume', $error, false);
+                    $this->updateState();
+                    $this->setAuthenticationFeedback('resume', $error->reason);
+                    return;
+                }
+                $this->WriteAttributeString('AccountBlock', '');
+                if (in_array($this->ReadAttributeString('LastError'), self::PROTECTION_REASONS, true)) {
+                    $this->WriteAttributeString('LastError', '');
+                }
+                $this->RecordAccountDiagnostic('resume', 0, 'ok');
+                $this->updateState();
+                $this->setAuthenticationFeedback('resume', 'ok');
+            } finally {
+                IPS_SemaphoreLeave('SymconiCloud.' . $this->InstanceID);
             }
-            $this->RecordAccountDiagnostic('resume', 0, 'ok');
-            $this->updateState();
-            $this->setAuthenticationFeedback('resume', 'ok');
-        } finally {
-            IPS_SemaphoreLeave('SymconiCloud.' . $this->InstanceID);
-        }
-        $this->notifyChildren();
-        $this->ReloadForm();
+            $this->notifyChildren();
+            $this->ReloadForm();
+        }, true);
     }
 
     /** Bounded, allowlisted records only; no provider payloads, identities, URLs, or secrets. */
     public function GetAccountDiagnostics(): string
     {
-        $raw = json_decode($this->ReadAttributeString('AccountDiagnostics'), true);
-        $entries = [];
-        foreach (is_array($raw) ? array_slice($raw, -50) : [] as $entry) {
-            if (!is_array($entry) || !is_int($entry['time'] ?? null) || !is_int($entry['httpStatus'] ?? null) || !is_int($entry['waitSeconds'] ?? null)
-                || !in_array($entry['operation'] ?? null, self::DIAGNOSTIC_OPERATIONS, true) || !$this->diagnosticReasonAllowed($entry['reason'] ?? null)) {
-                continue;
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): string
+        {
+            $raw = json_decode($this->ReadAttributeString('AccountDiagnostics'), true);
+            $entries = [];
+            foreach (is_array($raw) ? array_slice($raw, -50) : [] as $entry) {
+                if (!is_array($entry) || !is_int($entry['time'] ?? null) || !is_int($entry['httpStatus'] ?? null) || !is_int($entry['waitSeconds'] ?? null)
+                    || !in_array($entry['operation'] ?? null, self::DIAGNOSTIC_OPERATIONS, true) || !$this->diagnosticReasonAllowed($entry['reason'] ?? null)) {
+                    continue;
+                }
+                $entries[] = ['time' => max(0, $entry['time']), 'operation' => $entry['operation'], 'httpStatus' => max(0, min(599, $entry['httpStatus'])), 'reason' => $entry['reason'], 'waitSeconds' => max(0, min(86400, $entry['waitSeconds']))];
             }
-            $entries[] = ['time' => max(0, $entry['time']), 'operation' => $entry['operation'], 'httpStatus' => max(0, min(599, $entry['httpStatus'])), 'reason' => $entry['reason'], 'waitSeconds' => max(0, min(86400, $entry['waitSeconds']))];
-        }
-        return json_encode($entries, JSON_THROW_ON_ERROR);
+            return json_encode($entries, JSON_THROW_ON_ERROR);
+        });
     }
 
     /** Clearing diagnostic history cannot release a hold or reset security counters. */
     public function ClearAccountDiagnostics(): void
     {
-        if (!IPS_SemaphoreEnter('SymconiCloud.' . $this->InstanceID, 1000)) {
-            return;
-        }
-        try {
-            // Preserve legacy security evidence even if cleanup precedes the first new request.
-            $this->WriteAttributeString('AccountSecurityDiagnostics', $this->GetAccountSecurityDiagnostics());
-            $this->WriteAttributeString('AccountDiagnostics', '[]');
-        } finally {
-            IPS_SemaphoreLeave('SymconiCloud.' . $this->InstanceID);
-        }
-        $this->ReloadForm();
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
+        {
+            if (!IPS_SemaphoreEnter('SymconiCloud.' . $this->InstanceID, 1000)) {
+                $this->CloudDebugProblem('busy', __FUNCTION__, __LINE__);
+                return;
+            }
+            try {
+                // Preserve legacy security evidence even if cleanup precedes the first new request.
+                $this->WriteAttributeString('AccountSecurityDiagnostics', $this->GetAccountSecurityDiagnostics());
+                $this->WriteAttributeString('AccountDiagnostics', '[]');
+            } finally {
+                IPS_SemaphoreLeave('SymconiCloud.' . $this->InstanceID);
+            }
+            $this->ReloadForm();
+        }, true);
     }
 
     /** Security evidence is independent of routine polling: at most 200 events for 30 days. */
     public function GetAccountSecurityDiagnostics(): string
     {
-        $raw = $this->ReadAttributeString('AccountSecurityDiagnostics');
-        $legacy = $raw === '';
-        $entries = json_decode($legacy ? $this->GetAccountDiagnostics() : $raw, true);
-        $safe = [];
-        foreach (is_array($entries) ? array_slice($entries, -200) : [] as $entry) {
-            if (!is_array($entry) || !is_int($entry['time'] ?? null) || !is_int($entry['httpStatus'] ?? null) || !is_int($entry['waitSeconds'] ?? null)
-                || $entry['time'] < $this->AccountProtectionTime() - 30 * 86400 || !in_array($entry['operation'] ?? null, self::DIAGNOSTIC_OPERATIONS, true)
-                || !$this->diagnosticReasonAllowed($entry['reason'] ?? null) || !$this->isSecurityEvent($entry['operation'], $entry['reason'])) {
-                continue;
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): string
+        {
+            $raw = $this->ReadAttributeString('AccountSecurityDiagnostics');
+            $legacy = $raw === '';
+            $entries = json_decode($legacy ? $this->GetAccountDiagnostics() : $raw, true);
+            $safe = [];
+            foreach (is_array($entries) ? array_slice($entries, -200) : [] as $entry) {
+                if (!is_array($entry) || !is_int($entry['time'] ?? null) || !is_int($entry['httpStatus'] ?? null) || !is_int($entry['waitSeconds'] ?? null)
+                    || $entry['time'] < $this->AccountProtectionTime() - 30 * 86400 || !in_array($entry['operation'] ?? null, self::DIAGNOSTIC_OPERATIONS, true)
+                    || !$this->diagnosticReasonAllowed($entry['reason'] ?? null) || !$this->isSecurityEvent($entry['operation'], $entry['reason'])) {
+                    continue;
+                }
+                $safe[] = ['time' => max(0, $entry['time']), 'operation' => $entry['operation'], 'httpStatus' => max(0, min(599, $entry['httpStatus'])),
+                    'reason'      => $entry['reason'], 'waitSeconds' => max(0, min(86400, $entry['waitSeconds'])),
+                    'appleCode'   => in_array($entry['appleCode'] ?? '', ['-20209', '-20101'], true) ? $entry['appleCode'] : ''];
             }
-            $safe[] = ['time' => max(0, $entry['time']), 'operation' => $entry['operation'], 'httpStatus' => max(0, min(599, $entry['httpStatus'])),
-                'reason'      => $entry['reason'], 'waitSeconds' => max(0, min(86400, $entry['waitSeconds'])),
-                'appleCode'   => in_array($entry['appleCode'] ?? '', ['-20209', '-20101'], true) ? $entry['appleCode'] : ''];
-        }
-        return json_encode($safe, JSON_THROW_ON_ERROR);
+            return json_encode($safe, JSON_THROW_ON_ERROR);
+        });
     }
 
     /** History cleanup is deliberately separate from release of security holds and limits. */
     public function ClearAccountSecurityDiagnostics(): void
     {
-        if (!IPS_SemaphoreEnter('SymconiCloud.' . $this->InstanceID, 1000)) {
-            return;
-        }
-        try {
-            $this->WriteAttributeString('AccountSecurityDiagnostics', '[]');
-        } finally {
-            IPS_SemaphoreLeave('SymconiCloud.' . $this->InstanceID);
-        }
-        $this->ReloadForm();
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
+        {
+            if (!IPS_SemaphoreEnter('SymconiCloud.' . $this->InstanceID, 1000)) {
+                $this->CloudDebugProblem('busy', __FUNCTION__, __LINE__);
+                return;
+            }
+            try {
+                $this->WriteAttributeString('AccountSecurityDiagnostics', '[]');
+            } finally {
+                IPS_SemaphoreLeave('SymconiCloud.' . $this->InstanceID);
+            }
+            $this->ReloadForm();
+        }, true);
     }
 
     protected function RegisterAccountProtection(): void
@@ -206,7 +224,18 @@ trait AccountProtection
             $entries = json_decode($this->GetAccountDiagnostics(), true, 512, JSON_THROW_ON_ERROR);
             $entries[] = $entry;
             $this->WriteAttributeString('AccountDiagnostics', json_encode(array_slice($entries, -50), JSON_THROW_ON_ERROR));
-            $this->SendSafeDebug('AccountProtection', $entry + ['appleCode' => in_array($appleCode, ['-20209', '-20101'], true) ? $appleCode : ''], 2048);
+            $normal = in_array($entry['reason'], ['ok', 'sessionReused', 'verificationRequired'], true);
+            $message = $entry['reason'] === 'ok'
+                ? ($status > 0 ? ($operation === 'verifyCode' ? 'Apple hat den Bestätigungscode akzeptiert. Anschließendes Vertrauen und Kontositzung müssen weiterhin erfolgreich sein.' : 'Apple-Antwort empfangen. Die Annahme einer Anfrage bestätigt noch keine Gerätewirkung.') : 'Verarbeitungsschritt abgeschlossen; das bedeutet keine zusätzliche Apple-Abfrage.')
+                : $this->CloudDebugReason($entry['reason']);
+            $this->DebugFlowEvent(
+                __FUNCTION__,
+                __LINE__,
+                $normal ? ($status > 0 ? 'EMPFANG' : 'AKTION') : 'FEHLER',
+                $message,
+                ['Operation'           => $entry['operation'], 'HTTP-Status' => $entry['httpStatus'], 'WartezeitSekunden' => $entry['waitSeconds'],
+                    'Apple-Fehlercode' => in_array($appleCode, ['-20209', '-20101'], true) ? $appleCode : '']
+            );
         } catch (\Throwable) {
             // Diagnostics must never change authentication or device-command outcomes.
         }

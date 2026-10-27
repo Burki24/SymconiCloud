@@ -10,18 +10,21 @@ trait WoIstGeocoding
     /** @return string Cached address only for the device's current authenticated position. */
     public function GetDeviceAddress(string $DeviceID, float $Latitude, float $Longitude): string
     {
-        $state = $this->bootstrap($this->request('GetDevices'))['state'];
-        if (!$state['success']) {
-            return '';
-        }
-        foreach ($state['devices'] as $device) {
-            $location = $device['location'];
-            if ($device['id'] === $DeviceID && ($device['accountAvailable'] ?? true) && $location !== null
-                && $location['latitude'] === $Latitude && $location['longitude'] === $Longitude) {
-                return $device['address'] === '' ? '' : ($device['addressNotice'] === '' ? '' : $device['addressNotice'] . ': ') . $device['address'];
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($DeviceID, $Latitude, $Longitude): string
+        {
+            $state = $this->bootstrap($this->request('GetDevices'))['state'];
+            if (!$state['success']) {
+                return '';
             }
-        }
-        return '';
+            foreach ($state['devices'] as $device) {
+                $location = $device['location'];
+                if ($device['id'] === $DeviceID && ($device['accountAvailable'] ?? true) && $location !== null
+                    && $location['latitude'] === $Latitude && $location['longitude'] === $Longitude) {
+                    return $device['address'] === '' ? '' : ($device['addressNotice'] === '' ? '' : $device['addressNotice'] . ': ') . $device['address'];
+                }
+            }
+            return '';
+        });
     }
 
     /**
@@ -32,44 +35,52 @@ trait WoIstGeocoding
      */
     public function ResolveAddresses(): bool
     {
-        $lock = 'SymconiCloud.Geocoding.' . $this->InstanceID;
-        if (!\IPS_SemaphoreEnter($lock, 0)) {
-            return false;
-        }
-        try {
-            $this->SetTimerInterval('ResolveAddresses', 0);
-            $configuration = $this->WoIstGeocodingConfiguration();
-            if ($configuration === null) {
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): bool
+        {
+            $lock = 'SymconiCloud.Geocoding.' . $this->InstanceID;
+            if (!\IPS_SemaphoreEnter($lock, 0)) {
+                $this->CloudDebugProblem('busy', __FUNCTION__, __LINE__);
                 return false;
             }
-            $state = $this->bootstrap($this->request('GetDevices'))['state'];
-            if (!$state['success']) {
+            try {
+                $this->CloudDebugTimer('ResolveAddresses', 0, __FUNCTION__, __LINE__);
+                $configuration = $this->WoIstGeocodingConfiguration();
+                if ($configuration === null) {
+                    $this->DebugFlowEvent($this->CloudDebugFunction(__FUNCTION__), __LINE__, 'AKTION', 'Adressauflösung ist ausgeschaltet oder nicht vollständig konfiguriert. Anbieter, Serveradresse beziehungsweise API-Key prüfen; Inhalte werden nicht ausgegeben.');
+                    return false;
+                }
+                $state = $this->bootstrap($this->request('GetDevices'))['state'];
+                if (!$state['success']) {
+                    return false;
+                }
+                foreach ($state['devices'] as $device) {
+                    $location = $device['location'];
+                    if ($location === null || ($device['accountAvailable'] ?? true) === false) {
+                        continue;
+                    }
+                    $zoom = $this->ReverseGeocodingPrecision($location['horizontalAccuracy'])['zoom'];
+                    if ($this->WoIstReadAddress($configuration, $location, $zoom) !== null) {
+                        continue;
+                    }
+                    if ($configuration['provider'] === 'geoapify') {
+                        $this->DebugFlowEvent($this->CloudDebugFunction(__FUNCTION__), __LINE__, 'SENDEN', 'Adressauflösung für eine Position angefordert. Anbieterlimit, Wartezeit und Cache bleiben wirksam; Koordinaten und Schlüssel bleiben geschützt.', ['Anbieter' => 'Geoapify']);
+                        $address = $this->ResolveGeoapifyAddress($configuration['key'], $location['latitude'], $location['longitude'], $configuration['language'], $zoom, $configuration['limit']);
+                    } else {
+                        $this->DebugFlowEvent($this->CloudDebugFunction(__FUNCTION__), __LINE__, 'SENDEN', 'Adressauflösung für eine Position angefordert. Wartezeit und Cache bleiben wirksam; Koordinaten und Serveradresse bleiben geschützt.', ['Anbieter' => 'Nominatim']);
+                        $address = $this->ResolveNominatimAddress($configuration['server'], $location['latitude'], $location['longitude'], $configuration['language'], $zoom);
+                    }
+                    $this->DebugFlowEvent($this->CloudDebugFunction(__FUNCTION__), __LINE__, $address !== '' ? 'EMPFANG' : 'FEHLER', $address !== '' ? 'Eine Adresse liegt vor; die Genauigkeitsregeln bleiben wirksam. Der Adressinhalt ist geschützt.' : 'Keine Adresse ermittelt. Anbieterfreigabe, Tageslimit, Wartezeit und vorangehende Meldungen prüfen; das ist keine bestätigte Adresse.');
+                    if ($this->WoIstGeocodingConfiguration() !== $configuration) {
+                        $this->ClearReverseGeocodingCache();
+                    }
+                    $this->publish($this->request('GetDevices'));
+                    return true;
+                }
                 return false;
+            } finally {
+                \IPS_SemaphoreLeave($lock);
             }
-            foreach ($state['devices'] as $device) {
-                $location = $device['location'];
-                if ($location === null || ($device['accountAvailable'] ?? true) === false) {
-                    continue;
-                }
-                $zoom = $this->ReverseGeocodingPrecision($location['horizontalAccuracy'])['zoom'];
-                if ($this->WoIstReadAddress($configuration, $location, $zoom) !== null) {
-                    continue;
-                }
-                if ($configuration['provider'] === 'geoapify') {
-                    $this->ResolveGeoapifyAddress($configuration['key'], $location['latitude'], $location['longitude'], $configuration['language'], $zoom, $configuration['limit']);
-                } else {
-                    $this->ResolveNominatimAddress($configuration['server'], $location['latitude'], $location['longitude'], $configuration['language'], $zoom);
-                }
-                if ($this->WoIstGeocodingConfiguration() !== $configuration) {
-                    $this->ClearReverseGeocodingCache();
-                }
-                $this->publish($this->request('GetDevices'));
-                return true;
-            }
-            return false;
-        } finally {
-            \IPS_SemaphoreLeave($lock);
-        }
+        });
     }
 
     /** Refreshes only sibling device caches after address or source-state changes. */
@@ -210,6 +221,6 @@ trait WoIstGeocoding
                 $interval = $configuration['limit'] === 0 ? 0 : max(1000, ($usage['nextReset'] - $this->ReverseGeocodingNow()) * 1000);
             }
         }
-        $this->SetTimerInterval('ResolveAddresses', $interval);
+        $this->CloudDebugTimer('ResolveAddresses', $interval, __FUNCTION__, __LINE__);
     }
 }

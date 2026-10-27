@@ -51,32 +51,41 @@ trait PhotosWidget
 
     public function GetVisualizationTile(): string
     {
-        return $this->PhotoPage(false);
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): string
+        {
+            return $this->PhotoPage(false);
+        });
     }
 
     public function GetIPSViewHTML(): string
     {
-        return $this->RenderIPSViewFrame(['url' => $this->PhotoOriginValid() ? $this->ReadPropertyString('IPSViewServerURL') . '/hook/' . $this->PhotoHook() . '/page' : '',
-            'token'                             => $this->ReadAttributeString('PhotoToken'), 'title' => $this->Translate('iCloud Photos'), 'error' => $this->Translate('Unable to open Photos. Check the server URL and apply the configuration.')]);
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): string
+        {
+            return $this->RenderIPSViewFrame(['url' => $this->PhotoOriginValid() ? $this->ReadPropertyString('IPSViewServerURL') . '/hook/' . $this->PhotoHook() . '/page' : '',
+                'token'                             => $this->ReadAttributeString('PhotoToken'), 'title' => $this->Translate('iCloud Photos'), 'error' => $this->Translate('Unable to open Photos. Check the server URL and apply the configuration.')]);
+        });
     }
 
     /** Cached model reads recheck authorization even when existing previews are on disk. */
     public function ReadPhotoWidget(string $operation, int $offset = 0, string $photoID = ''): array
     {
-        if (!$this->ReadPropertyBoolean('Enabled') || $this->ReadAttributeString('PhotoToken') === ''
-            || $this->ReadAttributeString('PhotoSource') !== $this->CurrentPhotoSource()) {
-            return ['success' => false, 'revoked' => true];
-        }
-        $catalog = $this->PhotoAccountRequest('GetPhotoAlbums');
-        if (($catalog['success'] ?? false) !== true || !in_array($this->ReadPropertyString('AlbumID'), array_column($catalog['albums'] ?? [], 'id'), true)) {
-            return ['success' => false, 'revoked' => true, 'error' => $catalog['error'] ?? $this->Translate('Select an available album and refresh photos.')];
-        }
-        return match ($operation) {
-            'model' => ['success' => true, 'state' => json_decode($this->ReadAttributeString('PhotoState'), true, 512, JSON_THROW_ON_ERROR), 'source' => $this->CurrentPhotoSource(), 'error' => $this->ReadAttributeString('LastError')],
-            'page'  => $offset >= 0 && $offset <= 1000000000 ? $this->PhotoAccountRequest('GetPhotoPage', ['Offset' => $offset]) : ['success' => false],
-            'image' => $photoID !== '' && strlen($photoID) <= 512 ? $this->PhotoAccountRequest('GetPhotoImage', ['PhotoID' => $photoID]) : ['success' => false],
-            default => ['success' => false]
-        };
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($operation, $offset, $photoID): array
+        {
+            if (!$this->ReadPropertyBoolean('Enabled') || $this->ReadAttributeString('PhotoToken') === ''
+                || $this->ReadAttributeString('PhotoSource') !== $this->CurrentPhotoSource()) {
+                return ['success' => false, 'revoked' => true];
+            }
+            $catalog = $this->PhotoAccountRequest('GetPhotoAlbums');
+            if (($catalog['success'] ?? false) !== true || !in_array($this->ReadPropertyString('AlbumID'), array_column($catalog['albums'] ?? [], 'id'), true)) {
+                return ['success' => false, 'revoked' => true, 'error' => $catalog['error'] ?? $this->Translate('Select an available album and refresh photos.')];
+            }
+            return match ($operation) {
+                'model' => ['success' => true, 'state' => json_decode($this->ReadAttributeString('PhotoState'), true, 512, JSON_THROW_ON_ERROR), 'source' => $this->CurrentPhotoSource(), 'error' => $this->ReadAttributeString('LastError')],
+                'page'  => $offset >= 0 && $offset <= 1000000000 ? $this->PhotoAccountRequest('GetPhotoPage', ['Offset' => $offset]) : ['success' => false],
+                'image' => $photoID !== '' && strlen($photoID) <= 512 ? $this->PhotoAccountRequest('GetPhotoImage', ['PhotoID' => $photoID]) : ['success' => false],
+                default => ['success' => false]
+            };
+        });
     }
 
     protected function RegisterPhotoWidget(): void
@@ -117,57 +126,60 @@ trait PhotosWidget
 
     protected function ProcessHookData(): void
     {
-        header('Access-Control-Allow-Origin: *');
-        header('Access-Control-Allow-Headers: X-Photo-Token, Content-Type');
-        header('Access-Control-Allow-Methods: POST, OPTIONS');
-        header('Referrer-Policy: no-referrer');
-        header('X-Content-Type-Options: nosniff');
-        $path = '/hook/' . $this->PhotoHook();
-        $uri = $_SERVER['REQUEST_URI'] ?? '';
-        $method = $_SERVER['REQUEST_METHOD'] ?? '';
-        if (!$this->ReadPropertyBoolean('Enabled') || !$this->PhotoOriginValid() || !in_array($uri, [$path, $path . '/page'], true)) {
-            $this->SendPlainTextResponse(404, 'Not available.');
-            return;
-        }
-        if ($uri === $path . '/page' && $method === 'GET' && $this->IsIPSViewHTMLPageEnabled()) {
-            $this->SendResponse(200, 'text/html', $this->PhotoPage(true, true));
-            return;
-        }
-        if ($method === 'OPTIONS') {
-            $this->SendPlainTextResponse(204, '');
-            return;
-        }
-        if ($method !== 'POST' || $uri !== $path) {
-            $this->SendPlainTextResponse(405, 'Method not allowed.');
-            return;
-        }
-        $token = $this->ReadAttributeString('PhotoToken');
-        if ($token === '' || !hash_equals($token, $_SERVER['HTTP_X_PHOTO_TOKEN'] ?? '')) {
-            $this->SendPlainTextResponse(403, 'Access denied.');
-            return;
-        }
-        try {
-            $input = (string) file_get_contents('php://input', false, null, 0, 2049);
-            if (strlen($input) > 2048) {
-                throw new \InvalidArgumentException();
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
+        {
+            header('Access-Control-Allow-Origin: *');
+            header('Access-Control-Allow-Headers: X-Photo-Token, Content-Type');
+            header('Access-Control-Allow-Methods: POST, OPTIONS');
+            header('Referrer-Policy: no-referrer');
+            header('X-Content-Type-Options: nosniff');
+            $path = '/hook/' . $this->PhotoHook();
+            $uri = $_SERVER['REQUEST_URI'] ?? '';
+            $method = $_SERVER['REQUEST_METHOD'] ?? '';
+            if (!$this->ReadPropertyBoolean('Enabled') || !$this->PhotoOriginValid() || !in_array($uri, [$path, $path . '/page'], true)) {
+                $this->CloudDebugPlainResponse(404, 'Not available.', __FUNCTION__, __LINE__);
+                return;
             }
-            $request = json_decode($input, true, 16, JSON_THROW_ON_ERROR);
-            if (!is_array($request) || array_diff(array_keys($request), ['operation', 'offset', 'id', 'view', 'token', 'page']) !== []
-                || !in_array($request['view'] ?? 'tile', ['tile', 'ipsview'], true)
-                || !is_string($request['operation'] ?? null) || !is_int($request['offset'] ?? 0) || !is_string($request['id'] ?? '')
-                || !is_string($request['token'] ?? '') || strlen($request['token'] ?? '') > 32 || !is_int($request['page'] ?? 0)) {
-                throw new \InvalidArgumentException();
+            if ($uri === $path . '/page' && $method === 'GET' && $this->IsIPSViewHTMLPageEnabled()) {
+                $this->CloudDebugResponse(200, 'text/html', $this->PhotoPage(true, true), __FUNCTION__, __LINE__);
+                return;
             }
-            $result = in_array($request['operation'], ['imagePage', 'imageClear'], true)
-                ? $this->ReadPhotoTransfer($request['id'] ?? '', $request['token'] ?? '', $request['page'] ?? 0, $request['operation'] === 'imageClear')
-                : $this->ReadPhotoWidget($request['operation'], $request['offset'] ?? 0, $request['id'] ?? '');
-            if (($result['success'] ?? false) && $request['operation'] === 'model') {
-                $result['options'] = $this->PhotoBootstrap(($request['view'] ?? 'tile') === 'ipsview', true)['options'];
+            if ($method === 'OPTIONS') {
+                $this->CloudDebugPlainResponse(204, '', __FUNCTION__, __LINE__);
+                return;
             }
-            $this->SendResponse(($result['success'] ?? false) ? 200 : (($result['revoked'] ?? false) ? 403 : 503), 'application/json', json_encode($result, JSON_THROW_ON_ERROR));
-        } catch (\Throwable) {
-            $this->SendPlainTextResponse(400, 'Invalid photo request.');
-        }
+            if ($method !== 'POST' || $uri !== $path) {
+                $this->CloudDebugPlainResponse(405, 'Method not allowed.', __FUNCTION__, __LINE__);
+                return;
+            }
+            $token = $this->ReadAttributeString('PhotoToken');
+            if ($token === '' || !hash_equals($token, $_SERVER['HTTP_X_PHOTO_TOKEN'] ?? '')) {
+                $this->CloudDebugPlainResponse(403, 'Access denied.', __FUNCTION__, __LINE__);
+                return;
+            }
+            try {
+                $input = (string) file_get_contents('php://input', false, null, 0, 2049);
+                if (strlen($input) > 2048) {
+                    throw new \InvalidArgumentException();
+                }
+                $request = json_decode($input, true, 16, JSON_THROW_ON_ERROR);
+                if (!is_array($request) || array_diff(array_keys($request), ['operation', 'offset', 'id', 'view', 'token', 'page']) !== []
+                    || !in_array($request['view'] ?? 'tile', ['tile', 'ipsview'], true)
+                    || !is_string($request['operation'] ?? null) || !is_int($request['offset'] ?? 0) || !is_string($request['id'] ?? '')
+                    || !is_string($request['token'] ?? '') || strlen($request['token'] ?? '') > 32 || !is_int($request['page'] ?? 0)) {
+                    throw new \InvalidArgumentException();
+                }
+                $result = in_array($request['operation'], ['imagePage', 'imageClear'], true)
+                    ? $this->ReadPhotoTransfer($request['id'] ?? '', $request['token'] ?? '', $request['page'] ?? 0, $request['operation'] === 'imageClear')
+                    : $this->ReadPhotoWidget($request['operation'], $request['offset'] ?? 0, $request['id'] ?? '');
+                if (($result['success'] ?? false) && $request['operation'] === 'model') {
+                    $result['options'] = $this->PhotoBootstrap(($request['view'] ?? 'tile') === 'ipsview', true)['options'];
+                }
+                $this->CloudDebugResponse(($result['success'] ?? false) ? 200 : (($result['revoked'] ?? false) ? 403 : 503), 'application/json', json_encode($result, JSON_THROW_ON_ERROR), __FUNCTION__, __LINE__);
+            } catch (\Throwable) {
+                $this->CloudDebugPlainResponse(400, 'Invalid photo request.', __FUNCTION__, __LINE__);
+            }
+        }, true);
     }
 
     /** Transfer pages remain bound to this widget's current account and album. */

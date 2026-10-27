@@ -10,84 +10,94 @@ trait ContactsAccount
     /** Local read only; stale data stays accessible and is explicitly marked. */
     public function GetContacts(string $Query = '', int $Offset = 0, int $Limit = 100): string
     {
-        return json_encode($this->contactsEnvelope($Query, $Offset, $Limit), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($Query, $Offset, $Limit): string
+        {
+            return json_encode($this->contactsEnvelope($Query, $Offset, $Limit), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+        });
     }
 
     /** Exact lookup; a deleted contact never falls back to a same-named recipient. */
     public function GetContact(string $ContactID): string
     {
-        if ($ContactID === '' || strlen($ContactID) > 1024) {
-            throw new \InvalidArgumentException('Invalid contact ID.');
-        }
-        $result = $this->contactsEnvelope('', 0, 1);
-        unset($result['contacts'], $result['total'], $result['offset'], $result['limit'], $result['nextOffset']);
-        $result['contact'] = null;
-        if ($result['success']) {
-            $cache = json_decode($this->ReadAttributeString('ContactsCache'), true, 512, JSON_THROW_ON_ERROR);
-            foreach ($cache['contacts'] as $contact) {
-                if ($contact['id'] === $ContactID) {
-                    $result['contact'] = $contact;
-                    break;
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($ContactID): string
+        {
+            if ($ContactID === '' || strlen($ContactID) > 1024) {
+                throw new \InvalidArgumentException('Invalid contact ID.');
+            }
+            $result = $this->contactsEnvelope('', 0, 1);
+            unset($result['contacts'], $result['total'], $result['offset'], $result['limit'], $result['nextOffset']);
+            $result['contact'] = null;
+            if ($result['success']) {
+                $cache = json_decode($this->ReadAttributeString('ContactsCache'), true, 512, JSON_THROW_ON_ERROR);
+                foreach ($cache['contacts'] as $contact) {
+                    if ($contact['id'] === $ContactID) {
+                        $result['contact'] = $contact;
+                        break;
+                    }
                 }
             }
-        }
-        return json_encode($result, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+            return json_encode($result, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+        });
     }
 
     /** Uses only an authenticated session. Account protection is checked before creating a transport. */
     public function RefreshContacts(): bool
     {
-        if (!IPS_SemaphoreEnter('SymconiCloud.' . $this->InstanceID, 1000)) {
-            return false;
-        }
-        $client = null;
-        $success = false;
-        try {
-            if (!$this->configurationValid() || !$this->ReadPropertyBoolean('EnableContacts')
-                || $this->credentialFingerprint() !== $this->ReadAttributeString('CredentialFingerprint')) {
-                throw new AppleException('contactsDisabled');
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): bool
+        {
+            if (!IPS_SemaphoreEnter('SymconiCloud.' . $this->InstanceID, 1000)) {
+                $this->CloudDebugProblem('busy', __FUNCTION__, __LINE__);
+                return false;
             }
-            if (!$this->contactsIntervalValid()) {
-                throw new AppleException('contactsConfiguration');
+            $client = null;
+            $success = false;
+            try {
+                if (!$this->configurationValid() || !$this->ReadPropertyBoolean('EnableContacts')
+                    || $this->credentialFingerprint() !== $this->ReadAttributeString('CredentialFingerprint')) {
+                    throw new AppleException('contactsDisabled');
+                }
+                if (!$this->contactsIntervalValid()) {
+                    throw new AppleException('contactsConfiguration');
+                }
+                $this->AssertAccountRequestsAllowed();
+                if (($this->readSession()['state'] ?? '') !== 'authenticated') {
+                    throw new AppleException('authentication');
+                }
+                // Repeated clicks and consumers cannot turn directory reads into high-frequency polling.
+                if ($this->ReadAttributeInteger('ContactsAttemptAt') > $this->AccountProtectionTime() - 60) {
+                    throw new AppleException('contactsWait');
+                }
+                $this->WriteAttributeInteger('ContactsAttemptAt', $this->AccountProtectionTime());
+                $client = $this->CreateAppleClient($this->readSession());
+                $contacts = $client->contacts();
+                $cache = json_encode(['contacts' => $contacts, 'updatedAt' => $this->AccountProtectionTime()], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+                if (strlen($cache) > 4 * 1024 * 1024) {
+                    throw new AppleException('contactsLimit');
+                }
+                // Replace atomically only after the complete snapshot was validated.
+                $this->WriteAttributeString('ContactsCache', $cache);
+                $this->WriteAttributeString('ContactsError', '');
+                $this->WriteAttributeInteger('TransientFailures', 0);
+                $this->RecordAccountDiagnostic('contacts', 0, 'ok');
+                $success = true;
+            } catch (AppleException $error) {
+                if ($error->reason !== 'contactsWait') {
+                    $this->WriteAttributeString('ContactsError', $error->reason);
+                }
+                $this->AccountRequestFailed('contacts', $error, $client !== null);
+            } catch (\Throwable) {
+                $this->WriteAttributeString('ContactsError', 'internal');
+                $this->RecordAccountDiagnostic('contacts', 0, 'internal');
+            } finally {
+                if ($client !== null) {
+                    $this->WriteAttributeString('Session', json_encode($client->session(), JSON_THROW_ON_ERROR));
+                }
+                $this->updateState();
+                IPS_SemaphoreLeave('SymconiCloud.' . $this->InstanceID);
             }
-            $this->AssertAccountRequestsAllowed();
-            if (($this->readSession()['state'] ?? '') !== 'authenticated') {
-                throw new AppleException('authentication');
-            }
-            // Repeated clicks and consumers cannot turn directory reads into high-frequency polling.
-            if ($this->ReadAttributeInteger('ContactsAttemptAt') > $this->AccountProtectionTime() - 60) {
-                throw new AppleException('contactsWait');
-            }
-            $this->WriteAttributeInteger('ContactsAttemptAt', $this->AccountProtectionTime());
-            $client = $this->CreateAppleClient($this->readSession());
-            $contacts = $client->contacts();
-            $cache = json_encode(['contacts' => $contacts, 'updatedAt' => $this->AccountProtectionTime()], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
-            if (strlen($cache) > 4 * 1024 * 1024) {
-                throw new AppleException('contactsLimit');
-            }
-            // Replace atomically only after the complete snapshot was validated.
-            $this->WriteAttributeString('ContactsCache', $cache);
-            $this->WriteAttributeString('ContactsError', '');
-            $this->WriteAttributeInteger('TransientFailures', 0);
-            $this->RecordAccountDiagnostic('contacts', 0, 'ok');
-            $success = true;
-        } catch (AppleException $error) {
-            if ($error->reason !== 'contactsWait') {
-                $this->WriteAttributeString('ContactsError', $error->reason);
-            }
-            $this->AccountRequestFailed('contacts', $error, $client !== null);
-        } catch (\Throwable) {
-            $this->WriteAttributeString('ContactsError', 'internal');
-            $this->RecordAccountDiagnostic('contacts', 0, 'internal');
-        } finally {
-            if ($client !== null) {
-                $this->WriteAttributeString('Session', json_encode($client->session(), JSON_THROW_ON_ERROR));
-            }
-            $this->updateState();
-            IPS_SemaphoreLeave('SymconiCloud.' . $this->InstanceID);
-        }
-        $this->notifyChildren();
-        return $success;
+            $this->notifyChildren();
+            return $success;
+        });
     }
     protected function RegisterContactsAccount(): void
     {
@@ -104,7 +114,7 @@ trait ContactsAccount
         $this->WriteAttributeString('ContactsCache', '{"contacts":[],"updatedAt":0}');
         $this->WriteAttributeString('ContactsError', '');
         $this->WriteAttributeInteger('ContactsAttemptAt', 0);
-        $this->SetTimerInterval('ContactsRefresh', 0);
+        $this->CloudDebugTimer('ContactsRefresh', 0, __FUNCTION__, __LINE__);
     }
 
     protected function ForwardContactsRequest(array $request): array
@@ -138,7 +148,7 @@ trait ContactsAccount
                 $this->ReadAttributeInteger('ContactsAttemptAt') + $this->ReadPropertyInteger('ContactsRefreshInterval') - $this->AccountProtectionTime(),
                 $this->ReadAttributeInteger('RetryAt') - $this->AccountProtectionTime()
             );
-            $this->SetTimerInterval('ContactsRefresh', $wait * 1000);
+            $this->CloudDebugTimer('ContactsRefresh', $wait * 1000, __FUNCTION__, __LINE__);
         }
     }
 

@@ -10,10 +10,11 @@ trait WoIstAccounts
     /** The primary account retains its official parent/child data-flow path. */
     protected function ReadWoIstAccount(int $accountID, string $command): array
     {
+        $this->DebugFlowEvent(__FUNCTION__, __LINE__, 'SENDEN', $command === 'RefreshDevices' ? 'Explizite Geräteaktualisierung beim zugewiesenen Konto anfordern; dessen Kontoschutz bleibt wirksam.' : 'Ausschließlich den lokalen Cache des zugewiesenen Kontos lesen; keine Apple-Anmeldung und keine zusätzliche Ortung.', ['KontoInstanz' => $accountID]);
         // Kernel interfaces may emit a warning while being rebuilt on reload.
         // Treat that narrow boundary as unavailable data, never as form output.
         if ($accountID === $this->GetParentID()) {
-            $reply = @$this->SendDataToParent($this->EncodeDataFlowMessage(self::REQUEST_DATA, ['Command' => $command]));
+            $reply = @$this->CloudDebugParent($this->EncodeDataFlowMessage(self::REQUEST_DATA, ['Command' => $command]), __FUNCTION__, __LINE__);
         } else {
             // Public, account-owned APIs on explicitly selected sources only.
             // Neither path creates a login or reads credentials/session attributes.
@@ -27,6 +28,7 @@ trait WoIstAccounts
         if (isset($refreshed) && !$refreshed) {
             $data['success'] = false;
         }
+        $this->CloudDebugSnapshot($data, __FUNCTION__, __LINE__);
         return $data;
     }
     private function RegisterWoIstAccounts(): void
@@ -87,6 +89,7 @@ trait WoIstAccounts
                 // Source exceptions, session data and provider payloads never reach the map.
             }
             $ok = ($data['success'] ?? false) === true && ($data['state'] ?? '') === 'authenticated' && is_int($data['updatedAt'] ?? null) && $data['updatedAt'] > 0;
+            $this->DebugFlowEvent(__FUNCTION__, __LINE__, $ok ? 'EMPFANG' : 'FEHLER', $ok ? 'Der zugewiesene Kontocache ist verfügbar. Diese Aussage bestätigt keine neue GPS-Messung.' : 'Für dieses zugewiesene Konto fehlt ein bestätigter Datenstand. Instanzzuordnung und Kontoschutz prüfen; andere verfügbare Konten bleiben nutzbar.', ['KontoInstanz' => $id, 'Verfügbar' => $ok]);
             $accounts[] = ['id' => (string) $id, 'name' => $name, 'success' => $ok, 'updatedAt' => max(0, (int) ($data['updatedAt'] ?? 0))];
             if ($ok) {
                 $available[] = $data['updatedAt'];

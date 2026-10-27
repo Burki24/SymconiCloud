@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../libs/CloudDebug.php';
 require_once __DIR__ . '/../libs/AppleClient.php';
 require_once __DIR__ . '/../libs/PhotosAccount.php';
 require_once __DIR__ . '/../libs/ContactsAccount.php';
@@ -11,6 +12,7 @@ require_once __DIR__ . '/../libs/helper/DataFlowHelper.php';
 
 class iCloudAccount extends IPSModuleStrict
 {
+    use \SymconiCloud\CloudDebug;
     use \SymconiCloud\PhotosAccount;
     use \SymconiCloud\ContactsAccount;
     use \SymconiCloud\AccountProtection;
@@ -23,240 +25,286 @@ class iCloudAccount extends IPSModuleStrict
     /** Registers account settings and restart-safe, account-private state. */
     public function Create(): void
     {
-        parent::Create();
-        $this->RegisterPhotosAccount();
-        $this->RegisterContactsAccount();
-        $this->RegisterAccountProtection();
-        $this->RegisterPropertyBoolean('Enabled', false);
-        $this->RegisterPropertyString('Username', '');
-        $this->RegisterPropertyString('Password', '');
-        $this->RegisterPropertyInteger('RefreshInterval', 300);
-        $this->RegisterAttributeString('Session', '{}');
-        $this->RegisterAttributeString('DeviceCache', '{"devices":[],"updatedAt":0}');
-        $this->RegisterAttributeString('CredentialFingerprint', '');
-        $this->RegisterAttributeString('LastError', '');
-        $this->RegisterAttributeInteger('RetryAt', 0);
-        $this->RegisterTimer('Refresh', 0, 'ICAC_RefreshDevices($_IPS["TARGET"]);');
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
+        {
+            parent::Create();
+            $this->RegisterPhotosAccount();
+            $this->RegisterContactsAccount();
+            $this->RegisterAccountProtection();
+            $this->RegisterPropertyBoolean('Enabled', false);
+            $this->RegisterPropertyString('Username', '');
+            $this->RegisterPropertyString('Password', '');
+            $this->RegisterPropertyInteger('RefreshInterval', 300);
+            $this->RegisterAttributeString('Session', '{}');
+            $this->RegisterAttributeString('DeviceCache', '{"devices":[],"updatedAt":0}');
+            $this->RegisterAttributeString('CredentialFingerprint', '');
+            $this->RegisterAttributeString('LastError', '');
+            $this->RegisterAttributeInteger('RetryAt', 0);
+            $this->RegisterTimer('Refresh', 0, 'ICAC_RefreshDevices($_IPS["TARGET"]);');
+        }, true);
     }
 
     /** Applies settings without logging in or performing any network request. */
     public function ApplyChanges(): void
     {
-        parent::ApplyChanges();
-        if (!IPS_SemaphoreEnter('SymconiCloud.' . $this->InstanceID, 1000)) {
-            return;
-        }
-        try {
-            if ($this->ReadPropertyBoolean('PauseRequests') !== $this->ReadAttributeBoolean('WasRequestsPaused')) {
-                $this->WriteAttributeBoolean('WasRequestsPaused', $this->ReadPropertyBoolean('PauseRequests'));
-                $this->RecordAccountDiagnostic($this->ReadPropertyBoolean('PauseRequests') ? 'pause' : 'resume', 0, 'ok');
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
+        {
+            parent::ApplyChanges();
+            if (!IPS_SemaphoreEnter('SymconiCloud.' . $this->InstanceID, 1000)) {
+                $this->CloudDebugProblem('busy', __FUNCTION__, __LINE__);
+                return;
             }
-            $fingerprint = $this->credentialFingerprint();
-            if ($fingerprint !== $this->ReadAttributeString('CredentialFingerprint')) {
-                $this->clearState();
-                $this->WriteAttributeString('CredentialFingerprint', $fingerprint);
-            }
-            if (!$this->ReadPropertyBoolean('Enabled')) {
-                $this->clearState();
-            }
-            if (!$this->ReadPropertyBoolean('EnableContacts')) {
-                $this->ClearContactsState();
-            }
-            if (!$this->ReadPropertyBoolean('EnablePhotos')) {
-                $this->ClearPhotoState();
-            }
-            else {
-                try {
-                    $this->PhotoCache()->trim();
-                } catch (Throwable) {
-                    $this->WriteAttributeString('PhotoError', $this->Translate('Photo cache unavailable or configured limits are invalid.'));
+            try {
+                if ($this->ReadPropertyBoolean('PauseRequests') !== $this->ReadAttributeBoolean('WasRequestsPaused')) {
+                    $this->WriteAttributeBoolean('WasRequestsPaused', $this->ReadPropertyBoolean('PauseRequests'));
+                    $this->RecordAccountDiagnostic($this->ReadPropertyBoolean('PauseRequests') ? 'pause' : 'resume', 0, 'ok');
                 }
+                $fingerprint = $this->credentialFingerprint();
+                if ($fingerprint !== $this->ReadAttributeString('CredentialFingerprint')) {
+                    $this->clearState();
+                    $this->WriteAttributeString('CredentialFingerprint', $fingerprint);
+                }
+                if (!$this->ReadPropertyBoolean('Enabled')) {
+                    $this->clearState();
+                }
+                if (!$this->ReadPropertyBoolean('EnableContacts')) {
+                    $this->ClearContactsState();
+                }
+                if (!$this->ReadPropertyBoolean('EnablePhotos')) {
+                    $this->ClearPhotoState();
+                }
+                else {
+                    try {
+                        $this->PhotoCache()->trim();
+                    } catch (Throwable) {
+                        $this->WriteAttributeString('PhotoError', $this->Translate('Photo cache unavailable or configured limits are invalid.'));
+                    }
+                }
+                $this->updateState();
+            } finally {
+                IPS_SemaphoreLeave('SymconiCloud.' . $this->InstanceID);
             }
-            $this->updateState();
-        } finally {
-            IPS_SemaphoreLeave('SymconiCloud.' . $this->InstanceID);
-        }
-        $this->notifyChildren();
+            $this->notifyChildren();
+        }, true);
     }
 
     /** @return string Local form state only; never contacts Apple. */
     public function GetConfigurationForm(): string
     {
-        $form = $this->LoadConfigurationForm();
-        $state = $this->readSession()['state'] ?? 'signedOut';
-        $form['actions'][0]['caption'] = $this->Translate('Session state') . ': ' . $this->Translate((string) $state);
-        $form['actions'][1]['caption'] = $this->GetBuffer('AuthenticationFeedback')
-            ?: $this->errorMessage($this->ReadAttributeString('AccountBlock') ?: $this->ReadAttributeString('LastError'));
-        if ($this->ReadAttributeString('AccountBlock') !== '') {
-            $form['actions'][2]['onClick'] = 'ICAC_LoginFromForm($id, true);';
-            $form['actions'][2]['confirm'] = $this->Translate('Have you checked the Apple account? Release the local hold and start one sign-in attempt? Pauses, cooldowns and attempt limits remain in effect.');
-        }
-        $form['actions'][] = ['type' => 'Label', 'caption' => $this->ReadAttributeString('PhotoError')];
-        $form['actions'][] = ['type' => 'Label', 'caption' => $this->errorMessage($this->ReadAttributeString('ContactsError'))];
-        $form['actions'] = $this->SetFormFieldVisibility($form['actions'], ['TwoFactor'], $state === 'awaiting2FA');
-        $block = $this->ReadAttributeString('AccountBlock');
-        $form['actions'][] = ['type' => 'Label', 'caption' => $block === '' ? '' : $this->Translate('Account requests stopped: manual review required') . ': ' . $this->errorMessage($block)];
-        try {
-            $wait = $this->AuthenticationWait('login');
-        } catch (\SymconiCloud\AppleException) {
-            $wait = -1;
-        }
-        $form['actions'][] = ['type' => 'Label', 'caption' => $this->Translate('Password login wait in seconds') . ': ' . $wait];
-        $rows = json_decode($this->GetAccountDiagnostics(), true, 512, JSON_THROW_ON_ERROR);
-        foreach ($rows as &$row) {
-            $row['time'] = date('Y-m-d H:i:s', $row['time']);
-        }
-        unset($row);
-        $securityRows = json_decode($this->GetAccountSecurityDiagnostics(), true, 512, JSON_THROW_ON_ERROR);
-        foreach ($securityRows as &$row) {
-            $row['time'] = date('Y-m-d H:i:s', $row['time']);
-            $row['reason'] = match ($row['reason']) {
-                'ok'                   => $this->Translate('Successful'),
-                'verificationRequired' => $this->Translate('Verification code required'),
-                'sessionReused'        => $this->Translate('Existing session reused'),
-                default                => $this->errorMessage($row['reason'])
-            };
-        }
-        unset($row);
-        $form['actions'][] = ['type' => 'ExpansionPanel', 'caption' => $this->Translate('Account security (last 200 events, 30 days)'), 'items' => [
-            ['type' => 'Label', 'caption' => $this->Translate('Sign-ins, account reviews and failures are retained separately from routine reads. Only known Apple error codes are stored; no response messages or account data.')],
-            ['type'       => 'List', 'name' => 'AccountSecurityList', 'rowCount' => 8, 'add' => false, 'delete' => false,
-                'columns' => array_map(fn ($name) => ['caption' => $this->Translate($name), 'name' => $name, 'width' => $name === 'reason' ? 'auto' : '150px'], ['time', 'operation', 'httpStatus', 'reason', 'appleCode', 'waitSeconds']), 'values' => $securityRows],
-            ['type' => 'Button', 'caption' => $this->Translate('Clear security history'), 'onClick' => 'ICAC_ClearAccountSecurityDiagnostics($id);', 'confirm' => $this->Translate('Delete security evidence? Holds, cooldowns and attempt limits remain unchanged.')]
-        ]];
-        $form['actions'][] = ['type' => 'ExpansionPanel', 'caption' => $this->Translate('Account diagnostics (last 50 entries)'), 'items' => [
-            ['type' => 'List', 'name' => 'AccountDiagnosticList', 'rowCount' => 8, 'add' => false, 'delete' => false, 'columns' => array_map(fn ($name) => ['caption' => $this->Translate($name), 'name' => $name, 'width' => $name === 'operation' || $name === 'reason' ? 'auto' : '150px'], ['time', 'operation', 'httpStatus', 'reason', 'waitSeconds']), 'values' => $rows],
-            ['type' => 'Button', 'caption' => $this->Translate('Clear diagnostic history'), 'onClick' => 'ICAC_ClearAccountDiagnostics($id);']
-        ]];
-        return $this->EncodeConfigurationForm($form);
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): string
+        {
+            $form = $this->LoadConfigurationForm();
+            $state = $this->readSession()['state'] ?? 'signedOut';
+            $form['actions'][0]['caption'] = $this->Translate('Session state') . ': ' . $this->Translate((string) $state);
+            $form['actions'][1]['caption'] = $this->GetBuffer('AuthenticationFeedback')
+                ?: $this->errorMessage($this->ReadAttributeString('AccountBlock') ?: $this->ReadAttributeString('LastError'));
+            if ($this->ReadAttributeString('AccountBlock') !== '') {
+                $form['actions'][2]['onClick'] = 'ICAC_LoginFromForm($id, true);';
+                $form['actions'][2]['confirm'] = $this->Translate('Have you checked the Apple account? Release the local hold and start one sign-in attempt? Pauses, cooldowns and attempt limits remain in effect.');
+            }
+            $form['actions'][] = ['type' => 'Label', 'caption' => $this->ReadAttributeString('PhotoError')];
+            $form['actions'][] = ['type' => 'Label', 'caption' => $this->errorMessage($this->ReadAttributeString('ContactsError'))];
+            $form['actions'] = $this->SetFormFieldVisibility($form['actions'], ['TwoFactor'], $state === 'awaiting2FA');
+            $block = $this->ReadAttributeString('AccountBlock');
+            $form['actions'][] = ['type' => 'Label', 'caption' => $block === '' ? '' : $this->Translate('Account requests stopped: manual review required') . ': ' . $this->errorMessage($block)];
+            try {
+                $wait = $this->AuthenticationWait('login');
+            } catch (\SymconiCloud\AppleException) {
+                $wait = -1;
+            }
+            $form['actions'][] = ['type' => 'Label', 'caption' => $this->Translate('Password login wait in seconds') . ': ' . $wait];
+            $rows = json_decode($this->GetAccountDiagnostics(), true, 512, JSON_THROW_ON_ERROR);
+            foreach ($rows as &$row) {
+                $row['time'] = date('Y-m-d H:i:s', $row['time']);
+            }
+            unset($row);
+            $securityRows = json_decode($this->GetAccountSecurityDiagnostics(), true, 512, JSON_THROW_ON_ERROR);
+            foreach ($securityRows as &$row) {
+                $row['time'] = date('Y-m-d H:i:s', $row['time']);
+                $row['reason'] = match ($row['reason']) {
+                    'ok'                   => $this->Translate('Successful'),
+                    'verificationRequired' => $this->Translate('Verification code required'),
+                    'sessionReused'        => $this->Translate('Existing session reused'),
+                    default                => $this->errorMessage($row['reason'])
+                };
+            }
+            unset($row);
+            $form['actions'][] = ['type' => 'ExpansionPanel', 'caption' => $this->Translate('Account security (last 200 events, 30 days)'), 'items' => [
+                ['type' => 'Label', 'caption' => $this->Translate('Sign-ins, account reviews and failures are retained separately from routine reads. Only known Apple error codes are stored; no response messages or account data.')],
+                ['type'       => 'List', 'name' => 'AccountSecurityList', 'rowCount' => 8, 'add' => false, 'delete' => false,
+                    'columns' => array_map(fn ($name) => ['caption' => $this->Translate($name), 'name' => $name, 'width' => $name === 'reason' ? 'auto' : '150px'], ['time', 'operation', 'httpStatus', 'reason', 'appleCode', 'waitSeconds']), 'values' => $securityRows],
+                ['type' => 'Button', 'caption' => $this->Translate('Clear security history'), 'onClick' => 'ICAC_ClearAccountSecurityDiagnostics($id);', 'confirm' => $this->Translate('Delete security evidence? Holds, cooldowns and attempt limits remain unchanged.')]
+            ]];
+            $form['actions'][] = ['type' => 'ExpansionPanel', 'caption' => $this->Translate('Account diagnostics (last 50 entries)'), 'items' => [
+                ['type' => 'List', 'name' => 'AccountDiagnosticList', 'rowCount' => 8, 'add' => false, 'delete' => false, 'columns' => array_map(fn ($name) => ['caption' => $this->Translate($name), 'name' => $name, 'width' => $name === 'operation' || $name === 'reason' ? 'auto' : '150px'], ['time', 'operation', 'httpStatus', 'reason', 'waitSeconds']), 'values' => $rows],
+                ['type' => 'Button', 'caption' => $this->Translate('Clear diagnostic history'), 'onClick' => 'ICAC_ClearAccountDiagnostics($id);']
+            ]];
+            return $this->EncodeConfigurationForm($form);
+        });
     }
 
     /** @return bool True if explicit login and subsequent device inventory succeeded. */
     public function Login(): bool
     {
-        return $this->operate('login');
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): bool
+        {
+            return $this->operate('login');
+        });
     }
 
     /** The form may release a local hold only after the user explicitly confirms recovery. */
     public function LoginFromForm(bool $ConfirmedRecovery): bool
     {
-        if ($ConfirmedRecovery && $this->ReadAttributeString('AccountBlock') !== '' && !$this->ReadPropertyBoolean('PauseRequests') && $this->ReadPropertyBoolean('AllowAuthentication')) {
-            $this->ResumeAccountRequests();
-        }
-        return $this->Login();
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($ConfirmedRecovery): bool
+        {
+            if ($ConfirmedRecovery && $this->ReadAttributeString('AccountBlock') !== '' && !$this->ReadPropertyBoolean('PauseRequests') && $this->ReadPropertyBoolean('AllowAuthentication')) {
+                $this->ResumeAccountRequests();
+            }
+            return $this->Login();
+        });
     }
 
     /** @param string $Code Six digits from a trusted Apple device. @return bool Authentication and inventory success. */
     public function VerifyCode(string $Code): bool
     {
-        return $this->operate('verify', $Code);
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($Code): bool
+        {
+            return $this->operate('verify', $Code);
+        });
     }
 
     /** @return bool True if a trusted-device code was requested successfully. */
     public function ResendCode(): bool
     {
-        return $this->operate('resend');
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): bool
+        {
+            return $this->operate('resend');
+        });
     }
 
     /** @return bool True if a fresh read-only inventory was stored. No password login is started. */
     public function RefreshDevices(): bool
     {
-        return $this->operate('devices');
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): bool
+        {
+            return $this->operate('devices');
+        });
     }
 
     /** @return string Normalized cached inventory envelope without tokens or account credentials. */
     public function GetDevices(): string
     {
-        return json_encode($this->inventory(), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): string
+        {
+            $data = $this->inventory();
+            $this->CloudDebugSnapshot($data, __FUNCTION__, __LINE__);
+            return json_encode($data, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+        });
     }
 
     /** Deletes local session/cache and stops requests; does not revoke the Apple account. */
     public function Logout(): void
     {
-        if (!IPS_SemaphoreEnter('SymconiCloud.' . $this->InstanceID, 1000)) {
-            return;
-        }
-        try {
-            $this->clearState();
-            $this->updateState();
-        } finally {
-            IPS_SemaphoreLeave('SymconiCloud.' . $this->InstanceID);
-        }
-        $this->notifyChildren();
-        $this->ReloadForm();
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
+        {
+            if (!IPS_SemaphoreEnter('SymconiCloud.' . $this->InstanceID, 1000)) {
+                $this->CloudDebugProblem('busy', __FUNCTION__, __LINE__);
+                return;
+            }
+            try {
+                $this->clearState();
+                $this->updateState();
+            } finally {
+                IPS_SemaphoreLeave('SymconiCloud.' . $this->InstanceID);
+            }
+            $this->notifyChildren();
+            $this->ReloadForm();
+        }, true);
     }
 
     /** @param string $JSONString Allowlisted child command. @return string Sanitized inventory or action result. */
     public function ForwardData(string $JSONString): string
     {
-        try {
-            $request = $this->DecodeDataFlowMessage($JSONString, self::REQUEST_DATA);
-            if (in_array($request['Command'] ?? '', ['GetContacts', 'GetContact', 'RefreshContacts'], true)) {
-                return json_encode($this->ForwardContactsRequest($request), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
-            }
-            if (in_array($request['Command'] ?? '', ['GetPhotoAlbums', 'RefreshPhotoAlbums', 'GetPhotoPage', 'GetPhotoImage', 'GetPhotoImagePage', 'ClearPhotoImageTransfer'], true)) {
-                return json_encode($this->ForwardPhotosRequest($request), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
-            }
-            if (($request['Command'] ?? '') === 'PlaySound') {
-                if (!is_string($request['DeviceID'] ?? null) || array_diff(array_keys($request), ['DataID', 'Command', 'DeviceID']) !== []) {
-                    throw new InvalidArgumentException();
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($JSONString): string
+        {
+            try {
+                $request = $this->DecodeDataFlowMessage($JSONString, self::REQUEST_DATA);
+                if (in_array($request['Command'] ?? '', ['GetContacts', 'GetContact', 'RefreshContacts'], true)) {
+                    return json_encode($this->ForwardContactsRequest($request), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
                 }
-                return json_encode($this->performDeviceAction($request['DeviceID'], 'PlaySound'), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
-            }
-            if (($request['Command'] ?? '') === 'ActivateLostMode') {
-                if (($request['Confirmed'] ?? null) !== true
-                    || array_diff(array_keys($request), ['DataID', 'Command', 'DeviceID', 'Confirmed', 'PhoneNumber', 'Message', 'NewPasscode']) !== []) {
-                    throw new InvalidArgumentException();
+                if (in_array($request['Command'] ?? '', ['GetPhotoAlbums', 'RefreshPhotoAlbums', 'GetPhotoPage', 'GetPhotoImage', 'GetPhotoImagePage', 'ClearPhotoImageTransfer'], true)) {
+                    return json_encode($this->ForwardPhotosRequest($request), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
                 }
-                foreach (['DeviceID', 'PhoneNumber', 'Message', 'NewPasscode'] as $field) {
-                    if (!is_string($request[$field] ?? null)) {
+                if (($request['Command'] ?? '') === 'PlaySound') {
+                    if (!is_string($request['DeviceID'] ?? null) || array_diff(array_keys($request), ['DataID', 'Command', 'DeviceID']) !== []) {
                         throw new InvalidArgumentException();
                     }
+                    return json_encode($this->performDeviceAction($request['DeviceID'], 'PlaySound'), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
                 }
-                return json_encode($this->performDeviceAction($request['DeviceID'], 'ActivateLostMode', [
-                    $request['PhoneNumber'], $request['Message'], $request['NewPasscode']
-                ]), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
-            }
-            if (($request['Command'] ?? '') === 'DeactivateLostMode') {
-                if (($request['Confirmed'] ?? null) !== true || !is_string($request['DeviceID'] ?? null)
-                    || array_diff(array_keys($request), ['DataID', 'Command', 'DeviceID', 'Confirmed']) !== []) {
+                if (($request['Command'] ?? '') === 'ActivateLostMode') {
+                    if (($request['Confirmed'] ?? null) !== true
+                        || array_diff(array_keys($request), ['DataID', 'Command', 'DeviceID', 'Confirmed', 'PhoneNumber', 'Message', 'NewPasscode']) !== []) {
+                        throw new InvalidArgumentException();
+                    }
+                    foreach (['DeviceID', 'PhoneNumber', 'Message', 'NewPasscode'] as $field) {
+                        if (!is_string($request[$field] ?? null)) {
+                            throw new InvalidArgumentException();
+                        }
+                    }
+                    return json_encode($this->performDeviceAction($request['DeviceID'], 'ActivateLostMode', [
+                        $request['PhoneNumber'], $request['Message'], $request['NewPasscode']
+                    ]), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+                }
+                if (($request['Command'] ?? '') === 'DeactivateLostMode') {
+                    if (($request['Confirmed'] ?? null) !== true || !is_string($request['DeviceID'] ?? null)
+                        || array_diff(array_keys($request), ['DataID', 'Command', 'DeviceID', 'Confirmed']) !== []) {
+                        throw new InvalidArgumentException();
+                    }
+                    return json_encode($this->performDeviceAction($request['DeviceID'], 'DeactivateLostMode'), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+                }
+                if (($request['Command'] ?? '') === 'RefreshDevices') {
+                    if (!$this->RefreshDevices()) {
+                        $result = $this->inventory();
+                        $result['success'] = false;
+                        if ($result['error'] === '') {
+                            $result['error'] = $this->Translate('Account request already running.');
+                        }
+                        return json_encode($result, JSON_THROW_ON_ERROR);
+                    }
+                } elseif (($request['Command'] ?? '') !== 'GetDevices') {
                     throw new InvalidArgumentException();
                 }
-                return json_encode($this->performDeviceAction($request['DeviceID'], 'DeactivateLostMode'), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+                return $this->GetDevices();
+            } catch (Throwable) {
+                return json_encode(['success' => false, 'state' => 'error', 'devices' => [], 'updatedAt' => 0, 'error' => $this->Translate('Unsupported request.')], JSON_THROW_ON_ERROR);
             }
-            if (($request['Command'] ?? '') === 'RefreshDevices') {
-                if (!$this->RefreshDevices()) {
-                    $result = $this->inventory();
-                    $result['success'] = false;
-                    if ($result['error'] === '') {
-                        $result['error'] = $this->Translate('Account request already running.');
-                    }
-                    return json_encode($result, JSON_THROW_ON_ERROR);
-                }
-            } elseif (($request['Command'] ?? '') !== 'GetDevices') {
-                throw new InvalidArgumentException();
-            }
-            return $this->GetDevices();
-        } catch (Throwable) {
-            return json_encode(['success' => false, 'state' => 'error', 'devices' => [], 'updatedAt' => 0, 'error' => $this->Translate('Unsupported request.')], JSON_THROW_ON_ERROR);
-        }
+        });
     }
 
     /** @param string $Ident Explicit account action. @param mixed $Value Action payload. */
     public function RequestAction(string $Ident, mixed $Value): void
     {
-        match ($Ident) {
-            'Login'                           => $this->Login(),
-            'VerifyCode'                      => $this->VerifyCode(is_string($Value) ? $Value : ''),
-            'ResendCode'                      => $this->ResendCode(),
-            'RefreshDevices'                  => $this->RefreshDevices(),
-            'RefreshContacts'                 => $this->RefreshContacts(),
-            'Logout'                          => $this->Logout(),
-            'ResumeAccountRequests'           => $this->ResumeAccountRequests(),
-            'ClearAccountDiagnostics'         => $this->ClearAccountDiagnostics(),
-            'ClearAccountSecurityDiagnostics' => $this->ClearAccountSecurityDiagnostics(),
-            default                           => throw new InvalidArgumentException('Unsupported account action.')
-        };
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($Ident, $Value): void
+        {
+            match ($Ident) {
+                'Login'                           => $this->Login(),
+                'VerifyCode'                      => $this->VerifyCode(is_string($Value) ? $Value : ''),
+                'ResendCode'                      => $this->ResendCode(),
+                'RefreshDevices'                  => $this->RefreshDevices(),
+                'RefreshContacts'                 => $this->RefreshContacts(),
+                'Logout'                          => $this->Logout(),
+                'ResumeAccountRequests'           => $this->ResumeAccountRequests(),
+                'ClearAccountDiagnostics'         => $this->ClearAccountDiagnostics(),
+                'ClearAccountSecurityDiagnostics' => $this->ClearAccountSecurityDiagnostics(),
+                default                           => throw new InvalidArgumentException('Unsupported account action.')
+            };
+        }, true);
+    }
+
+    public function Destroy(): void
+    {
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
+        { parent::Destroy(); }, true);
     }
 
     /** Transport seam for offline integration tests; production owns its cookie jar. */
@@ -266,13 +314,15 @@ class iCloudAccount extends IPSModuleStrict
             new \SymconiCloud\AppleHttpClient($session['cookies'] ?? []),
             $session,
             fn ($operation, $status, $reason, $appleCode = '') => $this->RecordAccountDiagnostic($operation, $status, $reason, $appleCode),
-            fn () => $this->ReserveAuthenticationAttempt('resend')
+            fn () => $this->ReserveAuthenticationAttempt('resend'),
+            fn ($operation) => $this->CloudDebugAppleSending($operation)
         );
     }
 
     private function operate(string $operation, string $value = ''): bool
     {
         if (!IPS_SemaphoreEnter('SymconiCloud.' . $this->InstanceID, 1000)) {
+            $this->CloudDebugProblem('busy', __FUNCTION__, __LINE__);
             if ($operation !== 'devices') {
                 $this->setAuthenticationFeedback($operation, 'busy');
             }
@@ -363,6 +413,7 @@ class iCloudAccount extends IPSModuleStrict
     private function performDeviceAction(string $deviceID, string $action, array $parameters = []): array
     {
         if (!IPS_SemaphoreEnter('SymconiCloud.' . $this->InstanceID, 1000)) {
+            $this->CloudDebugProblem('busy', __FUNCTION__, __LINE__);
             return ['success' => false, 'message' => $this->Translate('Account request already running.')];
         }
         $client = null;
@@ -479,22 +530,22 @@ class iCloudAccount extends IPSModuleStrict
 
     private function updateState(): void
     {
-        $this->SetTimerInterval('Refresh', 0);
-        $this->SetTimerInterval('ContactsRefresh', 0);
+        $this->CloudDebugTimer('Refresh', 0, __FUNCTION__, __LINE__);
+        $this->CloudDebugTimer('ContactsRefresh', 0, __FUNCTION__, __LINE__);
         if (!$this->ReadPropertyBoolean('Enabled')) {
-            $this->SetStatus(IS_INACTIVE);
+            $this->CloudDebugStatus(IS_INACTIVE, __FUNCTION__, __LINE__);
             return;
         }
         if (!$this->configurationValid()) {
-            $this->SetStatus(201);
+            $this->CloudDebugStatus(201, __FUNCTION__, __LINE__);
             return;
         }
         if (!extension_loaded('curl') || !extension_loaded('bcmath')) {
-            $this->SetStatus(205);
+            $this->CloudDebugStatus(205, __FUNCTION__, __LINE__);
             return;
         }
         if ($this->ReadPropertyBoolean('PauseRequests') || $this->ReadAttributeString('AccountBlock') !== '') {
-            $this->SetStatus($this->ReadPropertyBoolean('PauseRequests') ? 207 : 208);
+            $this->CloudDebugStatus($this->ReadPropertyBoolean('PauseRequests') ? 207 : 208, __FUNCTION__, __LINE__);
             return;
         }
         $state = $this->readSession()['state'] ?? 'signedOut';
@@ -502,7 +553,7 @@ class iCloudAccount extends IPSModuleStrict
         if ($state === 'authenticated') {
             $this->UpdateContactsTimer();
             $seconds = max($this->ReadPropertyInteger('RefreshInterval'), $this->ReadAttributeInteger('RetryAt') - $this->AccountProtectionTime());
-            $this->SetTimerInterval('Refresh', $seconds * 1000);
+            $this->CloudDebugTimer('Refresh', $seconds * 1000, __FUNCTION__, __LINE__);
         }
         $status = match (true) {
             !$this->ReadPropertyBoolean('AllowAuthentication') && $state !== 'authenticated' && $this->ReadAttributeInteger('RetryAt') <= $this->AccountProtectionTime() => 211,
@@ -515,12 +566,14 @@ class iCloudAccount extends IPSModuleStrict
             $state === 'authenticated'                                                                                                                                   => IS_ACTIVE,
             default                                                                                                                                                      => IS_INACTIVE
         };
-        $this->SetStatus($status);
+        $this->CloudDebugStatus($status, __FUNCTION__, __LINE__);
     }
 
     private function notifyChildren(): void
     {
-        $this->SendDataToChildren($this->EncodeDataFlowMessage(self::NOTIFICATION_DATA, $this->inventory()));
+        $data = $this->inventory();
+        $this->DebugFlowEvent(__FUNCTION__, __LINE__, 'SENDEN', 'Der normalisierte Kontodatenstand wird an verbundene Kindinstanzen übergeben. Sitzung und private Nutzdaten werden nicht protokolliert.', ['Geräteanzahl' => count($data['devices']), 'Verfügbar' => $data['success']]);
+        $this->SendDataToChildren($this->EncodeDataFlowMessage(self::NOTIFICATION_DATA, $data));
     }
 
     private function errorMessage(string $reason): string

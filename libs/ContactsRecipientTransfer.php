@@ -13,109 +13,128 @@ trait ContactsRecipientTransfer
     /** Prepares one bounded transfer from unsaved form inputs, without modifying either target. */
     public function PreviewRecipientTransfer(int $TargetID, string $ContactID, string $Phone, string $Email, string $UserID, int $Level, int $Action): bool
     {
-        if (!IPS_SemaphoreEnter('SymconiCloud.RecipientTransfer.' . $this->InstanceID, 1000)) {
-            return false;
-        }
-        $this->SetBuffer('RecipientTransferPending', '');
-        try {
-            $source = $this->recipientSource($ContactID);
-            $contact = $source['contact'];
-            foreach ([[$Phone, 'phones'], [$Email, 'emails']] as [$selected, $field]) {
-                if ($selected !== '' && !in_array($selected, array_column($contact[$field], 'value'), true)) {
-                    throw new \RuntimeException('Selected address is no longer available.');
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($TargetID, $ContactID, $Phone, $Email, $UserID, $Level, $Action): bool
+        {
+            if (!IPS_SemaphoreEnter('SymconiCloud.RecipientTransfer.' . $this->InstanceID, 1000)) {
+                $this->CloudDebugProblem('busy', __FUNCTION__, __LINE__);
+                return false;
+            }
+            $this->SetBuffer('RecipientTransferPending', '');
+            try {
+                $source = $this->recipientSource($ContactID);
+                $contact = $source['contact'];
+                foreach ([[$Phone, 'phones'], [$Email, 'emails']] as [$selected, $field]) {
+                    if ($selected !== '' && !in_array($selected, array_column($contact[$field], 'value'), true)) {
+                        throw new \RuntimeException('Selected address is no longer available.');
+                    }
                 }
+                if ($Phone === '' && $Email === '') {
+                    throw new \RuntimeException('Select at least one phone number or email address.');
+                }
+                $target = $this->ReadRecipientTarget($TargetID);
+                $plan = $this->recipientPlan($target, $contact, $Phone, $Email, $UserID, $Level, $Action);
+                $changes = $plan['changes'];
+                $pending = ['target' => $TargetID, 'module' => $target['module'], 'configurationHash' => $this->recipientHash($target['configuration']),
+                    'arguments'      => [$Phone, $Email, $UserID, $Level, $Action], 'sourceID' => $ContactID, 'sourceHash' => $this->recipientHash($contact),
+                    'parent'         => $this->GetParentID(), 'createdAt' => $this->RecipientTransferTime(), 'changes' => $changes];
+                $this->SetBuffer('RecipientTransferPending', json_encode($pending, JSON_THROW_ON_ERROR));
+                $this->recipientTransferFeedback('Preview ready. Review the changes before confirming.', $changes);
+                return true;
+            } catch (\Throwable $error) {
+                $this->recipientTransferFeedback($this->recipientTransferError($error), []);
+                return false;
+            } finally {
+                IPS_SemaphoreLeave('SymconiCloud.RecipientTransfer.' . $this->InstanceID);
             }
-            if ($Phone === '' && $Email === '') {
-                throw new \RuntimeException('Select at least one phone number or email address.');
-            }
-            $target = $this->ReadRecipientTarget($TargetID);
-            $plan = $this->recipientPlan($target, $contact, $Phone, $Email, $UserID, $Level, $Action);
-            $changes = $plan['changes'];
-            $pending = ['target' => $TargetID, 'module' => $target['module'], 'configurationHash' => $this->recipientHash($target['configuration']),
-                'arguments'      => [$Phone, $Email, $UserID, $Level, $Action], 'sourceID' => $ContactID, 'sourceHash' => $this->recipientHash($contact),
-                'parent'         => $this->GetParentID(), 'createdAt' => $this->RecipientTransferTime(), 'changes' => $changes];
-            $this->SetBuffer('RecipientTransferPending', json_encode($pending, JSON_THROW_ON_ERROR));
-            $this->recipientTransferFeedback('Preview ready. Review the changes before confirming.', $changes);
-            return true;
-        } catch (\Throwable $error) {
-            $this->recipientTransferFeedback($this->recipientTransferError($error), []);
-            return false;
-        } finally {
-            IPS_SemaphoreLeave('SymconiCloud.RecipientTransfer.' . $this->InstanceID);
-        }
+        });
     }
 
     /** One-use confirmation, tied to the previewed source and target snapshots. */
     public function ApplyRecipientTransfer(bool $Confirmed): bool
     {
-        if (!$Confirmed) {
-            return false;
-        }
-        if (!IPS_SemaphoreEnter('SymconiCloud.RecipientTransfer.' . $this->InstanceID, 1000)) {
-            return false;
-        }
-        $targetLock = null;
-        try {
-            $raw = $this->GetBuffer('RecipientTransferPending');
-            if ($raw === '') {
-                throw new \RuntimeException('Create a preview before applying recipient changes.');
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($Confirmed): bool
+        {
+            if (!$Confirmed) {
+                $this->DebugFlowEvent($this->CloudDebugFunction(__FUNCTION__), __LINE__, 'AKTION', 'Empfängerübernahme nicht bestätigt oder abgebrochen. Zielkonfiguration bleibt unverändert; keine Nachricht wird versendet.');
+                return false;
             }
-            $pending = json_decode($raw, true, 64, JSON_THROW_ON_ERROR);
-            $this->SetBuffer('RecipientTransferPending', '');
-            if (!is_array($pending) || $this->RecipientTransferTime() - $pending['createdAt'] > 300
-                || $this->RecipientTransferTime() < $pending['createdAt'] || $pending['parent'] !== $this->GetParentID()) {
-                throw new \RuntimeException('Preview expired or changed. Create a new preview.');
+            if (!IPS_SemaphoreEnter('SymconiCloud.RecipientTransfer.' . $this->InstanceID, 1000)) {
+                $this->CloudDebugProblem('busy', __FUNCTION__, __LINE__);
+                return false;
             }
-            $targetLock = 'SymconiCloud.RecipientTarget.' . $pending['target'];
-            if (!IPS_SemaphoreEnter($targetLock, 1000)) {
-                $targetLock = null;
-                throw new \RuntimeException('Target is busy. Create a new preview and try again.');
+            $targetLock = null;
+            try {
+                $raw = $this->GetBuffer('RecipientTransferPending');
+                if ($raw === '') {
+                    throw new \RuntimeException('Create a preview before applying recipient changes.');
+                }
+                $pending = json_decode($raw, true, 64, JSON_THROW_ON_ERROR);
+                $this->SetBuffer('RecipientTransferPending', '');
+                if (!is_array($pending) || $this->RecipientTransferTime() - $pending['createdAt'] > 300
+                    || $this->RecipientTransferTime() < $pending['createdAt'] || $pending['parent'] !== $this->GetParentID()) {
+                    throw new \RuntimeException('Preview expired or changed. Create a new preview.');
+                }
+                $targetLock = 'SymconiCloud.RecipientTarget.' . $pending['target'];
+                if (!IPS_SemaphoreEnter($targetLock, 1000)) {
+                    $this->CloudDebugProblem('busy', __FUNCTION__, __LINE__);
+                    $targetLock = null;
+                    throw new \RuntimeException('Target is busy. Create a new preview and try again.');
+                }
+                $source = $this->recipientSource($pending['sourceID']);
+                $target = $this->ReadRecipientTarget($pending['target']);
+                if ($target['module'] !== $pending['module'] || $this->recipientHash($source['contact']) !== $pending['sourceHash']
+                    || $this->recipientHash($target['configuration']) !== $pending['configurationHash']) {
+                    throw new \RuntimeException('Preview expired or changed. Create a new preview.');
+                }
+                $plan = $this->recipientPlan($target, $source['contact'], ...$pending['arguments']);
+                $this->WriteRecipientTarget($pending['target'], $plan['property'], $plan['before'], $plan['after']);
+                $this->recipientTransferFeedback('Recipient configuration applied. No message was sent.', $pending['changes']);
+                return true;
+            } catch (\Throwable $error) {
+                $this->SetBuffer('RecipientTransferPending', '');
+                $this->recipientTransferFeedback($this->recipientTransferError($error), []);
+                return false;
+            } finally {
+                if ($targetLock !== null) {
+                    IPS_SemaphoreLeave($targetLock);
+                }
+                IPS_SemaphoreLeave('SymconiCloud.RecipientTransfer.' . $this->InstanceID);
             }
-            $source = $this->recipientSource($pending['sourceID']);
-            $target = $this->ReadRecipientTarget($pending['target']);
-            if ($target['module'] !== $pending['module'] || $this->recipientHash($source['contact']) !== $pending['sourceHash']
-                || $this->recipientHash($target['configuration']) !== $pending['configurationHash']) {
-                throw new \RuntimeException('Preview expired or changed. Create a new preview.');
-            }
-            $plan = $this->recipientPlan($target, $source['contact'], ...$pending['arguments']);
-            $this->WriteRecipientTarget($pending['target'], $plan['property'], $plan['before'], $plan['after']);
-            $this->recipientTransferFeedback('Recipient configuration applied. No message was sent.', $pending['changes']);
-            return true;
-        } catch (\Throwable $error) {
-            $this->SetBuffer('RecipientTransferPending', '');
-            $this->recipientTransferFeedback($this->recipientTransferError($error), []);
-            return false;
-        } finally {
-            if ($targetLock !== null) {
-                IPS_SemaphoreLeave($targetLock);
-            }
-            IPS_SemaphoreLeave('SymconiCloud.RecipientTransfer.' . $this->InstanceID);
-        }
+        });
     }
 
     /** Returns only the visible preview, never the target's complete configuration. */
     public function GetRecipientTransferPreview(): string
     {
-        return $this->GetBuffer('RecipientTransferVisible') ?: '{"ready":false,"message":"","changes":[]}';
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): string
+        {
+            return $this->GetBuffer('RecipientTransferVisible') ?: '{"ready":false,"message":"","changes":[]}';
+        });
     }
 
     /** Refreshes address options from the local cache without any configuration write. */
     public function UpdateRecipientChoices(string $ContactID): void
     {
-        $this->SetBuffer('RecipientContactSelection', $ContactID);
-        $this->SetBuffer('RecipientTransferPending', '');
-        $this->recipientTransferFeedback('Create a preview before applying recipient changes.', []);
-        $source = json_decode($this->GetContact($ContactID ?: 'none'), true, 64, JSON_THROW_ON_ERROR);
-        foreach (['TransferPhone' => 'phones', 'TransferEmail' => 'emails'] as $name => $key) {
-            $this->UpdateFormField($name, 'options', json_encode($this->recipientAddressOptions($source['contact'][$key] ?? []), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE));
-            $this->UpdateFormField($name, 'value', '');
-        }
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($ContactID): void
+        {
+            $this->SetBuffer('RecipientContactSelection', $ContactID);
+            $this->SetBuffer('RecipientTransferPending', '');
+            $this->recipientTransferFeedback('Create a preview before applying recipient changes.', []);
+            $source = json_decode($this->GetContact($ContactID ?: 'none'), true, 64, JSON_THROW_ON_ERROR);
+            foreach (['TransferPhone' => 'phones', 'TransferEmail' => 'emails'] as $name => $key) {
+                $this->UpdateFormField($name, 'options', json_encode($this->recipientAddressOptions($source['contact'][$key] ?? []), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE));
+                $this->UpdateFormField($name, 'value', '');
+            }
+        }, true);
     }
 
     public function InvalidateRecipientTransfer(): void
     {
-        $this->SetBuffer('RecipientTransferPending', '');
-        $this->recipientTransferFeedback('Create a preview before applying recipient changes.', []);
+        $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
+        {
+            $this->SetBuffer('RecipientTransferPending', '');
+            $this->recipientTransferFeedback('Create a preview before applying recipient changes.', []);
+        }, true);
     }
 
     protected function RegisterRecipientTransfer(): void
@@ -154,12 +173,14 @@ trait ContactsRecipientTransfer
         if (IPS_HasChanges($targetID) || IPS_GetProperty($targetID, $property) !== $before) {
             throw new \RuntimeException('Preview expired or changed. Create a new preview.');
         }
+        $this->DebugFlowEvent(__FUNCTION__, __LINE__, 'SENDEN', 'Bestätigte Empfängereinstellungen werden an die Zielinstanz übergeben. Empfängerwerte und sonstige Einstellungen bleiben im Debug geschützt; kein Nachrichtenversand.', ['Zielinstanz' => $targetID]);
         try {
             IPS_SetProperty($targetID, $property, $after);
             IPS_ApplyChanges($targetID);
             if (IPS_GetProperty($targetID, $property) !== $after) {
                 throw new \RuntimeException();
             }
+            $this->DebugFlowEvent(__FUNCTION__, __LINE__, 'EMPFANG', 'Die Zielinstanz enthält die erwarteten Empfängereinstellungen. Eine Nachricht wurde nicht versendet.', ['Zielinstanz' => $targetID]);
         } catch (\Throwable) {
             try {
                 IPS_SetProperty($targetID, $property, $before);
@@ -337,6 +358,20 @@ trait ContactsRecipientTransfer
     /** Exception text is never forwarded unless it belongs to this fixed allowlist. */
     private function recipientTransferError(\Throwable $error): string
     {
+        $this->DebugFlowException(__FUNCTION__, __LINE__, $error);
+        $explanation = match ($error->getMessage()) {
+            'Create a preview before applying recipient changes.', 'Preview expired or changed. Create a new preview.' => 'Die Vorschau fehlt, ist abgelaufen oder passt nicht mehr zu Quelle und Ziel. Eine neue Vorschau erstellen und danach bestätigen.',
+            'Target is busy. Create a new preview and try again.'                                                      => 'Die Zielinstanz wird gerade bearbeitet. Später eine neue Vorschau erstellen; es wurde keine parallele Änderung erzwungen.',
+            'Selected address is no longer available.', 'A current, unpaused contact is required.'                     => 'Der ausgewählte Kontakt ist nicht aktuell verfügbar oder die Quelle ist pausiert. Kontaktverzeichnis und Auswahl prüfen.',
+            'Select at least one phone number or email address.', 'Select the address required by this action.'        => 'Es fehlt die für die Zielaktion benötigte Telefonnummer oder E-Mail-Auswahl. Es werden keine Empfängerwerte erraten.',
+            'Select an installed recipient target.'                                                                    => 'Es ist keine unterstützte installierte Zielinstanz ausgewählt. Im Formular zuerst Mitteilungen oder Benachrichtigung auswählen.',
+            'The target has unapplied changes. Apply or discard them first.'                                           => 'Die Zielinstanz hat ungespeicherte Änderungen. Diese zuerst übernehmen oder verwerfen; die Übernahme überschreibt sie nicht.',
+            'Target update failed. The previous configuration was restored.'                                           => 'Die Empfängeränderung ist fehlgeschlagen. Die vorherige Zielkonfiguration wurde wiederhergestellt; keine Nachricht wurde versendet.',
+            'Target update and restoration failed. Check the target configuration.'                                    => 'Sowohl Änderung als auch Wiederherstellung sind fehlgeschlagen. Die Zielkonfiguration jetzt prüfen; es wurde keine Nachricht versendet.',
+            'No recipient changes to apply.'                                                                           => 'Es gibt keine Empfängeränderung zu übernehmen. Das Ziel bleibt unverändert.',
+            default                                                                                                    => 'Die gewählte Zielaktion oder Empfängerkonfiguration ist nicht zulässig. Zieltyp, Benutzerkennung und SMTP-/SMS-Aktion prüfen; private Detailtexte bleiben geschützt.'
+        };
+        $this->DebugFlowEvent(__FUNCTION__, __LINE__, 'FEHLER', $explanation);
         $messages = ['Create a preview before applying recipient changes.', 'Target is busy. Create a new preview and try again.', 'Selected address is no longer available.', 'Select at least one phone number or email address.', 'Unsupported recipient configuration.',
             'Enter a stable Notice user ID using letters and digits.', 'Select an existing notification level and action.', 'Only SMTP and SMS recipient actions are supported.',
             'Select the address required by this action.', 'No recipient changes to apply.', 'Preview expired or changed. Create a new preview.',
