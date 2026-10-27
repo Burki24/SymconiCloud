@@ -1,5 +1,56 @@
 # Entwicklungsstand
 
+## 2FA: ausdrücklich gültige HTTP-409-Codes und unvollständige HTTP-202-Schritte (2026-10-27)
+
+Der öffentliche Beta-Forumsthread meldete eine nach Codeeingabe weiterhin offene
+Bestätigung mit HTTP 409. Die Protokollbeobachtung aus PyiCloud PR 372 beschreibt
+einen gültigen Gerätecode mit HTTP 409 und dem booleschen Antwortfeld
+securityCode.valid=true. Der Fehler wurde mit einer synthetischen Antwort gegen
+den vorhandenen AppleClient reproduziert: bisher response statt Fortsetzung zur
+Vertrauensbestätigung. Die bisherigen Tests waren grün, enthielten diesen Fall
+aber nicht. Quelle: https://github.com/timlaing/pyicloud/pull/372
+
+Die Korrektur akzeptiert genau diesen expliziten 409-Fall, keine allgemeinen
+Konfliktantworten oder als String/Zahl gemeldeten Wahrheitswerte. Anschließend
+bleiben 2sv/trust und accountLogin erforderlich. Die Kontoaktion meldet erst
+nach erfolgreichem Geräteabruf Erfolg. Rotierte Challenge-/Sitzungsheader werden
+wie bisher übernommen. Bekannte Apple-Sicherheitsfehler haben auch bei gültigem
+Code Vorrang. Ein akzeptierter 409-Code wird mit HTTP 409 und Ergebnis ok
+diagnostiziert, nicht als vermeintlicher Verarbeitungsfehler.
+
+Für den ebenfalls gemeldeten HTTP-202-Fall liegt kein konkreter Antwortinhalt
+des betroffenen Kontos vor. Deshalb wurde kein zusätzlicher Apple-Workflow
+unterstellt: 202 bleibt ein nicht abgeschlossener Authentifizierungsschritt und
+erhält den festen Grund authenticationIncomplete samt verständlicher deutscher
+Rückmeldung. Weder ein Codeflag noch eine scheinbar vollständige Kontonutzlast
+bei 202 dürfen Anmeldung oder Trust als abgeschlossen freigeben. Auch die vom
+HTTP-Parser abgewiesene Nicht-JSON-202-Antwort wird entsprechend eingeordnet.
+Der bekannte HTTP-Status bleibt dann in der Diagnose erhalten. Es werden keine
+Antworttexte, Codes oder Sitzungsgeheimnisse protokolliert und keine neuen
+automatischen Wiederholungen, Passwortanmeldungen oder Codeanforderungen eingeführt.
+
+Die zusätzlichen Tests apple-2fa.php und account-2fa.php laufen in der regulären
+CI und schließen die bestehenden Client-/Kontoschutzprüfungen ein. Red-first
+nachgewiesen wurden die fehlende 409-Annahme, die unklare 202-Einordnung und der
+irreführende 409-Diagnoseeintrag. Positive/negative Codewerte, fehlerhafte
+Trust-/Inventarschritte, ausstehende erneute Challenge, Sicherheitsvorrang,
+Headerwechsel, Cacheerhalt, Formularfeedback und das unveränderte Fünf-Code-Limit
+werden über synthetische Transporte geprüft. Keine echten Anmeldungen, keine
+Apple-Anfragen und kein Zugriff auf laufende Test-/Produktivsysteme.
+
+Gezielte Tests, Struktur-/Helper-Hashprüfung, offizieller JSON-Check,
+PHP-CS-Fixer im Prüfmodus (0 von 70 Dateien) und git diff --check bestehen.
+Die vollständige PHP-/Node-Suite besteht unter PHP 8.5.10 mit GD/EXIF in einer
+temporären Kopie mit regulär erzeugtem aktuellem zentralem Helper-Bundle
+(66 Dateien, 18 Abonnements); dessen Manifest-/Bundleprüfungen bestehen ebenfalls.
+Der vorhandene lokale Consumer-Helper enthält noch nicht die vorherige
+Kartenfilter-Speichererweiterung: der zugehörige WoIst-Wiederaufbautest scheitert
+dort weiterhin unabhängig von dieser 2FA-Korrektur. Für den Gesamttest wurden
+Metadaten nur in der temporären Kopie über den normalen Generator erzeugt.
+Es verbleiben keine vorläufigen Helper-Kopien im Modul; library.json und zentrale
+Helperquellen wurden nicht geändert. Der tatsächliche Login auf den betroffenen
+Apple-Konten bleibt der Abnahme nach dem Benutzerupdate vorbehalten.
+
 ## WoIst mit zusätzlichen Konten und Kontofilter (2026-10-27)
 
 Die öffentliche Beta und der Forumsthread wurden vom Benutzer bestätigt.

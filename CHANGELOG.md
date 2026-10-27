@@ -56,6 +56,14 @@
 
 ## Fixes
 
+- **iCloud Konto** verarbeitet ausdrücklich gültige Bestätigungscodes auch bei
+  Apples HTTP-409-Antwort. Vertrauensbestätigung und erfolgreiche Kontositzung
+  bleiben erforderlich; unbestätigte Antworten und Sicherheitsablehnungen
+  werden nicht akzeptiert. HTTP 202 erhält einen eigenen Hinweis auf die noch
+  nicht abgeschlossene Authentifizierung, ohne automatische Wiederholung.
+  Der bekannte HTTP-Status bleibt auch bei einer nicht lesbaren Antwort in der
+  datensparsamen Diagnose erhalten. Kontoschutz und Versuchslimits bleiben bestehen.
+
 - Die WoIst-Anleitung erklärt den eigenen Nominatim-Server anhand der
   Raspberry-Pi-Installation ohne Docker. Eine verlinkte Schrittfolge enthält
   den getrennten Datenbank-Cluster, Ressourcenlimits, regionalen Import,

@@ -23,6 +23,19 @@ Zugangsdaten sind Properties; Cookiejar und Sitzung persistente Attribute. Cooki
 
 ## Grenzen und Nachweise
 
+### Ergänzung zur Codebestätigung (27.10.2026)
+
+Ein HTTP-409-Ergebnis am Gerätecode-Endpunkt wird ausschließlich bei einem
+ausdrücklichen booleschen `securityCode.valid=true` als akzeptierter Code
+weiterverarbeitet. Trust und Kontositzung bleiben separat zu bestätigen;
+bekannte Apple-Sicherheitsablehnungen haben Vorrang. HTTP 202 allein bestätigt
+keinen abgeschlossenen Authentifizierungsschritt und löst keine automatische
+Fortsetzung oder Wiederholung aus. Seine noch unbekannte konkrete Bedeutung im
+gemeldeten Anwenderfall wird nicht durch einen angenommenen Apple-Workflow
+ersetzt. Die Einordnung bleibt librarylokale Apple-Protokolllogik; zentrale
+Formular-/Debug-Helper und die bestehenden Kontoschutzgrenzen bleiben erhalten.
+Protokollquelle: [gültige Gerätecodes mit HTTP 409](https://github.com/timlaing/pyicloud/pull/372).
+
 Apples Web-Schnittstelle ist nicht als öffentliche Drittanbieter-WoIst-API zugesichert. Insbesondere shouldLocate=false ist eine aus dem Protokollfeld abgeleitete Inventarabfrage und benötigt eine reale Abnahme. Globaler Dienst, vertrauenswürdiger Gerätecode; SMS, Sicherheitsschlüssel und China-Endpunkte sind nicht implementiert.
 
 Offline-Nachweise verwenden unabhängige Python-SRP-Servervektoren, synthetische HTTP-Antworten und offizielle Symcon-Stubs. Sie ersetzen weder Apple-Kompatibilität noch die Abnahme in einer realen Symcon-9-Konsole. Keine echten Anmeldungen oder Live-Systemänderungen wurden vorgenommen.

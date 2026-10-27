@@ -214,7 +214,7 @@ trait AccountProtection
 
     private function diagnosticReasonAllowed(mixed $reason): bool
     {
-        return in_array($reason, self::DIAGNOSTIC_REASONS, true) || in_array($reason, ['accountReviewRequired', 'termsRequired', 'authenticationDisabled'], true);
+        return in_array($reason, self::DIAGNOSTIC_REASONS, true) || in_array($reason, ['accountReviewRequired', 'termsRequired', 'authenticationDisabled', 'authenticationIncomplete'], true);
     }
 
     private function isSecurityEvent(string $operation, string $reason): bool

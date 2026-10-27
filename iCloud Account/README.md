@@ -49,6 +49,19 @@ bleibt beim Neuaufbau des Formulars erhalten und wird nicht von regelmäßigen
 Geräteabfragen überschrieben. Passwörter, Codes und technische Apple-Antworten
 werden darin nicht ausgegeben.
 
+Ein von Apple ausdrücklich als gültig bestätigter Code wird auch dann
+weiterverarbeitet, wenn Apple dafür HTTP 409 zurückgibt. Erst wenn anschließend
+die Vertrauensbestätigung, die Kontositzung und der Geräteabruf erfolgreich sind,
+zeigt das Modul die Anmeldung als erfolgreich an. Uneindeutige Antworten und
+Apples Sicherheitsablehnungen bleiben Fehler.
+
+Bei **HTTP 202** ist der Authentifizierungsschritt noch nicht abgeschlossen.
+Das Modul zeigt dafür einen eigenen Hinweis und startet weder eine automatische
+Wiederholung noch eine neue Passwortanmeldung. Dieser Status allein bestätigt
+weder einen falschen Code noch eine erfolgreiche Anmeldung. Vor einem weiteren
+Versuch das Konto in einer iCloud-Browsersitzung prüfen; die bestehenden
+Wartefristen und Versuchslimits gelten weiterhin.
+
 Die Sitzung bleibt nach einem Symcon-Neustart erhalten. Eine Änderung der Zugangsdaten oder das Deaktivieren löscht die lokale Sitzung und den Gerätecache. **Lokale Sitzung löschen** meldet nur diese Instanz lokal ab; der Apple-Account wird nicht gesperrt und Geräte werden nicht verändert. Erneutes Aktivieren allein startet keine Anmeldung.
 
 ## Lesender Kontaktzugriff

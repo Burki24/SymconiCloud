@@ -75,7 +75,11 @@ final class AppleClient
         if (in_array($response['status'], [400, 401], true)) {
             throw new AppleException('invalidCode', $response['status']);
         }
-        $this->expect($response, [200, 204]);
+        // Some trusted-device challenges confirm a correct code with HTTP 409.
+        // A conflict alone is insufficient; only Apple's explicit boolean verdict counts.
+        if (!self::acceptedCodeConflict($response)) {
+            $this->expect($response, [200, 204]);
+        }
         $this->expect($this->auth('GET', '/2sv/trust', null), [200, 204]);
         $this->accountLogin();
         return $this->session['state'];
@@ -430,10 +434,15 @@ final class AppleClient
             str_contains($path, '/fmipservice/')                       => 'deviceAction',
             default                                                    => 'authChallenge'
         };
+        $authentication = in_array($operation, ['signinInit', 'signinComplete', 'sessionRenewal', 'verifyCode', 'requestCode', 'trustBrowser', 'authChallenge'], true);
         try {
             $response = $this->transport->request($method, $url, $headers, $body);
         } catch (\Throwable $error) {
-            $this->diagnose($operation, 0, $error instanceof AppleException ? $error->reason : 'internal');
+            // A non-JSON 202 can be rejected by the HTTP parser before returning.
+            if ($authentication && $error instanceof AppleException && $error->reason === 'response' && $error->httpStatus === 202) {
+                $error = new AppleException('authenticationIncomplete', 202);
+            }
+            $this->diagnose($operation, $error instanceof AppleException ? $error->httpStatus : 0, $error instanceof AppleException ? $error->reason : 'internal');
             throw $error;
         }
         // Account-wide security failures precede service-specific 403 handling and
@@ -442,11 +451,13 @@ final class AppleClient
         $reason = match (true) {
             $appleCode === '-20209'                                                                                                                                                     => 'accountLocked',
             ($response['body']['termsUpdateNeeded'] ?? false) === true                                                                                                                  => 'termsRequired',
-            $response['status'] === 412 && in_array($operation, ['signinInit', 'signinComplete', 'sessionRenewal', 'verifyCode', 'requestCode', 'trustBrowser', 'authChallenge'], true) => 'accountReviewRequired',
+            $response['status'] === 412 && $authentication                                                                                                                              => 'accountReviewRequired',
             $appleCode === '-20101'                                                                                                                                                     => 'credentials',
+            $response['status'] === 202 && $authentication                                                                                                                              => 'authenticationIncomplete',
             default                                                                                                                                                                     => ''
         };
-        $this->diagnose($operation, $response['status'], $reason ?: ($response['status'] < 400 ? 'ok' : 'response'), $appleCode);
+        $acceptedCode = $operation === 'verifyCode' && self::acceptedCodeConflict($response);
+        $this->diagnose($operation, $response['status'], $reason ?: ($response['status'] < 400 || $acceptedCode ? 'ok' : 'response'), $appleCode);
         if ($reason !== '') {
             throw new AppleException($reason, $response['status'], $response['status'] === 429 ? self::retryAfter($response) : 0, $appleCode);
         }
@@ -465,6 +476,12 @@ final class AppleClient
         } catch (\Throwable) {
             // A diagnostic failure must never retry or alter an Apple request.
         }
+    }
+
+    private static function acceptedCodeConflict(array $response): bool
+    {
+        return $response['status'] === 409 && is_array($response['body']['securityCode'] ?? null)
+            && ($response['body']['securityCode']['valid'] ?? null) === true;
     }
 
     /** Only documented, fixed security codes may leave the response boundary. */
