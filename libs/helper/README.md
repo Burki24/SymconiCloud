@@ -24,7 +24,7 @@ The files in this directory are vendored from
 | `OpenFreeMapHelper.php` | 1.0.2 | `09b08d987f800a58a54b763d50144f6cf8a9f120f8f41e9432fe4bf93e972a82` |
 | `ParentConnectionHelper.php` | 1.0.0 | `d4f01dee721aa32e64410979ca15b2795a0fcc59c0232c0ad69e4702d9ff573c` |
 | `RasterImageHelper.php` | 1.0.0 | `2c9f18d6ad9809015e6415f510106c02f1bb709b1d37e8acba4a6ad4ef151a81` |
-| `ResponsiveVisualizationHelper.php` | 1.0.1 | `9b8f708fe4de4271310a50c1ac2f09166ba731f540eb829f46ad15b805f9f220` |
+| `ResponsiveVisualizationHelper.php` | 1.0.2 | `158d643156820c7c1e6979d4b28099b6b0e2f71eafbd8c6a7feb717200b6c700` |
 | `ReverseGeocodingHelper.php` | 1.1.0 | `a1511ade232cb44bd923d1edddac171e9006fe60a37bd250e8c63aed96bc5e67` |
 | `PersistentJsonCacheHelper.php` | 1.0.0 | `adbc7680abe814dc6c15a9cda1312cc30023073595052006662716bc0d65f2a4` |
 | `VariablePresentationHelper.php` | 2.1.0 | `56f8b6c258db79b6f41e2f9930d88a37d719a599c3a2f317bc34b7f4746293fa` |
