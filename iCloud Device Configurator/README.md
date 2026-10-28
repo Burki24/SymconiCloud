@@ -61,6 +61,11 @@ leere Gruppe erstellen. Anschließend die gewünschten Geräte und gemeinsamen
 Zonen mit genau einer Referenzzone in dieser Instanz auswählen. Die Erstellung
 startet keine Apple-Abfrage. Mehrere bereits vorhandene Gruppen bleiben erhalten.
 
+Vorhandene Anwesenheitsgruppen werden ohne irreführende rote Hinterlegung
+zugeordnet. Hinweise auf unvollständige Konfiguration, fehlende Kontodaten oder
+fehlende Geräte stehen in der Spalte **Auswertung**. Das Öffnen oder Neuladen
+des Konfigurators verändert weder Geräteauswahl noch Zonen einer Gruppe.
+
 **Eine Gruppe genügt für mehrere Geräte und gemeinsame Zonen.** Für Anwesenheit
 müssen vorher keine einzelnen Geräteinstanzen angelegt werden. Auch
 [WoIst-Karte](../iCloud%20WoIst/README.md) und

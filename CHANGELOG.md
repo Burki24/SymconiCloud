@@ -69,6 +69,10 @@
 
 ## Fixes
 
+- **Gerätekonfigurator** zeigt vorhandene Anwesenheitsgruppen nicht mehr allein
+  wegen ihrer Auflistung rot an. Geräteauswahl und Zonen bleiben unverändert;
+  tatsächliche Konfigurations- und Kontoprobleme werden weiterhin erklärt.
+
 - **iCloud Anwesenheit** macht ausstehende Zonenwechsel in Gerätekarten und
   Gruppensumme sichtbar und dokumentiert, dass ihre Bestätigung eine weitere
   neuere Apple-Position benötigt. Ein zusätzlicher Zustandszeitpunkt bleibt auch

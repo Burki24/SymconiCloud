@@ -165,7 +165,9 @@ class iCloudDeviceConfigurator extends IPSModuleStrict
                     203     => $this->Translate('Selected devices are missing from the current account cache.'),
                     default => $this->Translate('Shared zones and multiple devices')
                 };
-                $rows[] = ['name' => IPS_GetName($instanceID), 'model' => $model, 'instanceID' => $instanceID];
+                // Existing rows need a create descriptor; empty constraints preserve custom group settings.
+                $rows[] = ['name' => IPS_GetName($instanceID), 'model' => $model, 'instanceID' => $instanceID,
+                    'create'      => ['moduleID' => self::PRESENCE_MODULE, 'configuration' => (object) []]];
             }
         }
         if ($rows === [] && ($result['success'] ?? false) === true) {

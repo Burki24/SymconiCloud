@@ -282,6 +282,27 @@ $presenceRows = json_decode($probe->fieldUpdates['PresenceInstances']['values'],
 $check(count($presenceRows) >= 1, 'Presence list updates must also carry JSON rows.');
 $presenceRow = array_values(array_filter($presenceRows, static fn (array $row): bool => ($row['instanceID'] ?? 0) === $unconfiguredPresence))[0] ?? [];
 $check(($presenceRow['model'] ?? '') === 'Configure devices, zones and one reference zone.', 'Configurator rows must explain an unconfigured presence instance instead of only showing an error icon.');
+$assertPresenceRecipe = static function (string $json) use ($check, $unconfiguredPresence, $presenceModule): void
+{
+    $rows = json_decode($json, false, 512, JSON_THROW_ON_ERROR);
+    $row = array_values(array_filter($rows, static fn (object $row): bool => ($row->instanceID ?? 0) === $unconfiguredPresence))[0] ?? null;
+    // Symcon marks an existing instance red when its Configurator row has no create descriptor.
+    $check(isset($row->create) && $row->create->moduleID === $presenceModule, 'Existing presence groups need a creation descriptor to avoid a false red Configurator row.');
+    $check($row->create->configuration instanceof stdClass && get_object_vars($row->create->configuration) === [], 'Existing presence recipes must use an empty configuration object so custom devices and zones are not compared against creation defaults.');
+};
+$assertPresenceRecipe($probe->fieldUpdates['PresenceInstances']['values']);
+IPS_SetProperty($unconfiguredPresence, 'Devices', '[{"deviceID":"synthetic-device","name":"Synthetic phone"}]');
+IPS_SetProperty($unconfiguredPresence, 'Zones', '[{"id":"home","name":"Synthetic home","latitude":51.25,"longitude":7.5,"radius":100,"reference":true}]');
+IPS_ApplyChanges($unconfiguredPresence);
+$check(IPS_GetInstance($unconfiguredPresence)['InstanceStatus'] === IS_ACTIVE, 'Configured presence fixture must be active before checking its Configurator row.');
+$savedPresenceConfiguration = IPS_GetConfiguration($unconfiguredPresence);
+for ($reload = 0; $reload < 2; $reload++) {
+    $form = json_decode(IPS_GetConfigurationForm($configurator), false, 512, JSON_THROW_ON_ERROR);
+    $assertPresenceRecipe(json_encode($form->elements[1]->values, JSON_THROW_ON_ERROR));
+    $probe->Reload();
+    $assertPresenceRecipe($probe->fieldUpdates['PresenceInstances']['values']);
+}
+$check(IPS_GetConfiguration($unconfiguredPresence) === $savedPresenceConfiguration, 'Repeated form reads and reloads must preserve selected devices and zones.');
 $check(is_string($probe->fieldUpdates['Result']['caption']), 'Dynamic result caption must remain a string.');
 
 $firstBoundary->result['success'] = false;
@@ -289,7 +310,9 @@ IPS_ApplyChanges($configurator);
 $check(IPS_GetInstance($configurator)['InstanceStatus'] === 202, 'Unavailable account cache must produce an error after ApplyChanges.');
 $failed = json_decode(IPS_GetConfigurationForm($configurator), true, 512, JSON_THROW_ON_ERROR);
 $check(!isset($failed['elements'][0]['values'][0]['create']), 'Failed account cache must not offer device creation.');
-$check(!isset($failed['elements'][1]['values'][0]['create']), 'Failed account cache must not offer presence creation.');
+$failedObject = json_decode(IPS_GetConfigurationForm($configurator), false, 512, JSON_THROW_ON_ERROR);
+$assertPresenceRecipe(json_encode($failedObject->elements[1]->values, JSON_THROW_ON_ERROR));
+$check(count(array_filter($failed['elements'][1]['values'], static fn (array $row): bool => ($row['instanceID'] ?? 0) === 0)) === 0, 'Failed account cache must not offer a new presence group.');
 $disconnected = IPS_CreateInstance($configuratorModule);
 $check(IPS_GetInstance($disconnected)['InstanceStatus'] === 201, 'Missing account must retain its dedicated status.');
 echo "Documented form-action and creation contracts passed.\n";
