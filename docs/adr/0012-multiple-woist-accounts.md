@@ -41,6 +41,19 @@ neu einpassen oder eine vorübergehend ausgeblendete Auswahl löschen.
 
 ## Nachweise und Verteilung
 
+Ergänzung vom 28.10.2026: `ShowAllDevices` (Default true) und `SelectedDevices`
+begrenzen die Geräteanzeige einer WoIst-Instanz. Gespeichert werden konto- und
+gerätebezogene Hashschlüssel vor der Umformung der zusätzlichen Geräte-IDs.
+Damit bleibt die Konfiguration beim Wechsel zwischen Parent- und Zusatzkonto
+stabil. Native und IPSView-Payloads enthalten dieselbe eingeschränkte Liste;
+der vorhandene Kontofilter verfeinert diese. Eine leere Auswahl bedeutet leer,
+nicht alle. Gespeicherte unbekannte Schlüssel werden im Formular erhalten und
+berechtigen nicht zum Lesen unzugewiesener Konten. Das Formular liest nur lokale
+zugewiesene Kontocaches. Die Auswahl ist keine Zugriffssperre, ändert keinen
+Kontotoken und beeinträchtigt die bestehende Adressversorgung von Geräteinstanzen
+nicht. Sie verwendet die bestehenden zentralen Formular-/Debug-/Karten-Helper;
+die iCloud-spezifische Zuordnung verbleibt in der Library.
+
 Regressionen prüfen doppelte Quell-/Gerätekennungen, Cachezugriffe ohne Refresh,
 Teilfehler, ungültige Quelltypen/-listen, Wiederherstellung, erhaltene Properties
 und IPSView-Variablen-IDs sowie Tokenwechsel nur bei geänderter Kontozuordnung.

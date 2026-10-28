@@ -9,6 +9,13 @@
 
 ## Neue Funktionen
 
+- **WoIst** bietet eine gemeinsame Geräteauswahl für Kachel und IPSView.
+  Standardmäßig bleiben alle Geräte sichtbar. Optional werden nur ausgewählte
+  Geräte in Liste, Karte und Positionsübersicht angezeigt, eindeutig nach Konto
+  und Gerätekennung zugeordnet. Neue Geräte werden bei eingeschränkter Auswahl
+  nicht automatisch aufgenommen; leere und vorübergehend nicht verfügbare
+  Auswahlen bleiben erhalten. Der Kontofilter schränkt die Geräteauswahl weiter ein.
+
 - **WoIst** kann zusätzliche vorhandene iCloud-Konten gemeinsam auf einer Karte
   darstellen. Der Kontofilter begrenzt Karte und Geräteliste; gleichnamige
   Geräte und identische Gerätekennungen verschiedener Konten bleiben getrennt.

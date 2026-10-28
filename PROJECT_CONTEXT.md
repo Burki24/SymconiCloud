@@ -1,5 +1,37 @@
 # Entwicklungsstand
 
+## Geräteauswahl für WoIst-Kachel und IPSView (2026-10-28)
+
+ShowAllDevices bleibt standardmäßig true; SelectedDevices speichert optional
+bis zu 1000 Zeilen mit DeviceKey. Die Schlüssel verknüpfen Konto-ID und Hash
+der ursprünglichen Geräte-ID, unabhängig von Namen und primärer/zusätzlicher
+Kontorolle. Die bestehenden Client-Gerätekennungen werden nicht verändert.
+Der neue Formularbereich nutzt den vorhandenen ConfigurationFormHelper und
+List/Select mit Cacheoptionen, ohne neue öffentliche Aktion oder Apple-Abfrage.
+Fehlende Geräte bleiben als gespeicherte Optionen sichtbar. Ungültige aktive
+Auswahlen schlagen geschlossen mit dem bestehenden Konfigurationsstatus fehl;
+eine leere gültige Auswahl bleibt dagegen eine erfolgreiche leere Anzeige.
+
+Filterung erfolgt vor dem gemeinsamen sanitisierten Darstellungs-Payload für
+native Kachel und IPSView. Karte, Liste und Positionsübersicht erhalten nur die
+Auswahl; der Kontofilter schränkt weiter ein. Konto-/Adressversorgung und die
+bestehenden expliziten Refreshregeln bleiben erhalten. GetDeviceAddress und der
+Adressworker verwenden weiterhin den ungefilterten Cachepfad. Der IPSView-Token,
+WebContent-Variable, Loader und Sitzungsschlüssel wechseln durch Geräteauswahl
+nicht. Sichere deutsche Debugereignisse melden Modus und Anzahlen, keine
+Gerätenamen, Schlüssel, Koordinaten oder privaten Nutzlasten. Die iCloud-Logik
+bleibt librarylokal; zentrale Helper werden unverändert wiederverwendet.
+
+Regressionen prüfen Standardverhalten, identische IDs mehrerer Konten, doppelte
+Auswahl, leere und ungültige Konfiguration, neu gefundene Geräte, Quellenausfall
+und Wiederkehr, Umbenennung, Parentwechsel sowie Kontoentfernung. Formularabruf
+verändert keine Properties. Transportzustand ist identisch gefiltert und Token,
+Loader und Variablen-ID bleiben stabil. Beide JavaScript-Ausgabewege prüfen
+Marker, Liste, Fit-Grenzen, Schnittmenge mit Kontofilter, Scrollposition, Auswahl
+und Kamera. Die vollständige Offline-Suite besteht unter PHP 8.5.10.
+Die Prüfung am aktualisierten Live-Modul bleibt offen; keine laufende Instanz
+wurde verändert und keine reale Apple-Abfrage oder Anmeldung ausgelöst.
+
 ## WoIst-Bedienleiste bei ausgeblendetem nativen Titel (2026-10-28)
 
 Der native Maximieren-Pfeil bleibt sichtbar, wenn nur die Kachelüberschrift

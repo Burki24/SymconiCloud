@@ -5,7 +5,6 @@
             "HTTPS map tile URL with {z}, {x}, {y}": "HTTPS-Kartenkachel-URL mit {z}, {x}, {y}",
             "Map attribution": "Quellenangabe der Karte",
             "Map tiles are loaded by your browser. Device names and account credentials are not sent to the tile provider.": "Kartenkacheln werden im Browser geladen. Gerätenamen und Zugangsdaten werden nicht an den Kartenanbieter gesendet.",
-            "Add this instance to the tile visualization. All devices of the connected account are shown; separate device instances are not required.": "Diese Instanz zur Kachelvisualisierung hinzufügen. Angezeigt werden alle Geräte des verbundenen Kontos; einzelne Geräteinstanzen sind nicht erforderlich.",
             "Read account cache": "Gespeicherte Kontodaten lesen",
             "Refresh devices from Apple": "Geräte bei Apple aktualisieren",
             "No iCloud account connected.": "Kein iCloud-Konto verbunden.",
@@ -111,7 +110,18 @@
             "Account filter": "Kontofilter",
             "All accounts": "Alle Konten",
             "Unavailable account": "Konto nicht verfügbar",
-            "Some accounts are unavailable. Their positions are last known.": "Einige Konten sind nicht verfügbar. Deren Positionen sind die zuletzt bekannten."
+            "Some accounts are unavailable. Their positions are last known.": "Einige Konten sind nicht verfügbar. Deren Positionen sind die zuletzt bekannten.",
+            "Add this instance to the tile visualization. Choose the devices below; separate device instances are not required.": "Diese Instanz zur Kachelvisualisierung hinzufügen. Die anzuzeigenden Geräte unten auswählen; einzelne Geräteinstanzen sind nicht erforderlich.",
+            "Device selection": "Geräteauswahl",
+            "Show all devices": "Alle Geräte anzeigen",
+            "Selected devices": "Ausgewählte Geräte",
+            "Device and account": "Gerät und Konto",
+            "Select a cached device": "Gerät aus dem Kontocache auswählen",
+            "Unnamed device": "Unbenanntes Gerät",
+            "Unavailable device (%s)": "Nicht verfügbares Gerät (%s)",
+            "When all devices is disabled, only the selected devices appear in the map and device list in tiles and IPSView. An empty selection shows no devices. New devices are not added automatically.": "Wenn „Alle Geräte anzeigen“ ausgeschaltet ist, erscheinen in Karte und Geräteliste der Kachel und IPSView nur die ausgewählten Geräte. Eine leere Auswahl zeigt keine Geräte. Neue Geräte werden nicht automatisch aufgenommen.",
+            "Choices come from the assigned account caches. After adding accounts, apply the configuration and reopen this form to update the choices. Unavailable saved devices remain selected.": "Die Auswahl stammt aus den Caches der zugewiesenen Konten. Nach dem Hinzufügen von Konten die Konfiguration übernehmen und dieses Formular neu öffnen. Gespeicherte Geräte bleiben auch bei vorübergehender Nichtverfügbarkeit ausgewählt.",
+            "The saved device selection is invalid. Correct the selected devices and apply the configuration.": "Die gespeicherte Geräteauswahl ist ungültig. Die ausgewählten Geräte korrigieren und die Konfiguration übernehmen."
         }
     }
 }

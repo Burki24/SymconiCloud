@@ -8,7 +8,7 @@
 
 SymconiCloud verbindet Apple-iCloud-Dienste mit IP-Symcon. Die Library bietet Apple-Anmeldung mit Zwei-Faktor-Bestätigung, einen Gerätekonfigurator und **iCloud Gerät** zur Anzeige der von Apple gelieferten Geräte-, Akku- und Standortdaten.
 
-**[WoIst](iCloud%20WoIst/README.md)** zeigt die Gerätepositionen eines oder mehrerer ausgewählter iCloud-Konten gemeinsam auf einer Karte mit Kontofilter in der Kachelvisualisierung oder als IPSView-WebContent. Beide Ausgaben besitzen einen Designer; IPSView kann das Kachel-Design übernehmen. Kalender und iCloud Drive sind nicht enthalten.
+**[WoIst](iCloud%20WoIst/README.md)** zeigt die Gerätepositionen eines oder mehrerer ausgewählter iCloud-Konten gemeinsam auf einer Karte mit Kontofilter und optionaler Geräteauswahl in der Kachelvisualisierung oder als IPSView-WebContent. Beide Ausgaben besitzen einen Designer; IPSView kann das Kachel-Design übernehmen. Kalender und iCloud Drive sind nicht enthalten.
 
 **[iCloud Anwesenheit](iCloud%20Presence/README.md)** wertet pro Instanz mehrere
 ausgewählte Geräte in gemeinsamen, frei konfigurierbaren Kreiszonen aus. Gesamt-
@@ -30,7 +30,7 @@ Ein Nachrichtenversand ist darin nicht enthalten.
 | [iCloud Konto](iCloud%20Account/README.md) | Einmalige Anmeldung, gemeinsame Datenabfrage und Kontoschutz | Nein; Ausgangspunkt für alle anderen Module |
 | [iCloud Geräte Konfigurator](iCloud%20Device%20Configurator/README.md) | Geräteinstanzen und Anwesenheitsgruppen anlegen | Nein |
 | [iCloud Gerät](iCloud%20Device/README.md) | Akku-/Standortvariablen und Aktionen für genau ein Gerät | Dies ist die Geräteinstanz; je gewünschtem Gerät eine |
-| [iCloud WoIst Karte](iCloud%20WoIst/README.md) | Gerätepositionen ausgewählter Konten auf einer Karte mit Kontofilter, optional mit Adressen | Nein |
+| [iCloud WoIst Karte](iCloud%20WoIst/README.md) | Gerätepositionen ausgewählter Konten auf einer Karte mit Konto- und Geräteauswahl, optional mit Adressen | Nein |
 | [iCloud Anwesenheit](iCloud%20Presence/README.md) | Mehrere ausgewählte Geräte, gemeinsame Zonen und Gesamtanwesenheit | Nein |
 | [iCloud Fotos](iCloud%20Photos/README.md) | Album oder Diashow in Kachel und IPSView | Nein |
 | [iCloud Kontakte](iCloud%20Contacts/README.md) | Empfängerverzeichnis und bestätigte Übernahme in Benachrichtigungsmodule | Nein |

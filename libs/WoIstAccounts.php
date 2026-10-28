@@ -102,6 +102,7 @@ trait WoIstAccounts
                     continue;
                 }
                 // Existing primary IDs deliberately stay unchanged for saved selections.
+                $device['selectionKey'] = $this->WoIstDeviceSelectionKey($id, $device['id']);
                 if ($id !== $this->GetParentID()) {
                     $device['id'] = 'account:' . $id . ':' . hash('sha256', $device['id']);
                 }

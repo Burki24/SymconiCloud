@@ -12,7 +12,7 @@ trait WoIstGeocoding
     {
         return $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($DeviceID, $Latitude, $Longitude): string
         {
-            $state = $this->bootstrap($this->request('GetDevices'))['state'];
+            $state = $this->bootstrap($this->request('GetDevices'), false)['state'];
             if (!$state['success']) {
                 return '';
             }
@@ -49,7 +49,7 @@ trait WoIstGeocoding
                     $this->DebugFlowEvent($this->CloudDebugFunction(__FUNCTION__), __LINE__, 'AKTION', 'Adressauflösung ist ausgeschaltet oder nicht vollständig konfiguriert. Anbieter, Serveradresse beziehungsweise API-Key prüfen; Inhalte werden nicht ausgegeben.');
                     return false;
                 }
-                $state = $this->bootstrap($this->request('GetDevices'))['state'];
+                $state = $this->bootstrap($this->request('GetDevices'), false)['state'];
                 if (!$state['success']) {
                     return false;
                 }

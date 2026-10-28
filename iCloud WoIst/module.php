@@ -19,6 +19,7 @@ require_once __DIR__ . '/../libs/helper/ReverseGeocodingHelper.php';
 require_once __DIR__ . '/../libs/WoIstGeocoding.php';
 require_once __DIR__ . '/../libs/IPSViewFrame.php';
 require_once __DIR__ . '/../libs/WoIstAccounts.php';
+require_once __DIR__ . '/../libs/WoIstDeviceSelection.php';
 
 /** Assigned account device positions, rendered through the authenticated HTML SDK. */
 class iCloudWoIst extends IPSModuleStrict
@@ -40,6 +41,7 @@ class iCloudWoIst extends IPSModuleStrict
     use \SymconiCloud\WoIstGeocoding;
     use \SymconiCloud\IPSViewFrame;
     use \SymconiCloud\WoIstAccounts;
+    use \SymconiCloud\WoIstDeviceSelection;
 
     private const ACCOUNT_MODULE = '{10BF9A03-98A3-495A-B0FA-A4FA0B1002D5}';
     private const REQUEST_DATA = '{1E60F0BE-03E4-4AA4-A1CE-AA838725A4E2}';
@@ -58,6 +60,7 @@ class iCloudWoIst extends IPSModuleStrict
             $this->RegisterIPSViewStyleProperties();
             $this->RegisterPropertyInteger('StaleAfter', 900);
             $this->RegisterWoIstAccounts();
+            $this->RegisterWoIstDeviceSelection();
             $this->RegisterWoIstGeocoding();
             $this->RegisterPropertyString('TileURL', 'https://tile.openstreetmap.org/{z}/{x}/{y}.png');
             $this->RegisterPropertyString('TileAttribution', '© OpenStreetMap contributors');
@@ -130,7 +133,7 @@ class iCloudWoIst extends IPSModuleStrict
                 }
             }
             unset($element);
-            return $this->EncodeConfigurationForm($this->WoIstDesignForm($form));
+            return $this->EncodeConfigurationForm($this->WoIstDesignForm($this->WoIstDeviceSelectionForm($form)));
         });
     }
 
@@ -292,15 +295,17 @@ class iCloudWoIst extends IPSModuleStrict
         $this->CloudDebugStatus(!$this->configurationValid() ? 203 : (!$this->HasWoIstAccounts() ? 201 : ($state['success'] ? IS_ACTIVE : 202)), __FUNCTION__, __LINE__);
         $this->UpdateVisualizationValue($this->encode($bootstrap));
         $this->PublishWoIstIPSViewState($bootstrap);
-        $this->ScheduleWoIstGeocoding($state);
+        $this->ScheduleWoIstGeocoding($this->ReadPropertyBoolean('EnableAddressResolution') ? $this->bootstrap($data, false)['state'] : $state);
         $this->NotifyAddressDevices();
         return $state['success'];
     }
 
-    private function bootstrap(array $data): array
+    private function bootstrap(array $data, bool $filterDevices = true): array
     {
         if (!$this->configurationValid() || !$this->HasWoIstAccounts()) {
             $data = $this->unavailable(!$this->configurationValid() ? 'Invalid map configuration.' : 'No iCloud account connected.');
+        } elseif ($filterDevices) {
+            $data = $this->FilterWoIstDeviceData($data);
         }
         $updated = is_int($data['updatedAt'] ?? null) && $data['updatedAt'] > 0 ? $data['updatedAt'] : 0;
         $success = ($data['success'] ?? false) === true && ($data['state'] ?? '') === 'authenticated' && $updated > 0;
@@ -364,6 +369,9 @@ class iCloudWoIst extends IPSModuleStrict
     {
         try {
             $this->WoIstAccountIDs();
+            if (!$this->ReadPropertyBoolean('ShowAllDevices')) {
+                $this->WoIstSelectedDeviceKeys();
+            }
             return $this->ReadPropertyInteger('StaleAfter') >= 60 && $this->ReadPropertyInteger('StaleAfter') <= 86400;
         } catch (Throwable) {
             return false;

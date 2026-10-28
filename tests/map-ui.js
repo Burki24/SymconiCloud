@@ -52,7 +52,8 @@ const tileProviders = [];
 let fits = 0;
 let viewChanges = 0;
 let sizeInvalidations = 0;
-const map = {events: {}, setView(center, zoom) { this.center = center; this.zoom = zoom; viewChanges++; return this; }, on(name, action) { this.events[name] = action; }, getCenter() { return this.center; }, getZoom() { return this.zoom; }, fitBounds() { fits++; }, removeLayer() {}, invalidateSize(options) { sizeInvalidations++; assert.equal(options.pan, false); }};
+let lastFitPositions;
+const map = {events: {}, setView(center, zoom) { this.center = center; this.zoom = zoom; viewChanges++; return this; }, on(name, action) { this.events[name] = action; }, getCenter() { return this.center; }, getZoom() { return this.zoom; }, fitBounds(positions) { fits++; lastFitPositions = positions; }, removeLayer() {}, invalidateSize(options) { sizeInvalidations++; assert.equal(options.pan, false); }};
 const layer = {addTo() { return this; }, removeLayer(marker) { markers.splice(markers.indexOf(marker), 1); }};
 const window = {
     document: {readyState: 'complete', documentElement: documentRoot, querySelector(selector) { return selector === '.workspace' ? workspace : null; }, getElementById(id) { return elements[id]; }, createElement() { return new Element(); }, querySelectorAll() { return elements['device-list'].children.map((item) => item.children[0]); }},
@@ -343,4 +344,21 @@ for (const mode of ['symcon', 'ipsview']) {
     assert.equal(elements['device-list'].children[0].children[0].attrs['aria-pressed'], 'true', mode + ': device selection must survive delayed data after reconnect.');
     assert.deepEqual(Array.from(map.center), [52.25, 13.5]);
     assert.equal(map.zoom, 12);
+    const selectedOnly = {...reconnectState, devices: [reconnectState.devices[1]]};
+    const selectionCamera = {center: map.center, zoom: map.zoom};
+    window.handleMessage({state: selectedOnly});
+    assert.equal(elements['device-list'].children.length, 1, mode + ': configured device selection narrows the list.');
+    assert.equal(markers.length, 1, mode + ': configured device selection removes excluded markers.');
+    assert.equal(elements['device-list'].children[0].children[0].attrs['aria-pressed'], 'true', mode + ': a retained selected device stays selected.');
+    assert.equal(elements['woist-devices'].scrollTop, 75);
+    assert.deepEqual({center: map.center, zoom: map.zoom}, selectionCamera);
+    elements.fit.events.click();
+    assert.deepEqual(Array.from(lastFitPositions, pair => Array.from(pair)), [[30, 40]], mode + ': show-all fits only configured visible devices.');
+    elements['account-filter'].value = 'one';
+    elements['account-filter'].events.change();
+    assert.equal(elements['device-list'].children.length, 0, mode + ': the account filter further narrows the configured device selection.');
+    assert.equal(elements.fit.disabled, true, mode + ': an empty intersection cannot fit excluded devices.');
+    window.handleMessage({state: {...reconnectState, devices: [reconnectState.devices[0]]}});
+    assert.equal(elements['device-list'].children[0].children[0].attrs['aria-pressed'], 'false', mode + ': excluding the selected device clears its selection without selecting another.');
+    assert.deepEqual({center: map.center, zoom: map.zoom}, selectionCamera);
 }

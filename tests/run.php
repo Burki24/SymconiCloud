@@ -8,7 +8,7 @@ declare(strict_types=1);
 // lost-mode-deactivation.php also runs the confirmed activation contracts.
 // apple-2fa.php and account-2fa.php also run the existing client and account security scenarios.
 require __DIR__ . '/release-automation.php';
-foreach (['validate_structure.php', 'photos-cache.php', 'photos-boundaries.php', 'apple-2fa.php', 'account-2fa.php', 'debug-output.php', 'debug-data.php', 'contact-transfer.php', 'play-sound.php', 'device-widget.php', 'lost-mode-deactivation.php', 'sdk-contracts.php', 'device-details.php', 'debug-presence.php', 'presence-form.php', 'presence-widget.php', 'presence-widget-compact.php', 'presence-widget-images.php', 'map.php', 'map-accounts.php', 'woist-color-guide.php', 'compact-address.php'] as $test) {
+foreach (['validate_structure.php', 'photos-cache.php', 'photos-boundaries.php', 'apple-2fa.php', 'account-2fa.php', 'debug-output.php', 'debug-data.php', 'contact-transfer.php', 'play-sound.php', 'device-widget.php', 'lost-mode-deactivation.php', 'sdk-contracts.php', 'device-details.php', 'debug-presence.php', 'presence-form.php', 'presence-widget.php', 'presence-widget-compact.php', 'presence-widget-images.php', 'map.php', 'map-device-selection.php', 'woist-color-guide.php', 'compact-address.php'] as $test) {
     $process = proc_open([PHP_BINARY, __DIR__ . '/' . $test], [STDIN, STDOUT, STDERR], $pipes, dirname(__DIR__));
     if (!is_resource($process) || proc_close($process) !== 0) {
         exit(1);

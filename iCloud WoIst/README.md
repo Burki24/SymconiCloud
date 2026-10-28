@@ -11,12 +11,42 @@ Gerätemarkierungen für die Dokumentation entfernt.*
 ## Einrichtung
 
 1. **iCloud WoIst Karte** anlegen und mit dem gewünschten iCloud-Konto verbinden.
-2. Die Instanz zur Symcon-Kachelvisualisierung hinzufügen. Sie zeigt alle Geräte ihres verbundenen Kontos und optional zusätzlich ausgewählter Konten.
+2. Die Instanz zur Symcon-Kachelvisualisierung hinzufügen. Standardmäßig zeigt sie alle Geräte ihres verbundenen Kontos und optional zusätzlich ausgewählter Konten. Unter **Geräteauswahl** lässt sich die Anzeige einschränken.
 3. Ein Gerät aus der Liste wählen: Die Karte zentriert sich auf dessen Position, hebt den Marker mit größerem Punkt und stärkerem Rand hervor und öffnet die Gerätedetails. Ein bereits näherer Zoom bleibt erhalten. **Alle Positionen anzeigen** passt den Kartenausschnitt an die verfügbaren Positionen an.
 
 Beim Wechsel wird die vorherige Markierung zurückgesetzt. Die Hervorhebung bleibt bei Datenaktualisierungen erhalten; diese verschieben den gewählten Kartenausschnitt nicht. Ein Gerät ohne verfügbare Position kann in der Liste ausgewählt werden, erzeugt aber keinen Kartenmarker und verschiebt die Karte nicht.
 
 Die Karte erhält neue Daten automatisch vom Konto. **Bei Apple aktualisieren** löst eine ausdrückliche Geräteabfrage über das Konto aus und beachtet dessen Anmeldestatus und Wartezeiten. Das Öffnen der Karte oder des Formulars liest nur den Kontocache und löst keine Apple-Anmeldung aus.
+
+## Nur bestimmte Geräte anzeigen
+
+Die Auswahl gilt gemeinsam für die Kachel und IPSView:
+
+1. **Geräteauswahl** in der WoIst-Konfiguration öffnen.
+2. **Alle Geräte anzeigen** ausschalten.
+3. Unter **Ausgewählte Geräte** über **Hinzufügen** die gewünschten Geräte
+   auswählen. Jeder Eintrag nennt den Gerätenamen sowie Konto und Konto-ID.
+4. Die Konfiguration übernehmen.
+
+Nicht ausgewählte Geräte erscheinen weder in der Geräteliste noch auf der
+Karte. Auch **Alle Positionen anzeigen** berücksichtigt nur angezeigte Geräte.
+Der Kontofilter schränkt diese Auswahl zusätzlich ein. Eine leere Auswahl zeigt
+keine Geräte. Neu bei Apple gefundene Geräte werden in diesem Modus erst nach
+ausdrücklicher Auswahl angezeigt. **Alle Geräte anzeigen** stellt jederzeit die
+vollständige Anzeige wieder her; die gespeicherte Auswahl bleibt erhalten.
+
+Die Geräte stammen aus den vorhandenen Kontocaches. Nach dem Hinzufügen eines
+weiteren Kontos zunächst die Konfiguration übernehmen und das Formular erneut
+öffnen, damit dessen Geräte angeboten werden. Das Öffnen löst keine Anmeldung
+und keine neue Geräteabfrage bei Apple aus. Vorübergehend nicht verfügbare oder
+aus einem zugewiesenen Konto entfernte Geräte bleiben in der gespeicherten
+Auswahl erhalten und können dort entfernt werden.
+
+Konto und Gerätekennung bestimmen die Zuordnung; Umbenennungen und gleiche
+Gerätenamen verschiedener Konten verändern sie nicht. Die Auswahl begrenzt die
+Darstellung dieser WoIst-Instanz. Sie verändert weder das Konto noch die
+Geräteinstanzen oder deren Adressversorgung. Zoom, Kartenausschnitt und eine
+weiterhin sichtbare Geräteauswahl bleiben bei Datenupdates erhalten.
 
 ## Mehrere iCloud-Konten auf einer Karte
 

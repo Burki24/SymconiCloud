@@ -13,7 +13,7 @@
         },
         {
             "type": "Label",
-            "caption": "Add this instance to the tile visualization. All devices of the connected account are shown; separate device instances are not required."
+            "caption": "Add this instance to the tile visualization. Choose the devices below; separate device instances are not required."
         },
         {
             "type": "ExpansionPanel",
@@ -45,6 +45,57 @@
                             }
                         }
                     ]
+                }
+            ]
+        },
+        {
+            "type": "ExpansionPanel",
+            "name": "DeviceSelectionPanel",
+            "caption": "Device selection",
+            "items": [
+                {
+                    "type": "CheckBox",
+                    "name": "ShowAllDevices",
+                    "caption": "Show all devices"
+                },
+                {
+                    "type": "Label",
+                    "caption": "When all devices is disabled, only the selected devices appear in the map and device list in tiles and IPSView. An empty selection shows no devices. New devices are not added automatically."
+                },
+                {
+                    "type": "Label",
+                    "caption": "Choices come from the assigned account caches. After adding accounts, apply the configuration and reopen this form to update the choices. Unavailable saved devices remain selected."
+                },
+                {
+                    "type": "List",
+                    "name": "SelectedDevices",
+                    "caption": "Selected devices",
+                    "rowCount": 6,
+                    "add": true,
+                    "delete": true,
+                    "columns": [
+                        {
+                            "name": "DeviceKey",
+                            "caption": "Device and account",
+                            "width": "auto",
+                            "add": "",
+                            "edit": {
+                                "type": "Select",
+                                "options": [
+                                    {
+                                        "caption": "Select a cached device",
+                                        "value": ""
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "type": "Label",
+                    "name": "DeviceSelectionWarning",
+                    "caption": "The saved device selection is invalid. Correct the selected devices and apply the configuration.",
+                    "visible": false
                 }
             ]
         },
