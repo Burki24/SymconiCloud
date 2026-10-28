@@ -295,7 +295,7 @@
         },
         {
             "type": "Label",
-            "caption": "The zone radius must exceed the boundary buffer. Transitions require a distinct later location; timer reads alone never confirm a change. Stale or unreliable data becomes Unknown."
+            "caption": "The zone radius must exceed the boundary buffer. A confirmation time greater than zero requires another newer Apple location after the interval; repeated evaluations of the same cached position never confirm a change. The account refresh interval therefore also affects the delay. Set confirmation to 0 for immediate reliable changes."
         },
         {
             "type": "Label",

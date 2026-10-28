@@ -14,7 +14,10 @@
             "Presence groups": "Anwesenheitsgruppen",
             "Presence group": "Anwesenheitsgruppe",
             "Evaluation": "Auswertung",
-            "Shared zones and multiple devices": "Gemeinsame Zonen und mehrere Geräte"
+            "Shared zones and multiple devices": "Gemeinsame Zonen und mehrere Geräte",
+            "Configure devices, zones and one reference zone.": "Geräte, Zonen und genau eine Referenzzone konfigurieren.",
+            "Waiting for the first successful account update.": "Wartet auf die erste erfolgreiche Kontoaktualisierung.",
+            "Selected devices are missing from the current account cache.": "Ausgewählte Geräte fehlen im aktuellen Kontocache."
         }
     }
 }

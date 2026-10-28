@@ -29,7 +29,7 @@ class iCloudPresence extends IPSModuleStrict
     private const ACCOUNT_MODULE = '{10BF9A03-98A3-495A-B0FA-A4FA0B1002D5}';
     private const REQUEST_DATA = '{1E60F0BE-03E4-4AA4-A1CE-AA838725A4E2}';
     private const NOTIFICATION_DATA = '{FCE7780F-9520-4E52-92F3-60034FFAED6D}';
-    private const MEMBER_FIELDS = ['Presence', 'Zone', 'ZoneID', 'Reason', 'DataAvailable', 'DistanceAvailable', 'StayAvailable', 'TransitionPending', 'Distance', 'ZoneSince', 'StayDuration'];
+    private const MEMBER_FIELDS = ['Presence', 'Zone', 'ZoneID', 'Reason', 'DataAvailable', 'DistanceAvailable', 'StayAvailable', 'TransitionPending', 'Distance', 'StateSince', 'ZoneSince', 'StayDuration'];
     private const REASONS = [
         'valid'      => 'Reliable position.', 'held' => 'Boundary area: keeping the confirmed zone.',
         'pending'    => 'Zone change awaiting a new confirming position.', 'boundary' => 'Zone cannot be determined reliably.',
@@ -411,6 +411,16 @@ class iCloudPresence extends IPSModuleStrict
         return json_decode($this->CloudDebugParent($this->EncodeDataFlowMessage(self::REQUEST_DATA, ['Command' => 'GetDevices']), __FUNCTION__, __LINE__), true, 512, JSON_THROW_ON_ERROR);
     }
 
+    /** Keep the public distance value in metres while making long distances readable in widgets. */
+    private function formatWidgetDistance(string $ident, float $metres): string
+    {
+        if ($metres < 1000) {
+            return $this->PresenceFormattedValue($ident);
+        }
+        $decimal = str_starts_with(strtolower(IPS_GetSystemLanguage()), 'de') ? ',' : '.';
+        return number_format($metres / 1000, 1, $decimal, '') . ' km';
+    }
+
     /** Domain adapter only: no new account reads, GPS evaluations or coordinates in the widget. */
     private function publishWidget(): void
     {
@@ -436,22 +446,29 @@ class iCloudPresence extends IPSModuleStrict
             $id = (string) $deviceID;
             $read = fn (string $field): mixed => $this->GetValue($this->GetDeviceVariableIdent($id, $field));
             $presence = $read('Presence');
+            $pending = $read('TransitionPending');
             $details = [];
             if ($read('DistanceAvailable')) {
-                $details[] = $this->Translate('Distance to reference zone') . ': ' . $this->PresenceFormattedValue($this->GetDeviceVariableIdent($id, 'Distance'));
+                $distanceIdent = $this->GetDeviceVariableIdent($id, 'Distance');
+                $details[] = $this->Translate('Distance to reference zone') . ': ' . $this->formatWidgetDistance($distanceIdent, (float) $read('Distance'));
             }
             if ($read('StayAvailable')) {
                 $details[] = $this->Translate('Stay') . ': ' . $this->PresenceFormattedValue($this->GetDeviceVariableIdent($id, 'StayDuration'));
             }
             $rows[] = ['id' => substr(hash('sha256', $id), 0, 32), 'name' => $name !== '' ? $name : ($names[$id] ?? $this->Translate('Device')),
-                'status'    => $presence === -1 ? $labels[$presence] : $labels[$presence] . ' · ' . $read('Zone'), 'tone' => $tones[$presence],
+                'status'    => ($presence === -1 ? $labels[$presence] : $labels[$presence] . ' · ' . $read('Zone')) . ($pending ? ' · ' . $this->Translate('Change awaiting confirmation') : ''), 'tone' => $tones[$presence],
                 'zone'      => $presence === -1 ? $labels[-1] : $read('Zone'),
-                'detail'    => implode(' · ', $details), 'reason' => $presence === -1 || $read('TransitionPending') ? $read('Reason') : '',
+                'detail'    => implode(' · ', $details), 'reason' => $presence === -1 || $pending ? $read('Reason') : '',
                 'image'     => $pictures[$id] ?? ''];
         }
         $presence = $this->GetValue('Presence');
+        $pending = $this->GetValue('PendingCount');
+        $summary = sprintf($this->Translate('%d present · %d absent · %d unknown'), $this->GetValue('PresentCount'), $this->GetValue('AbsentCount'), $this->GetValue('UnknownCount'));
+        if ($pending > 0) {
+            $summary .= ' · ' . sprintf($this->Translate($pending === 1 ? '%d change awaiting confirmation' : '%d changes awaiting confirmation'), $pending);
+        }
         $this->PublishStatusWidget(['title' => $this->Translate('Overall presence'), 'summary' => ['label' => $labels[$presence], 'tone' => $tones[$presence],
-            'detail'                                                                                       => sprintf($this->Translate('%d present · %d absent · %d unknown'), $this->GetValue('PresentCount'), $this->GetValue('AbsentCount'), $this->GetValue('UnknownCount'))], 'members' => $rows]);
+            'detail'                                                                                       => $summary], 'members' => $rows]);
     }
 
     /** UI limits for the geofence helper's strict radius/buffer contract. */
@@ -512,6 +529,7 @@ class iCloudPresence extends IPSModuleStrict
         $states = $this->readState('MemberStates');
         $names = $this->readState('MemberNames');
         $presence = [];
+        $pending = 0;
         $missing = 0;
         $zoneNames = array_column($zones, 'name', 'id');
         $index = 0;
@@ -537,6 +555,7 @@ class iCloudPresence extends IPSModuleStrict
             $states[$id] = $result['state'];
             $values = ['Presence'   => $result['presence'], 'ZoneID' => $result['zone'] ?? '',
                 'Zone'              => $result['zone'] === null ? $this->Translate('Unknown') : ($zoneNames[$result['zone']] ?? $this->Translate('Outside all zones')),
+                'StateSince'        => $result['state']['zone'] === null ? 0 : $result['state']['since'],
                 'ZoneSince'         => $result['since'], 'StayDuration' => $result['duration'], 'StayAvailable' => $result['since'] > 0,
                 'Distance'          => $result['distance'] ?? 0.0, 'DistanceAvailable' => $result['distance'] !== null,
                 'TransitionPending' => $result['pending'], 'DataAvailable' => true,
@@ -545,10 +564,11 @@ class iCloudPresence extends IPSModuleStrict
                 $this->CloudDebugWrite($this->GetDeviceVariableIdent($id, $field), $value, __FUNCTION__, __LINE__);
             }
             $presence[] = $result['presence'];
+            $pending += (int) $result['pending'];
         }
         $this->writeState('MemberStates', array_intersect_key($states, $members));
         $this->writeState('MemberNames', array_intersect_key($names, $members));
-        $this->publishPresenceSummary($presence, true, $missing > 0 ? 'Some selected devices are missing from the account cache.' : 'Shared zones evaluated.');
+        $this->publishPresenceSummary($presence, $pending, true, $missing > 0 ? 'Some selected devices are missing from the account cache.' : ($pending > 0 ? 'One or more zone changes await another newer Apple location.' : 'Shared zones evaluated.'));
         $this->CloudDebugStatus($missing === count($members) ? 203 : IS_ACTIVE, __FUNCTION__, __LINE__);
         return true;
     }
@@ -563,7 +583,7 @@ class iCloudPresence extends IPSModuleStrict
             $this->setUnknownMember((string) $id, $message);
         }
         $this->writeState('MemberStates', array_intersect_key($states, $members));
-        $this->publishPresenceSummary(array_fill(0, count($members), -1), false, $message);
+        $this->publishPresenceSummary(array_fill(0, count($members), -1), 0, false, $message);
         $this->WriteAttributeString('LastError', $this->Translate($message));
         $this->CloudDebugStatus($status, __FUNCTION__, __LINE__);
     }
@@ -574,19 +594,20 @@ class iCloudPresence extends IPSModuleStrict
         foreach (self::MEMBER_FIELDS as $field) {
             $value = match ($field) {
                 'Presence' => -1, 'Zone' => $this->Translate('Unknown'), 'ZoneID' => '', 'Reason' => $this->Translate($reason),
-                'Distance' => 0.0, 'ZoneSince', 'StayDuration' => 0, default => false
+                'Distance' => 0.0, 'StateSince', 'ZoneSince', 'StayDuration' => 0, default => false
             };
             $this->CloudDebugWrite($this->GetDeviceVariableIdent($id, $field), $value, __FUNCTION__, __LINE__);
         }
     }
 
-    private function publishPresenceSummary(array $presence, bool $available, string $reason): void
+    private function publishPresenceSummary(array $presence, int $pending, bool $available, string $reason): void
     {
         $this->CloudDebugWrite('Presence', $this->AggregateGeofencePresence($presence), __FUNCTION__, __LINE__);
         $this->CloudDebugWrite('SelectedCount', count($presence), __FUNCTION__, __LINE__);
         foreach (['PresentCount' => 1, 'AbsentCount' => 0, 'UnknownCount' => -1] as $ident => $state) {
             $this->CloudDebugWrite($ident, count(array_filter($presence, static fn (int $value): bool => $value === $state)), __FUNCTION__, __LINE__);
         }
+        $this->CloudDebugWrite('PendingCount', max(0, $pending), __FUNCTION__, __LINE__);
         $this->CloudDebugWrite('DataAvailable', $available, __FUNCTION__, __LINE__);
         $this->CloudDebugWrite('Reason', $this->Translate($reason), __FUNCTION__, __LINE__);
         $this->WriteAttributeString('LastError', '');
@@ -656,7 +677,7 @@ class iCloudPresence extends IPSModuleStrict
             } else {
                 $value = match ($match[1]) {
                     'Presence' => -1, 'Zone' => $this->Translate('Unknown'), 'ZoneID' => '', 'Reason' => $this->Translate('Device no longer selected.'),
-                    'Distance' => 0.0, 'ZoneSince', 'StayDuration' => 0, default => false
+                    'Distance' => 0.0, 'StateSince', 'ZoneSince', 'StayDuration' => 0, default => false
                 };
                 $this->CloudDebugWrite($ident, $value, __FUNCTION__, __LINE__);
                 $inactive[$ident] = $recorded ? $previous : ['id' => $child, 'hidden' => $object['ObjectIsHidden'], 'restore' => !$object['ObjectIsHidden']];
@@ -688,7 +709,7 @@ class iCloudPresence extends IPSModuleStrict
             $this->CloudDebugWrite('Presence', -1, __FUNCTION__, __LINE__);
         }
         $position = 1;
-        foreach (['SelectedCount', 'PresentCount', 'AbsentCount', 'UnknownCount'] as $ident) {
+        foreach (['SelectedCount', 'PresentCount', 'AbsentCount', 'UnknownCount', 'PendingCount'] as $ident) {
             $this->RegisterVariableInteger($ident, $this->Translate($ident), $this->IntegerPresentation(), $position++);
         }
         $this->RegisterVariableBoolean('DataAvailable', $this->Translate('DataAvailable'), $this->BooleanPresentation($this->Translate('Yes'), $this->Translate('No')), $position++);
@@ -705,7 +726,7 @@ class iCloudPresence extends IPSModuleStrict
                 'Presence'                 => $this->RegisterVariableInteger($ident, $caption, $this->presencePresentation(), $position++),
                 'Zone', 'ZoneID', 'Reason' => $this->RegisterVariableString($ident, $caption, $this->TextPresentation(), $position++),
                 'Distance'                 => $this->RegisterVariableFloat($ident, $caption, $this->DecimalPresentation('m', 1), $position++),
-                'ZoneSince'                => $this->RegisterVariableInteger($ident, $caption, $this->DateTimePresentation(), $position++),
+                'StateSince', 'ZoneSince'  => $this->RegisterVariableInteger($ident, $caption, $this->DateTimePresentation(), $position++),
                 'StayDuration'             => $this->RegisterVariableInteger($ident, $caption, $this->DurationPresentation(), $position++),
                 default                    => $this->RegisterVariableBoolean($ident, $caption, $this->BooleanPresentation($this->Translate('Yes'), $this->Translate('No')), $position++)
             };

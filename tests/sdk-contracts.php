@@ -269,12 +269,19 @@ $expectFailure(fn () => validateCreationRecipe((object) ['moduleID' => '{0000000
 $loadedModules = $metadata->getValue();
 $loadedModules[$configuratorModule]['Class'] = ContractConfigurator::class;
 $metadata->setValue(null, $loadedModules);
+$presenceModule = '{00438FA2-CF5C-45B0-AFF0-A5A5CE66595E}';
+$unconfiguredPresence = IPS_CreateInstance($presenceModule);
+IPS_ConnectInstance($unconfiguredPresence, $firstAccount);
+IPS_ApplyChanges($unconfiguredPresence);
 $probeID = IPS_CreateInstance($configuratorModule);
 IPS_ConnectInstance($probeID, $firstAccount);
 IPS_ApplyChanges($probeID);
 $probe = IPS\InstanceManager::getInstanceInterface($probeID);
 $check(count(json_decode($probe->fieldUpdates['Devices']['values'], true, 512, JSON_THROW_ON_ERROR)) >= 1, 'Dynamic list update must carry device rows as JSON.');
-$check(count(json_decode($probe->fieldUpdates['PresenceInstances']['values'], true, 512, JSON_THROW_ON_ERROR)) >= 1, 'Presence list updates must also carry JSON rows.');
+$presenceRows = json_decode($probe->fieldUpdates['PresenceInstances']['values'], true, 512, JSON_THROW_ON_ERROR);
+$check(count($presenceRows) >= 1, 'Presence list updates must also carry JSON rows.');
+$presenceRow = array_values(array_filter($presenceRows, static fn (array $row): bool => ($row['instanceID'] ?? 0) === $unconfiguredPresence))[0] ?? [];
+$check(($presenceRow['model'] ?? '') === 'Configure devices, zones and one reference zone.', 'Configurator rows must explain an unconfigured presence instance instead of only showing an error icon.');
 $check(is_string($probe->fieldUpdates['Result']['caption']), 'Dynamic result caption must remain a string.');
 
 $firstBoundary->result['success'] = false;

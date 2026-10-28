@@ -54,6 +54,7 @@ Die Gruppenvariablen sind ausschließlich lesbar:
 | `PresentCount` | int | Geräte mit bestätigter Anwesenheit |
 | `AbsentCount` | int | Geräte mit bestätigter Abwesenheit |
 | `UnknownCount` | int | Geräte mit unbekannter Anwesenheit |
+| `PendingCount` | int | Geräte, deren bestätigter Zustand noch auf eine weitere neuere Apple-Position wartet |
 | `DataAvailable` | bool | Erfolgreicher Zugriff auf den authentifizierten Kontocache |
 | `Reason` | string | Gruppenbewertung oder Konfigurations-/Kontofehler |
 
@@ -63,7 +64,7 @@ nicht, dass jedes ausgewählte Gerät eine aktuelle und verlässliche Position h
 
 ## Variablen je Gerät
 
-Je Gerät werden elf lesbare Variablen angelegt. Die sichtbaren Namen beginnen
+Je Gerät werden zwölf lesbare Variablen angelegt. Die sichtbaren Namen beginnen
 mit dem Anzeigenamen des Geräts. Gleiche Gerätenamen sind erlaubt; bei Bedarf
 unterschiedliche Anzeigenamen vergeben. Technisch sind die Variablen anhand
 der Geräte-ID getrennt.
@@ -78,6 +79,7 @@ der Geräte-ID getrennt.
 | `DistanceAvailable` | bool | Aktuelle Entfernung auswertbar |
 | `Distance` | float | Luftlinie zum Mittelpunkt der Referenzzone in Metern |
 | `StayAvailable` | bool | Bestätigter Aufenthalt innerhalb einer Zone vorhanden |
+| `StateSince` | int | Unix-Zeit, seit der der bestätigte Zustand einschließlich „Außerhalb aller Zonen“ gilt; bei Unbekannt 0 |
 | `ZoneSince` | int | Unix-Zeit der ersten bestätigten Beobachtung des Aufenthalts, sonst 0 |
 | `StayDuration` | int | Sekunden seit dieser Beobachtung, als Dauer formatiert; sonst 0 |
 | `TransitionPending` | bool | Dieses Gerät wartet auf Bestätigung eines Zonenwechsels |
@@ -91,6 +93,9 @@ Idents verwenden `Device_`, die ersten 32 Hexzeichen des SHA-256 der Geräte-ID,
 
 Aufenthaltsdauer und GPS-Bestätigung sind pro Gerät getrennt. Außerhalb aller
 Zonen oder bei Unbekannt sind Beginn und Dauer 0; `StayAvailable` ist false.
+`ZoneSince=0` bedeutet deshalb ausdrücklich „kein aktueller Zonenaufenthalt“ und
+nicht den 1. Januar 1970. Für den Beginn eines bestätigten Zustands außerhalb
+aller Zonen steht `StateSince` zur Verfügung. Bei Unbekannt ist auch dieser Wert 0.
 Nicht verfügbare Entfernungen sind 0 mit `DistanceAvailable=false`. In einem
 unklaren Grenzbereich kann die Entfernung verfügbar sein, obwohl Anwesenheit
 noch unbekannt ist. Die Dauer beschreibt beobachtete Zeit, nicht den garantiert
@@ -139,6 +144,22 @@ beträgt mindestens Radius plus Grenzpuffer. Dazwischen bleibt eine bestätigte
 Zuordnung erhalten; ohne Vorgeschichte lautet das Ergebnis Unbekannt. Die erste
 klare Position wird sofort angenommen. Anschließende Wechsel brauchen neue,
 zeitlich getrennte Positionen. Wiederholte Cache-Abfragen bestätigen keinen Wechsel.
+
+Die Bestätigungszeit ist kein allein ablaufender Countdown. Bei einem Wert größer
+0 muss nach Ablauf der Zeit eine **weitere Apple-Position mit neuerem Zeitstempel**
+vorliegen. Das Konto fragt Apple standardmäßig alle 300 Sekunden ab; deshalb kann
+ein auf 30 Sekunden eingestellter Wechsel entsprechend länger ausstehen. Für eine
+schnellere Folge kann das Konto-Aktualisierungsintervall bis auf 60 Sekunden
+reduziert werden. Soll jede verlässliche Position sofort gelten, die
+Bestätigungszeit auf 0 setzen.
+
+Jede Anwesenheitsinstanz führt ihren Bestätigungsverlauf unabhängig. Wird dasselbe
+Gerät gleichzeitig in einer frisch eingerichteten Einzelinstanz und einer bereits
+laufenden Gruppe ausgewertet, kann die erste klare Position der neuen Instanz
+sofort gelten, während die bestehende Instanz noch auf ihre Bestätigungsposition
+wartet. Das ist kein Vermischen der Gruppenmitglieder. Für einen gemeinsamen
+Zustandsverlauf das Gerät möglichst nur in einer Anwesenheitsgruppe führen und
+deren Gerätevariablen verwenden.
 
 Das Formular begrenzt den globalen Grenzpuffer auf einen Wert unterhalb des
 kleinsten Radius der Zonen, die ihn übernehmen. Der Zonendialog begrenzt den
@@ -265,6 +286,9 @@ Popup-, Diagramm- oder Critical-Farben diese Widgets nicht verändern.
 Die Gerätekarten zeigen Anwesenheit, Zone, verfügbare Entfernung zur Referenzzone
 und beobachtete Aufenthaltsdauer. Bei Unbekannt erscheint der Bewertungsgrund;
 fehlende Werte werden nicht als echte Entfernung oder Aufenthaltsdauer dargestellt.
+Ein ausstehender Wechsel steht direkt im Gerätestatus und in der Zusammenfassung.
+Die technische Entfernungsvariable bleibt immer in Metern. Die Visualisierungen
+zeigen Werte ab 1.000 Metern automatisch in Kilometern mit einer Nachkommastelle.
 
 ### Zusätzliches WidgetCompact
 

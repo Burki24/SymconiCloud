@@ -69,6 +69,14 @@
 
 ## Fixes
 
+- **iCloud Anwesenheit** macht ausstehende Zonenwechsel in Gerätekarten und
+  Gruppensumme sichtbar und dokumentiert, dass ihre Bestätigung eine weitere
+  neuere Apple-Position benötigt. Ein zusätzlicher Zustandszeitpunkt bleibt auch
+  außerhalb aller Zonen aussagekräftig, während der bisherige Zonenzeitpunkt
+  kompatibel erhalten bleibt. Lange Entfernungen werden in Kachel und IPSView
+  lesbar in Kilometern dargestellt; die gespeicherte Variable bleibt in Metern.
+  Der Gerätekonfigurator erklärt außerdem vorübergehende Anwesenheitsstatus.
+
 - **WoIst** hält bei ausgeblendeter nativer Kachelüberschrift rechts in der
   Bedienleiste Platz für den Maximieren-Pfeil frei. Buttons werden dadurch nicht
   überdeckt. Karte und Geräteliste behalten die freie Fläche; Zoom, Auswahl und

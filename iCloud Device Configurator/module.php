@@ -158,7 +158,14 @@ class iCloudDeviceConfigurator extends IPSModuleStrict
         $rows = [];
         foreach (IPS_GetInstanceListByModuleID(self::PRESENCE_MODULE) as $instanceID) {
             if ((int) IPS_GetInstance($instanceID)['ConnectionID'] === $this->GetParentID()) {
-                $rows[] = ['name' => IPS_GetName($instanceID), 'model' => $this->Translate('Shared zones and multiple devices'), 'instanceID' => $instanceID];
+                $status = (int) IPS_GetInstance($instanceID)['InstanceStatus'];
+                $model = match ($status) {
+                    201     => $this->Translate('Configure devices, zones and one reference zone.'),
+                    202     => $this->Translate('Waiting for the first successful account update.'),
+                    203     => $this->Translate('Selected devices are missing from the current account cache.'),
+                    default => $this->Translate('Shared zones and multiple devices')
+                };
+                $rows[] = ['name' => IPS_GetName($instanceID), 'model' => $model, 'instanceID' => $instanceID];
             }
         }
         if ($rows === [] && ($result['success'] ?? false) === true) {
