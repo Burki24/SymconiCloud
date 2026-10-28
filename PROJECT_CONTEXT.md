@@ -1,5 +1,37 @@
 # Entwicklungsstand
 
+## WoIst-Bedienleiste bei ausgeblendetem nativen Titel (2026-10-28)
+
+Der native Maximieren-Pfeil bleibt sichtbar, wenn nur die Kachelüberschrift
+ausgeblendet ist, und überdeckte dann den Aktualisieren-Button. Der vorhandene
+ResponsiveVisualizationHelper liest jetzt Titel und Maximieren gemeinsam aus
+den offiziellen Objektflags. Zusätzliche tileMaximizeVisible/tileActionInset-
+Metadaten reservieren nur bei verborgenem Titel und sichtbarem Pfeil 44 Pixel
+rechts in einer explizit markierten oberen Bedienleiste. Karte und Geräteliste
+behalten ihre Breite; sind beide verborgen, bleibt kein Leerraum. IPSView
+reserviert keine nativen Bedienelemente. Der Client übernimmt den Wert bei Start
+und SDK-Updates ohne Kartenneuaufbau. Teilnachrichten verwerfen ihn nicht.
+
+Regressionen reproduzierten vor der Korrektur die fehlenden Metadaten und die
+fehlende Client-Reservierung. Danach bestanden alle vier Titel-/Pfeilzustände,
+fehlende Felder, fehlgeschlagene Objektabfrage und IPSView ohne Objektzugriff.
+UI-Tests sichern Auswahl, Scrollposition, Zoom und Ausschnitt bei Updates,
+Rücknahme des Abstands und ungültige Metadaten. Unter PHP 8.5.10 bestanden die
+vollständigen Helper-/Modulsuiten sowie ein zusätzlicher realer Modul-/Stub-Test
+aller vier Zustände im isolierten, zentral generierten Paket (19 Abos, 67 Dateien).
+
+Browserprüfung im synthetischen Host mit tatsächlichem WoIst-HTML/CSS/JS,
+Leaflet und zentralem CSS bei 360/760/1280 Pixeln: Die alte Variante überlappt,
+die korrigierte nicht. Sichtbarer Titel, beide ausgeblendet und IPSView sind
+ebenfalls frei; Arbeitsbereichsbreiten bleiben gleich. Ein Browserklick auf
+Aktualisieren erreichte nur die lokale Testgrenze, ohne echte Apple-Abfrage.
+
+Die Helper-Änderung muss zuerst freigegeben und regulär verteilt werden, bevor
+SymconiCloud aktualisiert wird. Das bestehende Abonnement genügt; es gibt keine
+neuen Bundle-Dateien oder Ressourcen. Keine provisorischen Helperkopien bleiben
+im Consumer. Keine laufende Instanz wurde verändert; die Prüfung in der echten
+nativen Kachel bleibt bis zum Benutzerupdate offen.
+
 ## Fehlenden DebugFlowHelper im Auslieferungspaket ergänzt (2026-10-27)
 
 Der GitHub-Testlauf 40513391537 für 733e838 scheiterte bereits an der

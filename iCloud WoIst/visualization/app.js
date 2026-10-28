@@ -339,6 +339,8 @@
         const root = global.document.documentElement;
         const inset = outputMode === 'symcon' ? options.tileHeaderInset : 0;
         if (root && root.style && Number.isFinite(inset) && inset >= 0) root.style.setProperty('--symc-tile-header-inset', inset + 'px');
+        const actionInset = outputMode === 'symcon' ? options.tileActionInset : 0;
+        if (root && root.style && actionInset !== undefined) root.style.setProperty('--symc-tile-action-inset', Number.isFinite(actionInset) && actionInset >= 0 ? Math.min(actionInset, 96) + 'px' : '0px');
     }
 
     function resizeMap() {

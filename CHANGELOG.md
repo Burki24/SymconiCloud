@@ -56,6 +56,11 @@
 
 ## Fixes
 
+- **WoIst** hält bei ausgeblendeter nativer Kachelüberschrift rechts in der
+  Bedienleiste Platz für den Maximieren-Pfeil frei. Buttons werden dadurch nicht
+  überdeckt. Karte und Geräteliste behalten die freie Fläche; Zoom, Auswahl und
+  Scrollposition bleiben bei Datenupdates erhalten.
+
 - Das Library-Paket enthält den freigegebenen DebugFlowHelper samt manifestierter
   Abhängigkeit. Fehlende Instanzschnittstellen nach dem Debug-Update werden damit
   behoben. Die Paketprüfung kontrolliert zusätzlich alle Helper-Abhängigkeiten

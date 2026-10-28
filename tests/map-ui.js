@@ -40,7 +40,7 @@ elements['account-filter'] = new Element();
 const maliciousName = '<img src=x onerror=alert(1)>';
 const maliciousAddress = '<script>Example address</script>';
 const maliciousNotice = '<b>Approximate – area only</b>';
-elements['woist-bootstrap'].textContent = JSON.stringify({mode: 'symcon', options: {tileHeaderVisible: true, tileHeaderInset: 58}, state: {success: true, updatedAt: timestamp, staleAfter: 900, devices: [
+elements['woist-bootstrap'].textContent = JSON.stringify({mode: 'symcon', options: {tileHeaderVisible: true, tileHeaderInset: 58, tileActionInset: 0}, state: {success: true, updatedAt: timestamp, staleAfter: 900, devices: [
     {id: 'synthetic-a', name: maliciousName, address: maliciousAddress, addressNotice: maliciousNotice, location: {latitude: 0, longitude: 0, timestamp, isOld: false}},
     {id: 'synthetic-b', name: 'No location', location: null}
 ]}});
@@ -102,6 +102,21 @@ assert.equal(markers[0].options.radius, 14, 'A selected marker stays highlighted
 assert.equal(elements['device-list'].children[0].children[0].attrs['aria-pressed'], 'true', 'Selection survives data updates.');
 assert.equal(viewChanges, 2, 'Updating the selected marker does not setView.');
 assert.deepEqual({center: map.center, zoom: map.zoom}, chosenView);
+const listScrollBeforeLayout = 73;
+elements['woist-devices'].scrollTop = listScrollBeforeLayout;
+window.handleMessage({state: {success: true, devices: [{id: 'synthetic-a', location: {latitude: 1, longitude: 2, timestamp}}]}, options: {tileHeaderVisible: false, tileHeaderInset: 0, tileMaximizeVisible: true, tileActionInset: 44}});
+assert.equal(documentRoot.style['--symc-tile-header-inset'], '0px', 'Hiding only the native title still releases its vertical space.');
+assert.equal(documentRoot.style['--symc-tile-action-inset'], '44px', 'The toolbar must keep its buttons outside the native maximize overlay.');
+assert.equal(elements['device-list'].children[0].children[0].attrs['aria-pressed'], 'true', 'Overlay layout updates preserve device selection.');
+assert.equal(elements['woist-devices'].scrollTop, listScrollBeforeLayout, 'Overlay layout updates preserve list scroll position.');
+assert.deepEqual({center: map.center, zoom: map.zoom}, chosenView, 'Overlay layout updates do not move or zoom the map.');
+window.handleMessage({state: {success: true, devices: [{id: 'synthetic-a', location: {latitude: 1, longitude: 2, timestamp}}]}, options: {maxZoom: 19}});
+assert.equal(documentRoot.style['--symc-tile-action-inset'], '44px', 'Partial data or design options must not discard the native overlay reservation.');
+assert.ok(fs.readFileSync(path.join(__dirname, '../iCloud WoIst/visualization/index.html'), 'utf8').includes('<header class="toolbar" data-symc-tile-toolbar>'), 'The map toolbar opts into the central overlay reservation.');
+window.handleMessage({state: {success: true, devices: [{id: 'synthetic-a', location: {latitude: 1, longitude: 2, timestamp}}]}, options: {tileHeaderVisible: false, tileHeaderInset: 0, tileMaximizeVisible: false, tileActionInset: 0}});
+assert.equal(documentRoot.style['--symc-tile-action-inset'], '0px', 'Hiding the maximize control releases the horizontal space again.');
+window.handleMessage({state: {success: true, devices: [{id: 'synthetic-a', location: {latitude: 1, longitude: 2, timestamp}}]}, options: {tileActionInset: -44}});
+assert.equal(documentRoot.style['--symc-tile-action-inset'], '0px', 'Invalid overlay insets cannot create negative padding.');
 selectedMarker.opened = false;
 window.handleMessage({state: {success: true, devices: [{id: 'synthetic-a', location: {latitude: 1, longitude: 2, timestamp}}]}});
 assert.equal(selectedMarker.opened, false, 'A popup explicitly closed by the user stays closed during updates.');
@@ -167,6 +182,8 @@ vm.runInNewContext(source, {window, Date, Map, Set, Promise, URL, console});
 assert.equal(requests.length, requestsBeforeIPSView, 'IPSView never calls the native SDK or an Apple refresh.');
 assert.equal(elements['transport-message'].hidden, false, 'IPSView exposes a missing live endpoint without discarding the map.');
 assert.equal(documentRoot.style['--symc-tile-header-inset'], '0px', 'The HTTP IPSView page must not reserve native tile title space.');
+window.handleMessage({state: {success: true, devices: []}, options: {tileActionInset: 44}});
+assert.equal(documentRoot.style['--symc-tile-action-inset'], '0px', 'IPSView cannot inherit a native maximize reservation.');
 let resizeCallback;
 window.ResizeObserver = class { constructor(callback) { resizeCallback = callback; } observe() {} };
 vm.runInNewContext(source, {window, Date, Map, Set, Promise, URL, console});
