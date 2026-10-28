@@ -1,5 +1,50 @@
 # Entwicklungsstand
 
+## Gemeinsame WoIst-Gerätereihenfolge mit Ziehgriff (2026-10-28)
+
+Das Runtime-Attribut WoIstDeviceOrder speichert bis zu 4096 konto- und
+gerätebezogene Schlüssel. Normale Cacheupdates ergänzen neue Geräte am Ende,
+vorübergehend fehlende behalten ihren Rang. ChangeDeviceOrder verarbeitet
+höchstens 1024 Byte für einen relativen Move oder expliziten alphabetischen
+Reset; keine Propertyänderung oder ApplyChanges beim Sortieren. Ein
+instanzbezogenes Semaphore serialisiert Änderungen. Relative Moves bewahren
+die Reihenfolge anderer, auch ausgefilterter Geräte und prüfen Quell-/Zielgeräte
+gegen die aktuelle zugewiesene Geräteauswahl. Abgewiesene Operationen verändern
+nichts. Die bestehende native RequestAction-Allowlist und der authentifizierte
+IPSView-POST-Endpunkt /order verwenden dieselbe Methode und denselben Zustand.
+Tokenprüfung erfolgt vor dem Lesen des beschränkten Requestbodys. GET, ungültige
+Tokens, ungültige Inhalte und nicht mehr verfügbare Geräte werden abgewiesen.
+Es gibt weder automatische Sortierwiederholung noch Apple-Abfrage/Anmeldung.
+
+Ein eigener Ziehgriff mit Pointer-Capture, Einfügemarkierung und Randscrollen
+vermeidet Konflikte mit Kartenwahl und normalem Listenwischen. Separate Tasten
+für hoch/runter sowie Pfeiltasten am Griff stehen als Alternative bereit.
+Native Datenupdates während des Ziehens tauschen den erfassten Griff nicht aus.
+Abbruch/Captureverlust speichert nichts. Der Server bleibt maßgeblich; Fokus,
+Scroll und sichtbare Geräteauswahl bleiben beim Neurendern erhalten. Reorder
+dreht weder Token noch Loader/Sitzungsschlüssel und erzeugt keine neue HTML-Seite.
+Allgemeine Formular-, Debug-, HTTP-, Layout-, Theme- und Speichermöglichkeiten
+werden unverändert zentral genutzt. Ein bestehender Sortier-Helper wurde nicht
+gefunden; die iCloud-spezifische Fähigkeit bleibt nach der Zwei-Libraries-Regel
+librarylokal. Es gibt keine Änderungen an libs/helper oder zentralen Metadaten.
+
+Offline-Regressionen prüfen relative Moves, Filter, neue/fehlende Geräte,
+Konfigurationsübernahme, Reset, fehlerhafte Anfragen, übereinstimmenden
+Transportzustand, Token-/Loadererhalt und datensparsame Diagnose. HTTP-Fixtures
+prüfen 403 vor Body-Lesen, 405 bei GET, 400 bei ungültigem JSON und den
+autorisierten 200-Zustand. JavaScript prüft Pointer-/Tastaturbedienung, Abbruch,
+Datenupdates während des Ziehens, erhaltene Kamera/Scroll/Auswahl und keine
+automatischen Replays nach Transportfehlern. Die vollständige Offline-Suite
+besteht unter PHP 8.5.10.
+
+Im synthetischen lokalen Browserhost mit tatsächlichem Modul-HTML/CSS/JS und
+Leaflet wurden echte Ziehbewegungen in nativer SDK- und IPSView-Einbettung
+ausgeführt. Gemeinsamer Stand, Hoch-/Runter, Tastaturfokus, Alphabetisch-Reset,
+Listenrandscrollen und Mausrad ohne äußeres Seitenscrollen sind bestätigt.
+Die HTTP-Testgrenze verwendet nur synthetische Konten/Geräte. Kein Live-Modul
+wurde installiert oder geändert und keine Apple-Anfrage ausgeführt. Die native
+IPSView-App und Touchhardware bleiben nach dem Benutzerupdate zu prüfen.
+
 ## Geräteauswahl für WoIst-Kachel und IPSView (2026-10-28)
 
 ShowAllDevices bleibt standardmäßig true; SelectedDevices speichert optional

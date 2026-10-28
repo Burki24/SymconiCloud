@@ -32,6 +32,16 @@ button:disabled { opacity: 0.5; cursor: default; }
 aside { min-width: 0; min-height: 0; height: 100%; overflow: auto; padding: 12px; background: var(--symc-surface); border-radius: var(--symc-radius-medium); }
 ul { list-style: none; padding: 0; margin: 0; }
 li + li { margin-top: 8px; }
+.device-list-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 10px; }
+.device-list-heading h2 { margin: 0; }
+.device-list-heading button { font-size: 0.8rem; }
+.device-order { display: flex; justify-content: flex-end; gap: 4px; padding-top: 3px; }
+.device-order button { min-width: 44px; padding: 2px 8px; font: inherit; }
+.device-order-handle { touch-action: none; cursor: grab; user-select: none; }
+.device-order-handle:active { cursor: grabbing; }
+.order-drop-target { outline: 3px dashed var(--symc-accent); outline-offset: 2px; }
+.order-drop-target[data-order-placement="before"] { box-shadow: 0 -4px 0 var(--symc-accent); }
+.order-drop-target[data-order-placement="after"] { box-shadow: 0 4px 0 var(--symc-accent); }
 .device { display: block; width: 100%; text-align: start; background: var(--symc-background); border-inline-start: 4px solid var(--woist-current, #168d80); }
 .device.stale { border-inline-start-color: var(--woist-stale, #b47722); }
 .device.unlocated { border-inline-start-color: #858b94; }

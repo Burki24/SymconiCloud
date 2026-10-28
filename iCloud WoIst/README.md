@@ -48,6 +48,32 @@ Darstellung dieser WoIst-Instanz. Sie verändert weder das Konto noch die
 Geräteinstanzen oder deren Adressversorgung. Zoom, Kartenausschnitt und eine
 weiterhin sichtbare Geräteauswahl bleiben bei Datenupdates erhalten.
 
+## Reihenfolge der Geräteliste
+
+Die Reihenfolge wird je WoIst-Instanz gespeichert und gilt gemeinsam für Kachel
+und IPSView. Unter jeder Gerätekarte befinden sich drei Bedienelemente:
+
+- **↕ Ziehen zum Verschieben:** am Ziehgriff auf ein anderes Gerät ziehen.
+  Die Markierung zeigt die Einfügestelle. Am oberen und unteren Listenrand
+  scrollt die Liste beim Ziehen automatisch weiter.
+- **↑ Nach oben** und **↓ Nach unten:** verschieben das Gerät um einen Platz
+  innerhalb der gerade sichtbaren Liste. Alternativ am fokussierten Ziehgriff
+  die Pfeiltasten der Tastatur verwenden.
+
+Die Gerätekarte selbst wählt weiterhin das Gerät auf der Karte aus. Zum
+normalen Scrollen außerhalb des Ziehgriffs wischen oder das Mausrad verwenden.
+Abbrechen eines Ziehvorgangs speichert keine Änderung.
+
+**Alphabetisch sortieren** setzt die Reihenfolge der zugewiesenen Geräte zurück,
+auch wenn gerade ein Konto- oder Gerätefilter aktiv ist. Filter allein verändern
+die Reihenfolge nicht; beim Verschieben bleiben ausgeblendete Einträge erhalten.
+Neu erkannte Geräte werden am Ende ergänzt. Datenupdates, erneutes Öffnen und
+Wiederverbindung erhalten die gespeicherte Reihenfolge sowie die weiterhin
+sichtbare Geräteauswahl und den gewählten Kartenausschnitt.
+
+Die Sortierung liest nur die vorhandenen Kontocaches. Sie verändert keine
+Apple-Daten und löst weder Anmeldung noch Geräteaktualisierung aus.
+
 ## Mehrere iCloud-Konten auf einer Karte
 
 Das bisher verbundene **iCloud Konto** bleibt automatisch enthalten. Unter

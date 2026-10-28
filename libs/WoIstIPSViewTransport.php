@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace SymconiCloud;
 
-/** Per-instance cache transport with one explicit, authenticated refresh operation. */
+/** Per-instance cache transport with authenticated refresh and display-order actions. */
 trait WoIstIPSViewTransport
 {
-    /** Serves public assets, authenticated cache data, or an explicitly requested account refresh. */
+    /** Serves assets/cache data, explicit account refresh, or a bounded display-order change. */
     protected function ProcessHookData(): void
     {
         $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
@@ -19,6 +19,7 @@ trait WoIstIPSViewTransport
             $uri = $_SERVER['REQUEST_URI'] ?? '';
             $page = $uri === $path . '/page';
             $refresh = $uri === $path . '/refresh';
+            $order = $uri === $path . '/order';
             // The renderer is public library code, usable by native tiles even
             // when the optional IPSView output is disabled. No cache data is read.
             if ($uri === $path . '/assets/maplibre-gl.js') {
@@ -32,7 +33,7 @@ trait WoIstIPSViewTransport
                 return;
             }
 
-            if (($uri !== $path && !$page && !$refresh) || !$this->IsIPSViewHTMLPageEnabled()
+            if (($uri !== $path && !$page && !$refresh && !$order) || !$this->IsIPSViewHTMLPageEnabled()
                 || !$this->WoIstIPSViewServerURLValid() || !$this->HasWoIstAccounts()
                 || $this->ReadAttributeInteger('IPSViewTransportConnection') !== IPS_GetInstance($this->InstanceID)['ConnectionID']) {
                 $this->CloudDebugPlainResponse(404, 'Not available.', __FUNCTION__, __LINE__);
@@ -72,6 +73,10 @@ trait WoIstIPSViewTransport
                 // RefreshDevices delegates authentication, serialization and cooldown
                 // to the existing account module; no generic remote action is exposed.
                 $this->RefreshDevices();
+            }
+            if ($order && !$this->ChangeDeviceOrder($this->ReadWoIstOrderBody())) {
+                $this->CloudDebugPlainResponse(400, 'Order not saved.', __FUNCTION__, __LINE__);
+                return;
             }
             $state = $this->ReadAttributeString('IPSViewTransportState');
             if ($state === '') {

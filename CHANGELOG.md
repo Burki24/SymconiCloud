@@ -9,6 +9,12 @@
 
 ## Neue Funktionen
 
+- **WoIst** erlaubt Drag-and-drop über einen eigenen Ziehgriff sowie Hoch-/Runter-
+  und Tastaturbedienung in der Geräteliste. Die Reihenfolge wird je Instanz für
+  Kachel und IPSView gemeinsam gespeichert. Neue Geräte werden am Ende ergänzt;
+  Filter und Updates erhalten den Stand. Ein alphabetischer Reset steht bereit.
+  Die tokengeprüfte IPSView-Sortierung löst keine Apple-Abfrage aus.
+
 - **WoIst** bietet eine gemeinsame Geräteauswahl für Kachel und IPSView.
   Standardmäßig bleiben alle Geräte sichtbar. Optional werden nur ausgewählte
   Geräte in Liste, Karte und Positionsübersicht angezeigt, eindeutig nach Konto

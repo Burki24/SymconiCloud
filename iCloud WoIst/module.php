@@ -20,6 +20,7 @@ require_once __DIR__ . '/../libs/WoIstGeocoding.php';
 require_once __DIR__ . '/../libs/IPSViewFrame.php';
 require_once __DIR__ . '/../libs/WoIstAccounts.php';
 require_once __DIR__ . '/../libs/WoIstDeviceSelection.php';
+require_once __DIR__ . '/../libs/WoIstDeviceOrder.php';
 
 /** Assigned account device positions, rendered through the authenticated HTML SDK. */
 class iCloudWoIst extends IPSModuleStrict
@@ -42,6 +43,7 @@ class iCloudWoIst extends IPSModuleStrict
     use \SymconiCloud\IPSViewFrame;
     use \SymconiCloud\WoIstAccounts;
     use \SymconiCloud\WoIstDeviceSelection;
+    use \SymconiCloud\WoIstDeviceOrder;
 
     private const ACCOUNT_MODULE = '{10BF9A03-98A3-495A-B0FA-A4FA0B1002D5}';
     private const REQUEST_DATA = '{1E60F0BE-03E4-4AA4-A1CE-AA838725A4E2}';
@@ -61,6 +63,7 @@ class iCloudWoIst extends IPSModuleStrict
             $this->RegisterPropertyInteger('StaleAfter', 900);
             $this->RegisterWoIstAccounts();
             $this->RegisterWoIstDeviceSelection();
+            $this->RegisterAttributeString('WoIstDeviceOrder', '[]');
             $this->RegisterWoIstGeocoding();
             $this->RegisterPropertyString('TileURL', 'https://tile.openstreetmap.org/{z}/{x}/{y}.png');
             $this->RegisterPropertyString('TileAttribution', '© OpenStreetMap contributors');
@@ -204,12 +207,20 @@ class iCloudWoIst extends IPSModuleStrict
         });
     }
 
-    /** @param string $Ident Allowlisted HTML-SDK/form action. @param mixed $Value Unused action payload. */
+    /** @param string $Ident Allowlisted HTML-SDK/form action. @param mixed $Value Bounded JSON for ChangeDeviceOrder; otherwise unused. */
     public function RequestAction(string $Ident, mixed $Value): void
     {
         $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($Ident, $Value): void
         {
             if ($this->HandleIPSViewHTMLPageAction($Ident, $Value)) {
+                return;
+            }
+            if ($Ident === 'ChangeDeviceOrder') {
+                if (!$this->ChangeDeviceOrder(is_string($Value) ? $Value : '')) {
+                    $snapshot = $this->bootstrap($this->request('GetDevices'));
+                    $snapshot['state']['orderError'] = true;
+                    $this->UpdateVisualizationValue($this->encode($snapshot));
+                }
                 return;
             }
             match ($Ident) {
@@ -290,6 +301,7 @@ class iCloudWoIst extends IPSModuleStrict
 
     private function publish(array $data): bool
     {
+        $this->RememberWoIstDeviceOrder($data);
         $bootstrap = $this->bootstrap($data);
         $state = $bootstrap['state'];
         $this->CloudDebugStatus(!$this->configurationValid() ? 203 : (!$this->HasWoIstAccounts() ? 201 : ($state['success'] ? IS_ACTIVE : 202)), __FUNCTION__, __LINE__);
@@ -305,7 +317,7 @@ class iCloudWoIst extends IPSModuleStrict
         if (!$this->configurationValid() || !$this->HasWoIstAccounts()) {
             $data = $this->unavailable(!$this->configurationValid() ? 'Invalid map configuration.' : 'No iCloud account connected.');
         } elseif ($filterDevices) {
-            $data = $this->FilterWoIstDeviceData($data);
+            $data = $this->FilterWoIstDeviceData($this->OrderedWoIstData($data));
         }
         $updated = is_int($data['updatedAt'] ?? null) && $data['updatedAt'] > 0 ? $data['updatedAt'] : 0;
         $success = ($data['success'] ?? false) === true && ($data['state'] ?? '') === 'authenticated' && $updated > 0;
@@ -328,7 +340,7 @@ class iCloudWoIst extends IPSModuleStrict
             }
             $battery = $device['batteryLevel'] ?? null;
             $devices[] = [
-                'id'           => $device['id'], 'name' => is_string($device['name'] ?? null) ? $device['name'] : '',
+                'id'           => $device['id'], 'orderKey' => $device['selectionKey'] ?? '', 'name' => is_string($device['name'] ?? null) ? $device['name'] : '',
                 'model'        => is_string($device['model'] ?? null) ? $device['model'] : '',
                 'online'       => ($device['deviceStatus'] ?? 0) === 200,
                 'accountId'    => $device['accountId'] ?? '', 'accountName' => $device['accountName'] ?? '', 'accountAvailable' => $device['accountAvailable'] ?? $success,
@@ -342,6 +354,8 @@ class iCloudWoIst extends IPSModuleStrict
             'noDevices'              => 'No devices available.', 'noLocation' => 'No position available', 'stale' => 'Last known position',
             'current'                => 'Recent position', 'offline' => 'Offline', 'battery' => 'Battery', 'updated' => 'Account updated',
             'accounts'               => 'Account filter', 'allAccounts' => 'All accounts', 'unavailableAccount' => 'Unavailable account',
+            'dragDevice'             => 'Drag to reorder', 'moveUp' => 'Move up', 'moveDown' => 'Move down', 'resetOrder' => 'Alphabetical order',
+            'orderError'             => 'Order could not be saved. Please try again.',
             'accuracy'               => 'Accuracy', 'mapUnavailable' => 'Map tiles unavailable. Device data is still shown.',
             'loadError'              => 'The map could not be loaded.', 'refreshing' => 'Refreshing…',
             'transportError'         => 'Live updates unavailable. Retrying…',

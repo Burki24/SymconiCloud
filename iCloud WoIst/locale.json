@@ -121,7 +121,12 @@
             "Unavailable device (%s)": "Nicht verfügbares Gerät (%s)",
             "When all devices is disabled, only the selected devices appear in the map and device list in tiles and IPSView. An empty selection shows no devices. New devices are not added automatically.": "Wenn „Alle Geräte anzeigen“ ausgeschaltet ist, erscheinen in Karte und Geräteliste der Kachel und IPSView nur die ausgewählten Geräte. Eine leere Auswahl zeigt keine Geräte. Neue Geräte werden nicht automatisch aufgenommen.",
             "Choices come from the assigned account caches. After adding accounts, apply the configuration and reopen this form to update the choices. Unavailable saved devices remain selected.": "Die Auswahl stammt aus den Caches der zugewiesenen Konten. Nach dem Hinzufügen von Konten die Konfiguration übernehmen und dieses Formular neu öffnen. Gespeicherte Geräte bleiben auch bei vorübergehender Nichtverfügbarkeit ausgewählt.",
-            "The saved device selection is invalid. Correct the selected devices and apply the configuration.": "Die gespeicherte Geräteauswahl ist ungültig. Die ausgewählten Geräte korrigieren und die Konfiguration übernehmen."
+            "The saved device selection is invalid. Correct the selected devices and apply the configuration.": "Die gespeicherte Geräteauswahl ist ungültig. Die ausgewählten Geräte korrigieren und die Konfiguration übernehmen.",
+            "Drag to reorder": "Ziehen zum Verschieben",
+            "Move up": "Nach oben",
+            "Move down": "Nach unten",
+            "Alphabetical order": "Alphabetisch sortieren",
+            "Order could not be saved. Please try again.": "Die Reihenfolge konnte nicht gespeichert werden. Bitte erneut versuchen."
         }
     }
 }

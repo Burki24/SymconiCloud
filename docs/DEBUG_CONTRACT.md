@@ -1,6 +1,6 @@
 # Interner Debug-Vertrag von SymconiCloud
 
-Stand: 27.10.2026. Maßgeblich ist `SymconDevelopment/standards/DEBUG_OUTPUT.md`.
+Stand: 28.10.2026. Maßgeblich ist `SymconDevelopment/standards/DEBUG_OUTPUT.md`.
 Dieses Dokument beschreibt Implementierung und Prüfung, keine Anwenderbedienung.
 Library- und Modul-READMEs enthalten keine Debug-/Diagnoseanleitung.
 
@@ -15,7 +15,7 @@ Maskierungs- oder Ablaufmechanik wird dort nicht dupliziert.
 
 ## Erfasster Umfang
 
-106 libraryeigene Einstiege verwenden einen zentralen Callback-Ablauf:
+107 libraryeigene Einstiege verwenden einen zentralen Callback-Ablauf:
 
 | Quellbereich | Einstiege |
 | --- | ---: |
@@ -26,7 +26,7 @@ Maskierungs- oder Ablaufmechanik wird dort nicht dupliziert.
 | Fotos-Modul | 9 |
 | Anwesenheitsmodul | 16 |
 | WoIst-Modul | 12 |
-| Fach-Traits einschließlich öffentlicher Exporte und eigener HTTP-Hooks | 25 |
+| Fach-Traits einschließlich öffentlicher Exporte und eigener HTTP-Hooks | 26 |
 
 Create, ApplyChanges, Destroy, Bedienung, Timer, Formulare und Exporte sind
 einbezogen. Die reinen Getter GetCompatibleParents und GetDeviceVariableIdent

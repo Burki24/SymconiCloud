@@ -23,12 +23,13 @@ assert.equal(api.parseState('bad json'), null);
 assert.equal(api.parseState('{"state":{"devices":[],"success":false}}').success, false);
 
 class Element {
-    constructor() { this.children = []; this.dataset = {}; this.attrs = {}; this.events = {}; this.textContent = ''; this.style = {setProperty(name, value) { this[name] = value; }}; }
-    appendChild(child) { this.children.push(child); return child; }
+    constructor() { this.children = []; this.dataset = {}; this.attrs = {}; this.events = {}; this.textContent = ''; this.classList = {add() {}, remove() {}}; this.style = {setProperty(name, value) { this[name] = value; }}; }
+    appendChild(child) { this.children.push(child); child.parentElement = this; return child; }
     replaceChildren() { this.children = []; }
     setAttribute(name, value) { this.attrs[name] = value; }
     addEventListener(name, action) { this.events[name] = action; }
 }
+
 
 const elements = Object.fromEntries(['woist-theme', 'woist-heading', 'woist-devices', 'woist-controls', 'woist-bootstrap', 'title', 'updated', 'fit', 'refresh', 'devices-title', 'device-list', 'empty', 'account-message', 'transport-message', 'map-message', 'map'].map((id) => [id, new Element()]));
 const timestamp = Math.floor(Date.now() / 1000);
@@ -362,3 +363,46 @@ for (const mode of ['symcon', 'ipsview']) {
     assert.equal(elements['device-list'].children[0].children[0].attrs['aria-pressed'], 'false', mode + ': excluding the selected device clears its selection without selecting another.');
     assert.deepEqual({center: map.center, zoom: map.zoom}, selectionCamera);
 }
+
+// Native order actions use account-scoped keys and never trigger device selection.
+const orderKeyA = 'account:10000:' + 'a'.repeat(64), orderKeyB = 'account:10000:' + 'b'.repeat(64);
+const orderDevices = [{id: 'order-a', orderKey: orderKeyA, name: 'Alpha', location: {latitude: 1, longitude: 2, timestamp}}, {id: 'order-b', orderKey: orderKeyB, name: 'Beta', location: {latitude: 3, longitude: 4, timestamp}}];
+const orderCalls = [];
+window.requestAction = (name, value) => { if (name === 'ChangeDeviceOrder') orderCalls.push(JSON.parse(value)); };
+elements['woist-bootstrap'].textContent = JSON.stringify({mode: 'symcon', options: {viewStateKey: 'order-test'}, state: {success: true, devices: orderDevices}});
+markers.length = 0;
+vm.runInNewContext(source, {window, Date, Map, Set, Promise, URL, console});
+elements['device-list'].children[0].children[0].events.click();
+map.setView([11, 12], 13);
+elements['woist-devices'].scrollTop = 45;
+elements['device-list'].children[0].children[1].children[2].events.click();
+assert.deepEqual(orderCalls.at(-1), {device: orderKeyA, before: ''}, 'Move down sends one explicit persistent order action.');
+window.handleMessage({state: {success: true, devices: orderDevices.slice().reverse()}});
+assert.equal(elements['device-list'].children[1].children[0].attrs['aria-pressed'], 'true');
+assert.equal(elements['woist-devices'].scrollTop, 45);
+assert.deepEqual(Array.from(map.center), [11, 12]);
+assert.equal(map.zoom, 13);
+const upHandle = elements['device-list'].children[1].children[1].children[0];
+upHandle.events.keydown({key: 'ArrowUp', preventDefault() {}});
+assert.deepEqual(orderCalls.at(-1), {device: orderKeyA, before: orderKeyB}, 'The drag handle also supports keyboard ordering.');
+window.handleMessage({state: {success: true, devices: orderDevices}});
+let row = elements['device-list'].children[0];
+let handle = row.children[1].children[0];
+const target = elements['device-list'].children[1];
+target.closest = () => target;
+target.getBoundingClientRect = () => ({top: 100, height: 100});
+window.document.elementFromPoint = () => target;
+const pointer = (type, y) => ({type, pointerId: 7, button: 0, isPrimary: true, clientX: 10, clientY: y, preventDefault() {}});
+handle.events.pointerdown(pointer('pointerdown', 10));
+handle.events.pointermove(pointer('pointermove', 180));
+assert.equal(target.dataset.orderPlacement, 'after', 'The insertion marker must show which side of the target will receive the device.');
+window.handleMessage({state: {success: true, devices: orderDevices}});
+assert.equal(elements['device-list'].children[0], row, 'Incoming data cannot replace a captured drag handle.');
+handle.events.pointerup(pointer('pointerup', 180));
+assert.deepEqual(orderCalls.at(-1), {device: orderKeyA, before: ''}, 'Dropping below the last visible device moves to the end.');
+window.handleMessage({state: {success: true, devices: orderDevices}});
+const beforeCancel = orderCalls.length;
+row = elements['device-list'].children[0]; handle = row.children[1].children[0];
+handle.events.pointerdown(pointer('pointerdown', 10));
+handle.events.pointercancel(pointer('pointercancel', 180));
+assert.equal(orderCalls.length, beforeCancel, 'Canceled gestures must never persist an order change.');

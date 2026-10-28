@@ -11,7 +11,9 @@
         ago: 'ago', unknown: 'Unknown',
         transportError: 'Live updates unavailable. Retrying…',
         transportConfiguration: 'Configure the Symcon server URL for IPSView live updates.',
-        accounts: 'Account filter', allAccounts: 'All accounts', unavailableAccount: 'Unavailable account'
+        accounts: 'Account filter', allAccounts: 'All accounts', unavailableAccount: 'Unavailable account',
+        dragDevice: 'Drag to reorder', moveUp: 'Move up', moveDown: 'Move down', resetOrder: 'Alphabetical order',
+        orderError: 'Order could not be saved. Please try again.'
     };
 
     function validLocation(location) {
@@ -97,7 +99,7 @@
         function schedule(delay) {
             if (active && !hidden()) timer = environment.setTimeout(poll, delay);
         }
-        async function poll(refresh = false) {
+        async function poll(refresh = false, order = null) {
             timer = null;
             if (!active || hidden()) return false;
             const generation = epoch;
@@ -107,8 +109,9 @@
             try {
                 const result = await Promise.race([
                     (async () => {
-                        const response = await environment.fetch(refresh ? url + '/refresh' : url, {
-                            method: 'POST', headers: {'X-WoIst-Token': token}, credentials: 'omit',
+                        const response = await environment.fetch(order ? url + '/order' : refresh ? url + '/refresh' : url, {
+                            method: 'POST', headers: Object.assign({'X-WoIst-Token': token}, order ? {'Content-Type': 'application/json'} : {}), credentials: 'omit',
+                            ...(order ? {body: JSON.stringify(order)} : {}),
                             mode: 'cors', cache: 'no-store', redirect: 'error', signal: requestController.signal
                         });
                         if (!response.ok) throw new Error('Transport failed');
@@ -131,7 +134,7 @@
             } catch (_) {
                 if (!active || hidden() || generation !== epoch) return false;
                 failures++;
-                status('transportError');
+                status(order ? 'orderError' : 'transportError');
                 return false;
             } finally {
                 environment.clearTimeout(deadline);
@@ -153,6 +156,12 @@
                 cancel();
                 refreshing = true;
                 try { return await poll(true); } finally { refreshing = false; }
+            },
+            async order(operation) {
+                if (!active || hidden() || refreshing) return false;
+                cancel();
+                refreshing = true;
+                try { return await poll(false, operation); } finally { refreshing = false; }
             },
             start() {
                 if (active) return;
@@ -198,6 +207,9 @@
     let resizing = false;
     let refreshTimer;
     let refreshPending = false;
+    let dragOrder = null;
+    let orderPending = false;
+    let orderTimer = null;
     let ipsViewTransport = null;
     let viewMemory = null;
     let viewPersistenceReady = false;
@@ -208,6 +220,108 @@
     const now = () => Date.now() / 1000;
     const canRefresh = () => outputMode === 'ipsview'
         ? Boolean(ipsViewTransport && ipsViewTransport.canRefresh) : typeof global.requestAction === 'function';
+
+    function orderFailure() {
+        const message = el('order-message');
+        if (message) { message.textContent = text('orderError'); message.hidden = false; }
+    }
+
+    function sendOrder(operation) {
+        if (orderPending || !canRefresh()) return;
+        orderPending = true;
+        const message = el('order-message');
+        if (message) message.hidden = true;
+        orderTimer = global.setTimeout(() => { orderPending = false; orderFailure(); }, 12000);
+        try {
+            if (outputMode === 'ipsview') {
+                ipsViewTransport.order(operation).then(ok => { orderPending = false; global.clearTimeout(orderTimer); if (!ok) orderFailure(); });
+            } else {
+                const result = global.requestAction('ChangeDeviceOrder', JSON.stringify(operation));
+                if (result && typeof result.catch === 'function') result.catch(() => { orderPending = false; global.clearTimeout(orderTimer); orderFailure(); });
+            }
+        } catch (_) { orderPending = false; global.clearTimeout(orderTimer); orderFailure(); }
+    }
+
+    function locateOrderDrop() {
+        if (!dragOrder) return;
+        const target = global.document.elementFromPoint(dragOrder.x, dragOrder.y)?.closest('li[data-order-key]');
+        global.document.querySelectorAll('.order-drop-target').forEach(row => { row.classList.remove('order-drop-target'); delete row.dataset.orderPlacement; });
+        dragOrder.before = null;
+        if (!target || target.parentElement !== el('device-list') || target.dataset.orderKey === dragOrder.key) return;
+        const box = target.getBoundingClientRect();
+        const below = dragOrder.y > box.top + box.height / 2;
+        dragOrder.before = below ? target.nextElementSibling?.dataset.orderKey || '' : target.dataset.orderKey;
+        target.dataset.orderPlacement = below ? 'after' : 'before';
+        target.classList.add('order-drop-target');
+    }
+
+    function scrollOrderDrag() {
+        if (!dragOrder || !dragOrder.moved) return;
+        const list = el('woist-devices');
+        const box = list.getBoundingClientRect();
+        const y = dragOrder.y;
+        const x = dragOrder.x;
+        if (x >= box.left && x <= box.right && y >= box.top && y <= box.bottom) {
+            const delta = y < box.top + 40 ? -10 : y > box.bottom - 40 ? 10 : 0;
+            if (delta) { list.scrollTop += delta; locateOrderDrop(); }
+        }
+        dragOrder.frame = global.requestAnimationFrame(scrollOrderDrag);
+    }
+
+    function deviceOrderControls(device, devices, item) {
+        if (!/^account:[1-9][0-9]{0,9}:[a-f0-9]{64}$/.test(device.orderKey || '')) return;
+        const index = devices.indexOf(device);
+        const tools = node('div', 'device-order');
+        const handle = node('button', 'device-order-handle', '↕');
+        const up = node('button', 'device-order-up', '↑');
+        const down = node('button', 'device-order-down', '↓');
+        for (const [button, label] of [[handle, 'dragDevice'], [up, 'moveUp'], [down, 'moveDown']]) {
+            button.type = 'button'; button.title = text(label); button.setAttribute('aria-label', text(label));
+            button.dataset.orderControl = label; button.dataset.orderDevice = device.orderKey;
+            tools.appendChild(button);
+        }
+        up.disabled = index === 0 || !canRefresh();
+        down.disabled = index === devices.length - 1 || !canRefresh();
+        handle.disabled = !canRefresh();
+        const move = direction => {
+            if (direction < 0 && index > 0) sendOrder({device: device.orderKey, before: devices[index - 1].orderKey});
+            if (direction > 0 && index < devices.length - 1) sendOrder({device: device.orderKey, before: devices[index + 2]?.orderKey || ''});
+        };
+        up.addEventListener('click', () => move(-1));
+        down.addEventListener('click', () => move(1));
+        handle.addEventListener('keydown', event => {
+            if (event.key === 'ArrowUp' || event.key === 'ArrowDown') { event.preventDefault(); move(event.key === 'ArrowUp' ? -1 : 1); }
+        });
+        item.dataset.orderKey = device.orderKey;
+        handle.addEventListener('pointerdown', event => {
+            if (event.button !== 0 || event.isPrimary === false || orderPending || dragOrder) return;
+            event.preventDefault();
+            dragOrder = {key: device.orderKey, pointer: event.pointerId, start: event.clientY, x: event.clientX, y: event.clientY, moved: false, before: null};
+            try { handle.setPointerCapture(event.pointerId); } catch (_) { /* Arrow controls remain available. */ }
+        });
+        handle.addEventListener('pointermove', event => {
+            if (!dragOrder || event.pointerId !== dragOrder.pointer) return;
+            if (Math.abs(event.clientY - dragOrder.start) < 6 && !dragOrder.moved) return;
+            dragOrder.moved = true;
+            dragOrder.x = event.clientX; dragOrder.y = event.clientY;
+            event.preventDefault();
+            locateOrderDrop();
+            if (dragOrder.frame === undefined && typeof global.requestAnimationFrame === 'function') dragOrder.frame = global.requestAnimationFrame(scrollOrderDrag);
+        });
+        const finish = event => {
+            if (!dragOrder || event.pointerId !== dragOrder.pointer) return;
+            const operation = dragOrder;
+            dragOrder = null;
+            if (operation.frame !== undefined && typeof global.cancelAnimationFrame === 'function') global.cancelAnimationFrame(operation.frame);
+            try { handle.releasePointerCapture(event.pointerId); } catch (_) { /* Capture may already be released. */ }
+            if (event.type === 'pointerup' && operation.moved && operation.before !== null && operation.before !== operation.key) sendOrder({device: operation.key, before: operation.before});
+            render();
+        };
+        handle.addEventListener('pointerup', finish);
+        handle.addEventListener('pointercancel', finish);
+        handle.addEventListener('lostpointercapture', finish);
+        item.appendChild(tools);
+    }
 
     function finishRefresh() {
         if (refreshTimer) global.clearTimeout(refreshTimer);
@@ -388,6 +502,7 @@
     }
 
     function render() {
+        const orderFocus = global.document.activeElement?.dataset;
         if (!ready) return;
         const scroll = Number(el('woist-devices').scrollTop) || 0;
         let restoredScroll = null;
@@ -424,6 +539,7 @@
         if (accuracy && map) { map.removeLayer(accuracy); accuracy = null; }
         const allDevices = state.devices.filter((device) => device && typeof device === 'object');
         const devices = allDevices.filter(device => !accountFilter || device.accountId === accountFilter);
+        if (el('reset-order')) el('reset-order').disabled = !canRefresh() || allDevices.length === 0;
         const locatedIDs = new Set(devices.filter((device) => validLocation(device.location)).map((device) => device.id));
         for (const [id, marker] of markers) {
             if (!locatedIDs.has(id)) { layer.removeLayer(marker); markers.delete(id); }
@@ -444,6 +560,7 @@
             button.addEventListener('click', () => selectDevice(device, true));
             const item = node('li');
             item.appendChild(button);
+            deviceOrderControls(device, devices, item);
             el('device-list').appendChild(item);
             if (located && layer) {
                 const position = [device.location.latitude, device.location.longitude];
@@ -463,6 +580,11 @@
         });
         el('fit').disabled = markers.size === 0;
         if (!fitted && markers.size > 0) fit();
+        if (orderFocus?.orderDevice) {
+            global.document.querySelectorAll('button[data-order-device]').forEach(button => {
+                if (button.dataset.orderDevice === orderFocus.orderDevice && button.dataset.orderControl === orderFocus.orderControl && typeof button.focus === 'function') button.focus({preventScroll: true});
+            });
+        }
         if (selected !== null) {
             const device = devices.find((entry) => entry.id === selected);
             if (device) selectDevice(device, false, Boolean(reopenPopup));
@@ -493,6 +615,9 @@
         if (envelope.labels) labels = Object.assign({}, fallback, envelope.labels);
         if (envelope.options) { configureTileHeader(envelope.options); configureDesign(envelope.options.design); configureTiles(envelope.options); }
         state = next;
+        if (orderPending) { orderPending = false; global.clearTimeout(orderTimer); }
+        if (next.orderError === true) orderFailure();
+        if (dragOrder) return;
         if (ready && (outputMode !== 'ipsview' || !refreshPending)) finishRefresh();
         render();
     };
@@ -515,6 +640,7 @@
         state = parseState(bootstrap.state) || state;
         configureDesign((bootstrap.options || {}).design);
         ['title', 'refresh', 'fit'].forEach((key) => { el(key).textContent = text(key); });
+        if (el('reset-order')) { el('reset-order').textContent = text('resetOrder'); el('reset-order').addEventListener('click', () => sendOrder({reset: true})); }
         el('devices-title').textContent = text('devices');
         el('map').setAttribute('aria-label', text('title'));
         try {
