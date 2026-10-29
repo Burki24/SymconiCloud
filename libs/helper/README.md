@@ -13,7 +13,7 @@ The files in this directory are vendored from
 | `GeofenceHelper.php` | 1.2.0 | `a52906069249fb98ec1fcdd6cd7230aa265ae96358f906ee5bbb567624b3dba2` |
 | `HelperTranslationHelper.php` | 1.0.0 | `d3deee581eca9f8eb11e9adce060170227a2dc836ee898bd134f93d27604f639` |
 | `HttpResponseHelper.php` | 1.1.0 | `be4fae4c23f757ab462237d8e74d2a9dca1b504937ed4d4b51c7ff76004cf1cd` |
-| `IPSViewHTMLPageHelper.php` | 1.5.3 | `e03d0bf8118c550026a84b271ce17a6c48f489cf5c33b50da0e9c41daa653a2a` |
+| `IPSViewHTMLPageHelper.php` | 1.5.4 | `aa36bbf643408b6a68220cf4f3c301fd2e14cba201b425715d8eac40d156ba3a` |
 | `VisualizationAssetHelper.php` | 1.1.0 | `a9f5e0c8ea21c021646189fedda6757724b7897b539ead378c2a2f012895e1ee` |
 | `IPSViewStyleConfigurationHelper.php` | 1.1.0 | `e6f558a0dee301d251d2f5845ebdedb765dc07ca5352427d1e08792d940629b7` |
 | `IPSViewStylePresetHelper.php` | 1.0.1 | `770bfc48051a908b55e931f6d4eba6e8984ba73b4aa78cd987470006c7b3a9e7` |
