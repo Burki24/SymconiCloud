@@ -69,6 +69,12 @@
 
 ## Fixes
 
+- **iCloud Anwesenheit** ergänzt außerhalb aller Zonen optional die passende
+  Adresse aus einer ausgewählten WoIst-Karte desselben Kontos. Kachel, IPSView
+  und WidgetCompact benötigen dafür keine Geräteinstanz und starten keine
+  zusätzlichen Adressabfragen. Zonenvariablen und Anwesenheitslogik bleiben
+  unverändert; ohne passenden Cachetreffer bleibt die bisherige Anzeige erhalten.
+
 - **iCloud Konto** bietet einen optionalen Schnellmodus mit 60-Sekunden-Abruf
   und aktiver Standortanforderung höchstens einmal pro Minute. Wiederholte
   manuelle Abrufe und Neustarts umgehen diese Grenze nicht. Apple-Wartefristen,

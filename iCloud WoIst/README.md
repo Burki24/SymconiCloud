@@ -308,6 +308,11 @@ Kontocache vorhandenen Position passen. Bei fehlendem Treffer oder deaktivierter
 Auflösung ist das Ergebnis leer. Der Aufruf startet weder eine Anbieterabfrage
 noch eine Apple-Aktualisierung.
 
+`ICWI_GetAccountDeviceAddress(int $InstanceID, int $AccountID, string $DeviceID,
+float $Latitude, float $Longitude): string` prüft zusätzlich das explizit
+angegebene Quellkonto. Bei nicht positiver oder nicht passender Konto-ID bleibt
+das Ergebnis leer. Diesen Aufruf nutzt die optionale Adressanzeige der Anwesenheit.
+
 ## Kachel- und IPSView-Designer
 
 Im **Kachel-Designer** lassen sich Schriftgröße, Radius und Farben der Standortmarkierungen sowie Überschrift, Geräteliste und Bedienelemente einstellen. Einstellungen anschließend übernehmen. Karte und Geräteliste nutzen die verfügbare Breite und Höhe der Kachel. Auf schmalen Kacheln steht die Liste unter der Karte und scrollt innerhalb ihres Bereichs. Bei ausgeblendeter Liste nutzt die Karte die gesamte freie Fläche. Die bisherige Kartenhöhe dient nur noch als Fallback; die tatsächliche Kachelgröße hat Vorrang. Neue Instanzen verwenden dafür automatisch `0`.

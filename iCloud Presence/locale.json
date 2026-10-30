@@ -1,6 +1,8 @@
 {
     "translations": {
         "de": {
+            "WoIst address cache for outside positions (optional)": "WoIst-Adresscache für Positionen außerhalb der Zonen (optional)",
+            "Select a WoIst map on the same account with address resolution enabled. Matching cached addresses supplement outside-zone positions in tiles and IPSView. Without a selection, the zone display remains unchanged. No device instance or additional address request is required.": "Eine WoIst-Karte desselben Kontos mit aktivierter Adressauflösung auswählen. Passende Cacheadressen ergänzen Positionen außerhalb aller Zonen in Kachel und IPSView. Ohne Auswahl bleibt die Zonenanzeige unverändert. Keine Geräteinstanz und keine zusätzliche Adressabfrage erforderlich.",
             "Enable presence evaluation": "Anwesenheit auswerten",
             "Device": "Gerät",
             "Select device": "Gerät auswählen",

@@ -302,6 +302,18 @@
             "name": "ZoneSettingsError",
             "caption": "",
             "visible": false
+        },
+        {
+            "type": "SelectInstance",
+            "name": "AddressSource",
+            "caption": "WoIst address cache for outside positions (optional)",
+            "validModules": [
+                "{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}"
+            ]
+        },
+        {
+            "type": "Label",
+            "caption": "Select a WoIst map on the same account with address resolution enabled. Matching cached addresses supplement outside-zone positions in tiles and IPSView. Without a selection, the zone display remains unchanged. No device instance or additional address request is required."
         }
     ],
     "actions": [

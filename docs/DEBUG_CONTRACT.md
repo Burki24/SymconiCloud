@@ -15,7 +15,7 @@ Maskierungs- oder Ablaufmechanik wird dort nicht dupliziert.
 
 ## Erfasster Umfang
 
-107 libraryeigene Einstiege verwenden einen zentralen Callback-Ablauf:
+108 libraryeigene Einstiege verwenden einen zentralen Callback-Ablauf:
 
 | Quellbereich | Einstiege |
 | --- | ---: |
@@ -26,7 +26,7 @@ Maskierungs- oder Ablaufmechanik wird dort nicht dupliziert.
 | Fotos-Modul | 9 |
 | Anwesenheitsmodul | 16 |
 | WoIst-Modul | 12 |
-| Fach-Traits einschließlich öffentlicher Exporte und eigener HTTP-Hooks | 26 |
+| Fach-Traits einschließlich öffentlicher Exporte und eigener HTTP-Hooks | 27 |
 
 Create, ApplyChanges, Destroy, Bedienung, Timer, Formulare und Exporte sind
 einbezogen. Die reinen Getter GetCompatibleParents und GetDeviceVariableIdent

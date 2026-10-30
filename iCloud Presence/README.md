@@ -102,6 +102,26 @@ noch unbekannt ist. Die Dauer beschreibt beobachtete Zeit, nicht den garantiert
 exakten Ankunftszeitpunkt. Bei einem bestätigten Wechsel beginnt sie mit der
 bestätigenden Position neu.
 
+## Optionale Adresse außerhalb der Zonen
+
+Unter **WoIst-Adresscache für Positionen außerhalb der Zonen (optional)** kann
+eine WoIst-Karte desselben Kontos ausgewählt werden. In dieser Karte muss die
+Adressauflösung aktiviert sein. Eine iCloud-Geräteinstanz ist nicht erforderlich.
+Ohne Auswahl bleibt die bisherige Anzeige erhalten.
+
+Für zuverlässig bestätigte Positionen außerhalb aller Zonen ergänzt eine passende
+Cacheadresse die Anzeige in Kachel, IPSView und WidgetCompact, beispielsweise
+**Abwesend · Außerhalb aller Zonen · Musterstraße 7, Musterstadt**. Geräte-ID,
+Konto und Koordinaten müssen zusammenpassen. Bekannte Zonen behalten ihren Namen;
+bei unbekannten Positionen oder ausstehenden Wechseln wird keine Adresse angezeigt.
+Fehlende, deaktivierte oder unpassende Quellen beeinträchtigen die Anwesenheit nicht.
+
+Die Anwesenheitsauswertung liest ausschließlich den vorhandenen Cache. Sie startet
+keine Anbieterabfrage und keine zusätzliche Apple-Ortung. Nach der asynchronen
+Adressauflösung erscheint die Adresse bei der nächsten lokalen Auswertung,
+normalerweise nach spätestens 15 Sekunden. `Zone` und `ZoneID` bleiben für
+Skripte unverändert; die Adresse ergänzt nur die Darstellung.
+
 ## GPS-Stabilisierung und Aktualisierung
 
 Jede Zone bietet im Bearbeitungsdialog **Eigene GPS-Einstellungen für diese Zone

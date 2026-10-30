@@ -27,6 +27,7 @@ class iCloudPresence extends IPSModuleStrict
     use \Burki24\SymconModuleHelper\HttpResponseHelper;
 
     private const ACCOUNT_MODULE = '{10BF9A03-98A3-495A-B0FA-A4FA0B1002D5}';
+    private const MAP_MODULE = '{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}';
     private const REQUEST_DATA = '{1E60F0BE-03E4-4AA4-A1CE-AA838725A4E2}';
     private const NOTIFICATION_DATA = '{FCE7780F-9520-4E52-92F3-60034FFAED6D}';
     private const MEMBER_FIELDS = ['Presence', 'Zone', 'ZoneID', 'Reason', 'DataAvailable', 'DistanceAvailable', 'StayAvailable', 'TransitionPending', 'Distance', 'StateSince', 'ZoneSince', 'StayDuration'];
@@ -46,6 +47,8 @@ class iCloudPresence extends IPSModuleStrict
             parent::Create();
             $this->RegisterStatusWidget();
             $this->RegisterPropertyBoolean('Enabled', true);
+            $this->RegisterPropertyInteger('AddressSource', 0);
+            $this->RegisterAttributeString('MemberAddresses', '{}');
             $this->RegisterPropertyString('DeviceID', ''); // Legacy migration only; not shown in the form.
             $this->RegisterPropertyString('Devices', '[]');
             $this->RegisterPropertyString('Zones', '[]');
@@ -430,6 +433,7 @@ class iCloudPresence extends IPSModuleStrict
             $members = [];
         }
         $names = $this->readState('MemberNames');
+        $addresses = $this->readState('MemberAddresses');
         $pictures = [];
         $configured = json_decode($this->ReadPropertyString('Devices'), true);
         foreach (is_array($configured) ? $configured : [] as $row) {
@@ -447,6 +451,9 @@ class iCloudPresence extends IPSModuleStrict
             $read = fn (string $field): mixed => $this->GetValue($this->GetDeviceVariableIdent($id, $field));
             $presence = $read('Presence');
             $pending = $read('TransitionPending');
+            $address = $presence === 0 && !$pending && $read('ZoneID') === '' && $this->ReadPropertyInteger('AddressSource') > 0
+                ? ($addresses[$id] ?? '') : '';
+            $zoneText = $read('Zone') . ($address !== '' ? ' · ' . $address : '');
             $details = [];
             if ($read('DistanceAvailable')) {
                 $distanceIdent = $this->GetDeviceVariableIdent($id, 'Distance');
@@ -456,8 +463,8 @@ class iCloudPresence extends IPSModuleStrict
                 $details[] = $this->Translate('Stay') . ': ' . $this->PresenceFormattedValue($this->GetDeviceVariableIdent($id, 'StayDuration'));
             }
             $rows[] = ['id' => substr(hash('sha256', $id), 0, 32), 'name' => $name !== '' ? $name : ($names[$id] ?? $this->Translate('Device')),
-                'status'    => ($presence === -1 ? $labels[$presence] : $labels[$presence] . ' · ' . $read('Zone')) . ($pending ? ' · ' . $this->Translate('Change awaiting confirmation') : ''), 'tone' => $tones[$presence],
-                'zone'      => $presence === -1 ? $labels[-1] : $read('Zone'),
+                'status'    => ($presence === -1 ? $labels[$presence] : $labels[$presence] . ' · ' . $zoneText) . ($pending ? ' · ' . $this->Translate('Change awaiting confirmation') : ''), 'tone' => $tones[$presence],
+                'zone'      => $presence === -1 ? $labels[-1] : $zoneText,
                 'detail'    => implode(' · ', $details), 'reason' => $presence === -1 || $pending ? $read('Reason') : '',
                 'image'     => $pictures[$id] ?? ''];
         }
@@ -532,6 +539,7 @@ class iCloudPresence extends IPSModuleStrict
         $pending = 0;
         $missing = 0;
         $zoneNames = array_column($zones, 'name', 'id');
+        $addresses = [];
         $index = 0;
         foreach ($members as $id => $label) {
             $id = (string) $id;
@@ -551,6 +559,9 @@ class iCloudPresence extends IPSModuleStrict
                 'accuracy'                           => $location['horizontalAccuracy'] ?? null, 'timestamp' => $location['timestamp'] ?? null,
                 'isOld'                              => $location['isOld'] ?? false, 'isInaccurate' => $location['isInaccurate'] ?? false] : null;
             $result = $this->EvaluateGeofence($zones, $reference, $fix, is_array($states[$id] ?? null) ? $states[$id] : [], $this->PresenceNow(), $settings);
+            if ($result['zone'] === '' && !$result['pending'] && $result['reason'] === 'valid' && is_array($location)) {
+                $addresses[$id] = $this->readPresenceAddress((string) $id, (float) $location['latitude'], (float) $location['longitude']);
+            }
             $this->CloudDebugProblem($result['reason'], __FUNCTION__, __LINE__, ['GerätInAuswahlliste' => $index, 'Anwesenheit' => $result['presence'], 'WechselWartet' => $result['pending']]);
             $states[$id] = $result['state'];
             $values = ['Presence'   => $result['presence'], 'ZoneID' => $result['zone'] ?? '',
@@ -566,6 +577,7 @@ class iCloudPresence extends IPSModuleStrict
             $presence[] = $result['presence'];
             $pending += (int) $result['pending'];
         }
+        $this->writeState('MemberAddresses', $addresses);
         $this->writeState('MemberStates', array_intersect_key($states, $members));
         $this->writeState('MemberNames', array_intersect_key($names, $members));
         $this->publishPresenceSummary($presence, $pending, true, $missing > 0 ? 'Some selected devices are missing from the account cache.' : ($pending > 0 ? 'One or more zone changes await another newer Apple location.' : 'Shared zones evaluated.'));
@@ -575,6 +587,7 @@ class iCloudPresence extends IPSModuleStrict
 
     private function unavailable(array $members, string $message, int $status): void
     {
+        $this->WriteAttributeString('MemberAddresses', '{}');
         $this->CloudDebugProblem($message, __FUNCTION__, __LINE__);
         $this->CloudDebugTimer('Evaluate', $status === 202 || $status === 203 ? 15000 : 0, __FUNCTION__, __LINE__);
         $states = $this->readState('MemberStates');
@@ -586,6 +599,28 @@ class iCloudPresence extends IPSModuleStrict
         $this->publishPresenceSummary(array_fill(0, count($members), -1), 0, false, $message);
         $this->WriteAttributeString('LastError', $this->Translate($message));
         $this->CloudDebugStatus($status, __FUNCTION__, __LINE__);
+    }
+
+    /** Reads a selected map cache only; no device instance or geocoding request is needed. */
+    private function readPresenceAddress(string $deviceID, float $latitude, float $longitude): string
+    {
+        try {
+            $source = $this->ReadPropertyInteger('AddressSource');
+            if ($source <= 0 || !IPS_InstanceExists($source)) {
+                return '';
+            }
+            $instance = IPS_GetInstance($source);
+            if (($instance['ModuleInfo']['ModuleID'] ?? '') !== self::MAP_MODULE
+                || (int) $instance['ConnectionID'] !== $this->GetParentID()
+                || !IPS_GetProperty($source, 'EnableAddressResolution')) {
+                return '';
+            }
+            $this->DebugFlowEvent(__FUNCTION__, __LINE__, 'SENDEN', 'Eine Adresse wird ausschließlich aus dem ausgewählten WoIst-Cache desselben Kontos gelesen; keine neue Ortung oder Adressabfrage.', ['AdressquelleInstanz' => $source]);
+            return ICWI_GetAccountDeviceAddress($source, $this->GetParentID(), $deviceID, $latitude, $longitude);
+        } catch (Throwable) {
+            // Optional address data must never interrupt presence evaluation or disclose provider content.
+            return '';
+        }
     }
 
     private function setUnknownMember(string $id, string $reason): void

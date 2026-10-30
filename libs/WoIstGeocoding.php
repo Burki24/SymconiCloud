@@ -12,18 +12,16 @@ trait WoIstGeocoding
     {
         return $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($DeviceID, $Latitude, $Longitude): string
         {
-            $state = $this->bootstrap($this->request('GetDevices'), false)['state'];
-            if (!$state['success']) {
-                return '';
-            }
-            foreach ($state['devices'] as $device) {
-                $location = $device['location'];
-                if ($device['id'] === $DeviceID && ($device['accountAvailable'] ?? true) && $location !== null
-                    && $location['latitude'] === $Latitude && $location['longitude'] === $Longitude) {
-                    return $device['address'] === '' ? '' : ($device['addressNotice'] === '' ? '' : $device['addressNotice'] . ': ') . $device['address'];
-                }
-            }
-            return '';
+            return $this->readCachedDeviceAddress($DeviceID, $Latitude, $Longitude, 0);
+        });
+    }
+
+    /** @return string Matching cached address restricted to one explicitly identified account. */
+    public function GetAccountDeviceAddress(int $AccountID, string $DeviceID, float $Latitude, float $Longitude): string
+    {
+        return $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($AccountID, $DeviceID, $Latitude, $Longitude): string
+        {
+            return $AccountID > 0 ? $this->readCachedDeviceAddress($DeviceID, $Latitude, $Longitude, $AccountID) : '';
         });
     }
 
@@ -81,6 +79,23 @@ trait WoIstGeocoding
                 \IPS_SemaphoreLeave($lock);
             }
         });
+    }
+
+    private function readCachedDeviceAddress(string $deviceID, float $latitude, float $longitude, int $accountID): string
+    {
+        $state = $this->bootstrap($this->request('GetDevices'), false)['state'];
+        if (!$state['success']) {
+            return '';
+        }
+        foreach ($state['devices'] as $device) {
+            $location = $device['location'];
+            if (($accountID === 0 || (int) ($device['accountId'] ?? 0) === $accountID)
+                && $device['id'] === $deviceID && ($device['accountAvailable'] ?? true) && $location !== null
+                && $location['latitude'] === $latitude && $location['longitude'] === $longitude) {
+                return $device['address'] === '' ? '' : ($device['addressNotice'] === '' ? '' : $device['addressNotice'] . ': ') . $device['address'];
+            }
+        }
+        return '';
     }
 
     /** Refreshes only sibling device caches after address or source-state changes. */
