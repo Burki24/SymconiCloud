@@ -32,6 +32,7 @@ voneinander aktiviert werden; für Geräte, Karte und Anwesenheit bleiben sie au
 | `Username` | leer | Apple-Account-Anmeldename |
 | `Password` | leer | Reguläres Apple-Passwort, kein anwendungsspezifisches Passwort |
 | `RefreshInterval` | 300 | Sekunden zwischen Geräteabfragen, 60 bis 86400 |
+| `FastLocationUpdates` | false | Schnellmodus: Geräteabruf alle 60 Sekunden mit aktiver Standortanforderung |
 | `EnableContacts` | false | Lesenden Kontaktzugriff einschalten |
 | `ContactsRefreshInterval` | 3600 | Sekunden zwischen Kontaktabfragen, 900 bis 604800 |
 | `EnablePhotos` | false | Lesenden Fotozugriff einschalten |
@@ -63,6 +64,26 @@ Versuch das Konto in einer iCloud-Browsersitzung prüfen; die bestehenden
 Wartefristen und Versuchslimits gelten weiterhin.
 
 Die Sitzung bleibt nach einem Symcon-Neustart erhalten. Eine Änderung der Zugangsdaten oder das Deaktivieren löscht die lokale Sitzung und den Gerätecache. **Lokale Sitzung löschen** meldet nur diese Instanz lokal ab; der Apple-Account wird nicht gesperrt und Geräte werden nicht verändert. Erneutes Aktivieren allein startet keine Anmeldung.
+
+## Schnellere Standortupdates
+
+Für kürzere Verzögerungen **Schnellere Standortupdates (60 Sekunden, aktive
+Standortanforderung)** aktivieren und die Einstellungen übernehmen. Der Modus
+ersetzt das eingestellte Geräteintervall durch 60 Sekunden; der gespeicherte
+Intervallwert bleibt erhalten und gilt nach dem Ausschalten wieder.
+
+Bei Geräteaktualisierungen wird höchstens einmal pro Minute eine frische Position
+bei Apple angefordert. Auch manuelle Abrufe, erneutes Übernehmen und Neustarts
+setzen diese Grenze nicht zurück. Dazwischen lesen Abrufe die verfügbare
+Geräteliste ohne erneute aktive Standortanforderung. Anmeldung und Codebestätigung
+fordern keine aktive Ortung an. Eine Sitzungsverlängerung wiederholt nur den
+passiven Abruf, nicht die aktive Anforderung.
+
+Apple kann weiterhin eine ältere Position zurückgeben; eine sofortige Ortung
+ist nicht garantiert. Der Geräteakku kann stärker beansprucht werden. Pausen,
+Kontosperren und Apple-Wartefristen haben Vorrang. Die GPS-Wechselbestätigung
+der Anwesenheitsinstanzen bleibt erhalten und benötigt gegebenenfalls eine
+weitere neuere Position. Bestehende Konten bleiben standardmäßig im passiven Modus.
 
 ## Lesender Kontaktzugriff
 

@@ -41,6 +41,15 @@
             "maximum": 86400
         },
         {
+            "type": "CheckBox",
+            "name": "FastLocationUpdates",
+            "caption": "Faster location updates (60 seconds, active location request)"
+        },
+        {
+            "type": "Label",
+            "caption": "Fast mode replaces the interval above with 60 seconds and requests a fresh position at most once per minute. Apple may still return an older position. May increase device battery use. Account protection and GPS confirmation remain active."
+        },
+        {
             "type": "Label",
             "caption": "Use the account password, not an app-specific password. Save settings before signing in."
         },

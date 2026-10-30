@@ -93,13 +93,13 @@ final class AppleClient
         $this->expect($this->auth('PUT', '/verify/trusteddevice/securitycode', null), [200, 204]);
     }
 
-    /** Reads inventory without sound, lost mode, wipe, or active locate actions. */
-    public function devices(): array
+    /** Reads inventory, optionally requesting a fresh position without sound or Lost Mode. */
+    public function devices(bool $locate = false): array
     {
         if ($this->session['state'] !== 'authenticated') {
             throw new AppleException('authentication');
         }
-        $response = $this->readDevices();
+        $response = $this->readDevices($locate);
         if (in_array($response['status'], [401, 421, 450], true)) {
             // One token-based renewal only. Never restart password login in a timer.
             $this->accountLogin();
@@ -357,13 +357,13 @@ final class AppleClient
         $this->session['challengeAt'] = 0;
     }
 
-    private function readDevices(): array
+    private function readDevices(bool $locate = false): array
     {
         $url = ($this->session['findme'] ?? '') . '/fmipservice/client/web/refreshClient?' . http_build_query([
             'clientId' => $this->session['clientId'], 'dsid' => $this->session['dsid'] ?? ''
         ]);
         return $this->call('POST', $url, [], ['clientContext' => [
-            'fmly' => true, 'shouldLocate' => false, 'selectedDevice' => 'all', 'deviceListVersion' => 1
+            'fmly' => true, 'shouldLocate' => $locate, 'selectedDevice' => 'all', 'deviceListVersion' => 1
         ]]);
     }
 

@@ -35,6 +35,8 @@ class iCloudAccount extends IPSModuleStrict
             $this->RegisterPropertyString('Username', '');
             $this->RegisterPropertyString('Password', '');
             $this->RegisterPropertyInteger('RefreshInterval', 300);
+            $this->RegisterPropertyBoolean('FastLocationUpdates', false);
+            $this->RegisterAttributeInteger('LastLocationRequest', 0);
             $this->RegisterAttributeString('Session', '{}');
             $this->RegisterAttributeString('DeviceCache', '{"devices":[],"updatedAt":0}');
             $this->RegisterAttributeString('CredentialFingerprint', '');
@@ -182,7 +184,7 @@ class iCloudAccount extends IPSModuleStrict
         });
     }
 
-    /** @return bool True if a fresh read-only inventory was stored. No password login is started. */
+    /** @return bool True if inventory was stored; optional fast mode also requests a fresh position. */
     public function RefreshDevices(): bool
     {
         return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): bool
@@ -370,7 +372,16 @@ class iCloudAccount extends IPSModuleStrict
                 $state = $client->session()['state'];
             }
             if ($state === 'authenticated' && $operation !== 'resend') {
-                $devices = $client->devices();
+                $now = $this->AccountProtectionTime();
+                $lastLocationRequest = $this->ReadAttributeInteger('LastLocationRequest');
+                $locate = $operation === 'devices' && $this->ReadPropertyBoolean('FastLocationUpdates')
+                    && ($lastLocationRequest === 0 || $now - $lastLocationRequest >= 60);
+                if ($locate) {
+                    // Reserve before HTTP, including failed requests; repeated clicks and restart must not bypass this limit.
+                    $this->WriteAttributeInteger('LastLocationRequest', $now);
+                    $this->DebugFlowEvent(__FUNCTION__, __LINE__, 'AKTION', 'Eine frische Geräteposition wird bei Apple angefordert. Eine sofortige Ortung ist nicht garantiert; die GPS-Wechselbestätigung bleibt erhalten.');
+                }
+                $devices = $client->devices($locate);
                 $this->WriteAttributeString('DeviceCache', json_encode(['devices' => $devices, 'updatedAt' => time()], JSON_THROW_ON_ERROR));
                 $success = true;
             } elseif ($operation === 'resend') {
@@ -552,7 +563,8 @@ class iCloudAccount extends IPSModuleStrict
         $error = $this->ReadAttributeString('LastError');
         if ($state === 'authenticated') {
             $this->UpdateContactsTimer();
-            $seconds = max($this->ReadPropertyInteger('RefreshInterval'), $this->ReadAttributeInteger('RetryAt') - $this->AccountProtectionTime());
+            $interval = $this->ReadPropertyBoolean('FastLocationUpdates') ? 60 : $this->ReadPropertyInteger('RefreshInterval');
+            $seconds = max($interval, $this->ReadAttributeInteger('RetryAt') - $this->AccountProtectionTime());
             $this->CloudDebugTimer('Refresh', $seconds * 1000, __FUNCTION__, __LINE__);
         }
         $status = match (true) {

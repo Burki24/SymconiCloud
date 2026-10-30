@@ -153,6 +153,11 @@ schnellere Folge kann das Konto-Aktualisierungsintervall bis auf 60 Sekunden
 reduziert werden. Soll jede verlässliche Position sofort gelten, die
 Bestätigungszeit auf 0 setzen.
 
+Der optionale Kontomodus **Schnellere Standortupdates** verbindet den
+60-Sekunden-Abruf mit einer aktiven Anforderung einer frischen Apple-Position.
+Die Bestätigungszeit bleibt dabei unverändert. Auch dieser Modus kann keine
+sofortige Positionsmeldung garantieren und kann den Geräteakku stärker beanspruchen.
+
 Jede Anwesenheitsinstanz führt ihren Bestätigungsverlauf unabhängig. Wird dasselbe
 Gerät gleichzeitig in einer frisch eingerichteten Einzelinstanz und einer bereits
 laufenden Gruppe ausgewertet, kann die erste klare Position der neuen Instanz

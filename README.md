@@ -87,6 +87,11 @@ beschrieben.
 
 Das Konto aktualisiert die Geräteliste nach erfolgreicher Anmeldung standardmäßig alle 300 Sekunden. Das Öffnen von Formularen oder das Lesen von Gerätevariablen startet keine Apple-Anmeldung. Nach abgelaufener Sitzung meldet das Konto den erforderlichen Anmeldeschritt; es führt keine automatischen Passwort-Anmeldeschleifen aus.
 
+Optional verkürzt **Schnellere Standortupdates** im Konto den Geräteabruf auf
+60 Sekunden und fordert höchstens einmal pro Minute eine frische Apple-Position
+an. Kontoschutz und GPS-Wechselbestätigung bleiben erhalten; eine sofortige
+Ortung ist nicht garantiert. Der Modus kann den Geräteakku stärker beanspruchen.
+
 Die Abfrage fordert keine aktive Neuortung an. Apple kann deshalb ältere oder keine Standortdaten liefern. Gerätevariablen zeigen die Datenverfügbarkeit und den Standortzeitpunkt gesondert an. Die Geräteinstanz kann über **Handy suchen (Ton abspielen)** ausdrücklich einen Suchton-Auftrag senden. Im Formular lässt sich außerdem der [Verloren-Modus nach Bestätigung aktivieren und deaktivieren](iCloud%20Device/README.md#verloren-modus). Datenupdates lösen diese Aktionen nicht aus. Ein Löschen des Geräts wird nicht angeboten.
 
 ## Entwicklung und automatische Versionierung

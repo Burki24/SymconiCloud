@@ -21,6 +21,8 @@
             "Apple account": "Apple-Account",
             "Apple account password": "Apple-Account-Passwort",
             "Refresh interval in seconds": "Aktualisierungsintervall in Sekunden",
+            "Faster location updates (60 seconds, active location request)": "Schnellere Standortupdates (60 Sekunden, aktive Standortanforderung)",
+            "Fast mode replaces the interval above with 60 seconds and requests a fresh position at most once per minute. Apple may still return an older position. May increase device battery use. Account protection and GPS confirmation remain active.": "Der Schnellmodus ersetzt das obige Intervall durch 60 Sekunden und fordert höchstens einmal pro Minute eine frische Position an. Apple kann weiterhin eine ältere Position liefern. Kann den Geräteakku stärker beanspruchen. Kontoschutz und GPS-Wechselbestätigung bleiben aktiv.",
             "Use the account password, not an app-specific password. Save settings before signing in.": "Das reguläre Account-Passwort verwenden, kein anwendungsspezifisches Passwort. Einstellungen vor der Anmeldung speichern.",
             "Session state": "Sitzungsstatus",
             "Sign in": "Anmelden",

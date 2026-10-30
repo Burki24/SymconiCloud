@@ -69,6 +69,12 @@
 
 ## Fixes
 
+- **iCloud Konto** bietet einen optionalen Schnellmodus mit 60-Sekunden-Abruf
+  und aktiver Standortanforderung höchstens einmal pro Minute. Wiederholte
+  manuelle Abrufe und Neustarts umgehen diese Grenze nicht. Apple-Wartefristen,
+  Kontoschutz und GPS-Wechselbestätigung bleiben erhalten. Bestehende Konten
+  behalten ihren bisherigen Modus; eine sofortige Ortung ist nicht garantiert.
+
 - **Gerätekonfigurator** zeigt vorhandene Anwesenheitsgruppen nicht mehr allein
   wegen ihrer Auflistung rot an. Geräteauswahl und Zonen bleiben unverändert;
   tatsächliche Konfigurations- und Kontoprobleme werden weiterhin erklärt.
