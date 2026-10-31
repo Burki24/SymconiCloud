@@ -1,5 +1,41 @@
 # Entwicklungsstand
 
+## Upgrade vor ApplyChanges und sichtbarer Genauigkeitsnullwert (2026-10-31)
+
+Die Nachprüfung von c4a77ab zeigte zwei Restlücken: Eine bestehende Geräteinstanz
+ohne AccuracyAvailable konnte vor dem manuellen ApplyChanges bei Update oder
+ReceiveData abbrechen; die Kachel blendete einen bekannten Radius 0 weiterhin aus.
+Beide Fälle wurden zuerst mit fehlschlagenden Regressionen reproduziert.
+
+Der bereits bestehende interne Snapshotpfad initialisiert die neue Variable
+jetzt vor jedem möglichen Zugriff idempotent, auch bei fehlerhaften Nachrichten
+und nicht verfügbaren Kontodaten. Vorhandene Idents werden nur geprüft, nicht
+erneut registriert; Darstellung und Benutzermetadaten bleiben bei Cacheupdates
+unverändert. Die unveränderte angehängte Position ist 29, nach PlaySound (28).
+Es gibt keine neue öffentliche Methode und keinen zusätzlichen Kontozugriff.
+Vorhandene zentrale Darstellungs-Helper und das zentrale DebugFlow bleiben
+unverändert; die iCloud-spezifische Initialisierung bleibt librarylokal.
+
+Die Kachel zeigt endliche nicht negative numerische Genauigkeit einschließlich
+0 m. Null, negative Werte und Zahlenstrings werden nicht als bekannte Genauigkeit
+angezeigt. Tests prüfen Update, gültige/ungültige ReceiveData, nicht verfügbare
+Daten, erneutes ApplyChanges, Metadaten-/Darstellungserhalt und die lokalen
+Kontobefehle. Der Node-Test prüft 0, null, negative Werte, Strings und positive
+Radien über die echte Renderingfunktion sowie unveränderte Aktionsanzahl.
+
+Offene Praxisnachweise: Kein echter Symcon-9.0-Reload mit eintreffendem Kontopush
+vor ApplyChanges wurde ausgeführt. Die Nullwertanzeige und Mausrad-/Scrollbedienung
+sind nicht erneut im echten Kachelhost abgenommen; die vorhandenen synthetischen
+UI-Verträge ersetzen diese Abnahme nicht. Keine Apple-Anfrage, Live-Installation,
+Versionsanhebung oder Änderungen an Helper-/Vendor-Dateien.
+
+Abschlussprüfung unter PHP 8.5.10: vollständige Offline-Suite erfolgreich, GD
+nur über eine anschließend entfernte temporäre Testkonfiguration aktiviert.
+Struktur-/Helperhashprüfung, offizieller StylePHP-JSON-Check, php-cs-fixer im
+Prüfmodus, unveränderte öffentliche Signaturen, UTF-8/LF und git diff --check
+bestanden. Die gezielten Upgrade- und UI-Tests waren vor der Korrektur rot und
+sind danach grün; auch die bestehenden Standort-/Historienverträge bestehen.
+
 ## Datenqualität und ergänzte zentrale Standards (2026-10-31)
 
 Die öffentliche Cacheform und bestehende Variablentypen bleiben erhalten:

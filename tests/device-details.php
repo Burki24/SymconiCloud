@@ -208,6 +208,50 @@ $legacyObjects = [];
 foreach (IPS_GetChildrenIDs($qualityDevice) as $objectID) {
     $legacyObjects[$objectID] = IPS_GetObject($objectID);
 }
+// A reload can receive data before the user next applies the instance configuration.
+foreach (['update', 'receive', 'unavailable', 'malformed'] as $entry) {
+    $flagID = @IPS_GetObjectIDByIdent('AccuracyAvailable', $qualityDevice);
+    if ($flagID !== false) {
+        IPS_DeleteVariable($flagID);
+    }
+    $firstBoundary->commands = [];
+    set_error_handler(static function (int $severity, string $message): never
+    {
+        throw new ErrorException($message, 0, $severity);
+    });
+    try {
+        if ($entry === 'update') {
+            $check($quality->Update(), 'An old instance must support Update before ApplyChanges.');
+        } elseif ($entry === 'malformed') {
+            $quality->ReceiveData('{invalid');
+        } else {
+            $notification = $firstBoundary->result;
+            if ($entry === 'unavailable') {
+                $notification['success'] = false;
+            }
+            $quality->ReceiveData(json_encode(['DataID' => '{FCE7780F-9520-4E52-92F3-60034FFAED6D}'] + $notification, JSON_THROW_ON_ERROR));
+        }
+    } finally {
+        restore_error_handler();
+    }
+    $check($value($qualityDevice, 'AccuracyAvailable') === in_array($entry, ['update', 'receive'], true), 'Early entry must initialize accurate availability without ApplyChanges.');
+    $check($firstBoundary->commands === ($entry === 'update' ? ['GetDevices'] : []), 'Upgrade initialization must not add network or data-flow requests.');
+    foreach ($legacyObjects as $objectID => $object) {
+        $check(IPS_GetObject($objectID) === $object, 'Early initialization must preserve all pre-existing object metadata.');
+    }
+}
+$flagID = IPS_GetObjectIDByIdent('AccuracyAvailable', $qualityDevice);
+IPS_SetName($flagID, 'User accuracy availability');
+IPS_SetIcon($flagID, 'Star');
+$customPresentation = IPS_GetVariablePresentation($flagID);
+$customPresentation['ICON'] = 'Star';
+IPS_SetVariableCustomPresentation($flagID, $customPresentation);
+$flagObject = IPS_GetObject($flagID);
+$flagPresentation = IPS_GetVariablePresentation($flagID);
+$quality->Update();
+$firstBoundary->broadcast();
+$check(IPS_GetObject($flagID) === $flagObject && IPS_GetVariablePresentation($flagID) === $flagPresentation, 'Repeated upgrade checks must preserve metadata and the existing availability presentation.');
+$check(!HasAction($flagID) && $flagObject['ObjectPosition'] === 29, 'Availability remains a read-only Boolean in its existing appended position.');
 IPS_ApplyChanges($qualityDevice);
 foreach ($legacyObjects as $objectID => $object) {
     $check(IPS_GetObject($objectID) === $object, 'Adding availability to an old installation must preserve IDs, positions, names and icons.');

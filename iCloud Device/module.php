@@ -22,6 +22,8 @@ class iCloudDevice extends IPSModuleStrict
     private const REQUEST_DATA = '{1E60F0BE-03E4-4AA4-A1CE-AA838725A4E2}';
     private const NOTIFICATION_DATA = '{FCE7780F-9520-4E52-92F3-60034FFAED6D}';
     private const MAP_MODULE = '{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}';
+    // The availability flag was appended after the existing action at position 28.
+    private const ACCURACY_POSITION = 29;
     private const OPTIONAL_FLAGS = [
         'LowPowerMode'     => 'lowPowerMode', 'LocationEnabled' => 'locationEnabled',
         'LocationCapable'  => 'locationCapable', 'IsLocating' => 'isLocating',
@@ -386,7 +388,21 @@ class iCloudDevice extends IPSModuleStrict
         $this->CloudDebugWrite('PlaySound', 0, __FUNCTION__, __LINE__);
         $this->EnableAction('PlaySound');
         // Append the new read-only flag without moving or replacing existing variables.
-        $this->RegisterVariableBoolean('AccuracyAvailable', $this->Translate('AccuracyAvailable'), $this->BooleanPresentation($this->Translate('Yes'), $this->Translate('No')), $position);
+        $this->registerAccuracyAvailability();
+    }
+
+    /** Idempotent upgrade initialization, also safe before the first ApplyChanges. */
+    private function registerAccuracyAvailability(): void
+    {
+        try {
+            $variableID = @$this->GetIDForIdent('AccuracyAvailable');
+            if (is_int($variableID) && $variableID > 0 && IPS_VariableExists($variableID)) {
+                return;
+            }
+        } catch (Throwable) {
+            // A missing ident is expected on an installation created by the previous version.
+        }
+        $this->RegisterVariableBoolean('AccuracyAvailable', $this->Translate('AccuracyAvailable'), $this->BooleanPresentation($this->Translate('Yes'), $this->Translate('No')), self::ACCURACY_POSITION);
     }
 
     /** Missing optional fields are unknown, never a retained or inferred false. */

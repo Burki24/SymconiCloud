@@ -41,6 +41,8 @@ trait DeviceWidget
     /** Retains one location with its matching address, never a fabricated default position. */
     protected function RememberDeviceLocation(): void
     {
+        // Account pushes and explicit cache reads may arrive before ApplyChanges after an update.
+        $this->registerAccuracyAvailability();
         if (!$this->GetValue('LocationAvailable') && !($this->ReadAttributeString('WidgetLocation') === 'null' && $this->GetValue('LocationTimestamp') > 0)) {
             return;
         }

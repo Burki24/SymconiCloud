@@ -35,6 +35,13 @@ function harness() {
     assert.deepEqual(h.commands, [['GetState', '']], 'Opening the card only requests local state.');
     assert.equal(h.nodes['location-value'].textContent, '0.000000, 0.000000');
     assert.equal(h.nodes['location-warning'].hidden, true);
+    const quality = structuredClone(sample);
+    for (const [accuracy, caption] of [[0, 'Accuracy: 0 m'], [null, ''], [-1, ''], ['0', ''], [12.5, 'Accuracy: 13 m']]) {
+        quality.state.location.accuracy = accuracy;
+        h.window.handleMessage(quality);
+        assert.equal(h.nodes['location-accuracy'].textContent, caption, 'Only known finite non-negative numeric accuracy is displayed, including zero.');
+    }
+    assert.deepEqual(h.commands, [['GetState', '']], 'Quality display updates never trigger actions.');
     content.scrollTop = 90; content.scrollLeft = 4;
     const next = structuredClone(sample);
     next.state.location.address = '<img src=x onerror=alert(1)>Example street';

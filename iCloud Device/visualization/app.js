@@ -29,7 +29,7 @@
         const timestamp = location && Number(location.timestamp);
         const date = timestamp > 0 ? new Date(timestamp * 1000) : null;
         text('location-time', location ? date && Number.isFinite(date.getTime()) ? tr('LocationTimestamp') + ': ' + date.toLocaleString() : tr('Location time unknown.') : '');
-        text('location-accuracy', location && location.accuracy > 0 ? tr('Accuracy') + ': ' + Math.round(location.accuracy) + ' m' : '');
+        text('location-accuracy', location && Number.isFinite(location.accuracy) && location.accuracy >= 0 ? tr('Accuracy') + ': ' + Math.round(location.accuracy) + ' m' : '');
         text('location-warning', location && (!state.locationAvailable || state.locationOld || !date || Date.now() / 1000 - timestamp > 900) ? tr('Location is old or currently unavailable.') : '');
         text('device-error', state.error || '');
         text('sound-result', state.result || '');

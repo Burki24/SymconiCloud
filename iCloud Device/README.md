@@ -385,6 +385,10 @@ historischer Zahlenwert erhalten; ohne `AccuracyAvailable` darf er nicht der
 aktuellen Position zugeordnet werden. Bei Kontofehlern, Gerätewechsel oder
 fehlender Position ist die Verfügbarkeit falsch. Die Gerätekachel übernimmt
 unbekannte Genauigkeit als `null` und zeigt keinen erfundenen Genauigkeitswert.
+Ein bekannter Wert `0 m` wird ausdrücklich angezeigt. Bei älteren Installationen
+wird die neue Verfügbarkeitsvariable auch durch das erste Cacheupdate oder eine
+Kontobenachrichtigung vor dem manuellen Übernehmen angelegt. Bestehende
+Variablen werden dabei weder neu angelegt noch umbenannt.
 
 `location.isOld` im Kontocache und `LocationIsOld` bleiben Boolean. Nur Apples
 explizites `false` gilt als nicht alt; fehlende oder ungültige Kennzeichnungen

@@ -2,6 +2,11 @@
 
 ## Fixes
 
+- **iCloud Gerät:** Cacheupdates und Kontobenachrichtigungen initialisieren die
+  Genauigkeitsverfügbarkeit bei älteren Installationen auch vor dem ersten
+  Übernehmen der Instanzkonfiguration. Bestehende Variablen bleiben erhalten.
+  Die Gerätekachel zeigt einen bekannten Genauigkeitsradius von `0 m` an;
+  unbekannte Genauigkeit bleibt ausgeblendet.
 - **iCloud Gerät:** Fehlende Standortgenauigkeit wird nicht mehr als `0 m`
   gespeichert. Die neue lesende Variable **Genauigkeit verfügbar**
   (`AccuracyAvailable`) unterscheidet einen bekannten Radius vom erhaltenen
