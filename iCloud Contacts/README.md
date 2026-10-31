@@ -158,6 +158,53 @@ Das Modul verwendet Apples Web-Endpunkte. Änderungen bei Apple können den
 Zugriff beeinträchtigen. Telefonnummern und E-Mail-Adressen sind vertrauliche
 Daten; die Lesefunktionen nur vertrauenswürdigen Skripten bereitstellen.
 
+## Technische Konfiguration und Skriptbeispiel
+
+Die Kontoverbindung ist keine Property. Suche und aktuelle Formularseite sind
+flüchtiger Anzeigezustand. Die gespeicherten Empfängerfelder sind Vorgaben für
+die Vorschau; `IPS_ApplyChanges` führt keine Übernahme aus.
+
+| Formularfeld | Property | Typ | Standard | Bedeutung |
+| --- | --- | --- | --- | --- |
+| Zielinstanz | `TransferTargetID` | int | `0` | Installierte unterstützte Mitteilungen-/Benachrichtigungsinstanz |
+| Quellkontakt | `TransferContactID` | string | `''` | Exakte Kennung aus `contacts[].id`, nicht der Name |
+| Zu übernehmende Telefonnummer | `TransferPhone` | string | `''` | Wert aus `phones[].value`; leer übernimmt dieses Feld nicht |
+| Zu übernehmende E-Mail-Adresse | `TransferEmail` | string | `''` | Wert aus `emails[].value`; leer übernimmt dieses Feld nicht |
+| Notice-Benutzerkürzel (vorhanden oder neu) | `TransferUserID` | string | `''` | Für Mitteilungen: 1–64 Buchstaben/Ziffern |
+| Benachrichtigungsstufe (ab 1) | `TransferLevel` | int | `1` | Bei Benachrichtigung die vorhandene Stufe, ab 1 gezählt |
+| Versandaktion in der Stufe (ab 1) | `TransferAction` | int | `1` | Vorhandene Aktion innerhalb dieser Stufe, ab 1 gezählt |
+
+```php
+$instanceID = 12345; // Durch die eigene Kontakte-Instanz ersetzen.
+$offset = 0;
+do {
+    $result = json_decode(ICCT_GetContacts($instanceID, '', $offset, 100), true, 512, JSON_THROW_ON_ERROR);
+    if (!$result['success'] || $result['stale'] || $result['paused']) {
+        break; // Nicht als aktuelles Empfängerverzeichnis verwenden.
+    }
+    foreach ($result['contacts'] as $contact) {
+        // $contact['id'] ist die kontogebundene Kennung für ICCT_GetContact.
+    }
+    $offset = $result['nextOffset']; // Seiten können wegen der Bytegrenze kürzer sein.
+} while ($offset !== null);
+```
+
+`GetContacts` und `GetContact` liefern JSON-Strings. Parametergrenzen werden
+auch bei nicht verfügbarem Konto geprüft; ungültige Parameter werden abgewiesen.
+`contact=null` kann einen unbekannten Kontakt bezeichnen; zuerst den
+Rückgabestatus prüfen. `Refresh=true` bestätigt einen neuen vollständigen
+Kontocache, `Reload=true` nur eine verfügbare lokale Formularseite. Suche und
+Seitenwechsel liefern `void`, keinen Abrufnachweis. `PreviewRecipientTransfer`
+erwartet mindestens eines der ausgewählten, noch vorhandenen Adressfelder.
+Bei Benachrichtigung müssen Stufe und Aktion existieren; bei Mitteilungen wird
+das Benutzerkürzel benötigt. `true` bestätigt nur eine fertige Vorschau.
+`ApplyRecipientTransfer(true)` darf erst nach menschlicher Prüfung genau dieser
+Vorschau aufgerufen werden. `false` bestätigt keine Übernahme; Vorschauablauf,
+Konflikte, Pause und Schreibfehler können die Anwendung verhindern. Der
+Rückgabestatus wird durch `GetRecipientTransferPreview` erläutert. Es wird nie
+Versand ausgelöst. Das Modul bietet ein Konsolenverzeichnis, keine eigene
+Kachel-, IPSView- oder WebFront-Kontaktansicht.
+
 ## Lizenz
 
 PolyForm Noncommercial License 1.0.0; siehe [LICENSE](../LICENSE).

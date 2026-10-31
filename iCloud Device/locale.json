@@ -62,6 +62,7 @@
             "Latitude": "Breitengrad",
             "Longitude": "Längengrad",
             "Accuracy": "Genauigkeit",
+            "AccuracyAvailable": "Genauigkeit verfügbar",
             "LocationTimestamp": "Standortzeit",
             "LastUpdate": "Letzter erfolgreicher Geräteabruf",
             "Yes": "Ja",

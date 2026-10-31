@@ -24,21 +24,21 @@ voneinander aktiviert werden; für Geräte, Karte und Anwesenheit bleiben sie au
 
 ## Konfiguration
 
-| Eigenschaft | Standard | Bedeutung |
-| --- | --- | --- |
-| `Enabled` | false | Konto und regelmäßige Geräteabfrage aktivieren |
-| `PauseRequests` | false | Alle Apple-Anfragen pausieren, Sitzung und vorhandene Caches erhalten |
-| `AllowAuthentication` | true | Neue Anmeldungen, Code-Prüfungen und Code-Anforderungen auf diesem System erlauben; bestehende Sitzungen werden auch bei false weiterverwendet |
-| `Username` | leer | Apple-Account-Anmeldename |
-| `Password` | leer | Reguläres Apple-Passwort, kein anwendungsspezifisches Passwort |
-| `RefreshInterval` | 300 | Sekunden zwischen Geräteabfragen, 60 bis 86400 |
-| `FastLocationUpdates` | false | Schnellmodus: Geräteabruf alle 60 Sekunden mit aktiver Standortanforderung |
-| `EnableContacts` | false | Lesenden Kontaktzugriff einschalten |
-| `ContactsRefreshInterval` | 3600 | Sekunden zwischen Kontaktabfragen, 900 bis 604800 |
-| `EnablePhotos` | false | Lesenden Fotozugriff einschalten |
-| `PhotoCacheProfile` | `compact` | Ressourcenprofil: Kompakt, Standard, Groß oder Eigene Grenzen; siehe Fotoanleitung |
-| `PhotoCacheImages` | 50 | Eigene maximale Bildanzahl, nur beim Profil Eigene Grenzen wirksam |
-| `PhotoCacheMiB` | 100 | Eigenes Bilddateibudget in MiB, nur beim Profil Eigene Grenzen wirksam |
+| Formularfeld | Property | Typ | Standard | Bedeutung |
+| --- | --- | --- | --- | --- |
+| Konto aktivieren | `Enabled` | bool | false | Konto und regelmäßige Geräteabfrage aktivieren |
+| Apple-Abfragen pausieren (Sitzung erhalten) | `PauseRequests` | bool | false | Alle Apple-Anfragen pausieren, Sitzung und vorhandene Caches erhalten |
+| Neue Anmeldungen und Bestätigungen auf diesem System erlauben | `AllowAuthentication` | bool | true | Neue Anmeldungen, Code-Prüfungen und Code-Anforderungen auf diesem System erlauben; bestehende Sitzungen werden auch bei false weiterverwendet |
+| Apple-Account | `Username` | string | leer | Apple-Account-Anmeldename |
+| Apple-Account-Passwort | `Password` | string | leer | Reguläres Apple-Passwort, kein anwendungsspezifisches Passwort |
+| Aktualisierungsintervall in Sekunden | `RefreshInterval` | int | 300 | Sekunden zwischen Geräteabfragen, 60 bis 86400 |
+| Schnellere Standortupdates (60 Sekunden, aktive Standortanforderung) | `FastLocationUpdates` | bool | false | Schnellmodus: Geräteabruf alle 60 Sekunden mit aktiver Standortanforderung |
+| Lesenden Kontaktzugriff aktivieren | `EnableContacts` | bool | false | Lesenden Kontaktzugriff einschalten |
+| Kontakt-Aktualisierungsintervall in Sekunden | `ContactsRefreshInterval` | int | 3600 | Sekunden zwischen Kontaktabfragen, 900 bis 604800 |
+| Lesenden Fotozugriff aktivieren | `EnablePhotos` | bool | false | Lesenden Fotozugriff einschalten |
+| Ressourcenprofil für Fotos | `PhotoCacheProfile` | string | `compact` | Ressourcenprofil: Kompakt, Standard, Groß oder Eigene Grenzen; siehe Fotoanleitung |
+| Eigene maximale Bildanzahl im Cache | `PhotoCacheImages` | int | 50 | Eigene maximale Bildanzahl, nur beim Profil Eigene Grenzen wirksam |
+| Eigener Festplatten-Cache in MiB | `PhotoCacheMiB` | int | 100 | Eigenes Bilddateibudget in MiB, nur beim Profil Eigene Grenzen wirksam |
 
 Einstellungen speichern, **Anmelden** wählen und den sechsstelligen Code des vertrauenswürdigen Gerätes bestätigen. **Neuen Code anfordern** sendet eine neue Anfrage für die laufende Bestätigung. Nach zehn Minuten ist eine neue Anmeldung erforderlich. Alternative Verfahren mit SMS oder Hardware-Sicherheitsschlüsseln sind nicht enthalten.
 
@@ -329,6 +329,48 @@ beschreibt Einrichtung, Apple-Freigaben, Datenschutz und Cachegrenzen.
 Zugriffsstatus und Cacheauslastung. Zugangsdaten und signierte Bildadressen
 werden nicht ausgegeben. Abmelden, deaktivierter Fotozugriff und geänderte
 Zugangsdaten entfernen auch lokale Fotodaten.
+
+## Skriptverwendung und Rückgaben
+
+Die Instanz-ID bezeichnet das **Konto**, nicht eines seiner Geräte. Die
+Gerätekennung stammt aus `devices[].id` von `ICAC_GetDevices`; Namen und
+Seriennummern sind kein Ersatz. `GetDevices` liest nur den Cache. `success=true`
+bestätigt dessen Verfügbarkeit, nicht eine neue Ortung. `updatedAt` ist die
+Abrufzeit; die Position hat ihren eigenen Zeitpunkt. Leere Gerätelisten sind
+zulässig. Umfangreiche Daten werden vollständig bis zur Transportgrenze von
+4 MiB für die Apple-Antwort eingelesen; es gibt hier keine Seitenparameter.
+Diese Grenze ist eine Library-Regel, keine behauptete Symcon-Rückgabegrenze.
+
+```php
+$instanceID = 12345; // Durch die eigene Konto-Instanz ersetzen.
+IPS_SetProperty($instanceID, 'PauseRequests', true);
+IPS_ApplyChanges($instanceID); // Pausiert Anfragen, löscht aber keine Sitzung.
+$result = json_decode(ICAC_GetDevices($instanceID), true, 512, JSON_THROW_ON_ERROR);
+if (!$result['success']) {
+    echo 'Kein verwendbarer Gerätecachestand vorhanden.';
+}
+```
+
+`Login`, `LoginFromForm`, `VerifyCode`, `ResendCode` und `RefreshDevices` können
+Apple anfragen. `false` umfasst abgelehnte oder noch unvollständige Vorgänge,
+Kontoschutz, ungültige Konfiguration und Transportfehler. `VerifyCode` erwartet
+sechs Ziffern als String einschließlich führender Nullen; der Code stammt vom
+vertrauenswürdigen Gerät. `ResendCode=true` bestätigt die erfolgreiche
+Anforderung, nicht den Empfang. Die Freigabe `ConfirmedRecovery=true` darf nur
+nach menschlicher Kontoprüfung gesetzt werden. `ResumeAccountRequests` hebt nur
+die lokale Sperre auf; `void` bestätigt weder Anmeldung noch Erreichbarkeit.
+
+Für `PhotoCacheProfile` gelten `compact`, `standard`, `large` und `custom`.
+Bei `custom` sind 1–100000 Bilder und 1–65536 MiB zulässig.
+Die konkreten Profilgrenzen beschreibt die Fotoanleitung. Bei Kontaktabfragen gelten
+Suchtext bis 256 Bytes, Offset 0–10000 und Limit 1–100 (Vorgabe 100).
+`GetContact` erwartet eine nicht leere Cachekennung bis 1024 Bytes.
+Ungültige Abfrageparameter werden abgewiesen. Kontakt-Rückgaben können trotz
+`success=true` veraltet sein: zusätzlich `stale`, `paused`, `error` und
+`updatedAt` auswerten. `RefreshContacts=true` bestätigt einen vollständig
+ersetzten Kontaktcache. `RefreshPhotoAlbums=true` bestätigt einen geladenen
+Albumkatalog, keine geladenen Bilddateien. `GetPhotoAlbums` liefert JSON mit
+Zugriffsstatus; `success=false` ist kein Beweis für eine leere Fotobibliothek.
 
 ## Lizenz
 

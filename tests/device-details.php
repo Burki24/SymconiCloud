@@ -133,4 +133,88 @@ foreach (array_merge(array_keys($flags), ['LocationIsInaccurate', 'LocationFinis
     $check($value($freshDevice, $ident) === -1, 'A new unconfigured instance must start unknown.');
 }
 $check($value($freshDevice, 'ModelIdentifier') === 'Not available', 'New instance must not show a blank or retained model.');
-echo "Optional device details, tri-state availability and lifecycle contracts passed.\n";
+// A missing metric must not turn into a precise zero. The numeric variable remains compatible.
+$firstBoundary->result = $envelope;
+$firstBoundary->result['devices'] = [$syntheticDevice];
+$qualityDevice = $createDevice($firstAccount);
+$quality = IPS\InstanceManager::getInstanceInterface($qualityDevice);
+$knownAccuracy = $value($qualityDevice, 'Accuracy');
+foreach ([null, -1, 'invalid', false] as $unknownAccuracy) {
+    $input = $raw;
+    $input['location']['horizontalAccuracy'] = $unknownAccuracy;
+    $check($normalize($input)['location']['horizontalAccuracy'] === null, 'Unknown or invalid raw accuracy must remain null at the account boundary.');
+    $firstBoundary->result['devices'][0]['location']['horizontalAccuracy'] = $unknownAccuracy;
+    $quality->Update();
+    $check($value($qualityDevice, 'AccuracyAvailable') === false && $value($qualityDevice, 'Accuracy') === $knownAccuracy, 'Unavailable accuracy must preserve history with an explicit availability flag.');
+    $check($value($qualityDevice, 'LocationAvailable'), 'Missing accuracy must not discard valid coordinates.');
+    $snapshot = json_decode($quality->GetPersistence()['attributes']['WidgetLocation'], true, 512, JSON_THROW_ON_ERROR);
+    $check($snapshot['accuracy'] === null, 'The widget must not associate historical accuracy with a new position.');
+}
+unset($input['location']['horizontalAccuracy']);
+$check($normalize($input)['location']['horizontalAccuracy'] === null, 'An absent accuracy field is unknown, not zero.');
+foreach ([0.0, 25.5] as $knownAccuracy) {
+    $firstBoundary->result['devices'][0]['location']['horizontalAccuracy'] = $knownAccuracy;
+    $quality->Update();
+    $check($value($qualityDevice, 'AccuracyAvailable') && $value($qualityDevice, 'Accuracy') === $knownAccuracy, 'Valid zero and recovered accuracy must remain available.');
+}
+$firstBoundary->result['devices'][0]['location'] = null;
+$quality->Update();
+$check(!$value($qualityDevice, 'AccuracyAvailable') && $value($qualityDevice, 'Accuracy') === 25.5, 'Losing GPS clears availability while retaining the numeric history.');
+$firstBoundary->result['devices'] = [$syntheticDevice];
+foreach ([null, 'false', 0, 1, [], true, false] as $oldFlag) {
+    $input = $raw;
+    $input['location']['isOld'] = $oldFlag;
+    $normalizedQuality = $normalize($input);
+    $expectedOld = !is_bool($oldFlag) || $oldFlag;
+    $check($normalizedQuality['location']['isOld'] === $expectedOld, 'Only explicit false may mark an Apple location as not old.');
+    // Old/malformed normalized caches receive the same defensive interpretation in the child.
+    $firstBoundary->result['devices'][0]['location']['isOld'] = $oldFlag;
+    $quality->Update();
+    $check($value($qualityDevice, 'LocationIsOld') === $expectedOld, 'Legacy cache age flags must be interpreted conservatively.');
+}
+unset($input['location']['isOld']);
+$check($normalize($input)['location']['isOld'], 'Absent Apple age flags must not imply freshness.');
+unset($firstBoundary->result['devices'][0]['location']['isOld']);
+$quality->Update();
+$check($value($qualityDevice, 'LocationIsOld'), 'Absent cache age flags must not imply freshness.');
+
+$unitVectors = json_decode(file_get_contents(__DIR__ . '/fixtures/device-units.json'), true, 512, JSON_THROW_ON_ERROR);
+foreach ($unitVectors['cases'] as $vector) {
+    $normalizedUnits = $normalize($vector['raw']);
+    $check($normalizedUnits['location']['timestamp'] === $vector['expected']['timestamp'], 'Independent millisecond vectors must produce full Unix seconds.');
+    $check($normalizedUnits['location']['latitude'] === (float) $vector['raw']['location']['latitude'] && $normalizedUnits['location']['longitude'] === (float) $vector['raw']['location']['longitude'], 'Degree coordinates must not be scaled or lose valid zero.');
+    $normalizedUnits['id'] = 'synthetic-device';
+    $firstBoundary->result['devices'] = [$normalizedUnits];
+    $quality->Update();
+    $check($value($qualityDevice, 'BatteryLevel') === (float) $vector['expected']['batteryPercent'], 'Hand-calculated fraction-to-percent vectors must reach the device.');
+    $check($value($qualityDevice, 'AccuracyAvailable') && $value($qualityDevice, 'Accuracy') === (float) $vector['expected']['accuracyMetres'], 'Metre vectors must reach the device without scaling.');
+}
+
+// Protect user-owned labels/icons across ApplyChanges and incoming cache updates.
+$objectIDs = IPS_GetChildrenIDs($qualityDevice);
+foreach ($objectIDs as $objectID) {
+    IPS_SetName($objectID, 'User label ' . $objectID);
+    IPS_SetIcon($objectID, 'Star');
+}
+IPS_ApplyChanges($qualityDevice);
+$firstBoundary->broadcast();
+$check(IPS_GetChildrenIDs($qualityDevice) === $objectIDs, 'Quality changes must retain all existing variable identities.');
+foreach ($objectIDs as $objectID) {
+    $check(IPS_GetName($objectID) === 'User label ' . $objectID && IPS_GetObject($objectID)['ObjectIcon'] === 'Star', 'Device labels and icons belong to the user.');
+}
+// Simulate an older installation without the newly introduced availability variable.
+IPS_DeleteVariable(IPS_GetObjectIDByIdent('AccuracyAvailable', $qualityDevice));
+$legacyObjects = [];
+foreach (IPS_GetChildrenIDs($qualityDevice) as $objectID) {
+    $legacyObjects[$objectID] = IPS_GetObject($objectID);
+}
+IPS_ApplyChanges($qualityDevice);
+foreach ($legacyObjects as $objectID => $object) {
+    $check(IPS_GetObject($objectID) === $object, 'Adding availability to an old installation must preserve IDs, positions, names and icons.');
+}
+$check($value($qualityDevice, 'AccuracyAvailable'), 'An old installation recovers known accuracy when the flag is introduced.');
+IPS_SetProperty($qualityDevice, 'DeviceID', 'unavailable-device');
+IPS_ApplyChanges($qualityDevice);
+$check(!$value($qualityDevice, 'AccuracyAvailable'), 'Identity changes must clear accuracy availability.');
+
+echo "Optional device details, data quality, user metadata and lifecycle contracts passed.\n";

@@ -81,6 +81,28 @@ der Konfigurator erstellt keine Karte und keine Foto-Diashow.
 
 `false` bedeutet fehlende Kontoverbindung oder nicht verfügbare Kontodaten. Die Instanz besitzt keine Statusvariablen.
 
+## Skriptbeispiel und Konfiguration
+
+Der Konfigurator besitzt keine eigenen persistenten Properties. Die Auswahl
+des Kontos ist eine Datenverbindung, keine String-Property und kein Ordnerpfad.
+Die Instanz-ID im Beispiel bezeichnet den **Konfigurator**.
+
+```php
+$instanceID = 12345; // Durch die eigene Konfiguratorinstanz ersetzen.
+$result = ICDC_Reload($instanceID);
+if (!$result) {
+    echo 'Konto verbinden und dessen Cacheverfügbarkeit prüfen.';
+}
+```
+
+`Reload=true` bestätigt verfügbare Kontocachedaten und aktualisiert das Formular;
+eine erfolgreiche leere Liste ist möglich. `RefreshDevices` fordert ausdrücklich
+einen Apple-Abruf über das Konto an. Dessen Schutzsperren, Pause und Fehler
+können zu `false` führen. Beide Funktionen erwarten nur die Instanz-ID;
+Gerätekennungen gehören nicht in diesen Parameter. Das Formular erstellt
+Instanzen erst über die bewusste Auswahl **Erstellen**. Es gibt keine eigene
+Kachel-, IPSView- oder WebFront-Ausgabe des Konfigurators.
+
 ## Lizenz
 
 PolyForm Noncommercial License 1.0.0; siehe [LICENSE](../LICENSE).

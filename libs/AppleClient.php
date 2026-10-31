@@ -541,6 +541,8 @@ final class AppleClient
 
     private static function normalizeDevice(array $device): array
     {
+        // Existing wire-unit assumptions: battery fraction, Unix milliseconds and metre radius.
+        // Protocol evidence and remaining uncertainty are recorded in docs/PROTOCOL_VALUES.md.
         $details = [];
         foreach (['lowPowerMode', 'locationEnabled', 'locationCapable', 'isLocating', 'lostModeEnabled', 'lostModeCapable', 'activationLocked', 'fmlyShare'] as $field) {
             $details[$field] = is_bool($device[$field] ?? null) ? $device[$field] : null;
@@ -558,7 +560,8 @@ final class AppleClient
             $location = [
                 'latitude'           => (float) $raw['latitude'], 'longitude' => (float) $raw['longitude'],
                 'horizontalAccuracy' => is_numeric($accuracy) && is_finite((float) $accuracy) && (float) $accuracy >= 0 ? (float) $accuracy : null,
-                'timestamp'          => (int) ((float) $raw['timeStamp'] / 1000), 'isOld' => (bool) ($raw['isOld'] ?? false),
+                // Preserve the Boolean cache contract: unknown age is conservatively old.
+                'timestamp'          => (int) ((float) $raw['timeStamp'] / 1000), 'isOld' => ($raw['isOld'] ?? null) !== false,
                 'isInaccurate'       => is_bool($raw['isInaccurate'] ?? null) ? $raw['isInaccurate'] : null,
                 'finished'           => is_bool($raw['locationFinished'] ?? null) ? $raw['locationFinished'] : null
             ];

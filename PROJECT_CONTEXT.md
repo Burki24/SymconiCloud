@@ -1,5 +1,51 @@
 # Entwicklungsstand
 
+## Datenqualität und ergänzte zentrale Standards (2026-10-31)
+
+Die öffentliche Cacheform und bestehende Variablentypen bleiben erhalten:
+`location.isOld` bleibt Boolean. Nur ein echtes `false` bedeutet nicht alt;
+fehlende/ungültige Rohdaten und entsprechende alte Gerätecaches gelten
+konservativ als alt. Dies ist eine eigene Sicherheitsregel und keine neue
+Behauptung über Apples Protokoll. `Accuracy` bleibt ein Float mit seinem
+letzten bekannten Wert; das hinten angefügte `AccuracyAvailable` kennzeichnet
+die Zuordnung zur aktuell verfügbaren Position. Fehlende Genauigkeit ist im
+Widget-Snapshot `null`; ein echter metrischer Nullwert bleibt bekannt.
+Bestehende Idents, IDs und Positionen bleiben erhalten. Keine Migration von
+Benutzerwerten und keine neue öffentliche Methode sind erforderlich.
+
+Vorhandene zentrale Boolean-/Dezimaldarstellungen und DebugFlow-Schreibabläufe
+werden unverändert genutzt. Die iCloud-spezifische Verfügbarkeitsregel bleibt
+librarylokal. Neue Tests sichern fehlende/ungültige/echte Nullwerte, Wiederkehr,
+historische Genauigkeit, alte Alterskennzeichnungen und eigene Namen/Symbole
+der Geräte- sowie dynamischen Gruppenvariablen ab. Ein fehlender
+Verfügbarkeitsident machte den neuen Test vor der Umsetzung rot; die gezielten
+Datenqualitäts- und Gruppenprüfungen bestehen nach der Korrektur.
+
+Alle sieben READMEs ergänzen Typen, Kennungsherkunft, Rückgabeverträge und
+synthetische, lokale Skriptbeispiele. `tests/readme-examples.php` führt die
+Beispiele gegen die tatsächlichen Module in den Offline-Stubs aus und prüft
+ihre Ergebnisse bei fehlenden Quellen sowie dokumentierte Property-Typen.
+`docs/PROTOCOL_VALUES.md` ordnet die handgerechneten Gerätevektoren der
+externen Protokollbeobachtung zu. Akkuskala, Millisekundenzeitbasis und
+metrische Genauigkeit bleiben ausdrücklich als nicht offiziell von Apple
+garantierte Protokollannahmen gekennzeichnet. Keine kopierte Implementierung.
+
+Keine Apple-Anfragen, Live-Installation, Versionsanhebung oder Änderungen an
+zentralen Helpern. Unbelegte Symcon-9.1-/Rust-Aussagen werden nicht übernommen.
+Ein neuer Symcon-9.0-Laufzeitnachweis sowie eine reale Kachel-/IPSView-Abnahme
+wurden für diese Änderung nicht erhoben; die UI-Interaktion bleibt unverändert.
+
+Abschlussnachweis unter PHP 8.5.10: vollständiges `php tests/run.php`
+einschließlich der sieben ausführbaren README-Beispiele, Gerätevektoren,
+Metadaten-/Upgrade-Regressionsfälle, Node-Verträge und Syntaxprüfungen erfolgreich.
+Die vorhandene GD-Erweiterung wurde nur über eine temporäre PHP-Konfiguration
+für den Testprozess und seine Kinder aktiviert; Systemkonfiguration unverändert,
+temporäre Dateien anschließend entfernt. `php tests/validate_structure.php`,
+offizieller StylePHP-JSON-Check und php-cs-fixer 3.95.27 mit offiziellen Regeln
+im Prüfmodus bestanden. Der Fixer-Hinweis zur optionalen fehlenden composer.json
+ist unverändert und nicht fatal. Relative Dateilinks, UTF-8 ohne BOM, LF und
+`git diff --check` wurden geprüft. Keine Änderungen in libs/helper oder vendor.
+
 ## Gemeinsame WoIst-Gerätereihenfolge mit Ziehgriff (2026-10-28)
 
 Das Runtime-Attribut WoIstDeviceOrder speichert bis zu 4096 konto- und

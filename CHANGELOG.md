@@ -1,5 +1,19 @@
 # Unveröffentlicht
 
+## Fixes
+
+- **iCloud Gerät:** Fehlende Standortgenauigkeit wird nicht mehr als `0 m`
+  gespeichert. Die neue lesende Variable **Genauigkeit verfügbar**
+  (`AccuracyAvailable`) unterscheidet einen bekannten Radius vom erhaltenen
+  historischen Zahlenwert. Bestehende Variablen und ihre IDs bleiben erhalten.
+- **Standortdaten:** Fehlende oder ungültige Apple-Alterskennzeichnungen gelten
+  vorsorglich als alt; nur ein explizites `false` kennzeichnet eine Position als
+  nicht alt. **Achtung:** Für eigene Automationen die Standortzeit und beim
+  Genauigkeitswert zusätzlich `AccuracyAvailable` auswerten. Nach dem Update
+  die Geräteinstanzkonfiguration übernehmen.
+- Die sieben Modulanleitungen erläutern Property-Typen, Kennungen und
+  Rückgabebedeutungen und enthalten ausführbare synthetische Skriptbeispiele.
+
 ## Release-Vorbereitung
 
 - Automatische Versionierung auf `dev` über den zentralen ModuleCI-Baustein:

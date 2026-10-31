@@ -377,10 +377,10 @@ Ein aktueller Kontoabruf bedeutet nicht automatisch eine aktuelle Gerätepositio
 
 ## Konfiguration
 
-| Eigenschaft | Standard | Bedeutung |
-| --- | --- | --- |
-| `StaleAfter` | 900 | Positionen nach dieser Anzahl Sekunden als älter markieren; 60 bis 86400 |
-| `IPSViewServerURL` | leer | Aus IPSView erreichbare HTTP(S)-Server-Adresse ohne Pfad; leer nutzt die eigene HTTP(S)-Seitenadresse |
+| Formularfeld | Property | Typ | Standard | Bedeutung |
+| --- | --- | --- | --- | --- |
+| Positionen nach Sekunden als veraltet kennzeichnen | `StaleAfter` | int | 900 | Positionen nach dieser Anzahl Sekunden als älter markieren; 60 bis 86400 |
+| Symcon-Serveradresse für IPSView (optional) | `IPSViewServerURL` | string | leer | Aus IPSView erreichbare HTTP(S)-Server-Adresse ohne Pfad; leer nutzt die eigene HTTP(S)-Seitenadresse |
 
 OpenFreeMap ist der Kartenanbieter; die Kartendaten stammen von OpenStreetMap. Internetzugriff im Browser ist erforderlich. Der Anbieter erhält IP-Adresse und angefragte Kartenregion, aber keine Gerätenamen, Apple-Zugangsdaten oder Zugriffstokens. Leaflet, MapLibre und die Anbindung werden lokal mit der Library ausgeliefert; JavaScript wird nicht von einem CDN geladen. Die OpenFreeMap- und OpenStreetMap-Quellenangaben bleiben sichtbar. Die bisherigen Rasterkachel-Einstellungen werden durch die OpenFreeMap-Profile ersetzt.
 
@@ -461,6 +461,43 @@ dagegen die Liste, ohne gleichzeitig die Karte zu zoomen. Den Mauszeiger dafür
 über den gewünschten Bereich bewegen. Die Bedienung wird auch in der nativen
 IPSView-App unterstützt. Tastenkombinationen mit Strg beziehungsweise Meta
 bleiben der umgebenden Anwendung überlassen.
+
+## Skriptbeispiel und Auswahl-Properties
+
+Die Instanz-ID bezeichnet die **WoIst-Karte**. `Update` liest nur die
+zugewiesenen Kontocaches. `true` bedeutet, dass mindestens ein Konto nutzbare
+Daten liefert; einzelne Konten können trotzdem fehlen. `RefreshDevices`
+fordert die zugewiesenen Konten ausdrücklich zur Aktualisierung auf; deren
+Kontoschutz bleibt wirksam. Teilfehler stehen in den Kontoangaben des Zustands.
+`GetState` liefert JSON aus den Caches, keine neue Messung. Vor der Verwendung
+von Koordinaten deren Verfügbarkeit und Standortzeit prüfen.
+
+```php
+$instanceID = 12345; // Durch die eigene WoIst-Instanz ersetzen.
+IPS_SetProperty($instanceID, 'StaleAfter', 900);
+IPS_ApplyChanges($instanceID);
+$result = json_decode(ICWI_GetState($instanceID), true, 512, JSON_THROW_ON_ERROR);
+```
+
+| Formularfeld | Property | Typ | Standard | Bedeutung |
+| --- | --- | --- | --- | --- |
+| Zusätzliche Konten | `AdditionalAccounts` | string | `'[]'` | JSON-Liste mit `AccountID`; maximal 20 Zeilen, bestehende Konto-Instanz-IDs |
+| Alle Geräte anzeigen | `ShowAllDevices` | bool | `true` | Ohne Geräteauswahl anzeigen |
+| Ausgewählte Geräte | `SelectedDevices` | string | `'[]'` | JSON-Liste mit `DeviceKey` aus der Formularauswahl; keine Gerätenamen oder rohe Apple-ID |
+| Gerätepositionen in Adressen auflösen | `EnableAddressResolution` | bool | `false` | Optionalen Adressworker aktivieren |
+| Adressanbieter | `AddressProvider` | string | `'nominatim'` | `nominatim` oder `geoapify` |
+| Basis-URL des eigenen Nominatim-Servers | `NominatimServer` | string | `''` | Eigener erreichbarer HTTP(S)-Server gemäß Adressabschnitt |
+| Geoapify-API-Key | `GeoapifyAPIKey` | string | `''` | Vertraulicher Schlüssel des gewählten Anbieters |
+| Geoapify-Tageslimit je Instanz (UTC; 0 = keine neuen Abfragen) | `GeoapifyDailyLimit` | int | `2500` | 0–1000000 Anfragen je UTC-Tag; 0 sperrt neue Anfragen; Anbietergrenzen gelten zusätzlich |
+| Adresssprache (z. B. de oder en) | `AddressLanguage` | string | `'de'` | Sprachkennung für Adressantworten |
+| Karteneinstellungen der Kachel verwenden | `IPSViewUseTileDesign` | bool | `true` | IPSView übernimmt das Kachellayout |
+
+Die primäre Kontoverbindung bleibt unabhängig von `AdditionalAccounts` erhalten.
+`SelectedDevices` schränkt nur bei `ShowAllDevices=false` ein; eine leere Liste
+zeigt dann keine Geräte. Kontofilter und Geräteauswahl sind Anzeigeoptionen,
+keine Zugriffssperren. Kartenfarben, Layout und Stilfelder werden im jeweiligen
+Designer beschrieben. Native Kachel und IPSView verwenden eigene Einbindungen;
+eine gesonderte WebFront-Kartenansicht wird nicht zugesichert.
 
 ## Lizenz
 

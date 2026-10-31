@@ -193,4 +193,18 @@ IPS_ApplyChanges($visibilityID);
 $check(IPS_GetObject($betaPresence)['ObjectIsHidden'] && IPS_GetObject($alphaPresence)['ObjectIsHidden'], 'A later removal cycle must retain new user visibility settings.');
 $check(IPS_GetObject($betaDistance)['ObjectIsHidden'], 'An observed manual override relinquishes module visibility ownership, including later user changes.');
 
+// Both aggregate and dynamic member variables keep user-owned names and icons.
+$metadataIDs = IPS_GetChildrenIDs($visibilityID);
+foreach ($metadataIDs as $objectID) {
+    IPS_SetName($objectID, 'User presence ' . $objectID);
+    IPS_SetIcon($objectID, 'Star');
+}
+IPS_SetProperty($visibilityID, 'Devices', json_encode(array_reverse($visibleMembers), JSON_THROW_ON_ERROR));
+IPS_ApplyChanges($visibilityID);
+ICPR_Update($visibilityID);
+$firstBoundary->broadcast();
+foreach ($metadataIDs as $objectID) {
+    $check(IPS_GetName($objectID) === 'User presence ' . $objectID && IPS_GetObject($objectID)['ObjectIcon'] === 'Star', 'Aggregate and member labels/icons must survive reorder, ApplyChanges and cache pushes.');
+}
+
 echo "Multi-device presence, shared zones, aggregation, identity and migration contracts passed.\n";

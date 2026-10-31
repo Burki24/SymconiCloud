@@ -46,7 +46,7 @@ trait DeviceWidget
         }
         $this->WriteAttributeString('WidgetLocation', $this->EncodeVisualizationHTMLJSON([
             'latitude' => $this->GetValue('Latitude'), 'longitude' => $this->GetValue('Longitude'),
-            'accuracy' => $this->GetValue('Accuracy'), 'timestamp' => $this->GetValue('LocationTimestamp'),
+            'accuracy' => $this->GetValue('AccuracyAvailable') ? $this->GetValue('Accuracy') : null, 'timestamp' => $this->GetValue('LocationTimestamp'),
             'address'  => $this->GetValue('Address')
         ]));
     }

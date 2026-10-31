@@ -78,11 +78,11 @@ nicht automatisch wiederholt. Bei nicht verfügbaren Kontodaten ist er deaktivie
 
 ## Konfiguration
 
-| Einstellung | Standard | Bedeutung |
-| --- | --- | --- |
-| Übergeordnetes iCloud-Konto | keine Verbindung | Konto, dessen Geräteliste verwendet wird; nach der Anlage prüfen |
-| Geräte-ID (`DeviceID`) | leer | Wird vom Konfigurator eingetragen. Die Apple-Gerätekennung ist weder der sichtbare Gerätename noch die Seriennummer oder IMEI. |
-| WoIst-Adressquelle (optional) (`AddressSource`) | keine Auswahl | Automatische Verwendung genau einer geeigneten WoIst-Karte desselben Kontos; bei mehreren Karten eine auswählen |
+| Formularfeld | Property | Typ | Standard | Bedeutung |
+| --- | --- | --- | --- | --- |
+| Übergeordnetes iCloud-Konto | keine Property | Verbindung | keine Verbindung | Konto, dessen Geräteliste verwendet wird; nach der Anlage prüfen |
+| Geräte-ID | `DeviceID` | string | leer | Wird vom Konfigurator eingetragen. Die Apple-Gerätekennung ist weder der sichtbare Gerätename noch die Seriennummer oder IMEI. |
+| WoIst-Adressquelle (optional) | `AddressSource` | int | keine Auswahl | Automatische Verwendung genau einer geeigneten WoIst-Karte desselben Kontos; bei mehreren Karten eine auswählen |
 
 Die Geräte-ID normalerweise unverändert lassen. **Ein Wechsel der Geräte-ID
 oder Kontoverbindung setzt die bisherigen Gerätewerte zurück.**
@@ -106,7 +106,7 @@ Apple gerade eine neue GPS-Position ermittelt hat.
 | Kontodaten verfügbar | Das Gerät wurde in den verfügbaren Daten seines Kontos gefunden. |
 | Online | Apple meldet Gerätestatus `200`. Dies ist kein zusätzlicher Erreichbarkeitstest durch Symcon. |
 | Standort verfügbar / Standortzeit | Koordinaten wurden geliefert; die Standortzeit zeigt, von wann die Position stammt. |
-| Standort veraltet | Apple kennzeichnet die Position als alt oder aktuell ist kein Standort verfügbar. Für eigene Altersgrenzen zusätzlich die Standortzeit auswerten. |
+| Standort veraltet | Apple kennzeichnet die Position als alt, die Alterskennzeichnung fehlt/ist ungültig oder aktuell ist kein Standort verfügbar. Für eigene Altersgrenzen zusätzlich die Standortzeit auswerten. |
 | Genauigkeit | Von Apple gemeldeter Radius in Metern; ein kleinerer positiver Wert ist genauer. `0` bestätigt keine metergenaue Position. |
 | Letzter erfolgreicher Geräteabruf | Zeitpunkt des Kontoabrufs, nicht der Ermittlung der GPS-Position. |
 
@@ -260,10 +260,11 @@ deutschen Anzeigenamen wie **Akkustand**, **Standortzeit** und **Adresse**.
 | Akkustand | `BatteryLevel` | float | Akkustand in Prozent |
 | Akkustatus | `BatteryStatus` | string | Von Apple gelieferter Statustext, beispielsweise `NotCharging` |
 | Standort verfügbar | `LocationAvailable` | bool | Koordinaten in der letzten Antwort vorhanden |
-| Standort veraltet | `LocationIsOld` | bool | Standort von Apple als veraltet gemeldet oder aktuell nicht verfügbar |
+| Standort veraltet | `LocationIsOld` | bool | Standort als veraltet gemeldet, Alterskennzeichnung unbekannt oder aktuell nicht verfügbar |
 | Breitengrad / Längengrad | `Latitude`, `Longitude` | float | Koordinaten in Grad |
 | Adresse | `Address` | string | Aufgelöste Adresse aus der ausgewählten WoIst-Karte |
-| Genauigkeit | `Accuracy` | float | Standortgenauigkeit in Metern |
+| Genauigkeit | `Accuracy` | float | Letzter bekannter Genauigkeitsradius in Metern; nur bei `AccuracyAvailable=true` zur verfügbaren Position gehörend |
+| Genauigkeit verfügbar | `AccuracyAvailable` | bool | Bekannter Genauigkeitsradius zur verfügbaren Position |
 | Standortzeit | `LocationTimestamp` | int | Zeitpunkt der Position, als Datum/Uhrzeit angezeigt; für Skripte Unix-Sekunden |
 | Letzter erfolgreicher Geräteabruf | `LastUpdate` | int | Zeitpunkt des Kontoabrufs, als Datum/Uhrzeit angezeigt; für Skripte Unix-Sekunden |
 | Stromsparmodus | `LowPowerMode` | int | Von Apple gemeldeter Zustand |
@@ -359,6 +360,48 @@ Ergebnis bedeutet ausschließlich, dass Apple den Auftrag angenommen hat.
 Gerätezuordnung, Sitzung, Sperrfristen und Verzicht auf automatische
 Wiederholungen gelten wie bei der Aktivierung. Ein Fehler führt niemals zu
 einem ersatzweisen Aktivierungsauftrag.
+
+## Skriptbeispiel und Datenqualität
+
+Die Instanz-ID bezeichnet das **iCloud-Gerät**. Gerätekennungen werden vom
+Konfigurator übernommen oder aus `ICAC_GetDevices` des verbundenen Kontos
+gewonnen. `DeviceID` ist ein String (Vorgabe `''`); `AddressSource` ist eine
+Instanz-ID als Integer (Vorgabe `0`, automatische eindeutige Auswahl).
+
+```php
+$instanceID = 12345; // Durch die eigene Geräteinstanz ersetzen.
+$result = ICID_Update($instanceID); // Liest ausschließlich den Kontocache.
+$available = GetValue(IPS_GetObjectIDByIdent('AccuracyAvailable', $instanceID));
+if ($result && $available) {
+    $accuracy = GetValue(IPS_GetObjectIDByIdent('Accuracy', $instanceID));
+    echo 'Genauigkeitsradius: ' . $accuracy . ' m';
+}
+```
+
+`AccuracyAvailable` (Boolean, **Genauigkeit verfügbar**) ist nur bei gültiger
+Position und bekanntem, nicht negativem Genauigkeitswert wahr. Auch `0 m` ist
+ein vorhandener Wert. Bei fehlender Genauigkeit bleibt `Accuracy` als
+historischer Zahlenwert erhalten; ohne `AccuracyAvailable` darf er nicht der
+aktuellen Position zugeordnet werden. Bei Kontofehlern, Gerätewechsel oder
+fehlender Position ist die Verfügbarkeit falsch. Die Gerätekachel übernimmt
+unbekannte Genauigkeit als `null` und zeigt keinen erfundenen Genauigkeitswert.
+
+`location.isOld` im Kontocache und `LocationIsOld` bleiben Boolean. Nur Apples
+explizites `false` gilt als nicht alt; fehlende oder ungültige Kennzeichnungen
+werden vorsorglich als alt behandelt. Auch `false` garantiert keine Aktualität:
+für eigene Automationen Standortzeit und eigene Altersgrenze berücksichtigen.
+Alte Caches mit fehlender Kennzeichnung werden ebenso konservativ behandelt.
+Bestehende Variablen behalten Typ, Ident und ID; die neue Verfügbarkeit ergänzt
+den Vertrag. Eigene Variablennamen und Symbole bleiben erhalten.
+
+`Update=true` bestätigt ein im authentifizierten Cache gefundenes Gerät,
+nicht einen neuen Apple-Abruf. `PlaySound=true` und die beiden Verloren-Modus-
+Funktionen bestätigen nur die Annahme des Auftrags. Bei `false` wurde keine
+Annahme bestätigt; eine unklare Transportantwort darf nicht automatisch erneut
+versendet werden. Die Parametergrenzen und die persönliche Bestätigung für
+den Verloren-Modus stehen im entsprechenden Bedienabschnitt. Die Geräteinstanz
+bietet eine native Kachel; eine eigene IPSView- oder WebFront-HTML-Ausgabe wird
+nicht angeboten. Einzelvariablen bleiben unabhängig davon nutzbar.
 
 ## Lizenz
 

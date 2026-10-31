@@ -147,16 +147,16 @@ entfernte großzügigere Zielzone ist möglich, wenn der gesamte Genauigkeitskre
 außerhalb der Referenzzone liegt. Überlappungen behalten die Referenzzonenpriorität.
 Maximales Standortalter und maximale plausible Geschwindigkeit bleiben global.
 
-| Eigenschaft | Vorgabe | Bedeutung |
-| --- | --- | --- |
-| `Enabled` | true | Gruppe auswerten |
-| `Devices` | `[]` | Liste aus `deviceID` und optionalem `name` |
-| `Zones` | `[]` | Gemeinsame Zonenliste mit genau einer Referenzzone |
-| `MaxLocationAge` | 900 s | Maximal zulässiges Standortalter, 30 bis 86.400 s |
-| `MaxAccuracy` | 100 m | Maximal zulässiger positiver Genauigkeitsradius, 1 bis 10.000 m |
-| `Hysteresis` | 25 m | Globaler Grenzpuffer, 0 bis 10.000 m; kleiner als der Radius jeder Zone, die ihn übernimmt |
-| `ConfirmationTime` | 30 s | Wechsel mit einer weiteren späteren Position bestätigen; 0 deaktiviert die Verzögerung |
-| `MaxSpeed` | 300 km/h | Unplausible Sprünge nach Abzug beider Genauigkeitsradien verwerfen; 0 deaktiviert den Filter, maximal 2.000 km/h |
+| Formularfeld | Property | Typ | Standard | Bedeutung |
+| --- | --- | --- | --- | --- |
+| Anwesenheit auswerten | `Enabled` | bool | true | Gruppe auswerten |
+| Geräte | `Devices` | string | `[]` | Liste aus `deviceID` und optionalem `name` |
+| Zonen | `Zones` | string | `[]` | Gemeinsame Zonenliste mit genau einer Referenzzone |
+| Maximales Standortalter (Sekunden) | `MaxLocationAge` | int | 900 s | Maximal zulässiges Standortalter, 30 bis 86.400 s |
+| Maximale Standortungenauigkeit (m) | `MaxAccuracy` | int | 100 m | Maximal zulässiger positiver Genauigkeitsradius, 1 bis 10.000 m |
+| Puffer an Zonengrenzen (m) | `Hysteresis` | int | 25 m | Globaler Grenzpuffer, 0 bis 10.000 m; kleiner als der Radius jeder Zone, die ihn übernimmt |
+| Bestätigungszeit für Zonenwechsel (Sekunden) | `ConfirmationTime` | int | 30 s | Wechsel mit einer weiteren späteren Position bestätigen; 0 deaktiviert die Verzögerung |
+| Maximale plausible Geschwindigkeit (km/h; 0 deaktiviert) | `MaxSpeed` | int | 300 km/h | Unplausible Sprünge nach Abzug beider Genauigkeitsradien verwerfen; 0 deaktiviert den Filter, maximal 2.000 km/h |
 
 Sicher innerhalb: Entfernung plus Genauigkeitsradius liegt innerhalb von
 Radius minus Grenzpuffer. Sicher außerhalb: Entfernung minus Genauigkeitsradius
@@ -373,6 +373,49 @@ Auswahl und Scrollposition bleiben erhalten. Das Abschalten der IPSView-Ausgabe
 widerruft den Zugriff; die Variable bleibt bis zur ausdrücklichen Löschung erhalten.
 Es entstehen keine zusätzlichen Apple-Anfragen. Bilder, Designer und Widgets ändern
 weder die Zonen noch GPS-Bestätigungen, Aufenthaltsbeginn oder bestehende Variablen-IDs.
+
+## Skriptbeispiel und Kennungen
+
+`Devices` und `Zones` sind JSON-Strings mit Vorgabe `'[]'`, keine PHP-Arrays
+als Propertywert. Die Gerätekennung in `Devices[].deviceID` stammt aus dem
+Gerätekonfigurator beziehungsweise dem Konto-Cache. Eine Zone benötigt eine
+stabile eigene ID, Mittelpunkt, positiven Radius und die Referenzkennzeichnung.
+Schema und Auswahl stehen in den Einrichtungsabschnitten. `AddressSource` ist
+ein Integer mit Vorgabe `0` (keine Adressquelle); eine positive ID bezeichnet
+eine geeignete WoIst-Instanz desselben Kontos. `DeviceID` bleibt als String
+mit Vorgabe `''` ausschließlich für die Übernahme alter Einzelgeräte-
+Konfigurationen erhalten; neue Gruppen verwenden `Devices`.
+
+```php
+$instanceID = 12345; // Durch die eigene Anwesenheitsinstanz ersetzen.
+IPS_SetProperty($instanceID, 'MaxLocationAge', 900);
+IPS_ApplyChanges($instanceID);
+$result = ICPR_Update($instanceID); // Lokale Bewertung des Konto-Caches.
+$presence = GetValue(IPS_GetObjectIDByIdent('Presence', $instanceID));
+if ($result && $presence === 1) {
+    echo 'Mindestens ein ausgewähltes Gerät ist bestätigt anwesend.';
+}
+```
+
+`Update=true` bestätigt verfügbare authentifizierte Kontocachedaten, keine
+verlässliche Position jedes Geräts. Dafür zusätzlich die Gesamt- und
+Gerätezustände sowie Verfügbarkeitsvariablen auswerten. `false` bedeutet unter
+anderem deaktivierte Auswertung, ungültige Auswahl oder fehlende Kontodaten.
+`GetDeviceVariableIdent` erwartet eine tatsächlich ausgewählte Gerätekennung
+und einen dokumentierten Feldnamen. Der Rückgabestring ist ein Variablen-Ident,
+keine Objekt-ID und kein Messwert. `GetIPSViewHTML` und `GetIPSViewCompactHTML`
+liefern lokale Einbindungen als String; ohne aktivierte Ausgabe können sie
+leer sein. Diese Einbindungen enthalten einen vertraulichen Lesezugang.
+
+`TileWidgetVariant` ist ein String mit `Widget` (Vorgabe) oder `WidgetCompact`.
+`IPSViewServerURL` ist ein String mit Vorgabe `''`. Die vom Designer verwalteten
+Felder mit Präfix `Tile` beziehungsweise `IPSView` sind `WidgetPhotos` (bool,
+`true`), `WidgetDetails` (bool, `true`), `WidgetPictureSize` (int, 48 Pixel),
+`WidgetRadius` (int, 12 Pixel) und `WidgetSpacing` (int, 10 Pixel).
+`TileWidgetFontSize` ist ein Integer mit Vorgabe 14 Pixel. Bedeutung und
+Farbzuordnung stehen bei den jeweiligen Designern. Native Kachel und IPSView
+sind getrennte Ausgaben; eine eigene WebFront-Gruppenansicht wird nicht
+zugesichert.
 
 ## Lizenz
 

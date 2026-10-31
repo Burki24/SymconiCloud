@@ -111,11 +111,11 @@ als Hinweis angezeigt; es erfolgt keine automatische Passwort-Neuanmeldung.
 
 ## Konfiguration und IPSView-Variable
 
-| Einstellung | Standard | Bedeutung |
-| --- | --- | --- |
-| Foto-Widget aktivieren (`Enabled`) | aus | Anzeige und regelmäßige Metadatenabfrage einschalten |
-| Album (`AlbumID`) | keine Auswahl | Persönliches Album, Favoriten oder Alle Fotos |
-| Aktualisierungsintervall (`RefreshInterval`) | 900 s | Metadaten neu abrufen; 300 bis 86400 s, unabhängig vom Bildwechselintervall |
+| Formularfeld | Property | Typ | Standard | Bedeutung |
+| --- | --- | --- | --- | --- |
+| Foto-Widget aktivieren | `Enabled` | bool | aus | Anzeige und regelmäßige Metadatenabfrage einschalten |
+| Album | `AlbumID` | string | keine Auswahl | Persönliches Album, Favoriten oder Alle Fotos |
+| Aktualisierungsintervall der Fotodaten in Sekunden | `RefreshInterval` | int | 900 s | Metadaten neu abrufen; 300 bis 86400 s, unabhängig vom Bildwechselintervall |
 
 Das **Diashow-Intervall** wird dagegen im jeweiligen Designer eingestellt;
 es beträgt standardmäßig 30 Sekunden. Ein Bildwechsel ist keine neue
@@ -134,6 +134,46 @@ zum Fotozugriff im verbundenen Konto beachten.
 | `ICPH_RefreshAlbums(int $InstanceID): bool` | Albumkatalog lesend aktualisieren |
 | `ICPH_Refresh(int $InstanceID): bool` | Erste Metadatenseite des konfigurierten Albums laden |
 | `ICPH_GetIPSViewHTML(int $InstanceID): string` | Geschützte HTTP-Ausgabe einbetten |
+
+## Skriptbeispiel und Rückgabeverträge
+
+`AlbumID` ist ein String (Vorgabe `''`) aus der Albumauswahl des verbundenen
+Kontos beziehungsweise `ICAC_GetPhotoAlbums`. Ein Albumname oder eine Apple-URL
+ist keine Kennung. Auch `smart:favorites` und `smart:all` sind nur bei passendem
+verfügbarem Katalog auswählbar. `Enabled` hat die Vorgabe `false`.
+Die folgenden Angaben gelten für die **Foto-Instanz**, nicht für das Konto.
+
+```php
+$instanceID = 12345; // Durch die eigene Foto-Instanz ersetzen.
+IPS_SetProperty($instanceID, 'RefreshInterval', 900);
+IPS_ApplyChanges($instanceID);
+$result = ICPH_GetIPSViewHTML($instanceID); // Lokale Einbindung, keine Apple-Anfrage.
+```
+
+`RefreshAlbums=true` bestätigt einen aktualisierten Albumkatalog im Konto.
+`Refresh=true` bestätigt die erste Metadatenseite des gewählten Albums, nicht
+sämtliche Fotos oder heruntergeladene Vorschauen. Diese beiden Funktionen
+können Apple-Anfragen auslösen. Bei deaktivierter Instanz, fehlendem Album,
+fehlender Verbindung, parallelem Vorgang oder abgewiesenem Zugriff ist `false`
+möglich. Kontoschutz und Wartefristen bleiben wirksam. Der Fehlerhinweis steht
+im Formular; aus `false` darf keine leere Bibliothek abgeleitet werden.
+`GetIPSViewHTML` liefert die lokale HTML-Einbindung als String. Auch eine
+zurückgegebene Einbindung oder Fehlerseite bestätigt kein erfolgreich geladenes
+Foto. Die Einbindung enthält einen vertraulichen Lesezugang und gehört nicht in Logs oder Nachrichten.
+
+Die Designer verwenden die Präfixe `Tile` und `IPSView`: `PhotoMode` ist ein
+String mit `single` (Vorgabe) oder `slideshow`, `PhotoFit` ein String mit
+`contain` (Vorgabe) oder `cover`, `PhotoSeconds` ein Integer mit Vorgabe 30,
+`PhotoShuffle` ein Boolean mit Vorgabe `false` und `PhotoCaption` ein Boolean
+mit Vorgabe `true`. Die zugehörigen Formularfelder heißen Darstellungsmodus,
+Bildanpassung, Diashow-Intervall in Sekunden, zufällige Reihenfolge innerhalb
+jeder geladenen Seite und **Dateiname und Datum anzeigen**. Das Diashow-Intervall
+wird auf 5 bis 3600 Sekunden begrenzt. Die Felder wirken auf die Darstellung, nicht auf die Konto-Anmeldung. Die konkrete
+Bedienung und Grenzen stehen in den Designerabschnitten. `IPSViewServerURL`
+ist ein String mit Vorgabe `''`; eine gesetzte Adresse muss vom Client als
+HTTP(S)-Ursprung erreichbar sein. Native Kachel und IPSView verwenden die
+beschriebenen eigenen Ausgaben; eine separate WebFront-Diashow wird nicht
+zugesichert.
 
 ## Lizenz
 

@@ -59,6 +59,7 @@ class iCloudDevice extends IPSModuleStrict
             if ($identity !== $this->ReadAttributeString('SourceIdentity')) {
                 $this->WriteAttributeString('WidgetLocation', 'null');
                 $this->CloudDebugWrite('LocationAvailable', false, __FUNCTION__, __LINE__);
+                $this->CloudDebugWrite('AccuracyAvailable', false, __FUNCTION__, __LINE__);
                 $this->WriteAttributeString('SoundResult', '');
                 $this->WriteAttributeString('LostModeResult', '');
                 foreach (['Latitude', 'Longitude', 'Accuracy', 'BatteryLevel'] as $ident) {
@@ -307,11 +308,16 @@ class iCloudDevice extends IPSModuleStrict
             $valid = is_array($location) && is_numeric($location['latitude'] ?? null) && is_numeric($location['longitude'] ?? null)
                 && abs((float) $location['latitude']) <= 90 && abs((float) $location['longitude']) <= 180;
             $this->CloudDebugWrite('LocationAvailable', $valid, __FUNCTION__, __LINE__);
-            $this->CloudDebugWrite('LocationIsOld', !$valid || (bool) ($location['isOld'] ?? false), __FUNCTION__, __LINE__);
+            $this->CloudDebugWrite('LocationIsOld', !$valid || ($location['isOld'] ?? null) !== false, __FUNCTION__, __LINE__);
+            $accuracy = $valid ? ($location['horizontalAccuracy'] ?? null) : null;
+            $accuracyAvailable = is_numeric($accuracy) && is_finite((float) $accuracy) && (float) $accuracy >= 0;
+            $this->CloudDebugWrite('AccuracyAvailable', $accuracyAvailable, __FUNCTION__, __LINE__);
             if ($valid) {
                 $this->CloudDebugWrite('Latitude', (float) $location['latitude'], __FUNCTION__, __LINE__);
                 $this->CloudDebugWrite('Longitude', (float) $location['longitude'], __FUNCTION__, __LINE__);
-                $this->CloudDebugWrite('Accuracy', max(0.0, (float) ($location['horizontalAccuracy'] ?? 0)), __FUNCTION__, __LINE__);
+                if ($accuracyAvailable) {
+                    $this->CloudDebugWrite('Accuracy', (float) $accuracy, __FUNCTION__, __LINE__);
+                }
                 $this->CloudDebugWrite('LocationTimestamp', max(0, (int) ($location['timestamp'] ?? 0)), __FUNCTION__, __LINE__);
             }
             $this->CloudDebugWrite('Address', $valid ? $this->readAddress((float) $location['latitude'], (float) $location['longitude']) : '', __FUNCTION__, __LINE__);
@@ -332,7 +338,7 @@ class iCloudDevice extends IPSModuleStrict
     {
         $this->CloudDebugProblem($error, __FUNCTION__, __LINE__);
         $this->RememberDeviceLocation();
-        foreach (['DataAvailable', 'LocationAvailable', 'BatteryAvailable', 'Online'] as $ident) {
+        foreach (['DataAvailable', 'LocationAvailable', 'AccuracyAvailable', 'BatteryAvailable', 'Online'] as $ident) {
             $this->CloudDebugWrite($ident, false, __FUNCTION__, __LINE__);
         }
         $this->CloudDebugWrite('LocationIsOld', true, __FUNCTION__, __LINE__);
@@ -379,6 +385,8 @@ class iCloudDevice extends IPSModuleStrict
         ], 1), $position++);
         $this->CloudDebugWrite('PlaySound', 0, __FUNCTION__, __LINE__);
         $this->EnableAction('PlaySound');
+        // Append the new read-only flag without moving or replacing existing variables.
+        $this->RegisterVariableBoolean('AccuracyAvailable', $this->Translate('AccuracyAvailable'), $this->BooleanPresentation($this->Translate('Yes'), $this->Translate('No')), $position);
     }
 
     /** Missing optional fields are unknown, never a retained or inferred false. */
