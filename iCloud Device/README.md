@@ -389,6 +389,12 @@ Ein bekannter Wert `0 m` wird ausdrücklich angezeigt. Bei älteren Installation
 wird die neue Verfügbarkeitsvariable auch durch das erste Cacheupdate oder eine
 Kontobenachrichtigung vor dem manuellen Übernehmen angelegt. Bestehende
 Variablen werden dabei weder neu angelegt noch umbenannt.
+Beim manuellen Übernehmen wird die native Definition von **Genauigkeit verfügbar**
+erneuert, damit Korrekturen der Darstellung aus dem zentralen Helper auch bei
+bestehenden Instanzen ankommen. Eigene Darstellungen behalten Vorrang; normale
+Cacheupdates ersetzen sie nicht. Nach einer Helper-Aktualisierung die betroffenen
+Instanzen übernehmen. Enthält eine eigene Darstellung selbst unvollständige
+Optionen, muss diese gesondert geprüft werden; sie wird nicht automatisch ersetzt.
 
 Ältere gespeicherte Standorte konnten fehlende Genauigkeit als `0` enthalten.
 Ein solcher unmarkierter historischer Nullwert wird beim Lesen als unbekannt

@@ -252,7 +252,14 @@ $quality->Update();
 $firstBoundary->broadcast();
 $check(IPS_GetObject($flagID) === $flagObject && IPS_GetVariablePresentation($flagID) === $flagPresentation, 'Repeated upgrade checks must preserve metadata and the existing availability presentation.');
 $check(!HasAction($flagID) && $flagObject['ObjectPosition'] === 29, 'Availability remains a read-only Boolean in its existing appended position.');
+$oldDefinition = ['PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'OPTIONS' => json_encode([
+    ['Value' => false, 'Caption' => 'Old no'], ['Value' => true, 'Caption' => 'Old yes']
+], JSON_THROW_ON_ERROR)];
+(new ReflectionMethod($quality, 'RegisterVariableBoolean'))->invoke($quality, 'AccuracyAvailable', 'Ignored new name', $oldDefinition, 29);
 IPS_ApplyChanges($qualityDevice);
+$nativeAvailability = IPS_GetVariable($flagID)['VariablePresentation'];
+$check(array_column(json_decode($nativeAvailability['OPTIONS'], true, 512, JSON_THROW_ON_ERROR), 'Caption') === ['No', 'Yes'], 'ApplyChanges must refresh a legacy native definition using the current helper.');
+$check(IPS_GetVariable($flagID)['VariableCustomPresentation'] === $customPresentation && IPS_GetObject($flagID) === $flagObject, 'Refreshing a native definition must retain the user presentation, name, icon and identity.');
 foreach ($legacyObjects as $objectID => $object) {
     $check(IPS_GetObject($objectID) === $object, 'Adding availability to an old installation must preserve IDs, positions, names and icons.');
 }

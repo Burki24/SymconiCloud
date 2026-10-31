@@ -388,15 +388,15 @@ class iCloudDevice extends IPSModuleStrict
         $this->CloudDebugWrite('PlaySound', 0, __FUNCTION__, __LINE__);
         $this->EnableAction('PlaySound');
         // Append the new read-only flag without moving or replacing existing variables.
-        $this->registerAccuracyAvailability();
+        $this->registerAccuracyAvailability(true);
     }
 
     /** Idempotent upgrade initialization, also safe before the first ApplyChanges. */
-    private function registerAccuracyAvailability(): void
+    private function registerAccuracyAvailability(bool $refresh = false): void
     {
         try {
             $variableID = @$this->GetIDForIdent('AccuracyAvailable');
-            if (is_int($variableID) && $variableID > 0 && IPS_VariableExists($variableID)) {
+            if (is_int($variableID) && $variableID > 0 && IPS_VariableExists($variableID) && !$refresh) {
                 return;
             }
         } catch (Throwable) {

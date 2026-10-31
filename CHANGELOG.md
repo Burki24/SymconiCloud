@@ -2,6 +2,10 @@
 
 ## Fixes
 
+- **iCloud Gerät:** Beim Übernehmen wird auch die native Darstellung einer bereits
+  vorhandenen Genauigkeitsverfügbarkeit erneuert. Eigene Darstellungen und
+  bestehende Variablen bleiben erhalten. Die vollständigen Boolean-Optionsfelder
+  für Symcon 9.0 kommen mit der regulären Verteilung des zentralen Helpers.
 - **iCloud Gerät:** Historische Genauigkeit und Adresse bleiben auch erhalten,
   wenn eine Kontobenachrichtigung vor dem ersten Lesen des Alt-Snapshots eintrifft.
   Neue Messungen übernehmen weiterhin ausschließlich ihre eigene Genauigkeit.

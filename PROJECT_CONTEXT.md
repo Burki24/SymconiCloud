@@ -1,5 +1,41 @@
 # Entwicklungsstand
 
+## Symcon-9.0-Boolean-Optionen und Bestandsvariablen (2026-10-31)
+
+Der gemeldete 9.0-Windows-Build 5b5346950c61 greift im Wertanzeigeformular direkt
+auf IconActive, ColorActive und ContentColorActive sowie deren Werte zu. Der
+zentrale VariablePresentationHelper ergänzt künftig fehlende neutrale Felder;
+Details und Regressionen liegen in Symcon_ModuleHelper. Dies belegt keinen
+Versionsunterschied zu 9.1 und noch keine erfolgreiche WebFront-Abnahme.
+
+Als notwendige Bestandskorrektur erneuert ApplyChanges jetzt auch die native
+Definition einer bereits vorhandenen AccuracyAvailable-Variable. Die bisherige
+idempotente Prüfung bleibt für Cache-/Snapshotpfade ohne Refresh erhalten.
+Die neue Regression war vorher rot: Eine alte native Definition blieb trotz
+ApplyChanges erhalten. Danach werden die aktuellen Helper-Beschriftungen
+verwendet, während benutzerdefinierte Darstellung, Objekt-ID, Name, Icon und
+Position erhalten bleiben. Die vollständigen Optionsfelder werden ausschließlich
+über das regulär erzeugte zentrale Bundle eingebunden; libs/helper bleibt hier
+unverändert. Unvollständige gespeicherte Benutzerdarstellungen werden nicht
+automatisch überschrieben oder nachträglich normalisiert.
+
+Die Verteilung der zentralen Helper-Korrektur und anschließendes Übernehmen
+der Instanzen stehen aus. Es gibt keine Live-Installation oder Apple-Anfrage.
+Die Formular-/WebFront-Abnahme auf dem betroffenen Symcon-9.0-Build bleibt offen.
+
+Nachweise unter PHP 8.5.10: Die zentrale Helper-Suite und die vollständige
+SymconiCloud-Suite bestehen in einer isolierten Kopie mit über den regulären
+Metadaten-/Bundle-Generator erzeugtem Kandidatenpaket. Der neue ApplyChanges-Test
+prüft eine alte native Optionsdefinition bei gleichzeitig vorhandener eigener
+Darstellung; nur die native Definition wird aktualisiert, alle Benutzerdaten und
+Objektmetadaten bleiben erhalten. Zentrale Metadaten-, Bundle-, Auto-Merge-,
+Verteilungs- und Inhaltsprüfungen sind erfolgreich. GD war nur in der temporären
+Testkonfiguration aktiv. Struktur, JSON, php-cs-fixer im Prüfmodus, Signaturen,
+UTF-8/LF und git diff --check sind geprüft. Das echte libs/helper und zentrale
+Release-Metadaten bleiben unverändert; kein Testbundle muss vor dem Pull entfernt
+werden. Unvollständige gespeicherte Benutzerdarstellungen und die echte
+9.0-Formular-/WebFront-Abnahme bleiben ausdrücklich außerhalb dieses Nachweises.
+
 ## Benachrichtigung vor erster Snapshot-Migration (2026-10-31)
 
 Ein zusätzlicher Test reproduzierte die Reihenfolge-Lücke von 594c4c5: Eine alte
