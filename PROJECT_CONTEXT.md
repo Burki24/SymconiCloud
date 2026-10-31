@@ -1,5 +1,30 @@
 # Entwicklungsstand
 
+## Automatische Boolean-Aktualisierung nach Modulupdate (2026-10-31)
+
+Die bisherigen Hinweise auf ein manuelles Übernehmen nach dem Update waren
+falsch. Laut offiziellem SDK-Vertrag läuft Migrate nach einem Modulupdate mit
+anschließendem ApplyChanges:
+https://www.symcon.de/de/service/dokumentation/entwicklerbereich/sdk-tools/sdk-php/module/migrate/
+Die vorhandenen ApplyChanges-Pfade registrieren die Boolean-Variablen bereits
+neu; zusätzlicher Produktivcode ist nicht erforderlich. Der regulär verteilte
+VariablePresentationHelper 2.1.1 enthält die vollständigen Optionsfelder.
+
+tests/boolean-update.php simuliert zweimal den Reload mit Create, persistierten
+Daten, Migrate und dem vom Kernel vorgesehenen ApplyChanges. Alle elf Boolean-
+Definitionen von Gerät und Anwesenheit werden aus alten Definitionen erneuert.
+IDs, Werte bei unverändertem Cache, Namen, Icons, Positionen und vollständige
+wie unvollständige eigene Darstellungen bleiben erhalten. Es gibt keine
+Konfigurationsänderung und ausschließlich einen lokalen GetDevices-Cachezugriff.
+Der Test belegt den Modulpfad, nicht die Ausführung im echten Symcon-Kernel.
+Ein echtes Update und die Formular-/WebFront-Abnahme im gemeldeten Symcon-9.0-
+Build bleiben als Praxisnachweis offen. Eigene fehlerhafte Darstellungen werden
+bewusst nicht überschrieben. Keine Live-Installation oder Apple-Anmeldung.
+
+Frische Prüfungen: php tests/run.php vollständig grün (GD nur temporär aktiviert),
+php tests/validate_structure.php, README-Beispiele, offizieller StylePHP-Ablauf
+(php-cs-fixer im Prüfmodus und JSON-Prüfung) sowie git diff --check grün.
+
 ## Symcon-9.0-Boolean-Optionen und Bestandsvariablen (2026-10-31)
 
 Der gemeldete 9.0-Windows-Build 5b5346950c61 greift im Wertanzeigeformular direkt

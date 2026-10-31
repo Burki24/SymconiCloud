@@ -31,7 +31,7 @@ Voraussetzung sind Symcon 9.0, PHP 8.5 und ein bereits angemeldetes
 2. Das gewünschte Gerät in der Liste **Geräte** auswählen und die Instanz über
    **Erstellen** anlegen. Die Geräte-ID wird dabei automatisch übernommen.
 3. Die angelegte Instanz **iCloud Gerät** öffnen. Prüfen, dass als übergeordnete
-   Instanz dasselbe iCloud-Konto verbunden ist, und **Übernehmen** wählen.
+   Instanz dasselbe iCloud-Konto verbunden ist, und geänderte Einstellungen speichern.
    Gemeint ist die Datenverbindung; der Ordner im Objektbaum ist dafür unerheblich.
 4. Im Objektbaum unterhalb der Instanz die Variablen prüfen. **Kontodaten
    verfügbar** zeigt an, ob das Gerät in den verfügbaren Kontodaten enthalten ist.
@@ -130,8 +130,8 @@ Das Formular unterscheidet folgende Instanzzustände:
 ### Handy suchen
 
 Die Aktionsvariable **Handy suchen** (`PlaySound`) stellt in der Kachelvisualisierung
-einen Taster **Ton abspielen** bereit. Nach dem Modulupdate einmal die
-Instanzkonfiguration übernehmen, damit die Variable angelegt wird. Diese Variable
+einen Taster **Ton abspielen** bereit. Die Variable wird beim Modulupdate
+automatisch angelegt. Diese Variable
 oder eine Verknüpfung darauf als eigene Kachel hinzufügen und die Darstellung
 **Aufzählung** verwenden; sie ist bereits vom Modul voreingestellt. In der
 Listendarstellung der Geräteinstanz ist die Aktion ebenfalls bedienbar.
@@ -235,8 +235,8 @@ auswählen. Eine Quelle an einem anderen Konto wird nicht verwendet, auch wenn
 die Geräte-ID identisch ist. Eine ungültige Quelle beeinträchtigt die übrigen
 Gerätevariablen nicht.
 
-Nach dem Modulupdate die Geräteinstanzkonfiguration einmal übernehmen, damit
-die neue Variable angelegt wird. Vorhandene Cachetreffer erscheinen sofort;
+Die neue Variable wird beim Modulupdate automatisch angelegt.
+Vorhandene Cachetreffer erscheinen sofort;
 später aufgelöste Adressen werden von WoIst automatisch an die Geräteinstanz
 weitergegeben. Für die Übernahme ist keine Apple-Aktualisierung erforderlich.
 Nach dem Löschen oder Umverbinden einer Quelle wird deren Zuordnung beim
@@ -291,7 +291,7 @@ Die numerischen Werte bleiben für Skripte und Archivierung erhalten. Nicht jede
 Gerät liefert alle Angaben; **Nicht verfügbar** ist deshalb nicht automatisch
 ein Konfigurationsfehler.
 
-Nach dem Update die Geräteinstanzkonfiguration übernehmen. Alte Kontocaches
+Die Variablen werden beim Modulupdate automatisch angelegt. Alte Kontocaches
 bleiben lesbar; die neuen Angaben zeigen zunächst **Nicht verfügbar**, bis die
 nächste erfolgreiche Geräteabfrage im Konto die zusätzlichen Felder liefert.
 Die Geräteinstanz selbst startet für diese Statusanzeigen keinen Netzwerkabruf.
@@ -387,13 +387,17 @@ fehlender Position ist die Verfügbarkeit falsch. Die Gerätekachel übernimmt
 unbekannte Genauigkeit als `null` und zeigt keinen erfundenen Genauigkeitswert.
 Ein bekannter Wert `0 m` wird ausdrücklich angezeigt. Bei älteren Installationen
 wird die neue Verfügbarkeitsvariable auch durch das erste Cacheupdate oder eine
-Kontobenachrichtigung vor dem manuellen Übernehmen angelegt. Bestehende
+Kontobenachrichtigung vor Abschluss der Initialisierung angelegt. Bestehende
 Variablen werden dabei weder neu angelegt noch umbenannt.
-Beim manuellen Übernehmen wird die native Definition von **Genauigkeit verfügbar**
-erneuert, damit Korrekturen der Darstellung aus dem zentralen Helper auch bei
-bestehenden Instanzen ankommen. Eigene Darstellungen behalten Vorrang; normale
-Cacheupdates ersetzen sie nicht. Nach einer Helper-Aktualisierung die betroffenen
-Instanzen übernehmen. Enthält eine eigene Darstellung selbst unvollständige
+Nach einem Modulupdate ruft Symcon gemäß dem
+[SDK-Lebenszyklus](https://www.symcon.de/de/service/dokumentation/entwicklerbereich/sdk-tools/sdk-php/module/migrate/)
+automatisch `ApplyChanges()` auf. Dabei
+werden die nativen Boolean-Darstellungen bestehender Geräte- und
+Anwesenheitsvariablen mit dem mitgelieferten Helper erneuert, einschließlich
+**Genauigkeit verfügbar**. Ein manueller Formularschritt ist nicht erforderlich;
+ein dauerhaft sichtbarer Button **Übernehmen** wird nicht vorausgesetzt.
+Bestehende Variablen und eigene Darstellungen bleiben erhalten.
+Enthält eine eigene Darstellung selbst unvollständige
 Optionen, muss diese gesondert geprüft werden; sie wird nicht automatisch ersetzt.
 
 Ältere gespeicherte Standorte konnten fehlende Genauigkeit als `0` enthalten.

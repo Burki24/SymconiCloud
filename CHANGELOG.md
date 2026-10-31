@@ -2,7 +2,13 @@
 
 ## Fixes
 
-- **iCloud Gerät:** Beim Übernehmen wird auch die native Darstellung einer bereits
+- **Update-Hinweise:** Die Boolean-Korrektur erreicht bestehende Geräte- und
+  Anwesenheitsvariablen automatisch über den Update-Lebenszyklus. Ein Reload-Test
+  sichert IDs, Werte, Metadaten und eigene Darstellungen ab. Die falschen Hinweise
+  auf ein manuelles Übernehmen nach dem Update wurden korrigiert.
+
+- **iCloud Gerät:** Beim automatischen `ApplyChanges()` nach einem Modulupdate
+  wird auch die native Darstellung einer bereits
   vorhandenen Genauigkeitsverfügbarkeit erneuert. Eigene Darstellungen und
   bestehende Variablen bleiben erhalten. Die vollständigen Boolean-Optionsfelder
   für Symcon 9.0 kommen mit der regulären Verteilung des zentralen Helpers.
@@ -16,7 +22,7 @@
   Koordinaten, Standortzeit und zugehörige Adresse bleiben unverändert.
 - **iCloud Gerät:** Cacheupdates und Kontobenachrichtigungen initialisieren die
   Genauigkeitsverfügbarkeit bei älteren Installationen auch vor dem ersten
-  Übernehmen der Instanzkonfiguration. Bestehende Variablen bleiben erhalten.
+  Abschluss der Initialisierung. Bestehende Variablen bleiben erhalten.
   Die Gerätekachel zeigt einen bekannten Genauigkeitsradius von `0 m` an;
   unbekannte Genauigkeit bleibt ausgeblendet.
 - **iCloud Gerät:** Fehlende Standortgenauigkeit wird nicht mehr als `0 m`
@@ -26,8 +32,8 @@
 - **Standortdaten:** Fehlende oder ungültige Apple-Alterskennzeichnungen gelten
   vorsorglich als alt; nur ein explizites `false` kennzeichnet eine Position als
   nicht alt. **Achtung:** Für eigene Automationen die Standortzeit und beim
-  Genauigkeitswert zusätzlich `AccuracyAvailable` auswerten. Nach dem Update
-  die Geräteinstanzkonfiguration übernehmen.
+  Genauigkeitswert zusätzlich `AccuracyAvailable` auswerten. Die
+  Gerätevariablen werden beim Modulupdate automatisch registriert.
 - Die sieben Modulanleitungen erläutern Property-Typen, Kennungen und
   Rückgabebedeutungen und enthalten ausführbare synthetische Skriptbeispiele.
 
@@ -249,7 +255,7 @@
 - Die Geräteinstanz bietet **Handy suchen (Ton abspielen)** und
   `ICID_PlaySound()` für das konfigurierte Gerät. Die zusätzliche Aktionsvariable
   **Handy suchen** lässt sich direkt als Kachel mit dem Taster **Ton abspielen**
-  verwenden. Nach dem Update die Instanzkonfiguration übernehmen. Bestehende
+  verwenden. Die Variable wird beim Modulupdate automatisch angelegt. Bestehende
   Variablen behalten ihre IDs. Der Auftrag läuft über das
   angemeldete Konto und wird nur für dessen gelistete Geräte gesendet. Das
   Formular meldet Annahme oder Fehler; bei nicht erreichbaren Geräten kann der
@@ -319,13 +325,13 @@
   Es entstehen keine zusätzlichen Apple-Abfragen; vor der Installation muss
   das neue GeofenceHelper-Paket über den regulären Helper-Sync eingegangen sein.
 
-- iCloud-Geräteinstanzen zeigen zusätzliche Angaben zu Stromsparmodus, Ortung, Verloren-Modus, Aktivierungssperre, Familienfreigabe und technischer Modellkennung. Die zehn neuen Statusvariablen unterscheiden **Nicht verfügbar**, **Nein** und **Ja**; fehlende Angaben und Kontofehler lassen keine alten Statuswerte stehen. Nach dem Update die Geräteinstanzkonfiguration übernehmen und die nächste Kontoaktualisierung abwarten.
+- iCloud-Geräteinstanzen zeigen zusätzliche Angaben zu Stromsparmodus, Ortung, Verloren-Modus, Aktivierungssperre, Familienfreigabe und technischer Modellkennung. Die zehn neuen Statusvariablen unterscheiden **Nicht verfügbar**, **Nein** und **Ja**; fehlende Angaben und Kontofehler lassen keine alten Statuswerte stehen. Die Variablen werden beim Modulupdate automatisch angelegt; neue Werte erscheinen mit der nächsten Kontoaktualisierung.
 
 - Geoapify steht als zweiter Adressanbieter neben dem eigenen Nominatim-Server zur Wahl. Eigener API-Key, einstellbares UTC-Tageslimit je WoIst-Instanz (Vorgabe 2.500), Verbrauchsanzeige und automatische Fortsetzung am nächsten Tag ergänzen die bisherigen Genauigkeitsregeln. Cachetreffer bleiben am Limit verfügbar; Quellenhinweise erscheinen in Kachel und IPSView. Bestehende Nominatim-Einstellungen bleiben erhalten.
 
 - Die Adressanzeige berücksichtigt die Standortgenauigkeit über den zentralen ReverseGeocodingHelper: Gebäude bis einschließlich 20 m, Straße bis 100 m, Gebiet bis 1000 m und sonst Ort. Ungenaue oder unbekannte Positionen erhalten in Geräteliste, Popup und Gerätevariable einen deutlichen Ungefähr-Hinweis. Alte präzise Cachetreffer werden bei schlechterer Genauigkeit sofort ausgeblendet.
 
-- iCloud-Geräteinstanzen erhalten die lesbare Variable **Adresse** aus dem vorhandenen WoIst-Adresscache, ohne zusätzliche Nominatim-Abfragen. Eine passende Karte am selben Konto wird automatisch verwendet; bei mehreren Karten lässt sich die Quelle auswählen. Nach dem Update die Geräteinstanzkonfiguration einmal übernehmen.
+- iCloud-Geräteinstanzen erhalten die lesbare Variable **Adresse** aus dem vorhandenen WoIst-Adresscache, ohne zusätzliche Nominatim-Abfragen. Eine passende Karte am selben Konto wird automatisch verwendet; bei mehreren Karten lässt sich die Quelle auswählen. Die Variable wird beim Modulupdate automatisch angelegt.
 
 ## Fixes
 
