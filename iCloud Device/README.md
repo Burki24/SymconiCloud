@@ -397,6 +397,12 @@ Nullgenauigkeit passt. Positive historische Genauigkeit, Koordinaten, Standortze
 und Adresse bleiben erhalten. Neu bestätigte `0 m` werden intern als bekannt
 gespeichert und bleiben auch nach Standortverlust oder erneutem Laden sichtbar.
 Die interne Herkunftskennzeichnung wird nicht an Skripte oder die Kachel ausgegeben.
+Die Übernahme erfolgt auch vor der Verarbeitung einer zuerst eintreffenden
+Kontobenachrichtigung. Ein Kontofehler löscht dadurch weder gültige historische
+Genauigkeit noch die zugehörige Adresse. Eine neue Messung mit unbekannter
+Genauigkeit übernimmt dagegen keinen alten Radius. Unlesbare gespeicherte
+Standortdaten gelten als nicht verfügbar; neue gültige Daten stellen die Anzeige
+wieder her.
 
 `location.isOld` im Kontocache und `LocationIsOld` bleiben Boolean. Nur Apples
 explizites `false` gilt als nicht alt; fehlende oder ungültige Kennzeichnungen

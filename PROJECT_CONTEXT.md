@@ -1,5 +1,43 @@
 # Entwicklungsstand
 
+## Benachrichtigung vor erster Snapshot-Migration (2026-10-31)
+
+Ein zusätzlicher Test reproduzierte die Reihenfolge-Lücke von 594c4c5: Eine alte
+Instanz mit LocationAvailable=true, fehlendem AccuracyAvailable und positivem
+historischem Snapshot konnte dessen Genauigkeit vor dem ersten Kachellesen
+überschreiben. RememberDeviceLocation migriert und sichert jetzt den bisherigen
+Standort vor jedem möglichen Überschreiben. Passende historische Daten bleiben
+bei unbekannter aktueller Genauigkeit erhalten, einschließlich zugehöriger Adresse.
+Ein separater interner Capture-Pfad nach erfolgreicher Cacheanwendung erfasst
+dagegen ausdrücklich die Qualität der neu verarbeiteten Position. Fehlende
+Genauigkeit einer neuen Messung bleibt null; es wird kein alter Radius übernommen.
+
+Die Upgrade-Matrix beginnt ohne vorheriges Kachellesen und ohne ApplyChanges mit
+einer fehlerhaften Nachricht, nicht verfügbaren Kontodaten oder einer Nachricht
+ohne Position. Positive historische Genauigkeit, belegte Null und unbekannte
+Genauigkeit werden jeweils mit wiederholter Nachricht geprüft. Vollständige
+Historie und keine zusätzlichen Kontoanfragen sind abgesichert. Die vorhandenen
+Nullkoordinaten-, Identitäts-, Metadaten-, Wiederanlauf- und Quellenwechseltests
+bleiben bestehen. Ein zusätzlicher Regressionsfall verhindert, dass neu erforderliches
+Lesen eines unlesbaren Alt-JSON die Verarbeitung gültiger neuer Daten blockiert:
+solche Historie ist nicht verfügbar und kann durch eine neue Messung ersetzt werden.
+
+Private und öffentliche Snapshotverträge bleiben getrennt; keine neue öffentliche
+Methode oder Änderung an Variablentypen, Idents, Positionen und Helper-/Vendor-Dateien.
+Offen bleiben ein echter Symcon-9.0-Reload/Neustart mit Kontopush vor dem ersten
+Kachellesen sowie die visuelle Nullwert- und Scrollabnahme im echten Kachelhost.
+Keine Apple-Abfrage, Anmeldung, Live-Installation oder Versionsanhebung.
+
+Abschlussnachweis unter PHP 8.5.10: vollständige Offline-Suite einschließlich
+der neuen Benachrichtigung-zuerst-Matrix, bestehender Upgrade-/Nullwert-/Adress-
+und Identitätsprüfungen, Node-Verträge und Syntaxprüfung erfolgreich. GD war nur
+über die anschließend entfernte temporäre Testkonfiguration aktiviert. Struktur-
+und Helperhashprüfung, offizieller StylePHP-JSON-Check, php-cs-fixer im Prüfmodus,
+unveränderte öffentliche/geschützte Signaturen, UTF-8/LF und git diff --check
+bestanden. Die Reihenfolge- und Wiederherstellungsfälle waren vor ihrer Korrektur
+rot und sind danach grün. Keine weitere Regression in diesen Offline-Prüfungen
+festgestellt; die Praxisnachweise bleiben wie oben benannt offen.
+
 ## Migration mehrdeutiger historischer Genauigkeitsnullwerte (2026-10-31)
 
 Die zusätzliche Prüfung nach 21d4cd6 reproduzierte einen alten WidgetLocation-

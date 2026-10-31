@@ -27,13 +27,51 @@ $check($initial['state']['canPlaySound'] && $firstBoundary->commands === [], 'Re
 // Historical snapshots from before accuracy availability existed used zero for missing accuracy.
 $snapshotID = $createDevice($firstAccount);
 $snapshotDevice = IPS\InstanceManager::getInstanceInterface($snapshotID);
-$snapshotPayload = static function () use ($snapshotDevice): array
+$snapshotPayload = static function () use ($snapshotDevice): ?array
 {
     preg_match('#<script type="application/json" id="device-bootstrap">(.*?)</script>#s', $snapshotDevice->GetVisualizationTile(), $match);
     return json_decode($match[1], true, 512, JSON_THROW_ON_ERROR)['state']['location'];
 };
 $setSnapshotValue = static fn (string $ident, mixed $value) => (new ReflectionMethod($snapshotDevice, 'SetValue'))->invoke($snapshotDevice, $ident, $value);
 $historical = ['latitude' => 51.25, 'longitude' => 7.5, 'accuracy' => 0, 'timestamp' => 1700000000, 'address' => 'Synthetic historical address'];
+// Notification-first upgrades must preserve history without a preceding tile read or ApplyChanges.
+foreach (['malformed', 'unavailable', 'no-location'] as $firstEvent) {
+    foreach ([12.5, 0, null] as $historicalAccuracy) {
+        $firstBoundary->result['devices'] = [$syntheticDevice];
+        $snapshotDevice->Update();
+        $saved = $snapshotDevice->GetPersistence();
+        $history = array_replace($historical, ['accuracy' => $historicalAccuracy]);
+        if ($historicalAccuracy === 0) {
+            $history['accuracyKnown'] = true; // A genuinely measured zero, not an old sentinel.
+        }
+        $saved['attributes']['WidgetLocation'] = json_encode($history, JSON_THROW_ON_ERROR);
+        $snapshotDevice->ApplyPersistence($saved);
+        IPS_DeleteVariable(IPS_GetObjectIDByIdent('AccuracyAvailable', $snapshotID));
+        $firstBoundary->commands = [];
+        $notification = $firstBoundary->result;
+        if ($firstEvent === 'unavailable') {
+            $notification['success'] = false;
+        } elseif ($firstEvent === 'no-location') {
+            $notification['devices'][0]['location'] = null;
+        }
+        $message = $firstEvent === 'malformed' ? '{invalid' : json_encode(['DataID' => '{FCE7780F-9520-4E52-92F3-60034FFAED6D}'] + $notification, JSON_THROW_ON_ERROR);
+        // Use the actual notification contract; deliberately do not read the snapshot first.
+        $snapshotDevice->ReceiveData($message);
+        $snapshotDevice->ReceiveData($message);
+        $expected = $history;
+        unset($expected['accuracyKnown']);
+        $check($snapshotPayload() === $expected, 'Notification-first upgrade must preserve known positive/zero accuracy and all historical location fields: ' . $firstEvent . '/' . json_encode($historicalAccuracy) . ' actual=' . json_encode($snapshotPayload()));
+        $check(!$value($snapshotID, 'AccuracyAvailable') && $firstBoundary->commands === [], 'Historical quality must not imply current availability or trigger an account query.');
+    }
+}
+$firstBoundary->result['devices'] = [$syntheticDevice];
+$snapshotDevice->Update();
+$damaged = $snapshotDevice->GetPersistence();
+$damaged['attributes']['WidgetLocation'] = '{invalid';
+$snapshotDevice->ApplyPersistence($damaged);
+$check($snapshotPayload() === null, 'Unreadable historical JSON must produce unavailable history, not an exception.');
+$snapshotDevice->ReceiveData(json_encode(['DataID' => '{FCE7780F-9520-4E52-92F3-60034FFAED6D}'] + $firstBoundary->result, JSON_THROW_ON_ERROR));
+$check($snapshotPayload()['accuracy'] === 12.5, 'A damaged old snapshot must not prevent a valid incoming measurement from recovering the widget.');
 foreach ([0, 12.5, null] as $oldAccuracy) {
     $historical['accuracy'] = $oldAccuracy;
     $saved = $snapshotDevice->GetPersistence();

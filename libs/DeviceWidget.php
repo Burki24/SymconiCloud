@@ -43,14 +43,13 @@ trait DeviceWidget
     {
         // Account pushes and explicit cache reads may arrive before ApplyChanges after an update.
         $this->registerAccuracyAvailability();
-        if (!$this->GetValue('LocationAvailable') && !($this->ReadAttributeString('WidgetLocation') === 'null' && $this->GetValue('LocationTimestamp') > 0)) {
+        // Preserve a migrated historical measurement before an incoming failure clears availability.
+        $previous = $this->deviceLocationSnapshot();
+        if (!$this->GetValue('AccuracyAvailable') && $previous !== null
+            && $this->deviceSnapshotMatchesPosition($previous)) {
             return;
         }
-        $this->WriteAttributeString('WidgetLocation', $this->EncodeVisualizationHTMLJSON([
-            'latitude' => $this->GetValue('Latitude'), 'longitude' => $this->GetValue('Longitude'),
-            'accuracy' => $this->GetValue('AccuracyAvailable') ? $this->GetValue('Accuracy') : null, 'timestamp' => $this->GetValue('LocationTimestamp'),
-            'address'  => $this->GetValue('Address'), 'accuracyKnown' => $this->GetValue('AccuracyAvailable')
-        ]));
+        $this->captureDeviceLocation();
     }
 
     /** Uses local state and migrates legacy snapshots; no account request or geocoding. */
@@ -83,10 +82,28 @@ trait DeviceWidget
         return __DIR__ . '/../iCloud Device/visualization';
     }
 
+    /** Called after a successful cache application to capture its own quality, including unknown. */
+    private function captureDeviceLocation(): void
+    {
+        if (!$this->GetValue('LocationAvailable') && !($this->ReadAttributeString('WidgetLocation') === 'null' && $this->GetValue('LocationTimestamp') > 0)) {
+            return;
+        }
+        $this->WriteAttributeString('WidgetLocation', $this->EncodeVisualizationHTMLJSON([
+            'latitude' => $this->GetValue('Latitude'), 'longitude' => $this->GetValue('Longitude'),
+            'accuracy' => $this->GetValue('AccuracyAvailable') ? $this->GetValue('Accuracy') : null, 'timestamp' => $this->GetValue('LocationTimestamp'),
+            'address'  => $this->GetValue('Address'), 'accuracyKnown' => $this->GetValue('AccuracyAvailable')
+        ]));
+    }
+
     /** Migrates only ambiguous historical accuracy; provenance stays inside the private snapshot. */
     private function deviceLocationSnapshot(): ?array
     {
-        $location = json_decode($this->ReadAttributeString('WidgetLocation'), true, 512, JSON_THROW_ON_ERROR);
+        try {
+            $location = json_decode($this->ReadAttributeString('WidgetLocation'), true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            // Unreadable history is unavailable; a valid incoming measurement must still recover.
+            return null;
+        }
         if (!is_array($location)) {
             return null;
         }
@@ -97,9 +114,7 @@ trait DeviceWidget
             // An old zero is trustworthy only when it matches a still-available measured zero.
             if ((is_int($accuracy) || is_float($accuracy)) && $accuracy == 0
                 && $this->GetValue('LocationAvailable') && $this->GetValue('AccuracyAvailable') && $this->GetValue('Accuracy') == 0
-                && is_numeric($location['latitude'] ?? null) && (float) $location['latitude'] === $this->GetValue('Latitude')
-                && is_numeric($location['longitude'] ?? null) && (float) $location['longitude'] === $this->GetValue('Longitude')
-                && ($location['timestamp'] ?? null) === $this->GetValue('LocationTimestamp')) {
+                && $this->deviceSnapshotMatchesPosition($location)) {
                 $known = true;
             }
             $location['accuracy'] = $known ? $accuracy : null;
@@ -108,5 +123,12 @@ trait DeviceWidget
         }
         unset($location['accuracyKnown']);
         return $location;
+    }
+
+    private function deviceSnapshotMatchesPosition(array $location): bool
+    {
+        return is_numeric($location['latitude'] ?? null) && (float) $location['latitude'] === $this->GetValue('Latitude')
+            && is_numeric($location['longitude'] ?? null) && (float) $location['longitude'] === $this->GetValue('Longitude')
+            && ($location['timestamp'] ?? null) === $this->GetValue('LocationTimestamp');
     }
 }

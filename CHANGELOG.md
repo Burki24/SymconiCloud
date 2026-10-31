@@ -2,6 +2,10 @@
 
 ## Fixes
 
+- **iCloud Gerät:** Historische Genauigkeit und Adresse bleiben auch erhalten,
+  wenn eine Kontobenachrichtigung vor dem ersten Lesen des Alt-Snapshots eintrifft.
+  Neue Messungen übernehmen weiterhin ausschließlich ihre eigene Genauigkeit.
+  Unlesbare Snapshot-Daten verhindern die Wiederherstellung durch neue Daten nicht.
 - **iCloud Gerät:** Alte Standort-Snapshots mit mehrdeutiger Genauigkeit `0`
   werden nicht mehr als bekannte `0 m` angezeigt. Nachweislich bekannte neue
   Nullwerte bleiben auch bei Standortverlust und erneutem Laden erhalten;

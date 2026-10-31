@@ -323,7 +323,7 @@ class iCloudDevice extends IPSModuleStrict
                 $this->CloudDebugWrite('LocationTimestamp', max(0, (int) ($location['timestamp'] ?? 0)), __FUNCTION__, __LINE__);
             }
             $this->CloudDebugWrite('Address', $valid ? $this->readAddress((float) $location['latitude'], (float) $location['longitude']) : '', __FUNCTION__, __LINE__);
-            $this->RememberDeviceLocation();
+            $this->captureDeviceLocation();
             $this->applyDetails($device, $valid);
             $this->CloudDebugWrite('LastUpdate', (int) $data['updatedAt'], __FUNCTION__, __LINE__);
             $this->CloudDebugWrite('DataAvailable', true, __FUNCTION__, __LINE__);
