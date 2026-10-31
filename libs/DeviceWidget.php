@@ -49,11 +49,11 @@ trait DeviceWidget
         $this->WriteAttributeString('WidgetLocation', $this->EncodeVisualizationHTMLJSON([
             'latitude' => $this->GetValue('Latitude'), 'longitude' => $this->GetValue('Longitude'),
             'accuracy' => $this->GetValue('AccuracyAvailable') ? $this->GetValue('Accuracy') : null, 'timestamp' => $this->GetValue('LocationTimestamp'),
-            'address'  => $this->GetValue('Address')
+            'address'  => $this->GetValue('Address'), 'accuracyKnown' => $this->GetValue('AccuracyAvailable')
         ]));
     }
 
-    /** Only local variables and persisted history are read; no account request or geocoding. */
+    /** Uses local state and migrates legacy snapshots; no account request or geocoding. */
     protected function DeviceWidgetPayload(): array
     {
         return [
@@ -61,7 +61,7 @@ trait DeviceWidget
                 'name'              => $this->GetValue('DeviceName'), 'model' => $this->GetValue('Model'),
                 'online'            => $this->GetValue('Online'), 'available' => $this->GetValue('DataAvailable'),
                 'battery'           => $this->GetValue('BatteryAvailable') ? $this->GetValue('BatteryLevel') : null,
-                'location'          => json_decode($this->ReadAttributeString('WidgetLocation'), true, 512, JSON_THROW_ON_ERROR),
+                'location'          => $this->deviceLocationSnapshot(),
                 'locationAvailable' => $this->GetValue('LocationAvailable'), 'locationOld' => $this->GetValue('LocationIsOld'),
                 'canPlaySound'      => $this->GetValue('DataAvailable'), 'result' => $this->ReadAttributeString('SoundResult'),
                 'soundRevision'     => $this->ReadAttributeInteger('WidgetSoundRevision'),
@@ -81,5 +81,32 @@ trait DeviceWidget
     protected function VisualizationAssetDirectory(): string
     {
         return __DIR__ . '/../iCloud Device/visualization';
+    }
+
+    /** Migrates only ambiguous historical accuracy; provenance stays inside the private snapshot. */
+    private function deviceLocationSnapshot(): ?array
+    {
+        $location = json_decode($this->ReadAttributeString('WidgetLocation'), true, 512, JSON_THROW_ON_ERROR);
+        if (!is_array($location)) {
+            return null;
+        }
+        $this->registerAccuracyAvailability();
+        if (!is_bool($location['accuracyKnown'] ?? null)) {
+            $accuracy = $location['accuracy'] ?? null;
+            $known = (is_int($accuracy) || is_float($accuracy)) && is_finite((float) $accuracy) && $accuracy > 0;
+            // An old zero is trustworthy only when it matches a still-available measured zero.
+            if ((is_int($accuracy) || is_float($accuracy)) && $accuracy == 0
+                && $this->GetValue('LocationAvailable') && $this->GetValue('AccuracyAvailable') && $this->GetValue('Accuracy') == 0
+                && is_numeric($location['latitude'] ?? null) && (float) $location['latitude'] === $this->GetValue('Latitude')
+                && is_numeric($location['longitude'] ?? null) && (float) $location['longitude'] === $this->GetValue('Longitude')
+                && ($location['timestamp'] ?? null) === $this->GetValue('LocationTimestamp')) {
+                $known = true;
+            }
+            $location['accuracy'] = $known ? $accuracy : null;
+            $location['accuracyKnown'] = $known;
+            $this->WriteAttributeString('WidgetLocation', $this->EncodeVisualizationHTMLJSON($location));
+        }
+        unset($location['accuracyKnown']);
+        return $location;
     }
 }

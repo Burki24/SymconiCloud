@@ -24,6 +24,78 @@ $check($initial['state']['location']['latitude'] === 51.25 && $initial['state'][
 $check($initial['state']['location']['timestamp'] === 1700000000 && $initial['options']['tileHeaderInset'] === 58, 'Use the location timestamp and reserve the native tile heading.');
 $check($initial['state']['canPlaySound'] && $firstBoundary->commands === [], 'Rendering is local and never sends a sound or Apple request.');
 
+// Historical snapshots from before accuracy availability existed used zero for missing accuracy.
+$snapshotID = $createDevice($firstAccount);
+$snapshotDevice = IPS\InstanceManager::getInstanceInterface($snapshotID);
+$snapshotPayload = static function () use ($snapshotDevice): array
+{
+    preg_match('#<script type="application/json" id="device-bootstrap">(.*?)</script>#s', $snapshotDevice->GetVisualizationTile(), $match);
+    return json_decode($match[1], true, 512, JSON_THROW_ON_ERROR)['state']['location'];
+};
+$setSnapshotValue = static fn (string $ident, mixed $value) => (new ReflectionMethod($snapshotDevice, 'SetValue'))->invoke($snapshotDevice, $ident, $value);
+$historical = ['latitude' => 51.25, 'longitude' => 7.5, 'accuracy' => 0, 'timestamp' => 1700000000, 'address' => 'Synthetic historical address'];
+foreach ([0, 12.5, null] as $oldAccuracy) {
+    $historical['accuracy'] = $oldAccuracy;
+    $saved = $snapshotDevice->GetPersistence();
+    $saved['attributes']['WidgetLocation'] = json_encode($historical, JSON_THROW_ON_ERROR);
+    $snapshotDevice->ApplyPersistence($saved);
+    $setSnapshotValue('LocationAvailable', false);
+    IPS_DeleteVariable(IPS_GetObjectIDByIdent('AccuracyAvailable', $snapshotID));
+    $oldObjects = [];
+    foreach (IPS_GetChildrenIDs($snapshotID) as $objectID) {
+        $oldObjects[$objectID] = IPS_GetObject($objectID);
+    }
+    $firstBoundary->commands = [];
+    $upgraded = $snapshotPayload(); // No ApplyChanges or account update has happened.
+    $expected = $historical;
+    $expected['accuracy'] = $oldAccuracy === 0 ? null : $oldAccuracy;
+    $check($upgraded === $expected, 'Legacy zero is ambiguous; positive accuracy, coordinates, time and matching address must survive.');
+    $afterMigration = $snapshotDevice->GetPersistence()['attributes']['WidgetLocation'];
+    $snapshotDevice->ReceiveData('{invalid');
+    $check($snapshotPayload() === $expected, 'Unavailable account data must not resurrect an ambiguous historical zero.');
+    $check($snapshotDevice->GetPersistence()['attributes']['WidgetLocation'] === $afterMigration, 'Snapshot migration must be idempotent.');
+    foreach ($oldObjects as $objectID => $object) {
+        $check(IPS_GetObject($objectID) === $object, 'Snapshot upgrades must preserve existing variable metadata.');
+    }
+    $check($firstBoundary->commands === [], 'Reading/migrating a snapshot must not query the account.');
+}
+// Genuine new zero survives unavailable data and persistence reload, unlike the old sentinel.
+$firstBoundary->result['devices'] = [$syntheticDevice];
+$firstBoundary->result['devices'][0]['location']['horizontalAccuracy'] = 0.0;
+$snapshotDevice->Update();
+$check($snapshotPayload()['accuracy'] === 0.0 || $snapshotPayload()['accuracy'] === 0, 'A new confirmed zero must remain known.');
+$snapshotDevice->ReceiveData('{invalid');
+$savedZero = $snapshotDevice->GetPersistence();
+$snapshotDevice->ApplyPersistence($savedZero);
+$zeroHistory = $snapshotPayload();
+$check($zeroHistory['accuracy'] === 0.0 || $zeroHistory['accuracy'] === 0, 'A genuine zero must survive location loss and a persistence reload.');
+$check(array_keys($zeroHistory) === array_keys($historical), 'Internal provenance must not change the public location payload shape.');
+// Prior releases can also have an unmarked zero proven by the still-current availability flag.
+$snapshotDevice->Update();
+$unmarked = $snapshotDevice->GetPersistence();
+$unmarked['attributes']['WidgetLocation'] = json_encode(array_replace($historical, ['accuracy' => 0]), JSON_THROW_ON_ERROR);
+$snapshotDevice->ApplyPersistence($unmarked);
+$check($snapshotPayload()['accuracy'] === 0 || $snapshotPayload()['accuracy'] === 0.0, 'An unmarked zero matching the available current measurement must survive upgrade.');
+$snapshotDevice->ReceiveData('{invalid');
+$check($snapshotPayload()['accuracy'] === 0 || $snapshotPayload()['accuracy'] === 0.0, 'A verified old zero keeps its provenance when the account is later unavailable.');
+$firstBoundary->result['devices'][0]['location']['latitude'] = 0.0;
+$firstBoundary->result['devices'][0]['location']['longitude'] = 0.0;
+$snapshotDevice->Update();
+$currentZero = $snapshotPayload();
+$unmarked = $snapshotDevice->GetPersistence();
+$unmarked['attributes']['WidgetLocation'] = json_encode($currentZero, JSON_THROW_ON_ERROR);
+$snapshotDevice->ApplyPersistence($unmarked);
+$check($snapshotPayload()['accuracy'] === 0 || $snapshotPayload()['accuracy'] === 0.0, 'JSON integer zero coordinates must match the floating-point current measurement.');
+foreach (['timestamp', 'latitude'] as $differentField) {
+    $different = $currentZero;
+    $different[$differentField]++;
+    $unmarked['attributes']['WidgetLocation'] = json_encode($different, JSON_THROW_ON_ERROR);
+    $snapshotDevice->ApplyPersistence($unmarked);
+    $check($snapshotPayload()['accuracy'] === null, 'Current zero accuracy must not validate a different historical measurement.');
+}
+$firstBoundary->result['devices'] = [$syntheticDevice];
+$firstBoundary->commands = [];
+
 (new ReflectionMethod($widget, 'SetValue'))->invoke($widget, 'Address', 'Example Street 7, Example City');
 $firstBoundary->result['devices'][0]['location'] = null;
 // The widget snapshot is captured before availability changes; address still belongs to the old coordinates.

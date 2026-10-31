@@ -390,6 +390,14 @@ wird die neue Verfügbarkeitsvariable auch durch das erste Cacheupdate oder eine
 Kontobenachrichtigung vor dem manuellen Übernehmen angelegt. Bestehende
 Variablen werden dabei weder neu angelegt noch umbenannt.
 
+Ältere gespeicherte Standorte konnten fehlende Genauigkeit als `0` enthalten.
+Ein solcher unmarkierter historischer Nullwert wird beim Lesen als unbekannt
+übernommen, sofern er nicht eindeutig zur noch verfügbaren Messung mit bekannter
+Nullgenauigkeit passt. Positive historische Genauigkeit, Koordinaten, Standortzeit
+und Adresse bleiben erhalten. Neu bestätigte `0 m` werden intern als bekannt
+gespeichert und bleiben auch nach Standortverlust oder erneutem Laden sichtbar.
+Die interne Herkunftskennzeichnung wird nicht an Skripte oder die Kachel ausgegeben.
+
 `location.isOld` im Kontocache und `LocationIsOld` bleiben Boolean. Nur Apples
 explizites `false` gilt als nicht alt; fehlende oder ungültige Kennzeichnungen
 werden vorsorglich als alt behandelt. Auch `false` garantiert keine Aktualität:

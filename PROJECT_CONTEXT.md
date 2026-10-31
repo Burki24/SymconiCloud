@@ -1,5 +1,47 @@
 # Entwicklungsstand
 
+## Migration mehrdeutiger historischer Genauigkeitsnullwerte (2026-10-31)
+
+Die zusätzliche Prüfung nach 21d4cd6 reproduzierte einen alten WidgetLocation-
+Snapshot mit accuracy=0 aus dem früheren Missing-to-zero-Verhalten. Bei fehlender
+Position blieb er erhalten und die korrigierte Kachel zeigte ihn als 0 m an.
+Der neue Upgrade-Test war vor der Korrektur rot.
+
+Neue private Snapshots tragen accuracyKnown. Die Ausgabe entfernt dieses interne
+Feld; öffentliche Standortfelder und öffentliche Signaturen bleiben unverändert.
+Unmarkierte Snapshots werden beim Lesen idempotent migriert: positive endliche
+Genauigkeit bleibt bekannt, mehrdeutige Null wird null. Ein unmarkierter Nullwert
+darf nur dann bekannt bleiben, wenn LocationAvailable und AccuracyAvailable wahr
+sind und Genauigkeit, Koordinaten sowie Standortzeit zur aktuellen Messung passen.
+Numerische Nullkoordinaten überstehen dabei den JSON-Integer/Float-Wechsel.
+Andere Messungen übernehmen nicht die Verfügbarkeit der aktuellen Position.
+Neu aufgezeichnete bekannte Nullwerte behalten ihre interne Herkunft auch bei
+Kontofehlern, Standortverlust und erneutem Laden der Persistenz. Ein unmarkierter
+historischer Nullwert ohne eindeutigen Nachweis kann nicht nachträglich als echt
+bestätigt werden und wird deshalb konservativ unbekannt.
+
+Die librarylokale Migration verwendet die vorhandenen zentralen JSON-
+und DebugFlow-Verträge; keine Helper-/Vendor-Änderung. Der vollständige Standort
+einschließlich Adresse bleibt erhalten. Tests prüfen Lesen vor ApplyChanges,
+wiederholtes Lesen, fehlerhafte Kontobenachrichtigungen, fehlende Position,
+unveränderte Objektdaten, keine zusätzlichen Kontoanfragen, positive/null/mehrdeutige
+Genauigkeit, neue echte Nullwerte, Persistenz, Nullkoordinaten und abweichende
+Messungen. Der öffentliche Payload enthält keine zusätzliche Herkunftskennung.
+
+Offen bleiben echter Symcon-9.0-Reload/Neustart mit historischem Snapshot und
+Kontopush sowie visuelle Nullwert- und Mausrad-/Scrollabnahme im echten Kachelhost.
+Die synthetischen Nachweise ersetzen diese Praxisabnahme nicht. Keine reale
+Apple-Abfrage, Anmeldung, Live-Installation oder Versionsanhebung.
+
+Abschlussnachweis unter PHP 8.5.10: gesamte Offline-Suite einschließlich Node-
+Verträgen und Syntaxprüfung erfolgreich; GD ausschließlich über die anschließend
+entfernte temporäre PHP-Testkonfiguration aktiviert. Struktur-/Helperhashprüfung,
+offizieller StylePHP-JSON-Check und php-cs-fixer im Prüfmodus bestanden. Öffentliche
+und geschützte Signaturen sind unverändert; UTF-8 ohne BOM, LF und git diff --check
+sind geprüft. Die gezielten Alt-Snapshot- und Nullkoordinatenfälle waren vor ihren
+Korrekturen rot und sind danach grün. Keine weitere Regression in diesen
+Offline-Nachweisen festgestellt; die genannten Praxisprüfungen bleiben offen.
+
 ## Upgrade vor ApplyChanges und sichtbarer Genauigkeitsnullwert (2026-10-31)
 
 Die Nachprüfung von c4a77ab zeigte zwei Restlücken: Eine bestehende Geräteinstanz

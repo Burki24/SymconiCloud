@@ -2,6 +2,10 @@
 
 ## Fixes
 
+- **iCloud Gerät:** Alte Standort-Snapshots mit mehrdeutiger Genauigkeit `0`
+  werden nicht mehr als bekannte `0 m` angezeigt. Nachweislich bekannte neue
+  Nullwerte bleiben auch bei Standortverlust und erneutem Laden erhalten;
+  Koordinaten, Standortzeit und zugehörige Adresse bleiben unverändert.
 - **iCloud Gerät:** Cacheupdates und Kontobenachrichtigungen initialisieren die
   Genauigkeitsverfügbarkeit bei älteren Installationen auch vor dem ersten
   Übernehmen der Instanzkonfiguration. Bestehende Variablen bleiben erhalten.
