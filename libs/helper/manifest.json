@@ -21,10 +21,10 @@
             "source_sha": "d13d726f8df24a5ad6e3d659242f407731a10567"
         },
         "VariablePresentationHelper": {
-            "version": "2.1.0",
-            "sha256": "56f8b6c258db79b6f41e2f9930d88a37d719a599c3a2f317bc34b7f4746293fa",
+            "version": "2.1.1",
+            "sha256": "c3212189b2dffda2e582a59ab8ba5d7f2a563dc2f3ea841ec9e877e4400de650",
             "path": "libs/helper/VariablePresentationHelper.php",
-            "source_sha": "b586f89d44fb45ed3394dfeb5880a9406eb1c663"
+            "source_sha": "d9e6bcf6036fee370a7cbce8ef737234886e36c3"
         },
         "VisualizationAssetHelper": {
             "version": "1.1.0",
