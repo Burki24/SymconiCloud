@@ -193,6 +193,7 @@ $check($web['options']['tileHeaderInset'] === 0 && !$web['options']['design']['p
 $token = $readAttribute->invoke($widget, 'StatusWidgetToken');
 $check(strlen($token) === 64, 'IPSView uses a per-instance authorization token.');
 $check(str_contains($html, 'SymconVisualizationInteraction') && str_contains($html, 'SymconHTTPOrigin'), 'Outer data frame uses the central origin and wheel-forwarding helpers.');
+$check(str_contains($html, 'name="burki24.wheel.v1"'), 'Only the owned IPSView child frame explicitly joins the shared wheel bridge.');
 $check(!str_contains($page, $token) && $shell['options']['transport']['fragmentToken'] === true, 'Token travels only in the frame fragment, never in a public page response.');
 $check($request('POST', $token, '/page')[0] === 405 && $request('GET', '', '/page?token=x')[0] === 404, 'Page route accepts only the exact GET path.');
 $check($request('POST', '')[0] === 403 && $request('GET', $token)[0] === 405 && $request('POST', $token, '?token=x')[0] === 404, 'Cache endpoint rejects unauthenticated, query and non-POST requests.');

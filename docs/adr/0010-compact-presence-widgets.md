@@ -47,3 +47,14 @@ prüfen SDK-Nachrichten, Zeilenidentität, Auswahl, Scrollposition und Wiederanl
 MCP verwendet eine getrennte temporäre Library mit synthetischen Daten.
 Kachelvorschau und IPSView-Testeinbettung bestätigen keine nativen Live-Pushs oder
 native IPSView-App; diese Hostprüfungen bleiben nach regulärer Installation nötig.
+
+## Nachtrag 02.11.2026: freigegebene IPSView-Frame-Bridge
+
+Der bereits gemeinsame aeussere HTTP-Loader fuer WoIst und Anwesenheit markiert
+seinen eigenen iframe mit `name="burki24.wheel.v1"`. Nur diese ausdrueckliche
+Partnerfreigabe erlaubt dem abgesicherten zentralen Helper Anmelde-/Pointer-
+Nachrichten und weitergeleitete Mausrad-Ereignisse. Die Kennzeichnung enthaelt
+keine Daten oder Zugangsdaten und aendert weder URL-/Token- noch Designvertraege.
+Sie ist mit bisherigen Helpern kompatibel und wird vor deren neuer Verteilung
+ausgerollt. Die funktionale Partnerpruefung liegt weiterhin zentral im Helper;
+der Anwesenheits-Vertragstest prueft die tatsaechlich erzeugte Markierung.

@@ -2,6 +2,12 @@
 
 ## Fixes
 
+- Der eigene äußere IPSView-Loader kennzeichnet seinen Kind-Frame ausdrücklich
+  für die gemeinsame Mausrad-Bridge. Damit bleibt die Weiterleitung mit dem
+  abgesicherten Helper erhalten; fremde Hosts erhalten keine Bridge-Nachrichten.
+  Der neue Helper folgt über die reguläre Verteilung. Konten, Geräte, Designs
+  und Transportkonfigurationen bleiben unverändert.
+
 - **Update-Hinweise:** Die Boolean-Korrektur erreicht bestehende Geräte- und
   Anwesenheitsvariablen automatisch über den Update-Lebenszyklus. Ein Reload-Test
   sichert IDs, Werte, Metadaten und eigene Darstellungen ab. Die falschen Hinweise
