@@ -10,7 +10,7 @@ require_once __DIR__ . '/VisualizationAssetHelper.php';
 /**
  * Shared OpenFreeMap vector-map design, assets and per-output configuration.
  *
- * @version 1.0.2
+ * @version 1.0.3
  */
 trait OpenFreeMapHelper
 {
@@ -197,7 +197,7 @@ trait OpenFreeMapHelper
 
     private function OpenFreeMapText(string $key): string
     {
-        return $this->TranslateHelperText('OpenFreeMapHelper', $key, self::OPEN_FREE_MAP_TRANSLATION_SOURCES[$key]);
+        return $this->TranslateHelperTextFromDirectory(__DIR__ . '/translations', 'OpenFreeMapHelper', $key, self::OPEN_FREE_MAP_TRANSLATION_SOURCES[$key]);
     }
 
     /** @return array<string,string> Stable persisted values and translated display names. */
