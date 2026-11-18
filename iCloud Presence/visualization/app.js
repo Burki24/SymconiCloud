@@ -6,6 +6,7 @@
     const root = doc.getElementById('status-widget');
     const content = doc.getElementById('widget-content');
     const list = doc.getElementById('members');
+    const nativeTile = !doc.documentElement.classList.contains('ipsview-mode');
     const rows = new Map();
     let selected = '';
     let stopped = false;
@@ -14,6 +15,24 @@
     let generation = 0;
     const text = (id, value) => { doc.getElementById(id).textContent = typeof value === 'string' ? value : ''; };
     const tone = value => ['positive', 'neutral'].includes(value) ? value : 'unknown';
+    function renderDetails(element, member, compact) {
+        element.replaceChildren();
+        if (compact || !nativeTile || !Array.isArray(member.detailLines)) {
+            element.textContent = !compact && typeof member.detail === 'string' ? member.detail : '';
+            return;
+        }
+        for (const item of member.detailLines) {
+            if (typeof item?.label !== 'string' || typeof item.value !== 'string') continue;
+            const line = doc.createElement('span');
+            line.className = 'detail-line';
+            line.textContent = item.label + ': ';
+            const value = doc.createElement('span');
+            value.className = 'detail-value';
+            value.textContent = item.value;
+            line.appendChild(value);
+            element.appendChild(line);
+        }
+    }
     function render(payload) {
         if (!payload || !payload.state || !Array.isArray(payload.state.members) || !payload.options) return;
         const state = payload.state;
@@ -57,14 +76,16 @@
             previous = row;
             row.dataset.tone = tone(member.tone);
             row.setAttribute('aria-pressed', String(selected === member.id));
-            for (const key of ['name', 'status', 'detail', 'reason']) {
-                const value = key === 'status' && compact ? member.zone : compact && ['detail', 'reason'].includes(key) ? '' : member[key];
+            for (const key of ['name', 'status', 'reason']) {
+                const value = key === 'status' && compact ? member.zone : key === 'reason' && compact ? '' : member[key];
                 row.querySelector('.' + key).textContent = typeof value === 'string' ? value : '';
             }
             const presenceLabel = row.querySelector('.presence-label');
             presenceLabel.textContent = typeof member.presenceLabel === 'string' ? member.presenceLabel : '';
             row.dataset.hasPresenceLabel = String(presenceLabel.textContent !== '');
-            row.querySelector('.detail').hidden = compact || design.details === false;
+            const detail = row.querySelector('.detail');
+            renderDetails(detail, member, compact);
+            detail.hidden = compact || design.details === false;
             row.querySelector('.reason').hidden = compact || design.details === false || !member.reason;
             const avatar = row.querySelector('.avatar');
             avatar.hidden = design.photos === false;

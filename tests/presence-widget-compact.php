@@ -20,6 +20,7 @@ $normalModel = json_decode($request('POST', $token)[1], true, 512, JSON_THROW_ON
 $check($compactModel['options']['variant'] === 'WidgetCompact' && $normalModel['options']['variant'] === 'Widget', 'Cache routes must return the appropriate variant.');
 $check(isset($compactModel['state']['members'][0]['zone']), 'Compact devices need an explicit zone without parsing localized status text.');
 $check($compactModel['state']['members'][0]['detail'] === '' && $compactModel['state']['members'][0]['reason'] === '' && $compactModel['state']['summary']['detail'] === '', 'Compact state omits per-device details and aggregate counts.');
+$check($compactModel['state']['members'][0]['detailLines'] === [], 'Compact payloads omit the separate distance and stay values too.');
 $check($normalModel['state']['members'][0]['detail'] !== '', 'The normal widget retains its existing details.');
 $check($normalModel['options']['design']['showSummary'] === true && $compactModel['options']['design']['showSummary'] === true, 'Both IPSView variants show the summary by default.');
 $normalHTML = GetValue($normalID);

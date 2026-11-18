@@ -19,6 +19,8 @@ body { color: var(--symc-text); background: var(--symc-background); }
 .status, .presence-label { font-size: .9em; color: var(--status-color); overflow-wrap: anywhere; }
 .presence-label { display: none; }
 .detail, .reason { font-size: .8em; color: var(--symc-subheading); overflow-wrap: anywhere; }
+.detail-line { display: block; }
+.detail-value { display: inline-block; white-space: nowrap; }
 #status-widget[data-variant="compact"] #summary { padding: 6px 10px; gap: 2px 8px; }
 #status-widget[data-variant="compact"] #summary-value { font-size: 1em; }
 #status-widget[data-variant="compact"] #members { grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); }
@@ -52,7 +54,7 @@ html:not(.ipsview-mode) :is(.copy, .avatar) {
 }
 html:not(.ipsview-mode) .avatar {
     --avatar-size: min(
-        calc(var(--widget-picture-size, 48px) * 1.5),
+        calc(var(--widget-picture-size, 48px) * 2),
         calc(var(--widget-picture-size, 48px) + max(0px, 20cqh - max(32px, 2.5rem))),
         max(24px, 36cqi),
         max(32px, 50cqh)

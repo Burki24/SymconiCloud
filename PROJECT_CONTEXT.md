@@ -3479,3 +3479,14 @@ bei 230 und 231 CSS-Pixeln Inhaltsbreite, beide Kachelvarianten und das
 Mausradscrollen in beiden Richtungen wurden geprüft. Das Scrollen im
 schmalen IPSView-Frame funktionierte ebenfalls. Offline-Suite, Struktur-
 und Stilprüfungen bestanden. Die Prüfung im nativen Symcon-Client steht aus.
+
+### Bildgröße und Detailzeilen in Anwesenheitskacheln (2026-11-18)
+
+In hohen Gerätekarten kann die Bildgröße bis zum Doppelten des
+Designerwerts wachsen. Bei einer synthetischen Kachelausgabe mit
+626 × 632 CSS-Pixeln wuchs das Bild von 72 auf 96 Pixel. Chromium
+zeigte „14,0 km“ geschlossen in der Folgezeile und „Aufenthalt“ darunter.
+Bei mehr Breite passte die Entfernung wieder neben ihre Beschriftung.
+Der Test prüfte auch Mausradscrollen in beide Richtungen in der
+Kachelausgabe und im verschachtelten IPSView-Frame. Die Prüfung im
+nativen Client steht aus.

@@ -2,6 +2,10 @@
 
 ## Fixes
 
+- **iCloud Anwesenheit:** Gerätebilder können in höheren Kacheln stärker
+  mitwachsen. Entfernungszahl und Einheit bleiben beim Umbruch zusammen.
+  Der Aufenthalt steht in einer eigenen Zeile.
+
 - **iCloud Anwesenheit:** Beim Vergrößern der Kachel wachsen Bilder und Schrift
   in den Gerätekarten mit. Auch schmale, hohe Kacheln verwenden den kurzen
   Gerätestatus. Die Kartenbreite begrenzt die Größe von Bild und Text.

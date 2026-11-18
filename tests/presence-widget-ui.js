@@ -34,7 +34,9 @@ class Element {
 const source = fs.readFileSync(require('node:path').join(__dirname, '../iCloud Presence/visualization/app.js'), 'utf8');
 const sample = {
     state: {title: 'Presence', summary: {label: 'Present', tone: 'positive', detail: '1 present'}, members: [
-        {id: 'alpha', name: '<script>unsafe</script>', zone: 'Home', status: 'Present · Home', presenceLabel: 'Present', tone: 'positive', detail: 'Stay: 20 s', image: ''},
+        {id: 'alpha', name: '<script>unsafe</script>', zone: 'Home', status: 'Present · Home', presenceLabel: 'Present', tone: 'positive',
+            detail: 'Distance to reference zone: 14.0 km · Stay: 0:02:09',
+            detailLines: [{label: 'Distance to reference zone', value: '14.0 km'}, {label: 'Stay', value: '0:02:09'}], image: ''},
         {id: 'beta', name: 'Second', zone: 'Unknown', status: 'Unknown', presenceLabel: 'Unknown', tone: 'unknown', reason: 'Inaccurate', image: 'https://example.invalid/image'}
     ]},
     options: {design: {photos: true, details: true, fontSize: '14px', spacing: 10}, tileHeaderInset: 58, empty: 'Empty', connectionError: 'Retry', transport: null}
@@ -48,7 +50,9 @@ function harness(transport, fragment, variant = 'Widget') {
     if (fragment !== undefined) Object.assign(input.options.transport, {token: '', fragmentToken: true});
     nodes['widget-bootstrap'].textContent = JSON.stringify(input);
     const tasks = new Map(); let seq = 0;
-    const window = {document: {getElementById: id => nodes[id], createElement: tag => new Element(tag), documentElement: new Element('html')}, events: {},
+    const documentElement = new Element('html');
+    documentElement.classList = {contains: name => transport && name === 'ipsview-mode'};
+    const window = {document: {getElementById: id => nodes[id], createElement: tag => new Element(tag), documentElement}, events: {},
         addEventListener(name, fn) { this.events[name] = fn; },
         setTimeout(fn, ms) { tasks.set(++seq, {fn, ms}); return seq; }, clearTimeout(id) { tasks.delete(id); },
         SymconHTTPOrigin: {resolve: () => 'http://symcon.example.invalid'}, fetch: async () => { throw new Error('offline'); },
@@ -68,6 +72,10 @@ async function settle() { for (let i = 0; i < 12; i++) await Promise.resolve(); 
     assert.equal(first.parts.name.textContent, '<script>unsafe</script>', 'Names remain text.');
     assert.equal(first.parts['presence-label'].textContent, 'Present');
     assert.equal(first.parts.status.textContent, 'Present · Home');
+    const detailLines = first.parts.detail.children;
+    assert.equal(detailLines.length, 2, 'Distance and stay are separate lines in the native tile.');
+    assert.equal(detailLines[0].children[0].textContent, '14.0 km');
+    assert.equal(detailLines[1].children[0].textContent, '0:02:09');
     assert.equal(list.children[1].parts['presence-label'].textContent, 'Unknown');
     assert.equal(list.children[1].parts.avatar.children.length, 0, 'Remote images are never loaded.');
     assert.equal(nodes.summary.hidden, false, 'Legacy payloads show the summary.');
@@ -92,14 +100,18 @@ async function settle() { for (let i = 0; i < 12; i++) await Promise.resolve(); 
     assert.equal(first.parts.avatar.hidden, true); assert.equal(first.parts.detail.hidden, true);
     assert.equal(nodes.summary.hidden, false, 'The designer can restore the summary.');
     delete next.state.members.find(member => member.id === 'alpha').presenceLabel;
+    delete next.state.members.find(member => member.id === 'alpha').detailLines;
+    next.options.design.details = true;
     window.handleMessage(next);
     assert.equal(first.dataset.hasPresenceLabel, 'false', 'Legacy rows retain their ordinary text at every tile height.');
+    assert.equal(first.parts.detail.textContent, sample.state.members[0].detail, 'Older payloads retain readable details.');
     next.state.members = []; window.handleMessage(next);
     assert.equal(list.children.length, 0); assert.equal(nodes.empty.hidden, false);
 
     const web = harness(true); await settle();
     assert.equal(web.nodes.connection.hidden, false, 'Network errors are visible.');
     const row = web.nodes.members.children[0]; row.events.click(); web.nodes['widget-content'].scrollTop = 90;
+    assert.equal(row.parts.detail.textContent, sample.state.members[0].detail, 'IPSView keeps its existing detail format.');
     let request;
     web.window.fetch = async (url, options) => { request = {url, options}; return {ok: true, json: async () => sample}; };
     let retry = [...web.tasks.values()].find(task => task.ms === 5000); assert.ok(retry);

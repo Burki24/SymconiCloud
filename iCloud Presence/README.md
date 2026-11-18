@@ -250,9 +250,9 @@ Einzelgeräten. Sie enthält keine Navigation und keine vollständige Dashboards
 Die Geräteliste passt ihre Spalten an die verfügbare Breite an und nutzt die
 verbleibende Höhe. In flachen Kacheln rücken Kopfzeile und Gerätekarten enger
 zusammen. Die eingestellten Bild- und Schriftgrößen sind die Ausgangswerte.
-Bei mehr Höhe wachsen Bilder und Schrift in den Gerätekarten um bis zu 50 %,
-soweit die Kartenbreite es zulässt. Bei wenig Platz lässt sich der gesamte
-Kachelinhalt scrollen.
+Bei mehr Höhe können Gerätebilder bis zur doppelten Größe und die Schrift um
+bis zu 50 % wachsen, soweit die Kartenbreite es zulässt. Bei wenig Platz lässt
+sich der gesamte Kachelinhalt scrollen.
 Der native Kacheltitel wird über den zentralen Layoutvertrag berücksichtigt.
 
 Bei bis zu 200 CSS-Pixeln Inhaltshöhe oder 230 CSS-Pixeln Inhaltsbreite zeigt die
@@ -330,6 +330,8 @@ fehlende Werte werden nicht als echte Entfernung oder Aufenthaltsdauer dargestel
 Ein ausstehender Wechsel steht direkt im Gerätestatus und in der Zusammenfassung.
 Die technische Entfernungsvariable bleibt immer in Metern. Die Visualisierungen
 zeigen Werte ab 1.000 Metern automatisch in Kilometern mit einer Nachkommastelle.
+In der Kachel bleiben Entfernungszahl und Einheit beim Umbruch zusammen.
+Die Aufenthaltsdauer steht in einer eigenen Zeile.
 
 ### Zusätzliches WidgetCompact
 

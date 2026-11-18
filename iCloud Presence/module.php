@@ -459,10 +459,10 @@ class iCloudPresence extends IPSModuleStrict
             $details = [];
             if ($read('DistanceAvailable')) {
                 $distanceIdent = $this->GetDeviceVariableIdent($id, 'Distance');
-                $details[] = $this->Translate('Distance to reference zone') . ': ' . $this->formatWidgetDistance($distanceIdent, (float) $read('Distance'));
+                $details[] = ['label' => $this->Translate('Distance to reference zone'), 'value' => $this->formatWidgetDistance($distanceIdent, (float) $read('Distance'))];
             }
             if ($read('StayAvailable')) {
-                $details[] = $this->Translate('Stay') . ': ' . $this->PresenceFormattedValue($this->GetDeviceVariableIdent($id, 'StayDuration'));
+                $details[] = ['label' => $this->Translate('Stay'), 'value' => $this->PresenceFormattedValue($this->GetDeviceVariableIdent($id, 'StayDuration'))];
             }
             $rows[] = [
                 'id'            => substr(hash('sha256', $id), 0, 32),
@@ -471,7 +471,8 @@ class iCloudPresence extends IPSModuleStrict
                 'status'        => ($presence === -1 ? $labels[$presence] : $labels[$presence] . ' · ' . $zoneText) . ($pending ? ' · ' . $this->Translate('Change awaiting confirmation') : ''),
                 'tone'          => $tones[$presence],
                 'zone'          => $presence === -1 ? $labels[-1] : $zoneText,
-                'detail'        => implode(' · ', $details),
+                'detail'        => implode(' · ', array_map(static fn (array $line): string => $line['label'] . ': ' . $line['value'], $details)),
+                'detailLines'   => $details,
                 'reason'        => $presence === -1 || $pending ? $read('Reason') : '',
                 'image'         => $pictures[$id] ?? ''
             ];

@@ -345,7 +345,7 @@ trait PresenceWidget
         if ($compact) {
             $state['summary']['detail'] = '';
             foreach ($state['members'] ?? [] as $index => $member) {
-                $state['members'][$index] = array_replace($member, ['status' => $member['zone'] ?? '', 'detail' => '', 'reason' => '']);
+                $state['members'][$index] = array_replace($member, ['status' => $member['zone'] ?? '', 'detail' => '', 'detailLines' => [], 'reason' => '']);
             }
         }
         return ['state' => $state,
