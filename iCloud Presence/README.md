@@ -249,14 +249,17 @@ Die Instanz selbst ist eine HTML-Kachel mit Gesamtanwesenheit und den ausgewähl
 Einzelgeräten. Sie enthält keine Navigation und keine vollständige Dashboardseite.
 Die Geräteliste passt ihre Spalten an die verfügbare Breite an und nutzt die
 verbleibende Höhe. In flachen Kacheln rücken Kopfzeile und Gerätekarten enger
-zusammen. Die Gerätebilder nutzen ihre eingestellte Größe, solange die verfügbare
-Höhe es zulässt. Bei wenig Platz lässt sich der gesamte Kachelinhalt scrollen.
+zusammen. Die eingestellten Bild- und Schriftgrößen sind die Ausgangswerte.
+Bei mehr Höhe wachsen Bilder und Schrift in den Gerätekarten um bis zu 50 %,
+soweit die Kartenbreite es zulässt. Bei wenig Platz lässt sich der gesamte
+Kachelinhalt scrollen.
 Der native Kacheltitel wird über den zentralen Layoutvertrag berücksichtigt.
 
-Bei bis zu 200 CSS-Pixeln verfügbarer Inhaltshöhe zeigt die native Kachel pro
-Gerät nur Name, optionales Bild und **Anwesend**, **Abwesend** oder
-**Unbekannt**. Beim Vergrößern erscheint wieder die Ansicht der gewählten
-Widget-Variante.
+Bei bis zu 200 CSS-Pixeln Inhaltshöhe oder 230 CSS-Pixeln Inhaltsbreite zeigt die
+native Kachel pro Gerät nur Name, optionales Bild und **Anwesend**,
+**Abwesend** oder **Unbekannt**. In schmalen Kacheln passen sich auch Schrift
+und Bilder an die Breite an. Bei mehr Platz erscheint wieder die Ansicht der
+gewählten Widget-Variante.
 
 Unter **Layout und Inhalt → Gesamtanwesenheit anzeigen** lässt sich die Kopfzeile
 im Kacheldesigner und im IPSView-Designer separat ein- oder ausblenden. Sie ist
@@ -349,8 +352,8 @@ als schmale Kopfzeile ohne zusätzliche Zählerzeile.
   **Anwesenheit WidgetCompact für IPSView** (`IPSViewPresenceCompact`, zusätzlich).
   Beide können gleichzeitig in unterschiedliche HTMLBoxen eingebunden werden.
 - Beide Varianten verwenden die vorhandenen Bilder, Farben, Hell-/Dunkelstile,
-  Schriften und Designer. WidgetCompact begrenzt Bilder auf 36 Pixel und Abstände
-  auf 8 Pixel; kleinere Designerwerte gelten weiterhin. Der Detail-Schalter
+  Schriften und Designer. WidgetCompact begrenzt die Bild-Ausgangsgröße auf
+  36 Pixel und die Abstände auf 8 Pixel. Der Detail-Schalter
   betrifft das normale Widget; WidgetCompact blendet Details immer aus.
 
 Datenupdates laden keine der beiden IPSView-Variablen neu. Geräteauswahl und

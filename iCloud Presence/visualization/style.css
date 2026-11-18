@@ -45,6 +45,19 @@ html.ipsview-mode {
     font-weight: var(--ipsview-role-font-weight);
 }
 html.ipsview-mode .member { border-width: var(--ipsview-role-border-width); border-inline-start-width: 3px; box-shadow: var(--ipsview-role-shadow); }
+/* Use the tile height for growth and each card's width to leave room for its text. */
+html:not(.ipsview-mode) .member { container-type: inline-size; }
+html:not(.ipsview-mode) :is(.copy, .avatar) {
+    font-size: min(clamp(1rem, 6cqh + .2rem, 1.5rem), max(12px, 10cqi), max(14px, 12cqh));
+}
+html:not(.ipsview-mode) .avatar {
+    --avatar-size: min(
+        calc(var(--widget-picture-size, 48px) * 1.5),
+        calc(var(--widget-picture-size, 48px) + max(0px, 20cqh - max(32px, 2.5rem))),
+        max(24px, 36cqi),
+        max(32px, 50cqh)
+    );
+}
 @container status-widget (max-width: 300px) { #summary { grid-template-columns: 1fr; } #summary-detail { grid-column: 1; } .member { padding: 8px; gap: 8px; } }
 @container status-widget (max-height: 200px) {
     #widget-content { gap: min(var(--widget-spacing, 10px), 6px); }
@@ -53,8 +66,16 @@ html.ipsview-mode .member { border-width: var(--ipsview-role-border-width); bord
     .member, #status-widget[data-variant="compact"] .member { padding-block: 4px; gap: 6px; }
     .avatar { --avatar-size: min(var(--widget-picture-size, 48px), max(32px, 50cqh)); }
     .copy { gap: 2px; }
+}
+@container status-widget (max-height: 200px) or (max-width: 230px) {
     html:not(.ipsview-mode) .member[data-has-presence-label="true"] .presence-label { display: block; }
     html:not(.ipsview-mode) .member[data-has-presence-label="true"] :is(.status, .detail, .reason) { display: none; }
+}
+@container status-widget (max-width: 230px) {
+    html:not(.ipsview-mode) #summary { font-size: min(1rem, max(12px, min(10cqi, 12cqh))); }
+}
+@container status-widget (max-width: 140px) {
+    html:not(.ipsview-mode) .member { grid-template-columns: minmax(0, 1fr); }
 }
 @container status-widget (min-width: 480px) and (max-height: 200px) {
     #summary { grid-template-columns: auto minmax(0, 1fr) auto; }

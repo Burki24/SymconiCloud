@@ -3462,3 +3462,20 @@ beide Kachelvarianten und lesbare Status bei älteren Cache-Daten.
 Die Geräteauswahl blieb erhalten. Echtes Mausradscrollen in beide
 Richtungen wurde lokal und im verschachtelten IPSView-Frame geprüft.
 Die Prüfung in der nativen Symcon-Konsole steht aus.
+
+### Skalierung der Inhalte in Anwesenheitskacheln (2026-11-18)
+
+Die Kachel zeigt den kurzen Status auch bei bis zu 230 CSS-Pixeln
+Inhaltsbreite. Bei bis zu 140 CSS-Pixeln Inhaltsbreite steht das Bild über
+dem Text. Die Kachelhöhe lässt Bilder und Schrift in Gerätekarten um bis
+zu 50 % über die Designerwerte wachsen. Die Breite der einzelnen Karte
+begrenzt beide Größen.
+
+In Chromium wuchsen bei 680 CSS-Pixeln Breite und einer Höhenänderung
+von 180 auf 580 Pixel das Bild von 48 auf 72 und der Name von 14 auf 21
+Pixel. Bei 220 × 890 CSS-Pixeln passten vier Karten mit einzeiligen
+Statuswörtern auch bei eingestellten 96 Pixeln Bildgröße. Der Wechsel
+bei 230 und 231 CSS-Pixeln Inhaltsbreite, beide Kachelvarianten und das
+Mausradscrollen in beiden Richtungen wurden geprüft. Das Scrollen im
+schmalen IPSView-Frame funktionierte ebenfalls. Offline-Suite, Struktur-
+und Stilprüfungen bestanden. Die Prüfung im nativen Symcon-Client steht aus.

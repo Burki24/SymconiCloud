@@ -2,6 +2,10 @@
 
 ## Fixes
 
+- **iCloud Anwesenheit:** Beim Vergrößern der Kachel wachsen Bilder und Schrift
+  in den Gerätekarten mit. Auch schmale, hohe Kacheln verwenden den kurzen
+  Gerätestatus. Die Kartenbreite begrenzt die Größe von Bild und Text.
+
 - Der eigene äußere IPSView-Loader kennzeichnet seinen Kind-Frame ausdrücklich
   für die gemeinsame Mausrad-Bridge. Damit bleibt die Weiterleitung mit dem
   abgesicherten Helper erhalten; fremde Hosts erhalten keine Bridge-Nachrichten.
