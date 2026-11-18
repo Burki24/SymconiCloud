@@ -248,8 +248,9 @@ Dateien in die Library kopieren.
 Die Instanz selbst ist eine HTML-Kachel mit Gesamtanwesenheit und den ausgewählten
 Einzelgeräten. Sie enthält keine Navigation und keine vollständige Dashboardseite.
 Die Geräteliste passt ihre Spalten an die verfügbare Breite an und nutzt die
-verbleibende Höhe. In flachen Kacheln rücken Kopfzeile, Bilder und Gerätekarten
-enger zusammen. Bei wenig Platz lässt sich der gesamte Kachelinhalt scrollen.
+verbleibende Höhe. In flachen Kacheln rücken Kopfzeile und Gerätekarten enger
+zusammen. Die Gerätebilder nutzen ihre eingestellte Größe, solange die verfügbare
+Höhe es zulässt. Bei wenig Platz lässt sich der gesamte Kachelinhalt scrollen.
 Der native Kacheltitel wird über den zentralen Layoutvertrag berücksichtigt.
 
 Unter **Layout und Inhalt → Gesamtanwesenheit anzeigen** lässt sich die Kopfzeile

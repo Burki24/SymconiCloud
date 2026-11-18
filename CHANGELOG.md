@@ -57,6 +57,9 @@
   nutzen die verfügbare Höhe. Flache Kacheln verwenden eine kompaktere Darstellung
   und der gesamte Inhalt lässt sich bei Platzmangel scrollen.
 
+- **iCloud Anwesenheit:** Gerätebilder bleiben auch bei flachen Kacheln größer,
+  wenn die verfügbare Höhe es zulässt.
+
 - **WoIst und iCloud Anwesenheit:** Die Geräteauswahl zeigt zum Gerätenamen
   das Modell und die technische Modellkennung, sofern vorhanden. So lassen
   sich gleich benannte Geräte unterschiedlicher Modelle leichter unterscheiden.

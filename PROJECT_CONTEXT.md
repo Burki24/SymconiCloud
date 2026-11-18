@@ -3438,3 +3438,14 @@ verschachtelten IPSView-Loader mit synthetischer HTTP-Antwort geprüft. Die
 Offline-Suite, Strukturprüfung, der offizielle JSON-Check und PHP-CS-Fixer
 im Prüfmodus bestanden. Die Abnahme im nativen Symcon- und IPSView-Host
 steht aus.
+
+### Größere Gerätebilder bei flacher Kachel (2026-11-18)
+
+Die Bildgröße richtet sich in flachen Ansichten nach der verfügbaren Höhe.
+Ein Chromium-Test mit synthetischen Bildern zeigte bei 2528 × 202 CSS-Pixeln
+vier vollständige Detailkarten mit 48 statt 32 Pixel großen Bildern. Bei
+eingestellten 80 Pixeln passten die Bilder ebenfalls. Bei 280 × 160 mit
+nativem Titelabstand wurden die Bilder auf 41 Pixel begrenzt. Mausradscrollen
+in beide Richtungen funktionierte in der lokalen Kachelausgabe und im
+verschachtelten IPSView-Frame. Die native Anzeige der Bildgröße bleibt nach
+dem Modulupdate zu prüfen.
