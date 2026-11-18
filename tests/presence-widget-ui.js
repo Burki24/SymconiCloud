@@ -11,7 +11,7 @@ class Element {
     }
     set innerHTML(_) {
         this.parts = {};
-        for (const name of ['avatar', 'copy', 'name', 'status', 'detail', 'reason']) this.parts[name] = new Element();
+        for (const name of ['avatar', 'copy', 'name', 'status', 'presence-label', 'detail', 'reason']) this.parts[name] = new Element();
     }
     querySelector(selector) { return this.parts[selector.slice(1)]; }
     addEventListener(name, fn) { this.events[name] = fn; }
@@ -34,8 +34,8 @@ class Element {
 const source = fs.readFileSync(require('node:path').join(__dirname, '../iCloud Presence/visualization/app.js'), 'utf8');
 const sample = {
     state: {title: 'Presence', summary: {label: 'Present', tone: 'positive', detail: '1 present'}, members: [
-        {id: 'alpha', name: '<script>unsafe</script>', zone: 'Home', status: 'Present', tone: 'positive', detail: 'Stay: 20 s', image: ''},
-        {id: 'beta', name: 'Second', zone: 'Unknown', status: 'Unknown', tone: 'unknown', reason: 'Inaccurate', image: 'https://example.invalid/image'}
+        {id: 'alpha', name: '<script>unsafe</script>', zone: 'Home', status: 'Present · Home', presenceLabel: 'Present', tone: 'positive', detail: 'Stay: 20 s', image: ''},
+        {id: 'beta', name: 'Second', zone: 'Unknown', status: 'Unknown', presenceLabel: 'Unknown', tone: 'unknown', reason: 'Inaccurate', image: 'https://example.invalid/image'}
     ]},
     options: {design: {photos: true, details: true, fontSize: '14px', spacing: 10}, tileHeaderInset: 58, empty: 'Empty', connectionError: 'Retry', transport: null}
 };
@@ -66,16 +66,21 @@ async function settle() { for (let i = 0; i < 12; i++) await Promise.resolve(); 
     const viewport = nodes['widget-content'];
     const first = list.children[0];
     assert.equal(first.parts.name.textContent, '<script>unsafe</script>', 'Names remain text.');
+    assert.equal(first.parts['presence-label'].textContent, 'Present');
+    assert.equal(first.parts.status.textContent, 'Present · Home');
+    assert.equal(list.children[1].parts['presence-label'].textContent, 'Unknown');
     assert.equal(list.children[1].parts.avatar.children.length, 0, 'Remote images are never loaded.');
     assert.equal(nodes.summary.hidden, false, 'Legacy payloads show the summary.');
     first.events.click(); viewport.scrollTop = 170; viewport.scrollLeft = 9;
-    const next = structuredClone(sample); next.state.members[0].status = 'Absent';
+    const next = structuredClone(sample); next.state.members[0].status = 'Absent · Work'; next.state.members[0].presenceLabel = 'Absent';
     next.options.design.showSummary = false;
     next.state.members[0].image = 'data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=';
     window.handleMessage(JSON.stringify(next));
     assert.equal(list.children[0], first, 'Live updates preserve row identity and focus.');
     assert.equal(first.attrs['aria-pressed'], 'true');
-    assert.equal(first.parts.status.textContent, 'Absent');
+    assert.equal(first.parts.status.textContent, 'Absent · Work');
+    assert.equal(first.parts['presence-label'].textContent, 'Absent');
+    assert.equal(first.dataset.hasPresenceLabel, 'true');
     assert.equal(first.parts.avatar.children[0].src, next.state.members[0].image, 'Uploaded raster pictures render through the existing safe avatar path.');
     assert.equal(nodes.summary.hidden, true, 'The designer can hide the complete summary.');
     assert.equal(viewport.scrollTop, 170); assert.equal(viewport.scrollLeft, 9);
@@ -86,6 +91,9 @@ async function settle() { for (let i = 0; i < 12; i++) await Promise.resolve(); 
     assert.equal(list.children[1], first, 'Reordering retains selection by ID.');
     assert.equal(first.parts.avatar.hidden, true); assert.equal(first.parts.detail.hidden, true);
     assert.equal(nodes.summary.hidden, false, 'The designer can restore the summary.');
+    delete next.state.members.find(member => member.id === 'alpha').presenceLabel;
+    window.handleMessage(next);
+    assert.equal(first.dataset.hasPresenceLabel, 'false', 'Legacy rows retain their ordinary text at every tile height.');
     next.state.members = []; window.handleMessage(next);
     assert.equal(list.children.length, 0); assert.equal(nodes.empty.hidden, false);
 

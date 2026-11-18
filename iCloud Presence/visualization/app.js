@@ -46,7 +46,7 @@
             if (!row) {
                 row = doc.createElement('button');
                 row.type = 'button'; row.className = 'member'; row.dataset.id = member.id;
-                row.innerHTML = '<span class="avatar"></span><span class="copy"><strong class="name"></strong><span class="status"></span><span class="detail"></span><span class="reason"></span></span>';
+                row.innerHTML = '<span class="avatar"></span><span class="copy"><strong class="name"></strong><span class="status"></span><span class="presence-label"></span><span class="detail"></span><span class="reason"></span></span>';
                 row.addEventListener('click', () => {
                     selected = selected === member.id ? '' : member.id;
                     for (const [id, element] of rows) element.setAttribute('aria-pressed', String(id === selected));
@@ -61,6 +61,9 @@
                 const value = key === 'status' && compact ? member.zone : compact && ['detail', 'reason'].includes(key) ? '' : member[key];
                 row.querySelector('.' + key).textContent = typeof value === 'string' ? value : '';
             }
+            const presenceLabel = row.querySelector('.presence-label');
+            presenceLabel.textContent = typeof member.presenceLabel === 'string' ? member.presenceLabel : '';
+            row.dataset.hasPresenceLabel = String(presenceLabel.textContent !== '');
             row.querySelector('.detail').hidden = compact || design.details === false;
             row.querySelector('.reason').hidden = compact || design.details === false || !member.reason;
             const avatar = row.querySelector('.avatar');

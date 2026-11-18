@@ -3449,3 +3449,16 @@ nativem Titelabstand wurden die Bilder auf 41 Pixel begrenzt. Mausradscrollen
 in beide Richtungen funktionierte in der lokalen Kachelausgabe und im
 verschachtelten IPSView-Frame. Die native Anzeige der Bildgröße bleibt nach
 dem Modulupdate zu prüfen.
+
+### Kurzer Gerätestatus in flachen Anwesenheitskacheln (2026-11-18)
+
+Bis einschließlich 200 CSS-Pixel Inhaltshöhe zeigt die Kachel pro Gerät
+Name, optionales Bild und den übersetzten Anwesenheitsstatus. Bei mehr
+Höhe erscheint der Inhalt der ausgewählten Widget-Variante. Der Wechsel
+erfolgt über den vorhandenen CSS-Container.
+
+Chromium bestätigte den Übergang von 200 auf 201 Pixel ohne Neuladen,
+beide Kachelvarianten und lesbare Status bei älteren Cache-Daten.
+Die Geräteauswahl blieb erhalten. Echtes Mausradscrollen in beide
+Richtungen wurde lokal und im verschachtelten IPSView-Frame geprüft.
+Die Prüfung in der nativen Symcon-Konsole steht aus.

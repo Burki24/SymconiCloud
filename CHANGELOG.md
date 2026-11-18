@@ -60,6 +60,10 @@
 - **iCloud Anwesenheit:** Gerätebilder bleiben auch bei flachen Kacheln größer,
   wenn die verfügbare Höhe es zulässt.
 
+- **iCloud Anwesenheit:** Flache Kacheln zeigen pro Gerät Name, optionales Bild
+  und den Anwesenheitsstatus. Bei mehr Höhe erscheint wieder die gewählte
+  Darstellung mit Zone und gegebenenfalls weiteren Details.
+
 - **WoIst und iCloud Anwesenheit:** Die Geräteauswahl zeigt zum Gerätenamen
   das Modell und die technische Modellkennung, sofern vorhanden. So lassen
   sich gleich benannte Geräte unterschiedlicher Modelle leichter unterscheiden.

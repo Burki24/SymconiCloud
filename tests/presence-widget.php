@@ -42,6 +42,7 @@ $decodeWidget = static function (string $html): array
 $readAttribute = new ReflectionMethod($widget, 'ReadAttributeString');
 $native = $decodeWidget($widget->GetVisualizationTile());
 $check($native['state']['summary']['tone'] === 'positive' && count($native['state']['members']) === 2, 'Compact widget shows aggregate and selected members.');
+$check(array_column($native['state']['members'], 'presenceLabel') === ['Present', 'Unknown'], 'The tile must receive separate labels for confirmed and unknown presence.');
 $check($native['state']['members'][1]['tone'] === 'unknown' && $native['state']['members'][1]['detail'] === '', 'Unknown GPS must not display fabricated distance or duration.');
 $check($native['state']['members'][1]['image'] === '', 'Missing pictures fall back safely.');
 $widget->clock += 10;
@@ -54,6 +55,7 @@ $firstBoundary->result['devices'][0]['location']['timestamp'] = $widget->clock;
 $firstBoundary->result['devices'][1]['location'] = $makeDevice('beta', 0.012, $widget->clock, 5)['location'];
 $firstBoundary->broadcast();
 $distanceWidget = $decodeWidget($widget->GetVisualizationTile());
+$check($distanceWidget['state']['members'][0]['presenceLabel'] === 'Absent', 'A confirmed absence must have a separate label without its zone.');
 $check(str_contains($distanceWidget['state']['members'][1]['detail'], 'km'), 'Widget distances of at least one kilometre must use an adaptive kilometre display.');
 $check(!str_contains($widget->GetVisualizationTile(), '<script>widget</script>'), 'Device labels cannot escape bootstrap JSON.');
 $check(!str_contains(json_encode($native), 'latitude') && !str_contains(json_encode($native), 'alpha'), 'Widget state contains opaque IDs and no coordinates or account IDs.');

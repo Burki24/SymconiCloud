@@ -464,11 +464,17 @@ class iCloudPresence extends IPSModuleStrict
             if ($read('StayAvailable')) {
                 $details[] = $this->Translate('Stay') . ': ' . $this->PresenceFormattedValue($this->GetDeviceVariableIdent($id, 'StayDuration'));
             }
-            $rows[] = ['id' => substr(hash('sha256', $id), 0, 32), 'name' => $name !== '' ? $name : ($names[$id] ?? $this->Translate('Device')),
-                'status'    => ($presence === -1 ? $labels[$presence] : $labels[$presence] . ' · ' . $zoneText) . ($pending ? ' · ' . $this->Translate('Change awaiting confirmation') : ''), 'tone' => $tones[$presence],
-                'zone'      => $presence === -1 ? $labels[-1] : $zoneText,
-                'detail'    => implode(' · ', $details), 'reason' => $presence === -1 || $pending ? $read('Reason') : '',
-                'image'     => $pictures[$id] ?? ''];
+            $rows[] = [
+                'id'            => substr(hash('sha256', $id), 0, 32),
+                'name'          => $name !== '' ? $name : ($names[$id] ?? $this->Translate('Device')),
+                'presenceLabel' => $labels[$presence],
+                'status'        => ($presence === -1 ? $labels[$presence] : $labels[$presence] . ' · ' . $zoneText) . ($pending ? ' · ' . $this->Translate('Change awaiting confirmation') : ''),
+                'tone'          => $tones[$presence],
+                'zone'          => $presence === -1 ? $labels[-1] : $zoneText,
+                'detail'        => implode(' · ', $details),
+                'reason'        => $presence === -1 || $pending ? $read('Reason') : '',
+                'image'         => $pictures[$id] ?? ''
+            ];
         }
         $presence = $this->GetValue('Presence');
         $pending = $this->GetValue('PendingCount');

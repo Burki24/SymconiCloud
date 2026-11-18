@@ -253,6 +253,11 @@ zusammen. Die Gerätebilder nutzen ihre eingestellte Größe, solange die verfü
 Höhe es zulässt. Bei wenig Platz lässt sich der gesamte Kachelinhalt scrollen.
 Der native Kacheltitel wird über den zentralen Layoutvertrag berücksichtigt.
 
+Bei bis zu 200 CSS-Pixeln verfügbarer Inhaltshöhe zeigt die native Kachel pro
+Gerät nur Name, optionales Bild und **Anwesend**, **Abwesend** oder
+**Unbekannt**. Beim Vergrößern erscheint wieder die Ansicht der gewählten
+Widget-Variante.
+
 Unter **Layout und Inhalt → Gesamtanwesenheit anzeigen** lässt sich die Kopfzeile
 im Kacheldesigner und im IPSView-Designer separat ein- oder ausblenden. Sie ist
 standardmäßig sichtbar. Der Schalter gilt für **Widget** und **WidgetCompact**.
