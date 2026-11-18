@@ -12,10 +12,11 @@ Eine Geräteinstanz oder WoIst-Karte ist nicht erforderlich.
 1. Im iCloud-Geräte-Konfigurator unter **Anwesenheitsgruppen** eine Gruppe
    erstellen oder **iCloud Anwesenheit** manuell anlegen. Mit dem gewünschten
    Konto verbinden. Der Konfigurator ordnet vorhandene Gruppen dem Konto zu.
-2. Unter **Geräte** die gewünschten Geräte hinzufügen. Der optionale Anzeigename
-   überschreibt den Namen aus dem Kontocache. Geräte dürfen nur einmal vorkommen;
-   maximal 64 Geräte sind möglich. Zur Zuordnung dient die stabile Geräte-ID,
-   nicht der Name oder die Reihenfolge.
+2. Unter **Geräte** die gewünschten Geräte hinzufügen. Die Auswahl zeigt zum
+   Gerätenamen das Modell und die technische Modellkennung, sofern vorhanden.
+   Der optionale Anzeigename überschreibt den Namen aus dem Kontocache. Geräte
+   dürfen nur einmal vorkommen. Maximal 64 Geräte sind möglich. Die Zuordnung
+   erfolgt über die stabile Geräte-ID.
 3. Unter **Zonen** die gemeinsamen Zonen definieren und genau eine Referenzzone
    markieren. Diese Referenz gilt für alle ausgewählten Geräte.
 

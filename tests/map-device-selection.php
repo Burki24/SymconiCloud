@@ -27,6 +27,7 @@ $transport = json_decode($attribute->invoke($map, 'IPSViewTransportState'), true
 $check($transport['state']['devices'] === $devices, 'Native and IPSView state must use the same filtered inventory.');
 $unfiltered = (new ReflectionMethod($map, 'bootstrap'))->invoke($map, (new ReflectionMethod($map, 'request'))->invoke($map, 'GetDevices'), false);
 $check(count($unfiltered['state']['devices']) === 2, 'Device address consumers must retain the unfiltered cache path.');
+$firstBoundary->result['devices'][] = array_replace($syntheticDevice, ['id' => 'same-name-device', 'modelIdentifier' => 'SyntheticPhone1,2']);
 $firstBoundary->commands = $secondBoundary->commands = [];
 $configuration = IPS_GetConfiguration($mapID);
 $form = json_decode($map->GetConfigurationForm(), true, 512, JSON_THROW_ON_ERROR);
@@ -34,8 +35,13 @@ $panel = array_values(array_filter($form['elements'], static fn ($item): bool =>
 $list = array_values(array_filter($panel['items'], static fn ($item): bool => ($item['name'] ?? '') === 'SelectedDevices'))[0];
 $options = array_column($list['columns'][0]['edit']['options'], 'caption', 'value');
 $check(isset($options[$key($firstAccount)], $options[$key($secondAccount)]) && $options[$key($firstAccount)] !== $options[$key($secondAccount)], 'The editor must offer each cached device with its account identity.');
+$accountSuffix = ' — ' . IPS_GetName($firstAccount) . ' (#' . $firstAccount . ')';
+$sameNameKey = 'account:' . $firstAccount . ':' . hash('sha256', 'same-name-device');
+$check($options[$key($firstAccount)] === 'Synthetic phone (Phone)' . $accountSuffix, 'The WoIst selector must show the model name and keep the account suffix.');
+$check($options[$sameNameKey] === 'Synthetic phone (Phone · SyntheticPhone1,2)' . $accountSuffix, 'The technical model must distinguish identical names and generic model labels in one account.');
 $check(IPS_GetConfiguration($mapID) === $configuration, 'Opening the device selector must not rewrite saved settings.');
 $check(!in_array('RefreshDevices', array_merge($firstBoundary->commands, $secondBoundary->commands), true), 'Form reads must never refresh Apple data.');
+array_pop($firstBoundary->result['devices']);
 $newDevice = array_replace($syntheticDevice, ['id' => 'new-device', 'name' => 'New device']);
 $secondBoundary->result['devices'][] = $newDevice;
 $check(count($read()['devices']) === 1, 'Newly discovered devices cannot bypass restricted mode.');

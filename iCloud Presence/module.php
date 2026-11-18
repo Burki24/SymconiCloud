@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../libs/CloudDebug.php';
+require_once __DIR__ . '/../libs/DeviceSelectionCaption.php';
 require_once __DIR__ . '/../libs/helper/ConfigurationFormHelper.php';
 require_once __DIR__ . '/../libs/helper/DataFlowHelper.php';
 require_once __DIR__ . '/../libs/helper/ParentConnectionHelper.php';
@@ -253,7 +254,8 @@ class iCloudPresence extends IPSModuleStrict
                 $data = $this->HasParent() ? $this->ReadPresenceCache() : [];
                 foreach ($data['devices'] ?? [] as $device) {
                     if (is_array($device) && is_string($device['id'] ?? null) && $device['id'] !== '' && !isset($known[$device['id']])) {
-                        $options[] = ['caption' => (string) ($device['name'] ?? $this->Translate('Device')), 'value' => $device['id']];
+                        $name = (string) ($device['name'] ?? $this->Translate('Device'));
+                        $options[] = ['caption' => \SymconiCloud\DeviceSelectionCaption::withModel($name, $device), 'value' => $device['id']];
                         $known[$device['id']] = true;
                     }
                 }

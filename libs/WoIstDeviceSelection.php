@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace SymconiCloud;
 
+require_once __DIR__ . '/DeviceSelectionCaption.php';
+
 /** Presentation selection from explicitly assigned account caches only. */
 trait WoIstDeviceSelection
 {
@@ -80,7 +82,8 @@ trait WoIstDeviceSelection
             foreach ($inventory['devices'] as $device) {
                 $key = $device['selectionKey'];
                 $name = is_string($device['name'] ?? null) && $device['name'] !== '' ? $device['name'] : $this->Translate('Unnamed device');
-                $choices[$key] = ['caption' => $name . ' — ' . $device['accountName'] . ' (#' . $device['accountId'] . ')', 'value' => $key];
+                $caption = DeviceSelectionCaption::withModel($name, $device);
+                $choices[$key] = ['caption' => $caption . ' — ' . $device['accountName'] . ' (#' . $device['accountId'] . ')', 'value' => $key];
             }
         } catch (\Throwable) {
             // Keep stored choices visible when an assigned cache is unavailable.

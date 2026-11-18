@@ -50,7 +50,11 @@
   Die Dokumentationsschaltflächen aller sieben Module verweisen auf die
   aktuellen Anleitungen unter `dev`.
 
-## Neue Funktionen
+## Neu
+
+- **WoIst und iCloud Anwesenheit:** Die Geräteauswahl zeigt zum Gerätenamen
+  das Modell und die technische Modellkennung, sofern vorhanden. So lassen
+  sich gleich benannte Geräte unterschiedlicher Modelle leichter unterscheiden.
 
 - **WoIst** erlaubt Drag-and-drop über einen eigenen Ziehgriff sowie Hoch-/Runter-
   und Tastaturbedienung in der Geräteliste. Die Reihenfolge wird je Instanz für

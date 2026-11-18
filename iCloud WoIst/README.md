@@ -25,7 +25,8 @@ Die Auswahl gilt gemeinsam für die Kachel und IPSView:
 1. **Geräteauswahl** in der WoIst-Konfiguration öffnen.
 2. **Alle Geräte anzeigen** ausschalten.
 3. Unter **Ausgewählte Geräte** über **Hinzufügen** die gewünschten Geräte
-   auswählen. Jeder Eintrag nennt den Gerätenamen sowie Konto und Konto-ID.
+   auswählen. Jeder Eintrag nennt den Gerätenamen, Konto und Konto-ID sowie
+   das Modell und die technische Modellkennung, sofern vorhanden.
 4. Die Konfiguration übernehmen.
 
 Nicht ausgewählte Geräte erscheinen weder in der Geräteliste noch auf der
