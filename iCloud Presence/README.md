@@ -247,8 +247,14 @@ Dateien in die Library kopieren.
 
 Die Instanz selbst ist eine HTML-Kachel mit Gesamtanwesenheit und den ausgewählten
 Einzelgeräten. Sie enthält keine Navigation und keine vollständige Dashboardseite.
-Die Liste passt ihre Spalten an die verfügbare Breite an und scrollt innerhalb der
-Kachel. Der native Kacheltitel wird über den zentralen Layoutvertrag berücksichtigt.
+Die Geräteliste passt ihre Spalten an die verfügbare Breite an und nutzt die
+verbleibende Höhe. In flachen Kacheln rücken Kopfzeile, Bilder und Gerätekarten
+enger zusammen. Bei wenig Platz lässt sich der gesamte Kachelinhalt scrollen.
+Der native Kacheltitel wird über den zentralen Layoutvertrag berücksichtigt.
+
+Unter **Layout und Inhalt → Gesamtanwesenheit anzeigen** lässt sich die Kopfzeile
+im Kacheldesigner und im IPSView-Designer separat ein- oder ausblenden. Sie ist
+standardmäßig sichtbar. Der Schalter gilt für **Widget** und **WidgetCompact**.
 
 ![Anwesenheitswidget mit Gesamtanwesenheit, Gerätebildern und Standortdetails](../docs/images/presence-widget-redacted.png)
 
@@ -410,9 +416,10 @@ leer sein. Diese Einbindungen enthalten einen vertraulichen Lesezugang.
 
 `TileWidgetVariant` ist ein String mit `Widget` (Vorgabe) oder `WidgetCompact`.
 `IPSViewServerURL` ist ein String mit Vorgabe `''`. Die vom Designer verwalteten
-Felder mit Präfix `Tile` beziehungsweise `IPSView` sind `WidgetPhotos` (bool,
-`true`), `WidgetDetails` (bool, `true`), `WidgetPictureSize` (int, 48 Pixel),
-`WidgetRadius` (int, 12 Pixel) und `WidgetSpacing` (int, 10 Pixel).
+Felder mit Präfix `Tile` beziehungsweise `IPSView` sind `WidgetShowSummary` (bool,
+`true`), `WidgetPhotos` (bool, `true`), `WidgetDetails` (bool, `true`),
+`WidgetPictureSize` (int, 48 Pixel), `WidgetRadius` (int, 12 Pixel) und
+`WidgetSpacing` (int, 10 Pixel).
 `TileWidgetFontSize` ist ein Integer mit Vorgabe 14 Pixel. Bedeutung und
 Farbzuordnung stehen bei den jeweiligen Designern. Native Kachel und IPSView
 sind getrennte Ausgaben; eine eigene WebFront-Gruppenansicht wird nicht

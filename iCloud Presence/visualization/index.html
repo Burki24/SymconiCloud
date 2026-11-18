@@ -10,10 +10,12 @@
 </head>
 <body>
     <main id="status-widget" aria-label="{{DOCUMENT_TITLE}}">
-        <header id="summary" role="status"><span id="summary-label"></span><strong id="summary-value"></strong><small id="summary-detail"></small></header>
-        <p id="connection" role="status" hidden></p>
-        <div id="members" role="list"></div>
-        <p id="empty" hidden></p>
+        <div id="widget-content">
+            <header id="summary" role="status"><span id="summary-label"></span><strong id="summary-value"></strong><small id="summary-detail"></small></header>
+            <p id="connection" role="status" hidden></p>
+            <div id="members" role="list"></div>
+            <p id="empty" hidden></p>
+        </div>
     </main>
     <script type="application/json" id="widget-bootstrap">{{BOOTSTRAP_JSON}}</script>
     <script>{{HTTP_ORIGIN_SCRIPT}}</script>

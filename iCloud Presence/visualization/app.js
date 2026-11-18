@@ -4,6 +4,7 @@
     if (!doc) return;
     const bootstrap = JSON.parse(doc.getElementById('widget-bootstrap').textContent);
     const root = doc.getElementById('status-widget');
+    const content = doc.getElementById('widget-content');
     const list = doc.getElementById('members');
     const rows = new Map();
     let selected = '';
@@ -20,8 +21,8 @@
         const design = options.design || {};
         const compact = options.variant === 'WidgetCompact';
         root.dataset.variant = compact ? 'compact' : 'normal';
-        const scrollTop = list.scrollTop;
-        const scrollLeft = list.scrollLeft;
+        const scrollTop = content.scrollTop;
+        const scrollLeft = content.scrollLeft;
         root.style.setProperty('--symc-tile-header-inset', Math.max(0, Math.min(100, Number(options.tileHeaderInset) || 0)) + 'px');
         for (const [key, css] of [['pictureSize', 'picture-size'], ['radius', 'radius'], ['spacing', 'spacing']]) {
             if (Number.isFinite(design[key])) root.style.setProperty('--widget-' + css, design[key] + 'px');
@@ -32,7 +33,9 @@
         text('summary-value', state.summary && state.summary.label);
         text('summary-detail', state.summary && state.summary.detail);
         doc.getElementById('summary-detail').hidden = compact;
-        doc.getElementById('summary').dataset.tone = tone(state.summary && state.summary.tone);
+        const summary = doc.getElementById('summary');
+        summary.hidden = design.showSummary === false;
+        summary.dataset.tone = tone(state.summary && state.summary.tone);
         const members = Array.isArray(state.members) ? state.members : [];
         const keep = new Set();
         let previous = null;
@@ -77,7 +80,7 @@
         if (!keep.has(selected)) selected = '';
         text('empty', options.empty);
         doc.getElementById('empty').hidden = keep.size > 0;
-        list.scrollTop = scrollTop; list.scrollLeft = scrollLeft;
+        content.scrollTop = scrollTop; content.scrollLeft = scrollLeft;
     }
     global.handleMessage = value => {
         try { render(typeof value === 'string' ? JSON.parse(value) : value); } catch (_) { /* Keep last usable state. */ }

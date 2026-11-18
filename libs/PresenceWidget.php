@@ -33,6 +33,7 @@ trait PresenceWidget
         'variant'              => 'Widget variant',
         'variantsHint'         => 'IPSView provides Widget and WidgetCompact as separate HTML variables. WidgetCompact shows device pictures, names and zones without distance, stay duration or diagnostic details.',
         'colors'               => 'Colors', 'style' => 'Colors and typography', 'font' => 'Font size in pixels',
+        'summary'              => 'Show overall presence',
         'photos'               => 'Show device pictures', 'details' => 'Show details', 'size' => 'Picture size in pixels',
         'radius'               => 'Corner radius in pixels', 'spacing' => 'Spacing in pixels',
         'url'                  => 'Symcon server URL for IPSView (optional)',
@@ -56,6 +57,7 @@ trait PresenceWidget
         $this->RegisterPropertyString('IPSViewServerURL', '');
         $this->RegisterPropertyString('TileWidgetVariant', 'Widget');
         foreach (['Tile', 'IPSView'] as $prefix) {
+            $this->RegisterPropertyBoolean($prefix . 'WidgetShowSummary', true);
             $this->RegisterPropertyBoolean($prefix . 'WidgetPhotos', true);
             $this->RegisterPropertyBoolean($prefix . 'WidgetDetails', true);
             $this->RegisterPropertyInteger($prefix . 'WidgetPictureSize', 48);
@@ -110,7 +112,7 @@ trait PresenceWidget
                     'options'       => [['caption' => 'Widget', 'value' => 'Widget'], ['caption' => 'WidgetCompact', 'value' => 'WidgetCompact']]];
                 $layout[] = ['type' => 'NumberSpinner', 'name' => 'TileWidgetFontSize', 'caption' => $this->StatusWidgetText('font'), 'minimum' => 10, 'maximum' => 28];
             }
-            foreach (['Photos' => 'photos', 'Details' => 'details'] as $property => $key) {
+            foreach (['ShowSummary' => 'summary', 'Photos' => 'photos', 'Details' => 'details'] as $property => $key) {
                 $layout[] = ['type' => 'CheckBox', 'name' => $prefix . 'Widget' . $property, 'caption' => $this->StatusWidgetText($key)];
             }
             foreach (['PictureSize' => ['size', 24, 96], 'Radius' => ['radius', 0, 32], 'Spacing' => ['spacing', 4, 24]] as $property => [$key, $min, $max]) {
@@ -326,7 +328,11 @@ trait PresenceWidget
     private function StatusWidgetBootstrap(bool $ipsView, bool $compact = false): array
     {
         $prefix = $ipsView ? 'IPSView' : 'Tile';
-        $design = ['photos' => $this->ReadPropertyBoolean($prefix . 'WidgetPhotos'), 'details' => $this->ReadPropertyBoolean($prefix . 'WidgetDetails')];
+        $design = [
+            'showSummary' => $this->ReadPropertyBoolean($prefix . 'WidgetShowSummary'),
+            'photos'      => $this->ReadPropertyBoolean($prefix . 'WidgetPhotos'),
+            'details'     => $this->ReadPropertyBoolean($prefix . 'WidgetDetails')
+        ];
         foreach (['PictureSize' => [24, 96], 'Radius' => [0, 32], 'Spacing' => [4, 24]] as $name => [$min, $max]) {
             $design[lcfirst($name)] = max($min, min($max, $this->ReadPropertyInteger($prefix . 'Widget' . $name)));
         }

@@ -74,6 +74,9 @@ $walk = static function (array $items) use (&$walk, &$fields): void
     }
 };
 $walk($form['elements']);
+foreach (['Tile', 'IPSView'] as $prefix) {
+    $check(($fields[$prefix . 'WidgetShowSummary']['type'] ?? '') === 'CheckBox', 'Each designer needs a checkbox for its own overall presence summary.');
+}
 foreach (['VisualizationThemeTextColor', 'VisualizationThemeBackgroundColor', 'IPSViewStyleViewBackgroundColor', 'TileWidgetPhotos', 'IPSViewWidgetPhotos', 'TileWidgetSpacing', 'IPSViewWidgetSpacing'] as $field) {
     $check(isset($fields[$field]), 'Independent designers must expose ' . $field);
 }

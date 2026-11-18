@@ -3416,3 +3416,25 @@ Regressionstests und schliesst die dort noch offene Anzeigepruefung nach dem
 Update ab. Sie ist eine Rueckmeldung aus der Installation des Benutzers;
 es wurde dafuer kein neuer MCP-Lauf durchgefuehrt. Persoenliche Kontaktdaten
 oder Screenshots werden nicht in das Repository uebernommen.
+
+## Gesamtanwesenheit und Kachelhöhe (2026-11-18)
+
+Kacheldesigner und IPSView-Designer steuern die Kopfzeile getrennt. Beide
+Schalter sind bei bestehenden und neuen Instanzen standardmäßig aktiv und
+gelten jeweils für Widget und WidgetCompact. Die Auswertung liefert ihren
+Gruppenstatus unabhängig von der Darstellung.
+
+Das Layout nutzt die Breite und Höhe des vorhandenen responsiven Containers.
+Flache Ansichten ziehen Kopfzeile und Gerätekarten zusammen. Bei Überlauf
+scrollen Kopfzeile und Geräte in einem gemeinsamen Bereich unterhalb des
+reservierten nativen Kacheltitels. Auswahl und Scrollposition werden bei
+Datenupdates übernommen.
+
+Chromium zeigte mit synthetischen Daten bei 1240 × 154 und 2528 × 202
+CSS-Pixeln vier vollständige Detailkarten. Bei 1240 × 390 expandierten die
+Karten, bei 280 × 160 blieben die Inhalte vertikal scrollbar. Echtes Mausrad
+in beiden Richtungen wurde mit der lokal gerenderten Kachelausgabe und im
+verschachtelten IPSView-Loader mit synthetischer HTTP-Antwort geprüft. Die
+Offline-Suite, Strukturprüfung, der offizielle JSON-Check und PHP-CS-Fixer
+im Prüfmodus bestanden. Die Abnahme im nativen Symcon- und IPSView-Host
+steht aus.
