@@ -2,6 +2,10 @@
 
 ## Fixes
 
+- **iCloud Fotos:** Alben werden per Klick synchronisiert. Der Abgleich lädt
+  neue oder geänderte Vorschauen. Diashow und Einzelbild lesen den
+  synchronisierten Stand direkt aus der geschützten lokalen Ablage.
+
 - **WoIst, Anwesenheit und Fotos:** Die Instanzen lassen sich auch bei
   fehlgeschlagener WebHook-Registrierung anlegen und konfigurieren. Die
   betroffene Ausgabe zeigt einen Hinweis. Übernehmen versucht die Registrierung

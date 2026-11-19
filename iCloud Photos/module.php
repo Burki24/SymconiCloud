@@ -28,11 +28,10 @@ class iCloudPhotos extends IPSModuleStrict
             parent::Create();
             $this->RegisterPropertyBoolean('Enabled', false);
             $this->RegisterPropertyString('AlbumID', '');
-            $this->RegisterPropertyInteger('RefreshInterval', 900);
-            $this->RegisterAttributeString('PhotoState', '{"items":[],"next":null,"total":0}');
+            $this->RegisterPropertyInteger('RefreshInterval', 900); // Legacy property retained for existing instances.
             $this->RegisterAttributeString('PhotoSource', '');
             $this->RegisterAttributeString('LastError', '');
-            $this->RegisterTimer('Refresh', 0, 'ICPH_Refresh($_IPS["TARGET"]);');
+            $this->RegisterTimer('Refresh', 0, '/* Photo synchronization is manual. */');
             $this->RegisterPhotoWidget();
         }, true);
     }
@@ -49,13 +48,13 @@ class iCloudPhotos extends IPSModuleStrict
             parent::ApplyChanges();
             $source = hash('sha256', json_encode([$this->GetParentID(), $this->ReadPropertyString('AlbumID'), $this->ReadPropertyBoolean('Enabled')], JSON_THROW_ON_ERROR));
             if ($source !== $this->ReadAttributeString('PhotoSource')) {
-                $this->WriteAttributeString('PhotoState', '{"items":[],"next":null,"total":0}');
                 $this->WriteAttributeString('PhotoSource', $source);
                 $this->WriteAttributeString('PhotoToken', '');
+                $this->WriteAttributeString('LastError', '');
             }
             $this->ConfigurePhotoWidget();
             $active = $this->ReadPropertyBoolean('Enabled') && $this->HasParent() && $this->ReadPropertyString('AlbumID') !== '';
-            $this->CloudDebugTimer('Refresh', $active ? max(300, min(86400, $this->ReadPropertyInteger('RefreshInterval'))) * 1000 : 0, __FUNCTION__, __LINE__);
+            $this->CloudDebugTimer('Refresh', 0, __FUNCTION__, __LINE__);
             $this->CloudDebugStatus($active ? IS_ACTIVE : IS_INACTIVE, __FUNCTION__, __LINE__);
             $this->PublishPhotos();
             $this->RegenerateIPSViewHTMLPages();
@@ -83,6 +82,15 @@ class iCloudPhotos extends IPSModuleStrict
                 $options[] = ['caption' => $this->Translate('Selected album (not available)'), 'value' => $selected];
             }
             $form['elements'][1]['options'] = $options;
+            if ($selected !== '') {
+                $local = $this->PhotoAccountRequest('GetPhotoPage');
+                if (($local['success'] ?? false) === true) {
+                    $form['actions'][] = ['type' => 'Label', 'caption' => sprintf($this->Translate('Locally synchronized previews: %d'), $local['total'])];
+                    if ($local['limited']) {
+                        $form['actions'][] = ['type' => 'Label', 'caption' => $this->Translate('The account storage limit was reached. Only the saved previews are shown.')];
+                    }
+                }
+            }
             $form['actions'][] = ['type' => 'Label', 'caption' => $this->ReadAttributeString('LastError')];
             return $this->EncodeConfigurationForm($this->PhotoWidgetForm($form));
         });
@@ -112,23 +120,22 @@ class iCloudPhotos extends IPSModuleStrict
                 return false;
             }
             try {
-                $catalog = $this->PhotoAccountRequest('GetPhotoAlbums');
-                if (($catalog['success'] ?? false) && time() - ($catalog['updatedAt'] ?? 0) >= 3600) {
-                    $catalog = $this->PhotoAccountRequest('RefreshPhotoAlbums');
-                }
-                $page = ($catalog['success'] ?? false) ? $this->PhotoAccountRequest('GetPhotoPage', ['Offset' => 0]) : $catalog;
-                if (($page['success'] ?? false) === true) {
-                    $this->WriteAttributeString('PhotoState', json_encode($page, JSON_THROW_ON_ERROR));
+                $result = $this->PhotoAccountRequest('SyncPhotoAlbum');
+                if (($result['success'] ?? false) === true) {
                     $this->WriteAttributeString('LastError', '');
                     $this->CloudDebugStatus(IS_ACTIVE, __FUNCTION__, __LINE__);
                     return true;
                 }
-                $this->WriteAttributeString('LastError', $page['error'] ?? $this->Translate('Photos unavailable.'));
+                $this->WriteAttributeString('LastError', $result['error'] ?? $this->Translate('Photos unavailable.'));
                 $this->CloudDebugStatus(202, __FUNCTION__, __LINE__);
                 return false;
             } finally {
-                $this->PublishPhotos();
-                IPS_SemaphoreLeave('SymconiCloud.Photos.' . $this->InstanceID);
+                try {
+                    $this->PublishPhotos();
+                    $this->ReloadForm();
+                } finally {
+                    IPS_SemaphoreLeave('SymconiCloud.Photos.' . $this->InstanceID);
+                }
             }
         });
     }
@@ -192,7 +199,7 @@ class iCloudPhotos extends IPSModuleStrict
             $this->CloudDebugProblem('Connect an account first.', __FUNCTION__, __LINE__);
             return ['success' => false, 'albums' => [], 'error' => $this->Translate('Connect an account first.')];
         }
-        if (in_array($command, ['GetPhotoPage', 'GetPhotoImage', 'GetPhotoImagePage', 'ClearPhotoImageTransfer'], true)) {
+        if (in_array($command, ['SyncPhotoAlbum', 'GetPhotoPage', 'GetPhotoImage', 'GetPhotoImagePage'], true)) {
             $arguments['AlbumID'] = $this->ReadPropertyString('AlbumID');
         }
         try {

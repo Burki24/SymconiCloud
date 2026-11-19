@@ -74,16 +74,16 @@ trait PhotosWidget
     {
         return $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($operation, $offset, $photoID): array
         {
-            if (!$this->ReadPropertyBoolean('Enabled') || $this->ReadAttributeString('PhotoToken') === ''
-                || $this->ReadAttributeString('PhotoSource') !== $this->CurrentPhotoSource()) {
+            if (!$this->PhotoWidgetAuthorized()) {
                 return ['success' => false, 'revoked' => true];
             }
-            $catalog = $this->PhotoAccountRequest('GetPhotoAlbums');
-            if (($catalog['success'] ?? false) !== true || !in_array($this->ReadPropertyString('AlbumID'), array_column($catalog['albums'] ?? [], 'id'), true)) {
-                return ['success' => false, 'revoked' => true, 'error' => $catalog['error'] ?? $this->Translate('Select an available album and refresh photos.')];
+            if ($operation === 'model') {
+                $local = $this->PhotoAccountRequest('GetPhotoPage');
+                return ($local['success'] ?? false) === true
+                    ? ['success' => true, 'state' => $local, 'source' => $this->CurrentPhotoSource(), 'error' => $this->ReadAttributeString('LastError')]
+                    : $local;
             }
             return match ($operation) {
-                'model' => ['success' => true, 'state' => json_decode($this->ReadAttributeString('PhotoState'), true, 512, JSON_THROW_ON_ERROR), 'source' => $this->CurrentPhotoSource(), 'error' => $this->ReadAttributeString('LastError')],
                 'page'  => $offset >= 0 && $offset <= 1000000000 ? $this->PhotoAccountRequest('GetPhotoPage', ['Offset' => $offset]) : ['success' => false],
                 'image' => $photoID !== '' && strlen($photoID) <= 512 ? $this->PhotoAccountRequest('GetPhotoImage', ['PhotoID' => $photoID]) : ['success' => false],
                 default => ['success' => false]
@@ -155,7 +155,8 @@ trait PhotosWidget
                 return;
             }
             $token = $this->ReadAttributeString('PhotoToken');
-            if ($token === '' || !hash_equals($token, $_SERVER['HTTP_X_PHOTO_TOKEN'] ?? '')) {
+            $provided = $_SERVER['HTTP_X_PHOTO_TOKEN'] ?? '';
+            if ($token === '' || !is_string($provided) || !hash_equals($token, $provided)) {
                 $this->CloudDebugPlainResponse(403, 'Access denied.', __FUNCTION__, __LINE__);
                 return;
             }
@@ -165,14 +166,14 @@ trait PhotosWidget
                     throw new \InvalidArgumentException();
                 }
                 $request = json_decode($input, true, 16, JSON_THROW_ON_ERROR);
-                if (!is_array($request) || array_diff(array_keys($request), ['operation', 'offset', 'id', 'view', 'token', 'page']) !== []
+                if (!is_array($request) || array_diff(array_keys($request), ['operation', 'offset', 'id', 'view', 'version', 'page']) !== []
                     || !in_array($request['view'] ?? 'tile', ['tile', 'ipsview'], true)
                     || !is_string($request['operation'] ?? null) || !is_int($request['offset'] ?? 0) || !is_string($request['id'] ?? '')
-                    || !is_string($request['token'] ?? '') || strlen($request['token'] ?? '') > 32 || !is_int($request['page'] ?? 0)) {
+                    || !is_string($request['version'] ?? '') || strlen($request['version'] ?? '') > 64 || !is_int($request['page'] ?? 0)) {
                     throw new \InvalidArgumentException();
                 }
-                $result = in_array($request['operation'], ['imagePage', 'imageClear'], true)
-                    ? $this->ReadPhotoTransfer($request['id'] ?? '', $request['token'] ?? '', $request['page'] ?? 0, $request['operation'] === 'imageClear')
+                $result = $request['operation'] === 'imagePage'
+                    ? $this->ReadLocalPhotoImagePage($request['id'] ?? '', $request['version'] ?? '', $request['page'] ?? 0)
                     : $this->ReadPhotoWidget($request['operation'], $request['offset'] ?? 0, $request['id'] ?? '');
                 if (($result['success'] ?? false) && $request['operation'] === 'model') {
                     $result['options'] = $this->PhotoBootstrap(($request['view'] ?? 'tile') === 'ipsview', true)['options'];
@@ -182,23 +183,6 @@ trait PhotosWidget
                 $this->CloudDebugPlainResponse(400, 'Invalid photo request.', __FUNCTION__, __LINE__);
             }
         }, true);
-    }
-
-    /** Transfer pages remain bound to this widget's current account and album. */
-    protected function ReadPhotoTransfer(string $photoID, string $token, int $page, bool $clear): array
-    {
-        $access = $this->ReadPhotoWidget('model');
-        if (!($access['success'] ?? false)) {
-            return $access;
-        }
-        if ($photoID === '' || strlen($photoID) > 512 || preg_match('/\A[a-f0-9]{32}\z/D', $token) !== 1 || $page < 0 || $page > 100) {
-            return ['success' => false];
-        }
-        $arguments = ['PhotoID' => $photoID, 'Token' => $token];
-        if (!$clear) {
-            $arguments['Page'] = $page;
-        }
-        return $this->PhotoAccountRequest($clear ? 'ClearPhotoImageTransfer' : 'GetPhotoImagePage', $arguments);
     }
 
     protected function PhotoWidgetForm(array $form): array
@@ -221,9 +205,27 @@ trait PhotosWidget
         return $form;
     }
 
+    /** Local file pages remain bound to this widget's current account and album. */
+    private function ReadLocalPhotoImagePage(string $photoID, string $version, int $page): array
+    {
+        if (!$this->PhotoWidgetAuthorized()) {
+            return ['success' => false, 'revoked' => true];
+        }
+        if ($photoID === '' || strlen($photoID) > 512 || preg_match('/\A[a-f0-9]{64}\z/D', $version) !== 1 || $page < 0 || $page >= 64) {
+            return ['success' => false];
+        }
+        return $this->PhotoAccountRequest('GetPhotoImagePage', ['PhotoID' => $photoID, 'Version' => $version, 'Page' => $page]);
+    }
+
     private function CurrentPhotoSource(): string
     {
         return hash('sha256', json_encode([$this->GetParentID(), $this->ReadPropertyString('AlbumID'), $this->ReadPropertyBoolean('Enabled')], JSON_THROW_ON_ERROR));
+    }
+
+    private function PhotoWidgetAuthorized(): bool
+    {
+        return $this->ReadPropertyBoolean('Enabled') && $this->ReadPropertyString('AlbumID') !== ''
+            && $this->ReadAttributeString('PhotoToken') !== '' && $this->ReadAttributeString('PhotoSource') === $this->CurrentPhotoSource();
     }
 
     private function PhotoHook(): string
@@ -253,7 +255,7 @@ trait PhotosWidget
             'mode'     => $this->ReadPropertyString($prefix . 'PhotoMode'), 'fit' => $this->ReadPropertyString($prefix . 'PhotoFit'),
             'seconds'  => max(5, min(3600, $this->ReadPropertyInteger($prefix . 'PhotoSeconds'))), 'shuffle' => $this->ReadPropertyBoolean($prefix . 'PhotoShuffle'),
             'caption'  => $this->ReadPropertyBoolean($prefix . 'PhotoCaption'), 'themeCSS' => $ipsView ? $this->VisualizationBaseThemeCSS() . $this->IPSViewStyleCSSVariables(':root') : $this->VisualizationThemeCSS(),
-            'text'     => $this->IPSViewTranslationsFor(['Previous', 'Next', 'Pause', 'Play', 'No photos loaded. Select an album and refresh photos.', 'Photos unavailable. Retrying...', 'Preview unavailable. Try the next picture.'])])];
+            'text'     => $this->IPSViewTranslationsFor(['Previous', 'Next', 'Pause', 'Play', 'No photos synchronized. Select an album and synchronize it.', 'Photos unavailable. Retrying...', 'Preview unavailable. Try the next picture.'])])];
     }
 
     private function PhotoPage(bool $ipsView, bool $publicShell = false): string

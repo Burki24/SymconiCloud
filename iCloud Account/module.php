@@ -77,7 +77,7 @@ class iCloudAccount extends IPSModuleStrict
                 }
                 else {
                     try {
-                        $this->PhotoCache()->trim();
+                        $this->ApplyPhotoStorageConfiguration();
                     } catch (Throwable) {
                         $this->WriteAttributeString('PhotoError', $this->Translate('Photo cache unavailable or configured limits are invalid.'));
                     }
@@ -234,7 +234,7 @@ class iCloudAccount extends IPSModuleStrict
                 if (in_array($request['Command'] ?? '', ['GetContacts', 'GetContact', 'RefreshContacts'], true)) {
                     return json_encode($this->ForwardContactsRequest($request), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
                 }
-                if (in_array($request['Command'] ?? '', ['GetPhotoAlbums', 'RefreshPhotoAlbums', 'GetPhotoPage', 'GetPhotoImage', 'GetPhotoImagePage', 'ClearPhotoImageTransfer'], true)) {
+                if (in_array($request['Command'] ?? '', ['GetPhotoAlbums', 'RefreshPhotoAlbums', 'SyncPhotoAlbum', 'GetPhotoPage', 'GetPhotoImage', 'GetPhotoImagePage'], true)) {
                     return json_encode($this->ForwardPhotosRequest($request), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
                 }
                 if (($request['Command'] ?? '') === 'PlaySound') {

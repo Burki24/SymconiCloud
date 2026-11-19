@@ -20,7 +20,10 @@ if (($argv[1] ?? '') === 'ipsview-dark') {
 $html = (new ReflectionMethod($module, 'PhotoPage'))->invoke($module, $ipsView, true);
 preg_match('#<script type="application/json" id="photo-bootstrap">(.*?)</script>#s', $html, $match);
 $bootstrap = json_decode($match[1], true, 512, JSON_THROW_ON_ERROR);
-$bootstrap['state'] = ['items' => [['id' => 'photo-1', 'name' => 'Synthetic first photo.jpg', 'date' => 1700000000], ['id' => 'photo-2', 'name' => 'Synthetic second photo.jpg', 'date' => 1700000000]], 'offset' => 0, 'next' => null, 'total' => 2];
+$bootstrap['state'] = ['items' => [
+    ['id' => 'photo-1', 'name' => 'Synthetic first photo.jpg', 'date' => 1700000000, 'version' => str_repeat('c', 64)],
+    ['id' => 'photo-2', 'name' => 'Synthetic second photo.jpg', 'date' => 1700000000, 'version' => str_repeat('c', 64)]
+], 'offset' => 0, 'next' => null, 'total' => 2];
 $bootstrap['runtime'] = ['source' => 'browser-fixture'];
 $bootstrap['options'] = array_replace($bootstrap['options'], ['endpoint' => '/hook/photos', 'token' => str_repeat('f', 64), 'fragmentToken' => $ipsView, 'mode' => 'slideshow', 'seconds' => 3600, 'instance' => 999]);
 echo str_replace($match[1], json_encode($bootstrap, JSON_HEX_TAG | JSON_THROW_ON_ERROR), $html);

@@ -59,7 +59,7 @@ IPS_SetProperty($idOf($a), 'PauseRequests', true);
 $a->ApplyChanges();
 $check(!$a->Login() && !$a->RefreshDevices() && !$a->VerifyCode('123456') && !$a->ResendCode(), 'Paused authentication and refresh paths must return without HTTP.');
 $check(!$forward($a, 'PlaySound', ['DeviceID' => 'synthetic-device'])['success'], 'Pause must also suppress a sound command.');
-$check(!$a->RefreshPhotoAlbums() && !$forward($a, 'GetPhotoPage', ['AlbumID' => 'private-album', 'Offset' => 0])['success'], 'Pause must suppress Photos catalog and page requests.');
+$check(!$a->RefreshPhotoAlbums() && !$forward($a, 'SyncPhotoAlbum', ['AlbumID' => 'private-album'])['success'], 'Pause must suppress Photos catalog and synchronization requests.');
 $check($a->transport->requests === [] && $attrs($a)['Session'] === $beforeSession && $attrs($a)['DeviceCache'] === $beforeCache, 'Pause must retain session, trusted-client identity and cached inventory byte for byte.');
 $check(IPS_GetInstance($idOf($a))['InstanceStatus'] === 207, 'Pause requires its own visible status.');
 $check(json_decode($a->GetDevices(), true)['success'] && json_decode($a->GetPhotoAlbums(), true)['success'], 'Local cached data must remain readable during a pause.');

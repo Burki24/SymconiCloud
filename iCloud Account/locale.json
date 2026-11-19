@@ -139,6 +139,7 @@
             "Photo web access is unavailable or needs approval on a trusted device.": "Der Foto-Webzugriff ist nicht verfügbar oder benötigt die Freigabe auf einem vertrauenswürdigen Gerät.",
             "Refresh albums and select an available photo album.": "Alben aktualisieren und ein verfügbares Fotoalbum auswählen.",
             "Photo cache unavailable or configured limits are invalid.": "Foto-Cache nicht verfügbar oder konfigurierte Grenzen ungültig.",
+            "Local photo preview unavailable. Synchronize the album again.": "Die lokale Fotovorschau ist nicht verfügbar. Synchronisiere das Album erneut.",
             "Preview unavailable. Refresh photo data or choose another picture.": "Vorschau nicht verfügbar. Fotodaten aktualisieren oder ein anderes Bild auswählen.",
             "Photos could not be loaded. Check the account session and try again later.": "Fotos konnten nicht geladen werden. Kontositzung prüfen und später erneut versuchen.",
             "Empty picture hint.": "Hinweis bei leerem Bilderrahmen.",

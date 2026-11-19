@@ -6,23 +6,23 @@ namespace SymconiCloud;
 
 require_once __DIR__ . '/PhotoDiskCache.php';
 require_once __DIR__ . '/ApplePhotoDownload.php';
-require_once __DIR__ . '/helper/ChunkedJsonTransferHelper.php';
 
 /** Library-local Photos capability and shared account cache; never changes the media library. */
 trait PhotosAccount
 {
-    use \Burki24\SymconModuleHelper\ChunkedJsonTransferHelper;
     /** Normalized catalog only. Reading this method never initiates Apple authentication. */
     public function GetPhotoAlbums(): string
     {
         return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): string
         {
             try {
-                $this->assertPhotosAccount();
-                if (!$this->ReadAttributeBoolean('PhotoAccess')) {
+                if (!$this->photosConfigured()) {
+                    throw new AppleException('photosDisabled');
+                }
+                $catalog = $this->photoCatalog();
+                if ($catalog['updatedAt'] === 0) {
                     throw new AppleException('photosAccess');
                 }
-                $catalog = json_decode($this->ReadAttributeString('PhotoAlbums'), true, 512, JSON_THROW_ON_ERROR);
                 return json_encode(['success' => true, 'albums' => $catalog['albums'], 'updatedAt' => $catalog['updatedAt'], 'cache' => $this->PhotoCache()->stats()], JSON_THROW_ON_ERROR);
             } catch (\Throwable $exception) {
                 $fallback = $exception instanceof AppleException && $exception->reason === 'photosAccess' ? 'Check Photos access and load albums' : 'Enable Photos and sign in to the account first.';
@@ -48,7 +48,8 @@ trait PhotosAccount
         $this->RegisterPropertyInteger('PhotoCacheImages', 50);
         $this->RegisterPropertyInteger('PhotoCacheMiB', 100);
         $this->RegisterAttributeString('PhotoAlbums', '{"albums":[],"updatedAt":0}');
-        $this->RegisterAttributeString('PhotoAssets', '{}');
+        $this->RegisterAttributeString('PhotoAssets', '{}'); // Clears signed URLs persisted by older versions.
+        $this->RegisterAttributeString('PhotoStorageID', '');
         $this->RegisterAttributeString('PhotoError', '');
         $this->RegisterAttributeBoolean('PhotoAccess', false);
         $this->RegisterAttributeInteger('PhotoRetryAt', 0);
@@ -56,12 +57,9 @@ trait PhotosAccount
 
     protected function ClearPhotoState(): void
     {
-        foreach ($this->photoTransfers() as $token => $transfer) {
-            $this->ClearChunkedJsonTransfer($transfer['scope'], $token);
-        }
-        $this->SetBuffer('PhotoImageTransfers', '');
         $this->WriteAttributeString('PhotoAlbums', '{"albums":[],"updatedAt":0}');
         $this->WriteAttributeString('PhotoAssets', '{}');
+        $this->WriteAttributeString('PhotoStorageID', '');
         $this->WriteAttributeString('PhotoError', '');
         $this->WriteAttributeBoolean('PhotoAccess', false);
         $this->WriteAttributeInteger('PhotoRetryAt', 0);
@@ -90,29 +88,29 @@ trait PhotosAccount
     protected function PhotoCache(): PhotoDiskCache
     {
         [$count, $bytes] = PhotoDiskCache::limits($this->ReadPropertyString('PhotoCacheProfile'), $this->ReadPropertyInteger('PhotoCacheImages'), $this->ReadPropertyInteger('PhotoCacheMiB'));
-        return new PhotoDiskCache($this->PhotoCacheDirectory(), $count, $bytes);
+        return new PhotoDiskCache($this->PhotoCacheDirectory(), $count, $bytes, $this->ReadAttributeString('PhotoStorageID'));
+    }
+
+    protected function ApplyPhotoStorageConfiguration(): void
+    {
+        if ($this->ReadAttributeString('PhotoAssets') !== '{}') {
+            $this->WriteAttributeString('PhotoAssets', '{}');
+        }
+        $this->PhotoCache()->trim();
     }
 
     protected function ForwardPhotosRequest(array $request): array
     {
         $command = $request['Command'];
-        $allowed = ['DataID', 'Command'];
-        if ($command !== 'GetPhotoAlbums' && $command !== 'RefreshPhotoAlbums') {
-            $allowed[] = 'AlbumID';
-        }
-        if ($command === 'GetPhotoPage') {
-            $allowed[] = 'Offset';
-        }
-        if (in_array($command, ['GetPhotoImage', 'GetPhotoImagePage', 'ClearPhotoImageTransfer'], true)) {
-            $allowed[] = 'PhotoID';
-        }
-        if (in_array($command, ['GetPhotoImagePage', 'ClearPhotoImageTransfer'], true)) {
-            $allowed[] = 'Token';
-        }
-        if ($command === 'GetPhotoImagePage') {
-            $allowed[] = 'Page';
-        }
-        if (array_diff(array_keys($request), $allowed) !== []) {
+        $allowed = match ($command) {
+            'GetPhotoAlbums', 'RefreshPhotoAlbums' => [],
+            'SyncPhotoAlbum'                       => ['AlbumID'],
+            'GetPhotoPage'                         => ['AlbumID', 'Offset'],
+            'GetPhotoImage'                        => ['AlbumID', 'PhotoID'],
+            'GetPhotoImagePage'                    => ['AlbumID', 'PhotoID', 'Version', 'Page'],
+            default                                => throw new \InvalidArgumentException()
+        };
+        if (array_diff(array_keys($request), ['DataID', 'Command', ...$allowed]) !== []) {
             throw new \InvalidArgumentException();
         }
         if ($command === 'GetPhotoAlbums') {
@@ -121,141 +119,138 @@ trait PhotosAccount
         if ($command === 'RefreshPhotoAlbums') {
             return $this->operatePhotos('catalog');
         }
-        if (!is_string($request['AlbumID'] ?? null) || strlen($request['AlbumID']) > 512
-            || ($command === 'GetPhotoPage' && (!is_int($request['Offset'] ?? null) || $request['Offset'] < 0 || $request['Offset'] > 1000000000))
-            || (in_array($command, ['GetPhotoImage', 'GetPhotoImagePage', 'ClearPhotoImageTransfer'], true) && (!is_string($request['PhotoID'] ?? null) || strlen($request['PhotoID']) > 512))
-            || (in_array($command, ['GetPhotoImagePage', 'ClearPhotoImageTransfer'], true) && (!is_string($request['Token'] ?? null) || preg_match('/\A[a-f0-9]{32}\z/D', $request['Token']) !== 1))
-            || ($command === 'GetPhotoImagePage' && (!is_int($request['Page'] ?? null) || $request['Page'] < 0 || $request['Page'] > 100))) {
+        $albumID = $request['AlbumID'] ?? null;
+        if (!is_string($albumID) || $albumID === '' || strlen($albumID) > 512) {
             throw new \InvalidArgumentException();
         }
-        $operation = match ($command) {
-            'GetPhotoImage' => 'image', 'GetPhotoImagePage' => 'imagePage', 'ClearPhotoImageTransfer' => 'imageClear', default => 'page'
-        };
-        return $this->operatePhotos($operation, $request['AlbumID'], $request['Offset'] ?? 0, $request['PhotoID'] ?? '', $request['Token'] ?? '', $request['Page'] ?? 0);
+        if ($command === 'SyncPhotoAlbum') {
+            return $this->operatePhotos('sync', $albumID);
+        }
+        $offset = $request['Offset'] ?? 0;
+        $id = $request['PhotoID'] ?? '';
+        $version = $request['Version'] ?? '';
+        $page = $request['Page'] ?? 0;
+        if (!is_int($offset) || $offset < 0 || $offset > 1000000000 || !is_string($id) || strlen($id) > 512
+            || ($command === 'GetPhotoImagePage' && (!is_string($version) || preg_match('/\A[a-f0-9]{64}\z/D', $version) !== 1
+                || !is_int($page) || $page < 0 || $page >= 64))) {
+            throw new \InvalidArgumentException();
+        }
+        return $this->readLocalPhotos($command, $albumID, $offset, $id, $version, $page);
     }
 
-    private function assertPhotosAccount(): void
+    private function photosConfigured(): bool
     {
-        if (!$this->configurationValid() || !$this->ReadPropertyBoolean('EnablePhotos')
-            || $this->credentialFingerprint() !== $this->ReadAttributeString('CredentialFingerprint') || ($this->readSession()['state'] ?? '') !== 'authenticated') {
-            throw new AppleException('photosDisabled');
+        return $this->configurationValid() && $this->ReadPropertyBoolean('EnablePhotos')
+            && $this->credentialFingerprint() === $this->ReadAttributeString('CredentialFingerprint');
+    }
+
+    private function photoCatalog(): array
+    {
+        return json_decode($this->ReadAttributeString('PhotoAlbums'), true, 512, JSON_THROW_ON_ERROR);
+    }
+
+    private function readLocalPhotos(string $command, string $albumID, int $offset, string $id, string $version, int $page): array
+    {
+        if (!$this->photosConfigured()) {
+            return ['success' => false, 'revoked' => true];
+        }
+        try {
+            $cache = $this->PhotoCache();
+            if ($command === 'GetPhotoPage') {
+                $local = $cache->page($albumID, $offset);
+                if ($local['updatedAt'] === 0 && !in_array($albumID, array_column($this->photoCatalog()['albums'], 'id'), true)) {
+                    return ['success' => false, 'revoked' => true, 'error' => $this->Translate('Refresh albums and select an available photo album.')];
+                }
+                return ['success' => true] + $local;
+            }
+            return ['success' => true] + match ($command) {
+                'GetPhotoImage'     => $cache->image($albumID, $id),
+                'GetPhotoImagePage' => $cache->image($albumID, $id, $version, $page)
+            };
+        } catch (\Throwable) {
+            return ['success' => false, 'error' => $this->Translate('Local photo preview unavailable. Synchronize the album again.')];
         }
     }
 
-    private function operatePhotos(string $operation, string $albumID = '', int $offset = 0, string $photoID = '', string $token = '', int $pageNumber = 0): array
+    private function loadPhotoCatalog(AppleClient $client): array
+    {
+        $catalog = ['albums' => $client->photoAlbums(), 'updatedAt' => time()];
+        $this->WriteAttributeString('PhotoAlbums', json_encode($catalog, JSON_THROW_ON_ERROR));
+        $this->WriteAttributeBoolean('PhotoAccess', true);
+        return $catalog;
+    }
+
+    /** Iterate the cloud inventory exclusively during the explicitly requested synchronization. */
+    private function cloudAlbumPhotos(AppleClient $client, array $album): \Generator
+    {
+        $offset = 0;
+        $total = null;
+        do {
+            $page = $client->photoPage($album, $offset);
+            $total ??= $page['total'];
+            if ($page['total'] !== $total) {
+                throw new AppleException('response');
+            }
+            yield from $page['items'];
+            $next = $page['next'];
+            if ($next !== null && $next <= $offset) {
+                throw new AppleException('response');
+            }
+            $offset = $next;
+        } while ($offset !== null);
+    }
+
+    private function operatePhotos(string $operation, string $albumID = ''): array
     {
         if (!IPS_SemaphoreEnter('SymconiCloud.' . $this->InstanceID, 1000)) {
             $this->CloudDebugProblem('busy', __FUNCTION__, __LINE__);
             return ['success' => false, 'error' => $this->Translate('Account request already running.')];
         }
         $client = null;
-        $diagnosticOperation = match ($operation) {
-            'catalog' => 'photoCatalog', 'page' => 'photoPage', default => 'photoImage'
-        };
+        $diagnosticOperation = $operation === 'catalog' ? 'photoCatalog' : 'photoPage';
         $previousState = $this->readSession()['state'] ?? 'signedOut';
         try {
-            $this->assertPhotosAccount();
-            $cache = $this->PhotoCache();
-            $cache->trim();
+            if (!$this->photosConfigured() || $previousState !== 'authenticated') {
+                throw new AppleException('photosDisabled');
+            }
+            $this->AssertAccountRequestsAllowed();
+            if ($this->ReadAttributeInteger('PhotoRetryAt') > $this->AccountProtectionTime()) {
+                throw new AppleException('rateLimited');
+            }
+            $client = $this->CreateAppleClient($this->readSession());
             if ($operation === 'catalog') {
-                $this->AssertAccountRequestsAllowed();
-                if ($this->ReadAttributeInteger('PhotoRetryAt') > $this->AccountProtectionTime()) {
-                    throw new AppleException('rateLimited');
+                $result = $this->loadPhotoCatalog($client);
+            } else {
+                $catalog = $this->photoCatalog();
+                if (!$this->ReadAttributeBoolean('PhotoAccess') || time() - $catalog['updatedAt'] >= 3600) {
+                    $catalog = $this->loadPhotoCatalog($client);
                 }
-                $client = $this->CreateAppleClient($this->readSession());
-                $catalog = ['albums' => $client->photoAlbums(), 'updatedAt' => time()];
-                $this->WriteAttributeString('PhotoAlbums', json_encode($catalog, JSON_THROW_ON_ERROR));
-                $this->WriteAttributeString('PhotoError', '');
-                $this->WriteAttributeInteger('TransientFailures', 0);
-                $this->WriteAttributeBoolean('PhotoAccess', true);
-                return ['success' => true] + $catalog;
-            }
-            if (!$this->ReadAttributeBoolean('PhotoAccess')) {
-                throw new AppleException('photosAccess');
-            }
-            $catalog = json_decode($this->ReadAttributeString('PhotoAlbums'), true, 512, JSON_THROW_ON_ERROR);
-            $album = null;
-            foreach ($catalog['albums'] as $candidate) {
-                if ($candidate['id'] === $albumID) {
-                    $album = $candidate;
-                    break;
-                }
-            }
-            if ($album === null) {
-                throw new AppleException('photosAlbum');
-            }
-            $scope = 'PhotoImage.' . substr(hash('sha256', $this->credentialFingerprint() . "\0" . $albumID . "\0" . $photoID), 0, 40);
-            if (in_array($operation, ['imagePage', 'imageClear'], true)) {
-                $transfers = $this->photoTransfers();
-                if (($transfers[$token]['scope'] ?? '') !== $scope) {
+                $album = array_column($catalog['albums'], null, 'id')[$albumID] ?? null;
+                if ($album === null) {
                     throw new AppleException('photosAlbum');
                 }
-                if ($operation === 'imageClear') {
-                    $this->ClearChunkedJsonTransfer($scope, $token);
-                    unset($transfers[$token]);
-                    $this->SetBuffer('PhotoImageTransfers', json_encode($transfers, JSON_THROW_ON_ERROR));
-                    return ['success' => true];
+                if ($this->ReadAttributeString('PhotoStorageID') === '') {
+                    $this->WriteAttributeString('PhotoStorageID', bin2hex(random_bytes(16)));
                 }
-                return ['success' => true] + $this->ReadChunkedJsonTransferPage($scope, $token, $pageNumber);
+                $result = $this->PhotoCache()->synchronize($albumID, $this->cloudAlbumPhotos($client, $album), function (string $url): string
+                {
+                    $this->AssertAccountRequestsAllowed();
+                    $preview = $this->DownloadPhotoPreview($url);
+                    $this->RecordAccountDiagnostic('photoImage', 200, 'ok');
+                    return $preview;
+                });
+                $this->DebugFlowEvent(__FUNCTION__, __LINE__, 'AKTION', 'Album lokal abgeglichen. Die Wiedergabe verwendet die gespeicherten Vorschauen.', [
+                    'Vorschauen' => $result['count'], 'Downloads' => $result['downloaded'], 'SpeichergrenzeErreicht' => $result['limited']
+                ]);
             }
-            $assets = json_decode($this->ReadAttributeString('PhotoAssets'), true, 512, JSON_THROW_ON_ERROR);
-            if ($operation === 'page') {
-                $this->AssertAccountRequestsAllowed();
-                if ($this->ReadAttributeInteger('PhotoRetryAt') > $this->AccountProtectionTime()) {
-                    throw new AppleException('rateLimited');
-                }
-                $client = $this->CreateAppleClient($this->readSession());
-                $page = $client->photoPage($album, $offset);
-                foreach ($page['items'] as &$item) {
-                    $key = hash('sha256', $albumID . "\0" . $item['id']);
-                    unset($assets[$key]);
-                    $assets[$key] = $item;
-                    unset($item['url'], $item['revision']);
-                }
-                unset($item);
-                while (count($assets) > 2000) {
-                    array_shift($assets);
-                }
-                $this->WriteAttributeString('PhotoAssets', json_encode($assets, JSON_THROW_ON_ERROR));
-                $this->WriteAttributeString('PhotoError', '');
-                $this->WriteAttributeInteger('TransientFailures', 0);
-                return ['success' => true, 'album' => $album['name'], 'updatedAt' => time()] + $page;
-            }
-            $asset = $assets[hash('sha256', $albumID . "\0" . $photoID)] ?? null;
-            if ($asset === null) {
-                throw new AppleException('photosAlbum');
-            }
-            $key = $photoID . ':' . $asset['revision'];
-            $bytes = $cache->get($key);
-            if ($bytes === null) {
-                $this->AssertAccountRequestsAllowed();
-                if ($this->ReadAttributeInteger('PhotoRetryAt') > $this->AccountProtectionTime()) {
-                    throw new AppleException('rateLimited');
-                }
-                ApplePhotoDownload::assertURL($asset['url']);
-                $bytes = $this->DownloadPhotoPreview($asset['url']);
-                ApplePhotoDownload::mime($bytes);
-                if (!$cache->put($key, $bytes)) {
-                    throw new AppleException('photosCache');
-                }
-                $this->RecordAccountDiagnostic('photoImage', 200, 'ok');
-            }
-            $transfers = $this->photoTransfers();
-            foreach ($transfers as $oldToken => $old) {
-                if ($old['expiresAt'] <= time()) {
-                    $this->ClearChunkedJsonTransfer($old['scope'], $oldToken);
-                    unset($transfers[$oldToken]);
-                }
-            }
-            $this->SetBuffer('PhotoImageTransfers', json_encode($transfers, JSON_THROW_ON_ERROR));
-            $metadata = $this->CreateChunkedJsonTransfer($scope, str_split(base64_encode($bytes), 131072));
-            $transfers[$metadata['Token']] = ['scope' => $scope, 'expiresAt' => $metadata['ExpiresAt']];
-            $this->SetBuffer('PhotoImageTransfers', json_encode($transfers, JSON_THROW_ON_ERROR));
-            return ['success' => true, 'mime' => ApplePhotoDownload::mime($bytes), 'bytes' => strlen($bytes), 'transfer' => $metadata];
+            $this->WriteAttributeString('PhotoError', '');
+            $this->WriteAttributeInteger('TransientFailures', 0);
+            $this->WriteAttributeInteger('PhotoRetryAt', 0);
+            return ['success' => true] + $result;
         } catch (\Throwable $exception) {
             $reason = $exception instanceof AppleException ? $exception->reason : 'photosCache';
             if ($exception instanceof AppleException) {
-                $this->AccountRequestFailed($diagnosticOperation, $exception, $client !== null || $operation === 'image');
+                $this->AccountRequestFailed($diagnosticOperation, $exception, $client !== null);
             } else {
                 $this->RecordAccountDiagnostic($diagnosticOperation, 0, 'photosCache');
             }
@@ -290,10 +285,5 @@ trait PhotosAccount
                 $this->notifyChildren();
             }
         }
-    }
-
-    private function photoTransfers(): array
-    {
-        return json_decode($this->GetBuffer('PhotoImageTransfers') ?: '{}', true, 32, JSON_THROW_ON_ERROR);
     }
 }

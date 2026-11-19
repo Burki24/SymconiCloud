@@ -315,14 +315,15 @@ Unter **iCloud Fotos (optional)** wird der lesende Fotozugriff ausdrücklich
 aktiviert und das gemeinsame Ressourcenprofil gewählt: **Kompakt** (Standard:
 50 Bilder/100 MiB), **Standard** (250/500 MiB), **Groß** (1000/2 GiB) oder
 **Eigene Grenzen** (`PhotoCacheImages` und `PhotoCacheMiB`). Es gilt jeweils die
-zuerst erreichte Grenze; das Konto entfernt länger nicht verwendete Vorschauen.
-Diese Grenzen gelten gemeinsam für alle verbundenen Foto-Widgets.
+zuerst erreichte Grenze. Die Grenzen gelten gemeinsam für alle verbundenen
+Foto-Widgets. Bei Platzmangel hat das zuletzt synchronisierte Album Vorrang.
 
 Nach dem Übernehmen **Fotozugriff prüfen und Alben laden** wählen. Bestehende
 Sitzungen entdecken den Fotodienst mit ihrem Sitzungstoken; ein Passwort-Login
 wird dabei nicht automatisch gestartet. Fehlender Foto-Webzugriff verhindert
 keine WoIst-Geräteabfrage. Die [Fotoanleitung](../iCloud%20Photos/README.md)
-beschreibt Einrichtung, Apple-Freigaben, Datenschutz und Cachegrenzen.
+beschreibt Einrichtung, Apple-Freigaben, Datenschutz und Speichergrenzen.
+Den manuellen Abgleich des gewählten Albums startet der Nutzer in der Foto-Instanz.
 
 `ICAC_RefreshPhotoAlbums($InstanceID)` aktualisiert den Albumkatalog lesend;
 `ICAC_GetPhotoAlbums($InstanceID)` liest ausschließlich dessen lokalen Stand,

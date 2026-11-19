@@ -5,7 +5,8 @@ const vm = require('node:vm');
 const file = require('node:path').join(__dirname, '../iCloud Photos/visualization/app.js');
 const {selection} = require(file);
 const state = selection();
-const page = {items: [{id: 'one', name: 'First'}, {id: 'two', name: 'Second'}], offset: 0, next: 20, total: 100};
+const revision = 'c'.repeat(64);
+const page = {items: [{id: 'one', name: 'First', version: revision}, {id: 'two', name: 'Second', version: revision}], offset: 0, next: 20, total: 100, snapshot: 'before'};
 state.apply(page, 'album-one', false); state.paused = true; state.move(1);
 state.apply({...page, items: [{id: 'new'}, ...page.items]}, 'album-one', false);
 assert.equal(state.id, 'two', 'An update must retain the selected picture by ID when a new picture is inserted.');
@@ -27,7 +28,7 @@ function harness(input = sample, fragment = false) {
     const nodes = Object.fromEntries(['photo-bootstrap', 'photo-widget', 'photo-frame', 'photo', 'photo-caption', 'photo-theme', 'photo-error', 'empty', 'previous', 'pause', 'next'].map(id => [id, new Element()]));
     nodes['photo-bootstrap'].textContent = JSON.stringify(input);
     const tasks = new Map(), events = {}, requests = [], revoked = [];
-    let seq = 0, available = true, status = 200, binaryDelay = false, waiting;
+    let seq = 0, available = true, status = 200, binaryDelay = false, waiting, currentPage = page;
     class PhotoURL extends URL {}
     PhotoURL.createObjectURL = () => 'blob:synthetic-' + ++seq;
     PhotoURL.revokeObjectURL = value => revoked.push(value);
@@ -42,17 +43,17 @@ function harness(input = sample, fragment = false) {
             const request = JSON.parse(configuration.body); requests.push({request, configuration});
             if (!available) throw new Error('Offline');
             if (request.operation === 'image' && binaryDelay) await new Promise(resolve => { waiting = resolve; });
-            const token = 'c'.repeat(32);
-            const value = request.operation === 'model' ? {success: true, state: page, source: 'source-one'}
-                : request.operation === 'image' ? {success: true, mime: 'image/jpeg', bytes: 100, transfer: {Token: token, PageCount: 1, ItemCount: 1}}
-                : request.operation === 'imagePage' ? {success: true, Token: token, Page: 0, PageCount: 1, ItemCount: 1, Complete: true, Items: [Buffer.alloc(100).toString('base64')]}
-                : request.operation === 'imageClear' ? {success: true}
-                : {success: true, items: [{id: 'later', name: 'Later'}], offset: request.offset, next: null};
+            const version = currentPage.items.find(item => item.id === request.id)?.version || revision;
+            const value = request.operation === 'model' ? {success: true, state: currentPage, source: 'source-one'}
+                : request.operation === 'image' ? {success: true, mime: 'image/jpeg', bytes: 100, version, pages: 1}
+                : request.operation === 'imagePage' ? {success: true, version, page: 0, data: Buffer.alloc(100).toString('base64')}
+                : {success: true, items: [{id: 'later', name: 'Later', version: revision}], offset: request.offset, next: null, snapshot: currentPage.snapshot};
             return {ok: status === 200, status, json: async () => value};
         }
     };
     vm.runInNewContext(fs.readFileSync(file, 'utf8'), {window, URL: PhotoURL, URLSearchParams, AbortController, console});
-    return {window, nodes, tasks, events, requests, revoked, offline: value => { available = !value; }, deny: () => { status = 403; }, delay: () => { binaryDelay = true; }, release: () => { binaryDelay = false; if (waiting) waiting(); }};
+    return {window, nodes, tasks, events, requests, revoked, offline: value => { available = !value; }, deny: () => { status = 403; }, delay: () => { binaryDelay = true; }, release: () => { binaryDelay = false; if (waiting) waiting(); },
+        update: value => { currentPage = value; }};
 }
 const tick = async () => { for (let i = 0; i < 80; i++) await Promise.resolve(); };
 const poll = async h => { const entry = [...h.tasks].find(([, task]) => task.ms === 5000); assert.ok(entry, 'Poll must be scheduled.'); h.tasks.delete(entry[0]); await entry[1].fn(); await tick(); };
@@ -100,5 +101,13 @@ const poll = async h => { const entry = [...h.tasks].find(([, task]) => task.ms 
     assert.equal(slow.requests.filter(item => item.request.operation === 'image').length, count, 'Polling must not cancel or duplicate a slow in-flight download.');
     slow.release(); await tick();
     assert.equal(slow.nodes.photo.hidden, false);
+    const old = slow.nodes.photo.src;
+    const newRevision = 'd'.repeat(64);
+    slow.update({...page, snapshot: 'after', items: [page.items[0], {...page.items[1], version: newRevision}]});
+    await poll(slow);
+    assert.match(slow.nodes['photo-caption'].textContent, /Second/);
+    assert.notEqual(slow.nodes.photo.src, old, 'An updated revision must reload the selected local photo while keeping its selection.');
+    assert.equal(slow.requests.at(-1).request.version, newRevision);
+    assert.ok(slow.requests.every(({request}) => ['model', 'page', 'image', 'imagePage'].includes(request.operation)), 'Playback may only read the local snapshot and file slices.');
     console.log('Photo selection, pause, lazy paging, wheel routing, reconnect and revocation passed.');
 })().catch(error => { console.error(error); process.exitCode = 1; });

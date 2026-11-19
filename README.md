@@ -20,7 +20,7 @@ Entfernung, Aufenthaltsdauer und GPS-Stabilisierung nutzen denselben Kontocache.
 Ausstehende Zonenwechsel werden je Gerät und in der Gruppensumme sichtbar; eine
 konfigurierte Bestätigungszeit benötigt eine weitere neuere Apple-Position.
 
-**[iCloud Fotos](iCloud%20Photos/README.md)** zeigt ein Album oder Favoriten als Einzelbild oder Diashow in Kachel und IPSView. Ein gemeinsamer Kontocache mit konfigurierbaren Ressourcenprofilen lädt Vorschauen bedarfsgerecht.
+**[iCloud Fotos](iCloud%20Photos/README.md)** zeigt ein Album oder Favoriten als Einzelbild oder Diashow in Kachel und IPSView. Alben werden per Klick synchronisiert. Die Anzeige lädt gespeicherte Vorschauen aus der geschützten Ablage des Kontos.
 
 **[iCloud Kontakte](iCloud%20Contacts/README.md)** stellt ein lesendes, durchsuchbares
 Empfängerverzeichnis mit Telefonnummern und E-Mail-Adressen aus dem gemeinsamen

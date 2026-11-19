@@ -28,24 +28,24 @@ $saved['attributes']['Session'] = json_encode($session, JSON_THROW_ON_ERROR);
 $saved['attributes']['PhotoAccess'] = true;
 $saved['attributes']['PhotoRetryAt'] = 0;
 $saved['attributes']['PhotoAlbums'] = json_encode(['albums' => [['id' => 'synthetic-album', 'name' => 'Fixture', 'kind' => 'album']], 'updatedAt' => time()], JSON_THROW_ON_ERROR);
-$saved['attributes']['PhotoAssets'] = json_encode([hash('sha256', "synthetic-album\0large") => ['id' => 'large', 'revision' => 'large-version', 'url' => 'https://test.icloud-content.com/fixture']], JSON_THROW_ON_ERROR);
 $photoAccount->ApplyPersistence($saved);
-$cache = new \SymconiCloud\PhotoDiskCache(PhotosFixtureAccount::$root . '/' . $photoAccountID, 2, 8388608);
+$cache = (new ReflectionMethod($photoAccount, 'PhotoCache'))->invoke($photoAccount);
 try {
-    $cache->put('large:large-version', $bytes);
-    $begin = $forward('GetPhotoImage', ['AlbumID' => 'synthetic-album', 'PhotoID' => 'large']);
-    $check(strlen(json_encode($begin, JSON_THROW_ON_ERROR)) < 245760 && !isset($begin['image']), 'Image initiation must stay below the Symcon buffer limit and return transfer metadata rather than a complete Base64 image.');
-    $transfer = $begin['transfer'];
-    $encoded = '';
-    for ($number = 0; $number < $transfer['PageCount']; $number++) {
-        $page = $forward('GetPhotoImagePage', ['AlbumID' => 'synthetic-album', 'PhotoID' => 'large', 'Token' => $transfer['Token'], 'Page' => $number]);
-        $check($page['success'] && $page['Page'] === $number && $page['Token'] === $transfer['Token'] && strlen(json_encode($page, JSON_THROW_ON_ERROR)) < 245760, 'Every data-flow and HTTP image page must stay below 240 KiB.');
-        $encoded .= implode('', $page['Items']);
+    $cache->synchronize('synthetic-album', [['id' => 'large', 'name' => 'Large', 'date' => 0, 'revision' => 'large-version', 'url' => 'fixture']], static fn (): string => $bytes);
+    $before = count($transport->requests);
+    $album = ['AlbumID' => 'synthetic-album'];
+    $begin = $forward('GetPhotoImage', $album + ['PhotoID' => 'large']);
+    $check($begin['success'] && $begin['bytes'] === strlen($bytes) && !isset($begin['data']), 'Image metadata contains only local dimensions needed for transfer.');
+    $complete = '';
+    for ($number = 0; $number < $begin['pages']; $number++) {
+        $page = $forward('GetPhotoImagePage', $album + ['PhotoID' => 'large', 'Version' => $begin['version'], 'Page' => $number]);
+        $check($page['success'] && $page['page'] === $number && $page['version'] === $begin['version'] && strlen(json_encode($page, JSON_THROW_ON_ERROR)) < 245760, 'Each file slice must fit inside the Symcon buffer limit.');
+        $complete .= base64_decode($page['data'], true);
     }
-    $check(base64_decode($encoded, true) === $bytes, 'Paging must preserve every byte of a multi-megabyte image.');
-    $check(!$forward('GetPhotoImagePage', ['AlbumID' => 'synthetic-album', 'PhotoID' => 'other', 'Token' => $transfer['Token'], 'Page' => 0])['success'], 'A transfer must not be readable using another photo identity.');
-    $check($forward('ClearPhotoImageTransfer', ['AlbumID' => 'synthetic-album', 'PhotoID' => 'large', 'Token' => $transfer['Token']])['success'], 'Completed image transfers must be removed.');
-    $check(!$forward('GetPhotoImagePage', ['AlbumID' => 'synthetic-album', 'PhotoID' => 'large', 'Token' => $transfer['Token'], 'Page' => 0])['success'], 'Cleared transfer tokens must no longer return image bytes.');
+    $check($complete === $bytes && count($transport->requests) === $before, 'All bytes of a multi-megabyte image must come from the local file.');
+    $check(!$forward('GetPhotoImagePage', $album + ['PhotoID' => 'other', 'Version' => $begin['version'], 'Page' => 0])['success'], 'A version must not authorize another photo identity.');
+    $check(!$forward('GetPhotoImagePage', ['AlbumID' => 'smart:all', 'PhotoID' => 'large', 'Version' => $begin['version'], 'Page' => 0])['success'], 'An image in one album must not satisfy a request for another.');
+    $check(!$forward('GetPhotoImagePage', $album + ['PhotoID' => 'large', 'Version' => $begin['version'], 'Page' => $begin['pages']])['success'], 'Requests beyond the file end must be rejected.');
 } finally {
     $photoAccount->Logout();
     if (is_dir(PhotosFixtureAccount::$root . '/' . $photoAccountID)) {

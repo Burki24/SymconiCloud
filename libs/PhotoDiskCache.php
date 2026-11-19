@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 namespace SymconiCloud;
 
-/** Account-private photo files. Caller holds the account semaphore for every operation. */
+require_once __DIR__ . '/ApplePhotoDownload.php';
+
+/** Account-private album snapshots. The caller serializes writes with the account semaphore. */
 final class PhotoDiskCache
 {
-    public function __construct(private readonly string $directory, private readonly int $maxImages, private readonly int $maxBytes)
+    private const IMAGE_PAGE_BYTES = 131072;
+    private const MAX_IMAGE_BYTES = 8388608;
+
+    public function __construct(private readonly string $directory, private readonly int $maxImages, private readonly int $maxBytes, private readonly string $owner = '')
     {
         if ($maxImages < 1 || $maxBytes < 1) {
             throw new \InvalidArgumentException('Invalid photo cache limits.');
@@ -26,57 +31,120 @@ final class PhotoDiskCache
         return [$count, $size * 1048576];
     }
 
-    public function get(string $key): ?string
+    /** Publishes the new album only after all selected previews are locally available. */
+    public function synchronize(string $albumID, iterable $photos, \Closure $download): array
     {
-        $index = $this->index();
-        $hash = hash('sha256', $key);
-        if (!isset($index[$hash]) || $index[$hash] > min($this->maxBytes, 8388608) || !is_file($this->path($hash)) || is_link($this->path($hash))) {
-            return null;
+        $albums = $this->albums();
+        $albumKey = hash('sha256', $albumID);
+        $previous = $this->referencedImages($albums);
+        $legacy = $this->legacyImages();
+        $this->prune($previous + $legacy, $legacy !== []);
+        $staged = [];
+        $items = [];
+        $downloaded = 0;
+        $bytes = 0;
+        $limited = false;
+        try {
+            foreach ($photos as $photo) {
+                $id = $photo['id'];
+                if (isset($items[$id])) {
+                    continue;
+                }
+                if (count($items) === $this->maxImages) {
+                    $limited = true;
+                    break;
+                }
+                $version = hash('sha256', $id . "\0" . $photo['revision']);
+                $info = $previous[$version] ?? null;
+                if ($info === null || $this->imageSize($version) !== $info['bytes']) {
+                    $oldKey = hash('sha256', $id . ':' . $photo['revision']);
+                    $oldContent = isset($legacy[$oldKey]) && $this->imageSize($oldKey) > 0 ? @file_get_contents($this->imagePath($oldKey)) : false;
+                    if ($oldContent === false && ($photo['bytes'] ?? 0) > $this->maxBytes - $bytes) {
+                        $limited = true;
+                        break;
+                    }
+                    $content = $oldContent === false ? $download($photo['url']) : $oldContent;
+                    $info = ['bytes' => strlen($content), 'mime' => ApplePhotoDownload::mime($content)];
+                    if ($bytes + $info['bytes'] > $this->maxBytes) {
+                        $limited = true;
+                        break;
+                    }
+                    $this->atomic($this->imagePath($version), $content);
+                    if (!isset($previous[$version])) {
+                        $staged[] = $version;
+                    }
+                    $downloaded += (int) ($oldContent === false);
+                    unset($content, $oldContent);
+                }
+                if ($bytes + $info['bytes'] > $this->maxBytes) {
+                    $limited = true;
+                    break;
+                }
+                preg_match('/\A.{0,160}/us', $photo['name'], $name);
+                $items[$id] = ['id' => $id, 'name' => $name[0] ?? '', 'date' => $photo['date'], 'version' => $version] + $info;
+                $bytes += $info['bytes'];
+            }
+            $album = ['items' => $items, 'limited' => $limited, 'updatedAt' => time()];
+            $albums = [$albumKey => $album] + $albums;
+            $albums = $this->applyLimits($albums);
+            $this->save($albums);
+        } catch (\Throwable $exception) {
+            foreach ($staged as $version) {
+                @unlink($this->imagePath($version));
+            }
+            throw $exception;
         }
-        $bytes = file_get_contents($this->path($hash));
-        unset($index[$hash]);
-        $index[$hash] = strlen((string) $bytes);
-        $this->save($index);
-        return $bytes === false ? null : $bytes;
+        $this->prune($this->referencedImages($albums));
+        return ['downloaded' => $downloaded, 'count' => count($items), 'limited' => $limited];
     }
 
-    public function put(string $key, string $bytes): bool
+    public function page(string $albumID, int $offset): array
     {
-        $size = strlen($bytes);
-        if ($size === 0 || $size > $this->maxBytes) {
-            return false;
+        $album = $this->albums()[hash('sha256', $albumID)] ?? ['items' => [], 'limited' => false, 'updatedAt' => 0];
+        $items = array_map(
+            static fn (array $photo): array => array_diff_key($photo, ['bytes' => true, 'mime' => true]),
+            array_slice(array_values($album['items']), $offset, 20)
+        );
+        $total = count($album['items']);
+        return ['items' => $items, 'offset' => $offset, 'next' => $offset + count($items) < $total ? $offset + count($items) : null,
+            'total'     => $total, 'limited' => $album['limited'], 'updatedAt' => $album['updatedAt'], 'snapshot' => $album['snapshot'] ?? ''];
+    }
+
+    /** Each page is read directly from the sealed local image for the selected album. */
+    public function image(string $albumID, string $id, ?string $version = null, int $page = 0): array
+    {
+        $photo = $this->albums()[hash('sha256', $albumID)]['items'][$id] ?? null;
+        if ($photo === null || $this->imageSize($photo['version']) !== $photo['bytes']) {
+            throw new AppleException('photosAlbum');
         }
-        if (!is_dir($this->directory) && !mkdir($this->directory, 0700, true) && !is_dir($this->directory)) {
-            throw new \RuntimeException('Photo cache unavailable.');
+        if ($version === null) {
+            return ['bytes' => $photo['bytes'], 'mime' => $photo['mime'], 'version' => $photo['version'],
+                'pages'     => (int) ceil($photo['bytes'] / self::IMAGE_PAGE_BYTES)];
         }
-        $index = $this->index(true);
-        $hash = hash('sha256', $key);
-        if (isset($index[$hash])) {
-            $this->remove($hash);
-            unset($index[$hash]);
+        $offset = $page * self::IMAGE_PAGE_BYTES;
+        if ($version !== $photo['version'] || $offset >= $photo['bytes']) {
+            throw new AppleException('photosAlbum');
         }
-        while ($index !== [] && (count($index) >= $this->maxImages || array_sum($index) + $size > $this->maxBytes)) {
-            $oldest = array_key_first($index);
-            $this->remove($oldest);
-            unset($index[$oldest]);
+        $length = min(self::IMAGE_PAGE_BYTES, $photo['bytes'] - $offset);
+        $content = @file_get_contents($this->imagePath($version), false, null, $offset, $length);
+        if ($content === false || strlen($content) !== $length) {
+            throw new AppleException('photosCache');
         }
-        $this->atomic($this->path($hash), $bytes);
-        $index[$hash] = $size;
-        $this->save($index);
-        return true;
+        return ['page' => $page, 'version' => $version, 'data' => base64_encode($content)];
     }
 
     public function trim(): void
     {
-        $index = $this->index(true);
-        while ($index !== [] && (count($index) > $this->maxImages || array_sum($index) > $this->maxBytes)) {
-            $oldest = array_key_first($index);
-            $this->remove($oldest);
-            unset($index[$oldest]);
+        $albums = $this->albums();
+        if (!is_file($this->directory . '/albums.json')) {
+            // Preserve previews from the former cache until the first explicit synchronization.
+            return;
         }
-        if (is_dir($this->directory)) {
-            $this->save($index);
+        $trimmed = $this->applyLimits($albums);
+        if ($trimmed !== $albums) {
+            $this->save($trimmed);
         }
+        $this->prune($this->referencedImages($trimmed));
     }
 
     public function clear(): void
@@ -84,74 +152,133 @@ final class PhotoDiskCache
         if (!is_dir($this->directory) || is_link($this->directory)) {
             return;
         }
+        foreach (['albums.json', 'index.json'] as $name) {
+            $file = $this->directory . '/' . $name;
+            if ((is_file($file) || is_link($file)) && !unlink($file)) {
+                throw new \RuntimeException('Photo cache unavailable.');
+            }
+        }
+        $this->prune([]);
+    }
+
+    public function stats(): array
+    {
+        $images = $this->referencedImages($this->albums());
+        return ['images' => count($images), 'bytes' => array_sum(array_column($images, 'bytes'))];
+    }
+
+    private function albums(): array
+    {
+        $path = $this->directory . '/albums.json';
+        if (is_link($this->directory) || is_link($path)) {
+            throw new \RuntimeException('Photo cache unavailable.');
+        }
+        if (!is_file($path)) {
+            return [];
+        }
+        $manifest = json_decode((string) @file_get_contents($path), true, 32, JSON_THROW_ON_ERROR);
+        return ($manifest['owner'] ?? null) === $this->owner ? $manifest['albums'] : [];
+    }
+
+    private function legacyImages(): array
+    {
+        $path = $this->directory . '/index.json';
+        if (!is_file($path) || is_link($path)) {
+            return [];
+        }
+        $index = json_decode((string) @file_get_contents($path), true);
+        return is_array($index) ? $index : [];
+    }
+
+    private function applyLimits(array $albums): array
+    {
+        $images = [];
+        $bytes = 0;
+        foreach ($albums as &$album) {
+            foreach ($album['items'] as $id => $photo) {
+                $version = $photo['version'];
+                if (isset($images[$version])) {
+                    continue;
+                }
+                if (count($images) >= $this->maxImages || $bytes + $photo['bytes'] > $this->maxBytes || $this->imageSize($version) !== $photo['bytes']) {
+                    unset($album['items'][$id]);
+                    $album['limited'] = true;
+                    continue;
+                }
+                $images[$version] = true;
+                $bytes += $photo['bytes'];
+            }
+        }
+        unset($album);
+        return $albums;
+    }
+
+    private function referencedImages(array $albums): array
+    {
+        $images = [];
+        foreach ($albums as $album) {
+            foreach ($album['items'] as $photo) {
+                $images[$photo['version']] = $photo;
+            }
+        }
+        return $images;
+    }
+
+    private function imageSize(string $version): int
+    {
+        $path = $this->imagePath($version);
+        if (!is_file($path) || is_link($path)) {
+            return 0;
+        }
+        $bytes = (int) filesize($path);
+        return $bytes <= self::MAX_IMAGE_BYTES ? $bytes : 0;
+    }
+
+    private function imagePath(string $version): string
+    {
+        if (preg_match('/\A[a-f0-9]{64}\z/D', $version) !== 1) {
+            throw new \RuntimeException('Invalid photo cache key.');
+        }
+        return $this->directory . '/' . $version . '.bin';
+    }
+
+    private function save(array $albums): void
+    {
+        foreach ($albums as &$album) {
+            $album['snapshot'] = hash('sha256', json_encode([$album['items'], $album['limited']], JSON_THROW_ON_ERROR));
+        }
+        unset($album);
+        $this->atomic($this->directory . '/albums.json', json_encode(['owner' => $this->owner, 'albums' => $albums], JSON_THROW_ON_ERROR));
+    }
+
+    private function prune(array $keep, bool $keepLegacyIndex = false): void
+    {
+        if (!is_dir($this->directory) || is_link($this->directory)) {
+            return;
+        }
         foreach (scandir($this->directory) ?: [] as $name) {
-            $path = $this->directory . '/' . $name;
-            if ((preg_match('/\A(?:[a-f0-9]{64}\.bin|photo-[A-Za-z0-9.]+)\z/D', $name) === 1 || $name === 'index.json') && (is_file($path) || is_link($path))) {
-                if (!unlink($path)) {
+            if (($name === 'index.json' && !$keepLegacyIndex) || preg_match('/\Aphoto-[A-Za-z0-9.]+\z/D', $name) === 1
+                || (preg_match('/\A([a-f0-9]{64})\.bin\z/D', $name, $match) === 1 && !isset($keep[$match[1]]))) {
+                $path = $this->directory . '/' . $name;
+                if ((is_file($path) || is_link($path)) && !unlink($path)) {
                     throw new \RuntimeException('Photo cache unavailable.');
                 }
             }
         }
     }
 
-    public function stats(): array
-    {
-        $index = $this->index();
-        return ['images' => count($index), 'bytes' => array_sum($index)];
-    }
-
-    private function index(bool $cleanup = false): array
-    {
-        if (is_link($this->directory)) {
-            throw new \RuntimeException('Photo cache unavailable.');
-        }
-        $file = $this->directory . '/index.json';
-        $saved = is_file($file) && !is_link($file) ? json_decode((string) file_get_contents($file), true) : [];
-        $index = [];
-        foreach (is_array($saved) ? $saved : [] as $hash => $size) {
-            if (is_string($hash) && preg_match('/\A[a-f0-9]{64}\z/D', $hash) === 1 && is_file($this->path($hash)) && !is_link($this->path($hash))) {
-                $index[$hash] = filesize($this->path($hash));
-            }
-        }
-        // Recover a crash between writing an image and publishing its index.
-        // Only this cache's fixed filenames are owned; unrelated files stay intact.
-        foreach ($cleanup && is_dir($this->directory) ? (scandir($this->directory) ?: []) : [] as $name) {
-            if (preg_match('/\A([a-f0-9]{64})\.bin\z/D', $name, $match) === 1 && !isset($index[$match[1]])) {
-                $this->remove($match[1]);
-            } elseif (preg_match('/\Aphoto-[A-Za-z0-9.]+\z/D', $name) === 1 && is_file($this->directory . '/' . $name)) {
-                unlink($this->directory . '/' . $name);
-            }
-        }
-        return $index;
-    }
-
-    private function path(string $hash): string
-    {
-        return $this->directory . '/' . $hash . '.bin';
-    }
-
-    private function remove(string $hash): void
-    {
-        if (file_exists($this->path($hash)) || is_link($this->path($hash))) {
-            if (!unlink($this->path($hash))) {
-                throw new \RuntimeException('Photo cache unavailable.');
-            }
-        }
-    }
-
-    private function save(array $index): void
-    {
-        $this->atomic($this->directory . '/index.json', json_encode($index, JSON_THROW_ON_ERROR));
-    }
-
     private function atomic(string $path, string $bytes): void
     {
+        if (is_link($this->directory) || (!is_dir($this->directory) && !mkdir($this->directory, 0700, true) && !is_dir($this->directory))) {
+            throw new \RuntimeException('Photo cache unavailable.');
+        }
         $temporary = tempnam($this->directory, 'photo-');
         if ($temporary === false) {
             throw new \RuntimeException('Photo cache unavailable.');
         }
         try {
-            if (file_put_contents($temporary, $bytes) !== strlen($bytes) || !chmod($temporary, 0600) || !rename($temporary, $path)) {
+            if (dirname($temporary) !== realpath($this->directory) || file_put_contents($temporary, $bytes) !== strlen($bytes)
+                || !chmod($temporary, 0600) || !rename($temporary, $path)) {
                 throw new \RuntimeException('Photo cache unavailable.');
             }
         } finally {

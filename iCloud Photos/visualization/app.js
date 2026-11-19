@@ -55,7 +55,7 @@
         }
         previous.disabled = next.disabled = !state.id && state.page.next === null;
         pause.hidden = options.mode !== 'slideshow'; pause.textContent = state.paused ? '▶' : 'Ⅱ'; pause.setAttribute('aria-pressed', String(state.paused));
-        doc.getElementById('empty').textContent = translate('No photos loaded. Select an album and refresh photos.');
+        doc.getElementById('empty').textContent = translate('No photos synchronized. Select an album and synchronize it.');
         doc.getElementById('empty').hidden = !!state.id;
         caption.hidden = options.caption === false;
     }
@@ -85,33 +85,24 @@
             return await response.json();
         } finally { global.clearTimeout(timeout); controllers.delete(controller); }
     }
-    async function readImage(id, current) {
+    async function readImage(id, version, current) {
         const start = await request({operation: 'image', id});
-        const transfer = start.transfer;
-        if (!start.success || !transfer || !/^[a-f0-9]{32}$/.test(transfer.Token) || !Number.isInteger(transfer.PageCount)
-            || transfer.PageCount < 1 || transfer.PageCount > 100 || !Number.isInteger(transfer.ItemCount) || transfer.ItemCount < 1 || transfer.ItemCount > 100
-            || !Number.isInteger(start.bytes) || start.bytes < 1 || start.bytes > 8388608 || !/^image\/(jpeg|png|webp)$/.test(start.mime)) throw new Error('Invalid image transfer');
-        const chunks = []; let bytes = 0, items = 0;
-        try {
-            for (let number = 0; number < transfer.PageCount; number++) {
-                if (stopped || current !== generation) throw new Error('Image selection changed');
-                const page = await request({operation: 'imagePage', id, token: transfer.Token, page: number});
-                if (!page.success || page.Token !== transfer.Token || page.Page !== number || page.PageCount !== transfer.PageCount
-                    || page.ItemCount !== transfer.ItemCount || !Array.isArray(page.Items) || page.Complete !== (number === transfer.PageCount - 1)) throw new Error('Invalid image page');
-                for (const encoded of page.Items) {
-                    if (typeof encoded !== 'string' || encoded.length > 131072 || !/^[A-Za-z0-9+/]+={0,2}$/.test(encoded)) throw new Error('Invalid image chunk');
-                    const decoded = global.atob(encoded);
-                    bytes += decoded.length; items++;
-                    if (bytes > start.bytes || items > transfer.ItemCount) throw new Error('Image exceeds declared limits');
-                    chunks.push(Uint8Array.from(decoded, value => value.charCodeAt(0)));
-                }
-            }
-            if (bytes !== start.bytes || items !== transfer.ItemCount) throw new Error('Incomplete image transfer');
-            return new global.Blob(chunks, {type: start.mime});
-        } finally {
-            // The central helper also expires abandoned encrypted transfers after five minutes.
-            try { await request({operation: 'imageClear', id, token: transfer.Token}); } catch (_) { /* May already be revoked or offline. */ }
+        const pageBytes = 131072;
+        if (!start.success || start.version !== version || !/^[a-f0-9]{64}$/.test(version)
+            || !Number.isInteger(start.bytes) || start.bytes < 1 || start.bytes > 8388608
+            || start.pages !== Math.ceil(start.bytes / pageBytes) || !/^image\/(jpeg|png|webp)$/.test(start.mime)) throw new Error('Invalid local preview');
+        const chunks = [];
+        for (let number = 0; number < start.pages; number++) {
+            if (stopped || current !== generation) throw new Error('Image selection changed');
+            const page = await request({operation: 'imagePage', id, version, page: number});
+            const size = Math.min(pageBytes, start.bytes - number * pageBytes);
+            if (!page.success || page.version !== version || page.page !== number || typeof page.data !== 'string'
+                || page.data.length !== Math.ceil(size / 3) * 4 || !/^[A-Za-z0-9+/]+={0,2}$/.test(page.data)) throw new Error('Invalid image page');
+            const data = global.atob(page.data);
+            if (data.length !== size) throw new Error('Incomplete image page');
+            chunks.push(Uint8Array.from(data, value => value.charCodeAt(0)));
         }
+        return new global.Blob(chunks, {type: start.mime});
     }
     async function show() {
         controls();
@@ -121,14 +112,15 @@
         caption.textContent = [item.name, item.date > 0 ? new Date(item.date * 1000).toLocaleDateString() : ''].filter(Boolean).join(' · ');
         caption.scrollTop = scroll;
         image.style.objectFit = options.fit === 'cover' ? 'cover' : 'contain';
-        if (shown === state.source + ':' + state.id) return;
+        const key = state.source + ':' + state.id + ':' + item.version;
+        if (shown === key) return;
         clearImage();
         caption.textContent = [item.name, item.date > 0 ? new Date(item.date * 1000).toLocaleDateString() : ''].filter(Boolean).join(' · ');
         caption.scrollTop = scroll;
-        const current = ++generation, key = state.source + ':' + state.id;
+        const current = ++generation;
         shown = key;
         try {
-            const blob = await readImage(item.id, current);
+            const blob = await readImage(item.id, item.version, current);
             if (stopped || current !== generation) return;
             if (!/^image\/(jpeg|png|webp)$/.test(blob.type) || blob.size > 8388608) throw new Error('Invalid preview');
             blobURL = global.URL.createObjectURL(blob); image.src = blobURL; image.alt = item.name || ''; image.hidden = false; shown = key;
@@ -173,7 +165,12 @@
         const changed = source !== state.source;
         if (navigating && !changed) return;
         if (changed) { clearImage(); restored = false; state.paused = options.mode !== 'slideshow'; }
-        if (changed || !state.page.offset) state.apply(payload.state, source, options.shuffle);
+        if (changed || !state.page.offset) {
+            state.apply(payload.state, source, options.shuffle);
+        } else if (payload.state.snapshot !== state.page.snapshot) {
+            await loadPage(state.page.offset);
+            if (!state.order.length) state.apply(payload.state, source, options.shuffle);
+        }
         if (!restored) {
             restored = true;
             try {

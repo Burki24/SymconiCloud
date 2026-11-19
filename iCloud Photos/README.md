@@ -23,7 +23,8 @@ Symcon 9.0, PHP 8.5 mit `curl` und `bcmath` sowie ein bereits angemeldetes
 3. Eine **iCloud Fotos**-Instanz anlegen und mit diesem Konto verbinden.
    **Alben laden** aktualisiert die Auswahl. Ein persönliches Album, **Favoriten**
    oder **Alle Fotos** auswählen, das Widget aktivieren und übernehmen.
-4. **Fotos aktualisieren** lädt die ersten Metadaten. Anschließend die Instanz
+4. **Album synchronisieren** lädt die Vorschauen des gewählten Albums bis zum
+   konfigurierten Speicherlimit. Anschließend die Instanz
    als instanzspezifische Kachel hinzufügen. Für IPSView die Ausgabe im
    **IPSView-Designer** aktivieren, übernehmen und **Fotos für IPSView** einbinden.
 
@@ -76,30 +77,25 @@ Auswahl. Bei entzogenem Zugriff wird das angezeigte Bild entfernt.
 | Groß | 1000 | 2 GiB |
 | Eigene Grenzen | 1–100000 | 1–65536 MiB |
 
-Es gilt jeweils die zuerst erreichte Grenze. **Ein gemeinsamer Festplatten-Cache
-pro Konto** verhindert doppelte Downloads durch mehrere Widgets. Länger nicht
-verwendete Bilder werden bei Platzbedarf entfernt; reduzierte Grenzen greifen
-beim Übernehmen. Kleine Indexdateien kommen zum Bildbudget hinzu. Der Cache ist
-eine beschränkte Vorschauablage und keine Sicherung der Mediathek.
+**Album synchronisieren** gleicht das ausgewählte iCloud-Album manuell ab.
+Anhand von Foto-ID und Revision lädt das Konto nur neue oder geänderte Vorschauen.
+Bereits gespeicherte identische Vorschauen werden von allen Widgets des Kontos
+gemeinsam genutzt. Ein fehlgeschlagener Abgleich erhält den letzten
+abgeschlossenen Stand. Nach einem Modulupdate das Album einmal synchronisieren.
+Vorhandene gültige Vorschauen können dabei weiterverwendet werden.
 
-Größere Alben bleiben durch bedarfsgerechtes Nachladen von Metadaten erreichbar.
-Der Browser hält nur das aktuelle Bild als Blob; er lädt nicht den kompletten
-Kontocache in den Arbeitsspeicher. Pro Bild gelten 8 MiB und 20 Millionen Pixel
-als feste Sicherheitsgrenzen. Nicht passende Vorschauen werden übersprungen.
-Bilddaten werden über den zentralen `ChunkedJsonTransferHelper` in kleinen
-JSON-Seiten zwischen Konto, Fotoinstanz und Browser übertragen. Auch größere
-Vorschauen überschreiten dadurch nicht das Symcon-Ausgabelimit von 1 MiB.
-Temporäre Transferdateien sind mit OpenSSL AES-256-GCM verschlüsselt und werden
-nach dem Abruf freigegeben; abgebrochene Transfers laufen nach fünf Minuten ab.
-Die PHP-Installation benötigt dafür OpenSSL mit AES-256-GCM.
-Die Ressourcenprofile erkennen keine Hardware automatisch und reservieren
-keinen RAM. Ausreichend freien Speicherplatz selbst sicherstellen.
+Es gilt jeweils die zuerst erreichte Grenze. Bei Platzmangel hat das zuletzt
+synchronisierte Album Vorrang. Das Formular zeigt an, wie viele Vorschauen
+lokal verfügbar sind und ob das Speicherlimit erreicht wurde. Reduzierte
+Grenzen greifen beim Übernehmen. Für einen laufenden Abgleich brauchen neue
+Vorschauen vorübergehend zusätzlichen Platz, bis der neue Stand veröffentlicht
+ist. Pro Bild gelten 8 MiB und 20 Millionen Pixel.
 
-Fotometadaten werden standardmäßig alle 900 Sekunden aktualisiert
-(konfigurierbar 300–86400); der Albumkatalog spätestens beim nächsten Fotorefresh
-nach einer Stunde. Bilddaten werden erst beim Anzeigen angefordert. Formularaufruf
-und Konfigurationsübernahme starten keine Apple-Abfragen. **Alben laden** und
-**Fotos aktualisieren** sind ausdrücklich ausgelöste lesende Abfragen.
+Einzelbild und Diashow verwenden ausschließlich den zuletzt synchronisierten
+lokalen Stand. Sie lesen die Vorschauen in begrenzten Abschnitten direkt aus
+den gespeicherten Bilddateien. Der Browser hält jeweils das angezeigte Bild.
+**Alben laden** fragt den Albumkatalog ab. **Album synchronisieren** ist die
+ausdrückliche Aktion für den Abgleich mit iCloud.
 
 Apple-Sitzung und signierte Bildadressen bleiben im Konto. Vorschauen liegen
 unter `SymconiCloud/photos/<Konto-ID>` im Symcon-Kernelverzeichnis, außerhalb des
@@ -117,13 +113,11 @@ als Hinweis angezeigt; es erfolgt keine automatische Passwort-Neuanmeldung.
 
 | Formularfeld | Property | Typ | Standard | Bedeutung |
 | --- | --- | --- | --- | --- |
-| Foto-Widget aktivieren | `Enabled` | bool | aus | Anzeige und regelmäßige Metadatenabfrage einschalten |
+| Foto-Widget aktivieren | `Enabled` | bool | aus | Anzeige der lokal synchronisierten Vorschauen einschalten |
 | Album | `AlbumID` | string | keine Auswahl | Persönliches Album, Favoriten oder Alle Fotos |
-| Aktualisierungsintervall der Fotodaten in Sekunden | `RefreshInterval` | int | 900 s | Metadaten neu abrufen; 300 bis 86400 s, unabhängig vom Bildwechselintervall |
 
-Das **Diashow-Intervall** wird dagegen im jeweiligen Designer eingestellt;
-es beträgt standardmäßig 30 Sekunden. Ein Bildwechsel ist keine neue
-Passwortanmeldung. Notwendige Bildvorschauen werden bedarfsgerecht geladen.
+Das **Diashow-Intervall** wird im jeweiligen Designer eingestellt und beträgt
+standardmäßig 30 Sekunden.
 
 Das Modul legt keine Variablen für jedes einzelne Foto an. Bei aktivierter
 IPSView-Ausgabe dient die String-Variable **Fotos für IPSView** (`IPSViewPhotos`)
@@ -136,7 +130,7 @@ zum Fotozugriff im verbundenen Konto beachten.
 | Funktion | Wirkung |
 | --- | --- |
 | `ICPH_RefreshAlbums(int $InstanceID): bool` | Albumkatalog lesend aktualisieren |
-| `ICPH_Refresh(int $InstanceID): bool` | Erste Metadatenseite des konfigurierten Albums laden |
+| `ICPH_Refresh(int $InstanceID): bool` | Konfiguriertes Album ausdrücklich synchronisieren |
 | `ICPH_GetIPSViewHTML(int $InstanceID): string` | Geschützte HTTP-Ausgabe einbetten |
 
 ## Skriptbeispiel und Rückgabeverträge
@@ -149,14 +143,12 @@ Die folgenden Angaben gelten für die **Foto-Instanz**, nicht für das Konto.
 
 ```php
 $instanceID = 12345; // Durch die eigene Foto-Instanz ersetzen.
-IPS_SetProperty($instanceID, 'RefreshInterval', 900);
-IPS_ApplyChanges($instanceID);
 $result = ICPH_GetIPSViewHTML($instanceID); // Lokale Einbindung, keine Apple-Anfrage.
 ```
 
 `RefreshAlbums=true` bestätigt einen aktualisierten Albumkatalog im Konto.
-`Refresh=true` bestätigt die erste Metadatenseite des gewählten Albums, nicht
-sämtliche Fotos oder heruntergeladene Vorschauen. Diese beiden Funktionen
+`Refresh=true` bestätigt den Abgleich des gewählten Albums bis zum
+konfigurierten Speicherlimit. Diese beiden Funktionen
 können Apple-Anfragen auslösen. Bei deaktivierter Instanz, fehlendem Album,
 fehlender Verbindung, parallelem Vorgang oder abgewiesenem Zugriff ist `false`
 möglich. Kontoschutz und Wartefristen bleiben wirksam. Der Fehlerhinweis steht

@@ -82,6 +82,9 @@ final class PhotosLibrary
                 $masters[] = $record;
             }
         }
+        if ($masters === []) {
+            throw new AppleException('response');
+        }
         $items = [];
         foreach ($masters as $master) {
             $id = $master['recordName'] ?? '';
@@ -97,13 +100,14 @@ final class PhotosLibrary
                     $name = base64_decode((string) ($fields['filenameEnc']['value'] ?? ''), true);
                     $items[] = ['id' => $id, 'name' => is_string($name) && preg_match('//u', $name) === 1 ? $name : '',
                         'date'       => max(0, (int) (($asset['assetDate']['value'] ?? 0) / 1000)),
-                        'url'        => $resource['downloadURL'], 'revision' => (string) ($fields[$version . 'Fingerprint']['value'] ?? hash('sha256', (string) parse_url($resource['downloadURL'], PHP_URL_PATH)))];
+                        'url'        => $resource['downloadURL'], 'bytes' => (int) $resource['size'],
+                        'revision'   => (string) ($fields[$version . 'Fingerprint']['value'] ?? $master['recordChangeTag'] ?? hash('sha256', (string) parse_url($resource['downloadURL'], PHP_URL_PATH)))];
                     break;
                 }
             }
         }
         $next = $offset + count($masters);
-        return ['items' => $items, 'offset' => $offset, 'next' => count($masters) > 0 && $next < $total ? $next : null, 'total' => $total];
+        return ['items' => $items, 'offset' => $offset, 'next' => $next < $total ? $next : null, 'total' => $total];
     }
 
     private static function records(array $response): array

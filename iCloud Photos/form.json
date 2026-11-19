@@ -17,15 +17,8 @@
             ]
         },
         {
-            "type": "NumberSpinner",
-            "name": "RefreshInterval",
-            "caption": "Photo metadata refresh interval in seconds",
-            "minimum": 300,
-            "maximum": 86400
-        },
-        {
             "type": "Label",
-            "caption": "Enable Photos in the account, load albums, select an album and apply the configuration. Photos are read only. Hidden photos and videos are excluded."
+            "caption": "Enable Photos in the account, load albums, select an album and apply the configuration. Synchronize the album to play the saved previews. Hidden photos and videos are excluded."
         }
     ],
     "actions": [
@@ -36,7 +29,7 @@
         },
         {
             "type": "Button",
-            "caption": "Refresh photos",
+            "caption": "Synchronize album",
             "onClick": "ICPH_Refresh($id);"
         }
     ],
