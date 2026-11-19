@@ -22,6 +22,11 @@ class PhotosFixtureAccount extends AccountFixtureModule
         return self::$root . '/' . $this->InstanceID;
     }
 
+    protected function LegacyPhotoCacheDirectory(): string
+    {
+        return self::$root . '/legacy-' . $this->InstanceID;
+    }
+
     protected function DownloadPhotoPreview(string $url): string
     {
         ApplePhotoDownload::assertURL($url);
@@ -53,8 +58,20 @@ $persistence['attributes']['PhotoAssets'] = '{"legacy":{"url":"https://test.iclo
 $photoAccount->ApplyPersistence($persistence);
 $photoAccount->transport = new AccountFixtureTransport();
 $transport = $photoAccount->transport;
+$expectedSuffix = '/user/iPhotos/' . $photoAccountID;
+$realPath = (new ReflectionMethod(iCloudAccount::class, 'PhotoCacheDirectory'))->invoke($photoAccount);
+$check(str_ends_with(str_replace('\\', '/', $realPath), $expectedSuffix), 'Production previews must use the Symcon user/iPhotos directory.');
+$legacyDirectory = PhotosFixtureAccount::$root . '/legacy-' . $photoAccountID;
+mkdir($legacyDirectory, 0700, true);
+$legacyPreview = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD1sAAAAASUVORK5CYII=', true);
+$legacyKey = hash('sha256', 'legacy-photo:revision');
+file_put_contents($legacyDirectory . '/' . $legacyKey . '.bin', $legacyPreview);
+file_put_contents($legacyDirectory . '/index.json', json_encode([$legacyKey => strlen($legacyPreview)], JSON_THROW_ON_ERROR));
 IPS_ApplyChanges($photoAccountID);
 $check($photoAccount->GetPersistence()['attributes']['PhotoAssets'] === '{}' && $transport->requests === [], 'An upgrade must clear legacy signed URLs without contacting Apple.');
+$movedPreview = PhotosFixtureAccount::$root . '/' . $photoAccountID . '/scphoto-' . $legacyKey . '.bin';
+$check(is_file($movedPreview) && file_get_contents($movedPreview) !== $legacyPreview && !is_file($legacyDirectory . '/index.json'), 'Applying the update must move and encrypt existing previews.');
+rmdir($legacyDirectory);
 $photoModule = '{7F1383D4-5B82-4F95-A52B-664E56FA5C3A}';
 $forward = static fn (string $command, array $args = []): array => json_decode($photoAccount->ForwardData(json_encode(['DataID' => '{1E60F0BE-03E4-4AA4-A1CE-AA838725A4E2}', 'Command' => $command] + $args, JSON_THROW_ON_ERROR)), true, 512, JSON_THROW_ON_ERROR);
 $records = [['recordType' => 'CPLAlbum', 'recordName' => 'synthetic-album', 'fields' => ['albumNameEnc' => ['value' => base64_encode('Family <script>')]]]];

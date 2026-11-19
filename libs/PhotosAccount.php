@@ -50,6 +50,7 @@ trait PhotosAccount
         $this->RegisterAttributeString('PhotoAlbums', '{"albums":[],"updatedAt":0}');
         $this->RegisterAttributeString('PhotoAssets', '{}'); // Clears signed URLs persisted by older versions.
         $this->RegisterAttributeString('PhotoStorageID', '');
+        $this->RegisterAttributeString('PhotoStorageKey', '');
         $this->RegisterAttributeString('PhotoError', '');
         $this->RegisterAttributeBoolean('PhotoAccess', false);
         $this->RegisterAttributeInteger('PhotoRetryAt', 0);
@@ -60,19 +61,26 @@ trait PhotosAccount
         $this->WriteAttributeString('PhotoAlbums', '{"albums":[],"updatedAt":0}');
         $this->WriteAttributeString('PhotoAssets', '{}');
         $this->WriteAttributeString('PhotoStorageID', '');
+        $this->WriteAttributeString('PhotoStorageKey', '');
         $this->WriteAttributeString('PhotoError', '');
         $this->WriteAttributeBoolean('PhotoAccess', false);
         $this->WriteAttributeInteger('PhotoRetryAt', 0);
         try {
-            (new PhotoDiskCache($this->PhotoCacheDirectory(), 50, 104857600))->clear();
+            (new PhotoDiskCache($this->PhotoCacheDirectory(), 50, 104857600, '', ''))->clear();
+            (new PhotoDiskCache($this->LegacyPhotoCacheDirectory(), 50, 104857600))->clear();
         }
         catch (\Throwable) {
             $this->WriteAttributeString('PhotoError', $this->Translate('Photo cache unavailable or configured limits are invalid.'));
         }
     }
 
-    /** Private storage outside webfront/user and the Git module tree. */
+    /** Encrypted previews under the Symcon user directory. The key stays in the account. */
     protected function PhotoCacheDirectory(): string
+    {
+        return rtrim(IPS_GetKernelDir(), '/\\') . '/user/iPhotos/' . $this->InstanceID;
+    }
+
+    protected function LegacyPhotoCacheDirectory(): string
     {
         return rtrim(IPS_GetKernelDir(), '/\\') . '/SymconiCloud/photos/' . $this->InstanceID;
     }
@@ -88,7 +96,9 @@ trait PhotosAccount
     protected function PhotoCache(): PhotoDiskCache
     {
         [$count, $bytes] = PhotoDiskCache::limits($this->ReadPropertyString('PhotoCacheProfile'), $this->ReadPropertyInteger('PhotoCacheImages'), $this->ReadPropertyInteger('PhotoCacheMiB'));
-        return new PhotoDiskCache($this->PhotoCacheDirectory(), $count, $bytes, $this->ReadAttributeString('PhotoStorageID'));
+        $key = $this->ReadAttributeString('PhotoStorageKey');
+        $key = preg_match('/\A[a-f0-9]{64}\z/D', $key) === 1 ? hex2bin($key) : '';
+        return new PhotoDiskCache($this->PhotoCacheDirectory(), $count, $bytes, $this->ReadAttributeString('PhotoStorageID'), $key);
     }
 
     protected function ApplyPhotoStorageConfiguration(): void
@@ -96,6 +106,7 @@ trait PhotosAccount
         if ($this->ReadAttributeString('PhotoAssets') !== '{}') {
             $this->WriteAttributeString('PhotoAssets', '{}');
         }
+        $this->importLegacyPhotoStorage();
         $this->PhotoCache()->trim();
     }
 
@@ -136,6 +147,27 @@ trait PhotosAccount
             throw new \InvalidArgumentException();
         }
         return $this->readLocalPhotos($command, $albumID, $offset, $id, $version, $page);
+    }
+
+    private function importLegacyPhotoStorage(): void
+    {
+        [$count, $bytes] = PhotoDiskCache::limits($this->ReadPropertyString('PhotoCacheProfile'), $this->ReadPropertyInteger('PhotoCacheImages'), $this->ReadPropertyInteger('PhotoCacheMiB'));
+        $legacy = new PhotoDiskCache($this->LegacyPhotoCacheDirectory(), $count, $bytes, $this->ReadAttributeString('PhotoStorageID'));
+        if ($legacy->hasStoredPhotos()) {
+            $this->initializePhotoStorage();
+            $this->PhotoCache()->importStoredPhotos($legacy);
+        }
+    }
+
+    private function initializePhotoStorage(): void
+    {
+        if ($this->ReadAttributeString('PhotoStorageKey') === '') {
+            $this->PhotoCache()->clear();
+            $this->WriteAttributeString('PhotoStorageKey', bin2hex(random_bytes(32)));
+        }
+        if ($this->ReadAttributeString('PhotoStorageID') === '') {
+            $this->WriteAttributeString('PhotoStorageID', bin2hex(random_bytes(16)));
+        }
     }
 
     private function photosConfigured(): bool
@@ -229,9 +261,8 @@ trait PhotosAccount
                 if ($album === null) {
                     throw new AppleException('photosAlbum');
                 }
-                if ($this->ReadAttributeString('PhotoStorageID') === '') {
-                    $this->WriteAttributeString('PhotoStorageID', bin2hex(random_bytes(16)));
-                }
+                $this->importLegacyPhotoStorage();
+                $this->initializePhotoStorage();
                 $result = $this->PhotoCache()->synchronize($albumID, $this->cloudAlbumPhotos($client, $album), function (string $url): string
                 {
                     $this->AssertAccountRequestsAllowed();

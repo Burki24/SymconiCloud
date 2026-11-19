@@ -11,8 +11,12 @@ final class PhotoDiskCache
 {
     private const IMAGE_PAGE_BYTES = 131072;
     private const MAX_IMAGE_BYTES = 8388608;
+    private const NONCE_BYTES = 12;
+    private const TAG_BYTES = 16;
+    private const ENCRYPTION_BYTES = self::NONCE_BYTES + self::TAG_BYTES;
 
-    public function __construct(private readonly string $directory, private readonly int $maxImages, private readonly int $maxBytes, private readonly string $owner = '')
+    /** A null key is reserved for the old cache outside the web directory. */
+    public function __construct(private readonly string $directory, private readonly int $maxImages, private readonly int $maxBytes, private readonly string $owner = '', private readonly ?string $key = null)
     {
         if ($maxImages < 1 || $maxBytes < 1) {
             throw new \InvalidArgumentException('Invalid photo cache limits.');
@@ -58,7 +62,7 @@ final class PhotoDiskCache
                 $info = $previous[$version] ?? null;
                 if ($info === null || $this->imageSize($version) !== $info['bytes']) {
                     $oldKey = hash('sha256', $id . ':' . $photo['revision']);
-                    $oldContent = isset($legacy[$oldKey]) && $this->imageSize($oldKey) > 0 ? @file_get_contents($this->imagePath($oldKey)) : false;
+                    $oldContent = isset($legacy[$oldKey]) ? $this->readPreview($oldKey) : false;
                     if ($oldContent === false && ($photo['bytes'] ?? 0) > $this->maxBytes - $bytes) {
                         $limited = true;
                         break;
@@ -69,7 +73,7 @@ final class PhotoDiskCache
                         $limited = true;
                         break;
                     }
-                    $this->atomic($this->imagePath($version), $content);
+                    $this->writePreview($version, $content);
                     if (!isset($previous[$version])) {
                         $staged[] = $version;
                     }
@@ -126,7 +130,7 @@ final class PhotoDiskCache
             throw new AppleException('photosAlbum');
         }
         $length = min(self::IMAGE_PAGE_BYTES, $photo['bytes'] - $offset);
-        $content = @file_get_contents($this->imagePath($version), false, null, $offset, $length);
+        $content = $this->readPreviewPage($version, $page, $length);
         if ($content === false || strlen($content) !== $length) {
             throw new AppleException('photosCache');
         }
@@ -136,7 +140,7 @@ final class PhotoDiskCache
     public function trim(): void
     {
         $albums = $this->albums();
-        if (!is_file($this->directory . '/albums.json')) {
+        if (!is_file($this->storagePath('albums.json'))) {
             // Preserve previews from the former cache until the first explicit synchronization.
             return;
         }
@@ -153,7 +157,7 @@ final class PhotoDiskCache
             return;
         }
         foreach (['albums.json', 'index.json'] as $name) {
-            $file = $this->directory . '/' . $name;
+            $file = $this->storagePath($name);
             if ((is_file($file) || is_link($file)) && !unlink($file)) {
                 throw new \RuntimeException('Photo cache unavailable.');
             }
@@ -167,26 +171,83 @@ final class PhotoDiskCache
         return ['images' => count($images), 'bytes' => array_sum(array_column($images, 'bytes'))];
     }
 
+    public function hasStoredPhotos(): bool
+    {
+        return !is_link($this->directory) && (is_file($this->storagePath('albums.json')) || is_file($this->storagePath('index.json')));
+    }
+
+    /** Import the former cache without Apple requests. The source is cleared after publishing the encrypted copy. */
+    public function importStoredPhotos(self $source): void
+    {
+        if (!$source->hasStoredPhotos()) {
+            return;
+        }
+        if ($this->albums() === [] && $this->legacyImages() === []) {
+            $albums = $source->applyLimits($source->albums());
+            if ($albums !== []) {
+                foreach ($source->referencedImages($albums) as $version => $photo) {
+                    $content = $source->readPreview($version);
+                    if ($content === false || strlen($content) !== $photo['bytes']) {
+                        throw new \RuntimeException('Photo cache unavailable.');
+                    }
+                    $this->writePreview($version, $content);
+                }
+                $this->save($albums);
+            } else {
+                $this->importLegacyIndex($source);
+            }
+        }
+        $source->clear();
+    }
+
+    private function importLegacyIndex(self $source): void
+    {
+        $index = [];
+        $bytes = 0;
+        foreach (array_reverse($source->legacyImages(), true) as $version => $unused) {
+            if (count($index) >= $this->maxImages) {
+                break;
+            }
+            if (!is_string($version) || preg_match('/\A[a-f0-9]{64}\z/D', $version) !== 1) {
+                continue;
+            }
+            $size = $source->imageSize($version);
+            if ($size === 0 || $bytes + $size > $this->maxBytes) {
+                continue;
+            }
+            $content = $source->readPreview($version);
+            if ($content === false) {
+                throw new \RuntimeException('Photo cache unavailable.');
+            }
+            $this->writePreview($version, $content);
+            $index[$version] = $size;
+            $bytes += $size;
+        }
+        if ($index !== []) {
+            $this->atomic($this->storagePath('index.json'), $this->seal(json_encode($index, JSON_THROW_ON_ERROR), 'index'));
+        }
+    }
+
     private function albums(): array
     {
-        $path = $this->directory . '/albums.json';
+        $path = $this->storagePath('albums.json');
         if (is_link($this->directory) || is_link($path)) {
             throw new \RuntimeException('Photo cache unavailable.');
         }
-        if (!is_file($path)) {
+        if ($this->key === '' || !is_file($path)) {
             return [];
         }
-        $manifest = json_decode((string) @file_get_contents($path), true, 32, JSON_THROW_ON_ERROR);
+        $manifest = json_decode($this->open((string) @file_get_contents($path), 'albums'), true, 32, JSON_THROW_ON_ERROR);
         return ($manifest['owner'] ?? null) === $this->owner ? $manifest['albums'] : [];
     }
 
     private function legacyImages(): array
     {
-        $path = $this->directory . '/index.json';
-        if (!is_file($path) || is_link($path)) {
+        $path = $this->storagePath('index.json');
+        if ($this->key === '' || !is_file($path) || is_link($path)) {
             return [];
         }
-        $index = json_decode((string) @file_get_contents($path), true);
+        $index = json_decode($this->open((string) @file_get_contents($path), 'index'), true);
         return is_array($index) ? $index : [];
     }
 
@@ -230,8 +291,11 @@ final class PhotoDiskCache
         if (!is_file($path) || is_link($path)) {
             return 0;
         }
-        $bytes = (int) filesize($path);
-        return $bytes <= self::MAX_IMAGE_BYTES ? $bytes : 0;
+        $bytes = (int) @filesize($path);
+        if ($this->key !== null) {
+            $bytes -= self::ENCRYPTION_BYTES * (int) ceil($bytes / (self::IMAGE_PAGE_BYTES + self::ENCRYPTION_BYTES));
+        }
+        return $bytes > 0 && $bytes <= self::MAX_IMAGE_BYTES ? $bytes : 0;
     }
 
     private function imagePath(string $version): string
@@ -239,7 +303,17 @@ final class PhotoDiskCache
         if (preg_match('/\A[a-f0-9]{64}\z/D', $version) !== 1) {
             throw new \RuntimeException('Invalid photo cache key.');
         }
-        return $this->directory . '/' . $version . '.bin';
+        return $this->storagePath($version . '.bin');
+    }
+
+    private function storagePath(string $name): string
+    {
+        return $this->directory . '/' . ($this->key === null ? '' : 'scphoto-') . $name;
+    }
+
+    private function temporaryPrefix(): string
+    {
+        return $this->key === null ? 'photo-' : 'scphoto-tmp-';
     }
 
     private function save(array $albums): void
@@ -248,7 +322,8 @@ final class PhotoDiskCache
             $album['snapshot'] = hash('sha256', json_encode([$album['items'], $album['limited']], JSON_THROW_ON_ERROR));
         }
         unset($album);
-        $this->atomic($this->directory . '/albums.json', json_encode(['owner' => $this->owner, 'albums' => $albums], JSON_THROW_ON_ERROR));
+        $content = json_encode(['owner' => $this->owner, 'albums' => $albums], JSON_THROW_ON_ERROR);
+        $this->atomic($this->storagePath('albums.json'), $this->seal($content, 'albums'));
     }
 
     private function prune(array $keep, bool $keepLegacyIndex = false): void
@@ -256,9 +331,12 @@ final class PhotoDiskCache
         if (!is_dir($this->directory) || is_link($this->directory)) {
             return;
         }
+        $imagePrefix = $this->key === null ? '' : 'scphoto-';
+        $indexName = $imagePrefix . 'index.json';
+        $temporaryPrefix = $this->temporaryPrefix();
         foreach (scandir($this->directory) ?: [] as $name) {
-            if (($name === 'index.json' && !$keepLegacyIndex) || preg_match('/\Aphoto-[A-Za-z0-9.]+\z/D', $name) === 1
-                || (preg_match('/\A([a-f0-9]{64})\.bin\z/D', $name, $match) === 1 && !isset($keep[$match[1]]))) {
+            if (($name === $indexName && !$keepLegacyIndex) || preg_match('/\A' . $temporaryPrefix . '[A-Za-z0-9.]+\z/D', $name) === 1
+                || (preg_match('/\A' . $imagePrefix . '([a-f0-9]{64})\.bin\z/D', $name, $match) === 1 && !isset($keep[$match[1]]))) {
                 $path = $this->directory . '/' . $name;
                 if ((is_file($path) || is_link($path)) && !unlink($path)) {
                     throw new \RuntimeException('Photo cache unavailable.');
@@ -267,18 +345,109 @@ final class PhotoDiskCache
         }
     }
 
-    private function atomic(string $path, string $bytes): void
+    private function readPreview(string $version): string|false
+    {
+        $bytes = $this->imageSize($version);
+        if ($bytes === 0) {
+            return false;
+        }
+        $content = '';
+        for ($offset = 0, $page = 0; $offset < $bytes; $offset += self::IMAGE_PAGE_BYTES, ++$page) {
+            $length = min(self::IMAGE_PAGE_BYTES, $bytes - $offset);
+            $slice = $this->readPreviewPage($version, $page, $length);
+            if ($slice === false || strlen($slice) !== $length) {
+                return false;
+            }
+            $content .= $slice;
+        }
+        return $content;
+    }
+
+    private function readPreviewPage(string $version, int $page, int $length): string|false
+    {
+        $overhead = $this->key === null ? 0 : self::ENCRYPTION_BYTES;
+        $offset = $page * (self::IMAGE_PAGE_BYTES + $overhead);
+        $stored = @file_get_contents($this->imagePath($version), false, null, $offset, $length + $overhead);
+        return $stored === false ? false : $this->open($stored, $version . ':' . $page);
+    }
+
+    private function writePreview(string $version, string $content): void
+    {
+        $this->atomic($this->imagePath($version), function (string $temporary) use ($version, $content): void
+        {
+            $file = fopen($temporary, 'wb');
+            if ($file === false) {
+                throw new \RuntimeException('Photo cache unavailable.');
+            }
+            try {
+                $size = strlen($content);
+                for ($offset = 0, $page = 0; $offset < $size; $offset += self::IMAGE_PAGE_BYTES, ++$page) {
+                    $bytes = $this->seal(substr($content, $offset, self::IMAGE_PAGE_BYTES), $version . ':' . $page);
+                    if (fwrite($file, $bytes) !== strlen($bytes)) {
+                        throw new \RuntimeException('Photo cache unavailable.');
+                    }
+                }
+            } finally {
+                fclose($file);
+            }
+        });
+    }
+
+    private function seal(string $content, string $context): string
+    {
+        if ($this->key === null) {
+            return $content;
+        }
+        if (strlen($this->key) !== 32 || !function_exists('openssl_encrypt')) {
+            throw new \RuntimeException('Photo cache encryption unavailable.');
+        }
+        $nonce = random_bytes(self::NONCE_BYTES);
+        $tag = '';
+        $sealed = @openssl_encrypt($content, 'aes-256-gcm', $this->key, OPENSSL_RAW_DATA, $nonce, $tag, $context, self::TAG_BYTES);
+        if ($sealed === false || strlen($tag) !== self::TAG_BYTES) {
+            throw new \RuntimeException('Photo cache encryption unavailable.');
+        }
+        return $nonce . $tag . $sealed;
+    }
+
+    private function open(string $stored, string $context): string
+    {
+        if ($this->key === null) {
+            return $stored;
+        }
+        if (strlen($this->key) !== 32 || strlen($stored) < self::ENCRYPTION_BYTES || !function_exists('openssl_decrypt')) {
+            throw new \RuntimeException('Photo cache decryption unavailable.');
+        }
+        $nonce = substr($stored, 0, self::NONCE_BYTES);
+        $tag = substr($stored, self::NONCE_BYTES, self::TAG_BYTES);
+        $content = @openssl_decrypt(substr($stored, self::ENCRYPTION_BYTES), 'aes-256-gcm', $this->key, OPENSSL_RAW_DATA, $nonce, $tag, $context);
+        if ($content === false) {
+            throw new \RuntimeException('Photo cache decryption unavailable.');
+        }
+        return $content;
+    }
+
+    private function atomic(string $path, string|\Closure $bytes): void
     {
         if (is_link($this->directory) || (!is_dir($this->directory) && !mkdir($this->directory, 0700, true) && !is_dir($this->directory))) {
             throw new \RuntimeException('Photo cache unavailable.');
         }
-        $temporary = tempnam($this->directory, 'photo-');
-        if ($temporary === false) {
+        $temporary = $this->directory . '/' . $this->temporaryPrefix() . bin2hex(random_bytes(12));
+        $created = @fopen($temporary, 'xb');
+        if ($created === false) {
             throw new \RuntimeException('Photo cache unavailable.');
         }
+        fclose($created);
         try {
-            if (dirname($temporary) !== realpath($this->directory) || file_put_contents($temporary, $bytes) !== strlen($bytes)
-                || !chmod($temporary, 0600) || !rename($temporary, $path)) {
+            if (!chmod($temporary, 0600)) {
+                throw new \RuntimeException('Photo cache unavailable.');
+            }
+            if ($bytes instanceof \Closure) {
+                $bytes($temporary);
+            } elseif (file_put_contents($temporary, $bytes) !== strlen($bytes)) {
+                throw new \RuntimeException('Photo cache unavailable.');
+            }
+            if (!rename($temporary, $path)) {
                 throw new \RuntimeException('Photo cache unavailable.');
             }
         } finally {

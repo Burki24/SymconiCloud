@@ -5,6 +5,9 @@
 - **iCloud Fotos:** Alben werden per Klick synchronisiert. Der Abgleich lädt
   neue oder geänderte Vorschauen. Diashow und Einzelbild lesen den
   synchronisierten Stand direkt aus der geschützten lokalen Ablage.
+- **iCloud Fotos:** Das Konto speichert Vorschauen und Albumindizes
+  verschlüsselt unter `user/iPhotos/<Konto-ID>`. Vorhandene Vorschauen werden
+  beim Modulupdate lokal übernommen.
 
 - **WoIst, Anwesenheit und Fotos:** Die Instanzen lassen sich auch bei
   fehlgeschlagener WebHook-Registrierung anlegen und konfigurieren. Die

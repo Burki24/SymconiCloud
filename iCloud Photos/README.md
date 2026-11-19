@@ -87,7 +87,8 @@ Vorhandene gültige Vorschauen können dabei weiterverwendet werden.
 Es gilt jeweils die zuerst erreichte Grenze. Bei Platzmangel hat das zuletzt
 synchronisierte Album Vorrang. Das Formular zeigt an, wie viele Vorschauen
 lokal verfügbar sind und ob das Speicherlimit erreicht wurde. Reduzierte
-Grenzen greifen beim Übernehmen. Für einen laufenden Abgleich brauchen neue
+Grenzen greifen beim Übernehmen. Index und Verschlüsselung benötigen etwas
+zusätzlichen Speicher. Für einen laufenden Abgleich brauchen neue
 Vorschauen vorübergehend zusätzlichen Platz, bis der neue Stand veröffentlicht
 ist. Pro Bild gelten 8 MiB und 20 Millionen Pixel.
 
@@ -97,11 +98,14 @@ den gespeicherten Bilddateien. Der Browser hält jeweils das angezeigte Bild.
 **Alben laden** fragt den Albumkatalog ab. **Album synchronisieren** ist die
 ausdrückliche Aktion für den Abgleich mit iCloud.
 
-Apple-Sitzung und signierte Bildadressen bleiben im Konto. Vorschauen liegen
-unter `SymconiCloud/photos/<Konto-ID>` im Symcon-Kernelverzeichnis, außerhalb des
-öffentlichen Web-Verzeichnisses. Die Ausgabe verwendet einen geschützten
-HTTP-Hook. Tokens werden im URL-Fragment übergeben und anschließend nur als
-Autorisierungsheader verwendet. HTML-Variablen und Symcon-Backups enthalten
+Apple-Sitzung und signierte Bildadressen bleiben im Konto. Vorschauen und ihre
+Albumindizes liegen verschlüsselt unter `user/iPhotos/<Konto-ID>` im
+Symcon-Kernelverzeichnis. Der Schlüssel bleibt in der Kontoinstanz. Die
+Wiedergabe verwendet den geschützten HTTP-Hook. Tokens werden im URL-Fragment
+übergeben und anschließend nur als Autorisierungsheader verwendet.
+Die Speicherung benötigt OpenSSL mit AES-256-GCM. Beim Modulupdate übernimmt
+das Konto vorhandene Vorschauen aus dem bisherigen Ablageort.
+HTML-Variablen und Symcon-Backups enthalten
 vertrauliche Daten und müssen entsprechend geschützt werden. Deaktivieren des
 Fotozugriffs, Abmelden und Ändern der Kontozugangsdaten leeren den Fotocache.
 
