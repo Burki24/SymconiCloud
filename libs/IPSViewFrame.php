@@ -4,9 +4,42 @@ declare(strict_types=1);
 
 namespace SymconiCloud;
 
-/** HTTP widget embedding shared by WoIst and Presence within this library. */
+/** HTTP visualization setup and frame rendering shared within this library. */
 trait IPSViewFrame
 {
+    private const VISUALIZATION_HOOK_WARNING = 'The visualization WebHook is unavailable. Save the configuration to retry registration.';
+
+    /** Registers the volatile route during Create, with a retry on the next ApplyChanges. */
+    protected function EnsureVisualizationHook(string $path): void
+    {
+        if ($this->IsVisualizationHookAvailable()) {
+            return;
+        }
+        if ($this->RegisterHook($path)) {
+            $this->SetBuffer('VisualizationHookRegistered', '1');
+            return;
+        }
+        $this->DebugFlowEvent(__FUNCTION__, __LINE__, 'FEHLER', 'Der WebHook für die Visualisierung konnte nicht registriert werden. Die Instanz bleibt konfigurierbar und versucht die Registrierung beim nächsten Übernehmen erneut.');
+    }
+
+    protected function IsVisualizationHookAvailable(): bool
+    {
+        return $this->GetBuffer('VisualizationHookRegistered') === '1';
+    }
+
+    protected function VisualizationHookFormItems(): array
+    {
+        return $this->IsVisualizationHookAvailable() ? [] : [
+            ['type' => 'Label', 'caption' => $this->Translate(self::VISUALIZATION_HOOK_WARNING)]
+        ];
+    }
+
+    protected function VisualizationHookUnavailableHTML(): string
+    {
+        return '<!doctype html><html><head><meta charset="utf-8"></head><body><p role="status">'
+            . htmlspecialchars($this->Translate(self::VISUALIZATION_HOOK_WARNING), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p></body></html>';
+    }
+
     /** Uses the central origin, interaction and JSON helpers without copying their mechanisms. */
     protected function RenderIPSViewFrame(array $configuration): string
     {

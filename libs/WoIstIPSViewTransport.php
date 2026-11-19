@@ -95,9 +95,7 @@ trait WoIstIPSViewTransport
         $this->RegisterAttributeString('IPSViewTransportAccounts', '');
         // Volatile hooks belong to Create and must survive output toggles.
         // ProcessHookData enforces activation and authorization independently.
-        if (!$this->RegisterHook($this->WoIstIPSViewHookName())) {
-            throw new \RuntimeException('Could not register the WoIst WebHook.');
-        }
+        $this->EnsureVisualizationHook($this->WoIstIPSViewHookName());
     }
 
     private function WoIstIPSViewHookName(): string
@@ -122,7 +120,7 @@ trait WoIstIPSViewTransport
     {
         $connection = IPS_GetInstance($this->InstanceID)['ConnectionID'];
         $accounts = $this->configurationValid() ? hash('sha256', json_encode($this->WoIstAccountIDs(), JSON_THROW_ON_ERROR)) : '';
-        $enabled = $this->IsIPSViewHTMLPageEnabled() && $this->WoIstIPSViewServerURLValid();
+        $enabled = $this->IsVisualizationHookAvailable() && $this->IsIPSViewHTMLPageEnabled() && $this->WoIstIPSViewServerURLValid();
         if (!$enabled) {
             $this->WriteAttributeString('IPSViewTransportToken', '');
             $this->WriteAttributeString('IPSViewTransportState', '');
@@ -153,7 +151,7 @@ trait WoIstIPSViewTransport
     private function PublishWoIstIPSViewState(array $bootstrap): void
     {
         $this->ConfigureWoIstIPSViewTransport();
-        if (!$this->IsIPSViewHTMLPageEnabled() || !$this->WoIstIPSViewServerURLValid()) {
+        if (!$this->IsVisualizationHookAvailable() || !$this->IsIPSViewHTMLPageEnabled() || !$this->WoIstIPSViewServerURLValid()) {
             return;
         }
         $bootstrap['mode'] = 'ipsview';

@@ -21,19 +21,16 @@ trait WoIstDesign
         'ShowControls' => [true, 0, 0, 'Show map controls']
     ];
 
-    /** Copies saved Tile settings and switches IPSView to independent editing. */
+    /** Proposes saved Tile settings in the open IPSView designer. */
     public function CopyTileDesignToIPSView(): void
     {
         $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
         {
-            foreach (self::MAP_DESIGN as $name => [$default]) {
-                IPS_SetProperty($this->InstanceID, 'IPSView' . $name, is_bool($default)
-                    ? $this->ReadPropertyBoolean('Tile' . $name) : $this->ReadPropertyInteger('Tile' . $name));
+            $this->UpdateFormField('IPSViewUseTileDesign', 'value', false);
+            $this->UpdateIPSViewDesignAvailability(false);
+            foreach ($this->IPSViewMapDesignFields() as $name) {
+                $this->UpdateFormField('IPSView' . $name, 'value', IPS_GetProperty($this->InstanceID, 'Tile' . $name));
             }
-            $this->CopyOpenFreeMapProperties('Tile', 'IPSView');
-            IPS_SetProperty($this->InstanceID, 'IPSViewUseTileDesign', false);
-            IPS_ApplyChanges($this->InstanceID);
-            $this->ReloadForm();
         }, true);
     }
 
@@ -42,7 +39,7 @@ trait WoIstDesign
     {
         $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($UseTileDesign): void
         {
-            foreach (array_merge(array_diff(array_keys(self::MAP_DESIGN), ['FontSize']), $this->OpenFreeMapPropertyNames()) as $name) {
+            foreach ($this->IPSViewMapDesignFields() as $name) {
                 $this->UpdateFormField('IPSView' . $name, 'enabled', !$UseTileDesign);
             }
         }, true);
@@ -52,6 +49,11 @@ trait WoIstDesign
     protected function IPSViewStyleNativeFamilyNames(): array
     {
         return ['base', 'association', 'shadowGrid', 'dialog'];
+    }
+
+    private function IPSViewMapDesignFields(): array
+    {
+        return array_merge(array_diff(array_keys(self::MAP_DESIGN), ['FontSize']), $this->OpenFreeMapPropertyNames());
     }
 
     private function RegisterWoIstDesignProperties(): void

@@ -334,10 +334,15 @@ Für IPSView:
 sind Kartenlayout, Positionsfarben und OpenFreeMap-Profil, nicht sämtliche
 IPSView-Farben und Schriften. Für unabhängige Kartenparameter die Option
 deaktivieren oder **Gespeichertes Kachel-Design kopieren und unabhängig
-bearbeiten** wählen. Die Kopieraktion übernimmt bereits gespeicherte Werte,
-speichert die IPSView-Einstellungen und lädt das Formular neu. Nach einem
+bearbeiten** wählen. Die Kopieraktion trägt die gespeicherten Kachelwerte als
+Vorschlag in den IPSView-Designer ein. Mit **Übernehmen** speichern oder mit
+**Verwerfen** zu den gespeicherten IPSView-Einstellungen zurückkehren. Nach einem
 Modulupdate die Instanzkonfiguration einmal übernehmen, damit vorhandene
 HTML-Ausgaben den aktuellen Stand enthalten.
+
+Wenn der WebHook der Karte nicht verfügbar ist, zeigen die Instanzkonfiguration
+und die Kartenausgabe einen Hinweis. Beim nächsten **Übernehmen** versucht das
+Modul die Registrierung erneut.
 
 Die Kartenseite besitzt eine eigene HTTP(S)-Adresse. Dadurch können Kartenanfragen den tatsächlichen Symcon-Server-Ursprung als Referer mitsenden, auch wenn die äußere IPSView-Ausgabe als `data:`-Seite eingebettet ist. Der Kartenanbieter und dessen Nutzungsbedingungen gelten weiterhin; eine bereits bestehende Sperre wird dadurch nicht garantiert aufgehoben.
 

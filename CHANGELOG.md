@@ -2,6 +2,15 @@
 
 ## Fixes
 
+- **WoIst, Anwesenheit und Fotos:** Die Instanzen lassen sich auch bei
+  fehlgeschlagener WebHook-Registrierung anlegen und konfigurieren. Die
+  betroffene Ausgabe zeigt einen Hinweis. Übernehmen versucht die Registrierung
+  erneut.
+- **iCloud Anwesenheit:** Beim Entfernen oder erneuten Auswählen eines Geräts
+  bleibt die Sichtbarkeit seiner Variablen erhalten.
+- **iCloud WoIst:** Die Kopierfunktion trägt gespeicherte Kachel-Kartenwerte in
+  den IPSView-Designer ein. Übernehmen speichert den Vorschlag.
+
 - **iCloud Anwesenheit:** Gerätebilder können in höheren Kacheln stärker
   mitwachsen. Entfernungszahl und Einheit bleiben beim Umbruch zusammen.
   Der Aufenthalt steht in einer eigenen Zeile.

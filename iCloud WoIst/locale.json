@@ -1,6 +1,7 @@
 {
     "translations": {
         "de": {
+            "The visualization WebHook is unavailable. Save the configuration to retry registration.": "Der WebHook für die Visualisierung ist nicht verfügbar. Beim Übernehmen der Konfiguration wird die Registrierung erneut versucht.",
             "Mark positions as old after seconds": "Positionen nach Sekunden als veraltet kennzeichnen",
             "HTTPS map tile URL with {z}, {x}, {y}": "HTTPS-Kartenkachel-URL mit {z}, {x}, {y}",
             "Map attribution": "Quellenangabe der Karte",

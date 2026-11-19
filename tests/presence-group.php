@@ -82,7 +82,7 @@ $check($options['gamma'] === 'Missing', 'Missing selected devices must remain ed
 $check(IPS_GetConfiguration($groupID) === $configuration && $firstBoundary->commands === ['GetDevices'], 'Opening the presence selector must only read the account cache.');
 IPS_SetProperty($groupID, 'Devices', json_encode([$selection[0]], JSON_THROW_ON_ERROR));
 IPS_ApplyChanges($groupID);
-$check(IPS_GetObject($betaID)['ObjectIsHidden'] && GetValue($betaID) === -1, 'Deselected member variables must be unknown and hidden, retaining their IDs.');
+$check(!IPS_GetObject($betaID)['ObjectIsHidden'] && GetValue($betaID) === -1, 'Deselected member variables must be unknown and retain their visibility and IDs.');
 IPS_SetProperty($groupID, 'Devices', json_encode([$selection[1], $selection[0]], JSON_THROW_ON_ERROR));
 IPS_ApplyChanges($groupID);
 $check(!IPS_GetObject($betaID)['ObjectIsHidden'] && $member('beta', 'StayDuration') === 20, 'Reselecting a device reuses its variables and starts from its observed fix.');
@@ -179,7 +179,7 @@ foreach (['cache', 'push', 'apply', 'apply'] as $refresh) {
 }
 IPS_SetProperty($visibilityID, 'Devices', json_encode([$visibleMembers[0]], JSON_THROW_ON_ERROR));
 IPS_ApplyChanges($visibilityID);
-$check(IPS_GetObject($betaPresence)['ObjectIsHidden'] && IPS_GetObject($betaZone)['ObjectIsHidden'], 'Deselection hides retired variables without losing their previous visibility.');
+$check(!IPS_GetObject($betaPresence)['ObjectIsHidden'] && IPS_GetObject($betaZone)['ObjectIsHidden'], 'Deselection must preserve visible and hidden member variables.');
 IPS_SetHidden($betaDistance, false);
 ICPR_Update($visibilityID);
 $firstBoundary->broadcast();
@@ -187,8 +187,8 @@ IPS_ApplyChanges($visibilityID);
 $check(!IPS_GetObject($betaDistance)['ObjectIsHidden'], 'Repeated retirement must preserve a user visibility override.');
 IPS_SetProperty($visibilityID, 'Devices', json_encode($visibleMembers, JSON_THROW_ON_ERROR));
 IPS_ApplyChanges($visibilityID);
-$check(!IPS_GetObject($betaPresence)['ObjectIsHidden'] && IPS_GetObject($betaZone)['ObjectIsHidden'] && !IPS_GetObject($betaDistance)['ObjectIsHidden'], 'Reselection restores only module-hidden visibility and preserves previously hidden or manually shown variables.');
-$check(IPS_GetChildrenIDs($visibilityID) === $visibilityIDs && $variable('beta', 'Presence') === $betaPresence, 'Visibility changes and reselection must retain all variable identities.');
+$check(!IPS_GetObject($betaPresence)['ObjectIsHidden'] && IPS_GetObject($betaZone)['ObjectIsHidden'] && !IPS_GetObject($betaDistance)['ObjectIsHidden'], 'Reselection must preserve the current visibility of every member variable.');
+$check(IPS_GetChildrenIDs($visibilityID) === $visibilityIDs && $variable('beta', 'Presence') === $betaPresence, 'Deselection and reselection must retain all variable identities.');
 IPS_SetHidden($betaPresence, true);
 IPS_SetProperty($visibilityID, 'Devices', json_encode([$visibleMembers[0]], JSON_THROW_ON_ERROR));
 IPS_ApplyChanges($visibilityID);
@@ -199,7 +199,7 @@ ICPR_Update($visibilityID);
 IPS_SetProperty($visibilityID, 'Devices', json_encode($visibleMembers, JSON_THROW_ON_ERROR));
 IPS_ApplyChanges($visibilityID);
 $check(IPS_GetObject($betaPresence)['ObjectIsHidden'] && IPS_GetObject($alphaPresence)['ObjectIsHidden'], 'A later removal cycle must retain new user visibility settings.');
-$check(IPS_GetObject($betaDistance)['ObjectIsHidden'], 'An observed manual override relinquishes module visibility ownership, including later user changes.');
+$check(IPS_GetObject($betaDistance)['ObjectIsHidden'], 'A retired variable hidden by the user must stay hidden when reselected.');
 
 // Both aggregate and dynamic member variables keep user-owned names and icons.
 $metadataIDs = IPS_GetChildrenIDs($visibilityID);

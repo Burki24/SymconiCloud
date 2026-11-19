@@ -78,6 +78,7 @@ class iCloudWoIst extends IPSModuleStrict
         {
             parent::ApplyChanges();
             $this->SetVisualizationType(1);
+            $this->EnsureVisualizationHook($this->WoIstIPSViewHookName());
             $this->RegisterIPSViewStyleMediaMessages();
             $this->MaintainIPSViewHTMLVariable('IPSViewWoIst', $this->Translate('WoIst for IPSView'), 100, '', false);
             $this->ConfigureWoIstIPSViewTransport();
@@ -136,6 +137,7 @@ class iCloudWoIst extends IPSModuleStrict
                 }
             }
             unset($element);
+            array_push($form['actions'], ...$this->VisualizationHookFormItems());
             return $this->EncodeConfigurationForm($this->WoIstDesignForm($this->WoIstDeviceSelectionForm($form)));
         });
     }
@@ -172,6 +174,9 @@ class iCloudWoIst extends IPSModuleStrict
     {
         return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): string
         {
+            if (!$this->IsVisualizationHookAvailable()) {
+                return $this->VisualizationHookUnavailableHTML();
+            }
             return $this->renderPage(false, $this->bootstrap($this->request('GetDevices')));
         });
     }
@@ -181,6 +186,9 @@ class iCloudWoIst extends IPSModuleStrict
     {
         return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): string
         {
+            if (!$this->IsVisualizationHookAvailable()) {
+                return $this->VisualizationHookUnavailableHTML();
+            }
             $this->ConfigureWoIstIPSViewTransport();
             $options = $this->WoIstIPSViewTransportOptions();
             return $this->RenderIPSViewFrame([

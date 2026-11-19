@@ -53,7 +53,7 @@ trait PhotosWidget
     {
         return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): string
         {
-            return $this->PhotoPage(false);
+            return $this->IsVisualizationHookAvailable() ? $this->PhotoPage(false) : $this->VisualizationHookUnavailableHTML();
         });
     }
 
@@ -61,6 +61,9 @@ trait PhotosWidget
     {
         return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): string
         {
+            if (!$this->IsVisualizationHookAvailable()) {
+                return $this->VisualizationHookUnavailableHTML();
+            }
             return $this->RenderIPSViewFrame(['url' => $this->PhotoOriginValid() ? $this->ReadPropertyString('IPSViewServerURL') . '/hook/' . $this->PhotoHook() . '/page' : '',
                 'token'                             => $this->ReadAttributeString('PhotoToken'), 'title' => $this->Translate('iCloud Photos'), 'error' => $this->Translate('Unable to open Photos. Check the server URL and apply the configuration.')]);
         });
@@ -103,15 +106,14 @@ trait PhotosWidget
         }
         $this->RegisterAttributeString('PhotoToken', '');
         $this->SetVisualizationType(1);
-        if (!$this->RegisterHook($this->PhotoHook())) {
-            throw new \RuntimeException('Could not register the photo WebHook.');
-        }
+        $this->EnsureVisualizationHook($this->PhotoHook());
     }
 
     protected function ConfigurePhotoWidget(): void
     {
+        $this->EnsureVisualizationHook($this->PhotoHook());
         $this->RegisterIPSViewStyleMediaMessages();
-        if (!$this->ReadPropertyBoolean('Enabled') || !$this->PhotoOriginValid()) {
+        if (!$this->IsVisualizationHookAvailable() || !$this->ReadPropertyBoolean('Enabled') || !$this->PhotoOriginValid()) {
             $this->WriteAttributeString('PhotoToken', '');
         } elseif ($this->ReadAttributeString('PhotoToken') === '') {
             $this->WriteAttributeString('PhotoToken', bin2hex(random_bytes(32)));
@@ -201,6 +203,7 @@ trait PhotosWidget
 
     protected function PhotoWidgetForm(array $form): array
     {
+        array_push($form['actions'], ...$this->VisualizationHookFormItems());
         foreach (['Tile', 'IPSView'] as $prefix) {
             $items = $prefix === 'IPSView' ? $this->IPSViewHTMLPageFormItems() : [];
             if ($prefix === 'IPSView') {

@@ -229,15 +229,10 @@ Ein vorhandener Aufenthalt wird bei unveränderter Konto-, Geräte-, Zonen- und
 GPS-Zuordnung übernommen. Konto-, Zonen- oder GPS-Änderungen beginnen eine neue
 Auswertung; Ergänzen und Umordnen der Geräte setzt andere Aufenthalte nicht zurück.
 Entfernte Geräte werden nicht mehr mitgezählt. Ihre Variablen werden auf unbekannt
-bzw. nicht verfügbar gesetzt und ausgeblendet, sodass Objekt-IDs und Archivdaten
-erhalten bleiben. Erneute Auswahl verwendet diese Variablen wieder. Dabei wird
-nur eine vom Modul verwaltete Ausblendung zurückgenommen; zuvor manuell
-ausgeblendete Variablen bleiben verborgen. Datenupdates und erneutes Übernehmen
-der Konfiguration verändern die Sichtbarkeit ausgewählter Gerätevariablen nicht.
-Auch nach dem Entfernen eines Geräts bleibt eine anschließend manuell geänderte
-Sichtbarkeit bei weiteren Updates erhalten. Bereits bestehende Ausblendungen
-werden beim Modulupdate nicht pauschal aufgehoben. Eine bewusst
-leere Liste wird nicht aus der alten Geräteauswahl erneut befüllt.
+bzw. nicht verfügbar gesetzt. Objekt-IDs, Archivdaten und die aktuelle Sichtbarkeit
+bleiben beim Entfernen, bei erneuter Auswahl und beim Modulupdate erhalten.
+Bereits ausgeblendete Variablen lassen sich bei Bedarf im Objektbaum einblenden.
+Eine bewusst geleerte Liste bleibt leer.
 
 Ein vollständiges SymconiCloud-Modulupdate enthält auch die benötigten Helper
 und Widget-Ressourcen. Anwender müssen keine Helper einzeln herunterladen oder
@@ -364,6 +359,10 @@ Scrollposition bleiben je eingebundenem Widget getrennt erhalten. Auch
 Beim Abschalten der IPSView-Ausgabe bleiben beide Variablen nach dem zentralen
 Aufbewahrungsvertrag bestehen; ihre HTTP-Endpunkte werden gesperrt.
 Anklicken markiert ein Gerät lokal, ohne eine Hausautomation auszulösen.
+
+Wenn der WebHook für IPSView nicht verfügbar ist, zeigen der IPSView-Designer
+und die IPSView-Ausgabe einen Hinweis. Beim nächsten **Übernehmen** versucht
+das Modul die Registrierung erneut. Die native Anwesenheitskachel bleibt nutzbar.
 
 Für IPSView im **IPSView-Designer** die HTML-Ausgabe aktivieren und übernehmen.
 Die String-Variable **Anwesenheit für IPSView** (`IPSViewPresence`, WebContent)

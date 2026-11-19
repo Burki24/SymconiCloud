@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace SymconiCloud;
 
-use RuntimeException;
 use Throwable;
 
 require_once __DIR__ . '/helper/IPSViewHTMLPageHelper.php';
@@ -70,21 +69,20 @@ trait PresenceWidget
         $this->RegisterAttributeString('StatusWidgetToken', '');
         $this->RegisterAttributeInteger('StatusWidgetConnection', 0);
         $this->SetVisualizationType(1);
-        if (!$this->RegisterHook($this->StatusWidgetHookName())) {
-            throw new RuntimeException('Could not register the status widget WebHook.');
-        }
+        $this->EnsureVisualizationHook($this->StatusWidgetHookName());
     }
 
     /** Call from ApplyChanges before publishing data; never changes domain state. */
     protected function ConfigureStatusWidget(string $ident, string $caption): void
     {
+        $this->EnsureVisualizationHook($this->StatusWidgetHookName());
         $this->WriteAttributeString('StatusWidgetPictures', '{}');
         $this->SetVisualizationType(1);
         $this->RegisterIPSViewStyleMediaMessages();
         $this->MaintainIPSViewHTMLVariable($ident, $caption, 2000, '', false);
         $this->MaintainIPSViewHTMLVariable('IPSViewPresenceCompact', $this->Translate('Presence WidgetCompact for IPSView'), 2001, '', false);
         $connection = IPS_GetInstance($this->InstanceID)['ConnectionID'];
-        if (!$this->IsIPSViewHTMLPageEnabled() || !$this->StatusWidgetServerURLValid()) {
+        if (!$this->IsVisualizationHookAvailable() || !$this->IsIPSViewHTMLPageEnabled() || !$this->StatusWidgetServerURLValid()) {
             $this->WriteAttributeString('StatusWidgetToken', '');
         } elseif ($this->ReadAttributeString('StatusWidgetToken') === '' || $connection !== $this->ReadAttributeInteger('StatusWidgetConnection')) {
             $this->WriteAttributeString('StatusWidgetToken', bin2hex(random_bytes(32)));
@@ -96,7 +94,7 @@ trait PresenceWidget
     protected function StatusWidgetForm(array $form): array
     {
         foreach (['Tile', 'IPSView'] as $prefix) {
-            $items = $prefix === 'IPSView' ? $this->IPSViewHTMLPageFormItems() : [];
+            $items = $prefix === 'IPSView' ? array_merge($this->VisualizationHookFormItems(), $this->IPSViewHTMLPageFormItems()) : [];
             if ($prefix === 'IPSView') {
                 $items[] = ['type' => 'ValidationTextBox', 'name' => 'IPSViewServerURL', 'caption' => $this->StatusWidgetText('url')];
                 $items[] = ['type' => 'Label', 'caption' => $this->StatusWidgetText('urlHint')];
@@ -138,6 +136,9 @@ trait PresenceWidget
     {
         if (!$ipsView) {
             return $this->RenderStatusWidgetPage(false, false, $compact);
+        }
+        if (!$this->IsVisualizationHookAvailable()) {
+            return $this->VisualizationHookUnavailableHTML();
         }
         return $this->RenderIPSViewFrame([
             'url'   => $this->StatusWidgetServerURLValid() ? $this->ReadPropertyString('IPSViewServerURL') . '/hook/' . $this->StatusWidgetHookName() . ($compact ? '/compact/page' : '/page') : '',

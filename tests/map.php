@@ -72,9 +72,29 @@ $check(http_response_code() === 503 && $missingHTML === 'Map document unavailabl
 $modules['{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}']['Class'] = iCloudWoIst::class;
 $metadata->setValue(null, $modules);
 
-// Keep the genuine map instance and kernel routing; only Apple transport is synthetic.
+class FormDraftMap extends iCloudWoIst
+{
+    public array $fieldUpdates = [];
+
+    protected function LoadConfigurationForm(): array
+    {
+        return json_decode(file_get_contents(dirname(__DIR__) . '/iCloud WoIst/form.json'), true, 512, JSON_THROW_ON_ERROR);
+    }
+
+    protected function UpdateFormField(string $Field, string $Parameter, mixed $Value): bool
+    {
+        $this->fieldUpdates[$Field][$Parameter] = $Value;
+        return parent::UpdateFormField($Field, $Parameter, $Value);
+    }
+}
+
+// Use genuine map behavior and kernel routing; record the SDK's form updates.
 $firstBoundary->result = $envelope;
+$modules['{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}']['Class'] = FormDraftMap::class;
+$metadata->setValue(null, $modules);
 $mapID = IPS_CreateInstance('{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}');
+$modules['{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}']['Class'] = iCloudWoIst::class;
+$metadata->setValue(null, $modules);
 IPS_ConnectInstance($mapID, $firstAccount);
 IPS_ApplyChanges($mapID);
 $map = IPS\InstanceManager::getInstanceInterface($mapID);
@@ -228,9 +248,29 @@ IPS_ApplyChanges($mapID);
 $check(str_contains($callHook('GET', null, '/hook/SymconiCloudWoIst' . $mapID . '/page')[1], '"markerSize":13'), 'The HTTP page must render its independent IPSView design.');
 $check(str_contains($map->GetVisualizationTile(), '"markerSize":7'), 'Native tile must retain its own design.');
 $check(json_decode($callHook('POST', (new ReflectionMethod($map, 'ReadAttributeString'))->invoke($map, 'IPSViewTransportToken'))[1], true)['options']['openFreeMap']['theme'] === 'dark', 'IPSView map design must be independent.');
+IPS_SetProperty($mapID, 'IPSViewUseTileDesign', true);
+IPS_SetProperty($mapID, 'TileMapShowLabels', false);
+IPS_ApplyChanges($mapID);
+$savedDesign = IPS_GetConfiguration($mapID);
+$savedHtml = GetValueString($outputID);
+$firstBoundary->commands = [];
+$map->fieldUpdates = [];
 $map->CopyTileDesignToIPSView();
-$check(IPS_GetProperty($mapID, 'IPSViewMapTheme') === 'light' && IPS_GetProperty($mapID, 'IPSViewMapLightWaterColor') === 0x123456, 'Copying the designer must include the whole map profile.');
-$check(IPS_GetProperty($mapID, 'IPSViewMarkerSize') === 7 && IPS_GetProperty($mapID, 'IPSViewUseTileDesign') === false, 'Copy action must snapshot saved Tile settings into independent IPSView design.');
+$draft = [];
+foreach ($map->fieldUpdates as $name => $parameters) {
+    if (array_key_exists('value', $parameters)) {
+        $draft[$name] = $parameters['value'];
+    }
+}
+$check(IPS_GetConfiguration($mapID) === $savedDesign && GetValueString($outputID) === $savedHtml && $firstBoundary->commands === [], 'Copying must update the form only and leave stored settings and output intact.');
+$check(($draft['IPSViewMapTheme'] ?? null) === 'light' && ($draft['IPSViewMapLightWaterColor'] ?? null) === 0x123456 && ($draft['IPSViewMapShowLabels'] ?? null) === false, 'The form draft must include Select, color and CheckBox values from the saved map profile.');
+$check(($draft['IPSViewMarkerSize'] ?? null) === 7 && ($draft['IPSViewUseTileDesign'] ?? null) === false && !isset($draft['IPSViewFontSize']), 'The draft must enable independent map editing and leave separate IPSView typography alone.');
+$check(($map->fieldUpdates['IPSViewMarkerSize']['enabled'] ?? null) === true && ($map->fieldUpdates['IPSViewMapTheme']['enabled'] ?? null) === true, 'Both map and OpenFreeMap fields must become editable.');
+foreach ($draft as $name => $value) {
+    IPS_SetProperty($mapID, $name, $value);
+}
+IPS_ApplyChanges($mapID);
+$check(IPS_GetProperty($mapID, 'IPSViewMapTheme') === 'light' && IPS_GetProperty($mapID, 'IPSViewUseTileDesign') === false, 'Applying the draft must save independent IPSView settings.');
 $lastHtml = GetValueString($outputID);
 IPS_SetProperty($mapID, 'EnableIPSView', false);
 IPS_ApplyChanges($mapID);

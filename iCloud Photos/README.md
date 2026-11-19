@@ -32,6 +32,10 @@ enthält nur den HTTP(S)-Ursprung mit gegebenenfalls Port, beispielsweise
 `https://symcon.example:3777`, ohne weiteren Pfad. Der Client muss ihn erreichen
 können; bei einer HTTPS-Ansicht ist ebenfalls HTTPS erforderlich.
 
+Wenn der WebHook für die Fotoanzeige nicht verfügbar ist, zeigen die
+Instanzkonfiguration und die Fotoausgabe einen Hinweis. Beim nächsten
+**Übernehmen** versucht das Modul die Registrierung erneut.
+
 Die Geräteinstanzen und die WoIst-Karte sind dafür nicht erforderlich. Für ein
 anderes Album kann eine weitere Foto-Instanz am selben Konto verwendet werden;
 das Ressourcenbudget des Kontos gilt für alle diese Instanzen gemeinsam.
