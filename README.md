@@ -1,5 +1,7 @@
 # SymconiCloud
 
+[![PayPal.Me](https://img.shields.io/badge/PayPal-Me-lightblue.svg)](#spenden)
+
 SymconiCloud verbindet Apple-iCloud-Dienste mit IP-Symcon. Der erste Dienst ist **WoIst**: Apple-Anmeldung mit Zwei-Faktor-Bestätigung, lesender Abruf der verfügbaren Geräte und Anzeige der von Apple gelieferten Geräte-, Akku- und Standortdaten.
 
 Die Library ist für spätere Dienste erweiterbar. Aktuell sind ausschließlich die hier beschriebenen WoIst-Funktionen enthalten. Kalender, Kontakte, Fotos und iCloud Drive sind nicht enthalten.
@@ -34,3 +36,9 @@ Die Abfrage fordert keine aktive Neuortung an. Apple kann deshalb ältere oder k
 ## Lizenz
 
 PolyForm Noncommercial License 1.0.0; siehe [LICENSE](LICENSE).
+
+## Spenden
+
+Mit einer freiwilligen Spende kannst du die Weiterentwicklung dieses Projekts unterstützen.
+
+[![PayPal.Me](https://img.shields.io/badge/PayPal-Me-lightblue.svg)](https://www.paypal.me/BurkhardKneiseler)
