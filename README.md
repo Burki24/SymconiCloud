@@ -6,6 +6,8 @@
 [![Check Style](https://github.com/Burki24/SymconiCloud/actions/workflows/style.yml/badge.svg?branch=dev)](https://github.com/Burki24/SymconiCloud/actions/workflows/style.yml?query=branch%3Adev)
 [![Tests](https://github.com/Burki24/SymconiCloud/actions/workflows/tests.yml/badge.svg?branch=dev)](https://github.com/Burki24/SymconiCloud/actions/workflows/tests.yml?query=branch%3Adev)
 
+[![PayPal.Me](https://img.shields.io/badge/PayPal-Me-lightblue.svg)](#spenden)
+
 SymconiCloud verbindet Apple-iCloud-Dienste mit IP-Symcon. Die Library bietet Apple-Anmeldung mit Zwei-Faktor-Bestätigung, einen Gerätekonfigurator und **iCloud Gerät** zur Anzeige der von Apple gelieferten Geräte-, Akku- und Standortdaten.
 
 **[WoIst](iCloud%20WoIst/README.md)** zeigt die Gerätepositionen eines oder mehrerer ausgewählter iCloud-Konten gemeinsam auf einer Karte mit Kontofilter und optionaler Geräteauswahl in der Kachelvisualisierung oder als IPSView-WebContent. Beide Ausgaben besitzen einen Designer; IPSView kann das Kachel-Design übernehmen. Kalender und iCloud Drive sind nicht enthalten.
@@ -112,3 +114,9 @@ Beta-Vorbereitung auf die aktuellen Anleitungen im Entwicklungszweig `dev`.
 ## Lizenz
 
 PolyForm Noncommercial License 1.0.0; siehe [LICENSE](LICENSE).
+
+## Spenden
+
+Mit einer freiwilligen Spende kannst du die Weiterentwicklung dieses Projekts unterstützen.
+
+[![PayPal.Me](https://img.shields.io/badge/PayPal-Me-lightblue.svg)](https://www.paypal.me/BurkhardKneiseler)
