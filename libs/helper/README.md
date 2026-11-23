@@ -10,7 +10,7 @@ The files in this directory are vendored from
 | `DataFlowHelper.php` | 1.0.2 | `95784922e6b11f95ab3fe6e6d934f46234092b79e8fea11236963845cce2d4e6` |
 | `DebugFlowHelper.php` | 1.1.0 | `ee763d210b8883c5e8a483e51f6a87e9cefeee73a89f6ef7bc7b4cfd61e28005` |
 | `DebugHelper.php` | 1.0.5 | `a3db963c500a56d7daaa6cab71fe51f236d9859c93cb75cc9100e9f47dc93d04` |
-| `GeofenceHelper.php` | 1.2.0 | `a52906069249fb98ec1fcdd6cd7230aa265ae96358f906ee5bbb567624b3dba2` |
+| `GeofenceHelper.php` | 1.2.1 | `8e856a675a7b53106979a2f6346ee38de959aa57208ffb5b23ac721fd96f6ca8` |
 | `HelperTranslationHelper.php` | 1.0.2 | `7c0184b51923e3f4f78fb150d403ea092b0117b0b01fb5c04fdc4568b269ebdd` |
 | `HttpResponseHelper.php` | 1.1.0 | `be4fae4c23f757ab462237d8e74d2a9dca1b504937ed4d4b51c7ff76004cf1cd` |
 | `IPSViewHTMLPageHelper.php` | 1.5.6 | `c5ac1aeaefa3b909ab3bfa07316322e9b3676dfb08a4e3a9adab63e495ba9c6b` |
@@ -25,8 +25,8 @@ The files in this directory are vendored from
 | `ParentConnectionHelper.php` | 1.0.0 | `d4f01dee721aa32e64410979ca15b2795a0fcc59c0232c0ad69e4702d9ff573c` |
 | `RasterImageHelper.php` | 1.0.0 | `2c9f18d6ad9809015e6415f510106c02f1bb709b1d37e8acba4a6ad4ef151a81` |
 | `ResponsiveVisualizationHelper.php` | 1.0.4 | `66fd166b804f255e24be1f5bda0b852228f3cc1e6c45c56729b8a55385a20224` |
-| `ReverseGeocodingHelper.php` | 1.1.0 | `a1511ade232cb44bd923d1edddac171e9006fe60a37bd250e8c63aed96bc5e67` |
-| `PersistentJsonCacheHelper.php` | 1.0.0 | `adbc7680abe814dc6c15a9cda1312cc30023073595052006662716bc0d65f2a4` |
+| `ReverseGeocodingHelper.php` | 1.1.1 | `074ff0b278647716e87e844c6a58942070feba4b051632dcaa15cf721298abfa` |
+| `PersistentJsonCacheHelper.php` | 1.0.1 | `e048ce434b80f396e1821fdfba65982ad6c02123c50a2e335c6d436d0aa3ae38` |
 | `VariablePresentationHelper.php` | 2.1.1 | `c3212189b2dffda2e582a59ab8ba5d7f2a563dc2f3ea841ec9e877e4400de650` |
 | `VisualizationThemeConfigurationHelper.php` | 1.0.2 | `a0319239cf638dc42586fc77b16986f33f8b08387dec4bfc8d734dd2c5a1b316` |
 | `VisualizationThemeHelper.php` | 1.1.2 | `ffd5ba38a26191fd40c5900f8338ae520fa12904474493712eac7975304f4672` |
