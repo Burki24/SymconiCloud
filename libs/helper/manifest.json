@@ -375,25 +375,25 @@
             ]
         },
         "ReverseGeocodingHelper": {
-            "version": "1.1.0",
-            "sha256": "a1511ade232cb44bd923d1edddac171e9006fe60a37bd250e8c63aed96bc5e67",
+            "version": "1.1.1",
+            "sha256": "074ff0b278647716e87e844c6a58942070feba4b051632dcaa15cf721298abfa",
             "path": "libs/helper/ReverseGeocodingHelper.php",
-            "source_sha": "980f8a29b3f5c46b49f85b4ff8e56116dd2bc3d2",
+            "source_sha": "f44349716dcf828f3e2f294cdc31e726650ef611",
             "dependencies": [
                 {
                     "name": "PersistentJsonCacheHelper",
-                    "version": "1.0.0",
-                    "sha256": "adbc7680abe814dc6c15a9cda1312cc30023073595052006662716bc0d65f2a4",
+                    "version": "1.0.1",
+                    "sha256": "e048ce434b80f396e1821fdfba65982ad6c02123c50a2e335c6d436d0aa3ae38",
                     "path": "libs/helper/PersistentJsonCacheHelper.php",
-                    "source_sha": "2a16a7cc4e2e0b8ba811652dde6a5a644260b6ea"
+                    "source_sha": "f44349716dcf828f3e2f294cdc31e726650ef611"
                 }
             ]
         },
         "GeofenceHelper": {
-            "version": "1.2.0",
-            "sha256": "a52906069249fb98ec1fcdd6cd7230aa265ae96358f906ee5bbb567624b3dba2",
+            "version": "1.2.1",
+            "sha256": "8e856a675a7b53106979a2f6346ee38de959aa57208ffb5b23ac721fd96f6ca8",
             "path": "libs/helper/GeofenceHelper.php",
-            "source_sha": "351fb65539c79fe51d682bf5598ce832749f52d3"
+            "source_sha": "f44349716dcf828f3e2f294cdc31e726650ef611"
         },
         "RasterImageHelper": {
             "version": "1.0.0",
