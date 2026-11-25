@@ -10,31 +10,31 @@ $row = ['contactId'  => 'synthetic-contact-1', 'firstName' => 'Alex', 'lastName'
     'phones'         => [['label' => 'mobile', 'field' => '+49 170 1234567'], ['label' => 'work', 'field' => '+49 30 1234567']],
     'emailAddresses' => [['label' => 'home', 'field' => 'alex@example.invalid']],
     'notes'          => 'PRIVATE-NOTE', 'birthday' => 'PRIVATE-BIRTHDAY', 'photo' => ['url' => 'https://private.invalid']];
-$normalized = \SymconiCloud\ContactsDirectory::normalize([$row, ['contactId' => 'empty']]);
+$normalized = \ICloudServices\ContactsDirectory::normalize([$row, ['contactId' => 'empty']]);
 $check($normalized[0]['displayName'] === 'Alex Example' && $normalized[0]['phones'][0] === ['label' => 'mobile', 'value' => '+49 170 1234567'], 'Names and labelled addresses must retain user spelling without guessing a preferred route.');
 $check(count($normalized[0]['phones']) === 2 && $normalized[0]['phones'][1] === ['label' => 'work', 'value' => '+49 30 1234567'], 'Every iCloud field-based phone number must survive normalization.');
 $check($normalized[0]['emails'] === [['label' => 'home', 'value' => 'alex@example.invalid']], 'iCloud emailAddresses also stores the destination in field.');
 $variants = $row;
 $variants['phones'] = [['label' => 'mobile', 'phoneNumber' => '+49 170 7654321'], ['label' => 'canonical', 'field' => '+49 30 7654321', 'phoneNumber' => 'WRONG-FALLBACK'], ['label' => 'empty', 'field' => '', 'phoneNumber' => 'WRONG-FALLBACK']];
 $variants['emailAddresses'] = [['label' => 'work', 'emailAddress' => 'work@example.invalid'], ['field' => 'invalid-email'], ['field' => null, 'emailAddress' => 'wrong@example.invalid']];
-$variants = \SymconiCloud\ContactsDirectory::normalize([$variants])[0];
+$variants = \ICloudServices\ContactsDirectory::normalize([$variants])[0];
 $check(array_column($variants['phones'], 'value') === ['+49 170 7654321', '+49 30 7654321'], 'Named-key compatibility must not override or fill an explicitly empty canonical field.');
 $check(array_column($variants['emails'], 'value') === ['work@example.invalid'], 'Invalid and explicitly missing canonical email fields must remain unavailable.');
 $check($normalized[1]['phones'] === [] && $normalized[1]['emails'] === [] && $normalized[1]['displayName'] === 'Unnamed contact', 'Absent fields must be explicit empty values.');
 $check(array_keys($normalized[0]) === ['id', 'displayName', 'firstName', 'lastName', 'company', 'phones', 'emails'], 'Only the recipient allowlist may leave the provider adapter.');
-$check(\SymconiCloud\ContactsDirectory::page($normalized, 'EXAMPLE.INVALID', 0, 10)['total'] === 1, 'Search must include email addresses and be case insensitive.');
+$check(\ICloudServices\ContactsDirectory::page($normalized, 'EXAMPLE.INVALID', 0, 10)['total'] === 1, 'Search must include email addresses and be case insensitive.');
 foreach ([[-1, 10], [0, 0], [0, 101]] as [$offset, $limit]) {
     try {
-        \SymconiCloud\ContactsDirectory::page([], '', $offset, $limit);
+        \ICloudServices\ContactsDirectory::page([], '', $offset, $limit);
         throw new RuntimeException('Invalid query accepted.');
     } catch (InvalidArgumentException) {
     }
 }
 foreach ([[$row, $row], [['firstName' => 'No ID']], [['contactId' => 'bad' . "\n"]]] as $invalid) {
     try {
-        \SymconiCloud\ContactsDirectory::normalize($invalid);
+        \ICloudServices\ContactsDirectory::normalize($invalid);
         throw new RuntimeException('Invalid contact snapshot accepted.');
-    } catch (\SymconiCloud\AppleException $error) {
+    } catch (\ICloudServices\AppleException $error) {
         $check($error->reason === 'response', 'Malformed snapshots must fail atomically.');
     }
 }
@@ -107,7 +107,7 @@ $categories['phones'] = [
     ['label' => 'PAGER', 'field' => '+49 170 1000009'], ['field'       => '+49 30 1000010'],
     ['label' => 'old number', 'field' => '+49 170 1000011'], ['label'  => 'Mobile backup', 'field' => '+49 170 1000012']
 ];
-$setAttribute($a, 'ContactsCache', json_encode(['contacts' => \SymconiCloud\ContactsDirectory::normalize([$categories]), 'updatedAt' => $a->clock], JSON_THROW_ON_ERROR));
+$setAttribute($a, 'ContactsCache', json_encode(['contacts' => \ICloudServices\ContactsDirectory::normalize([$categories]), 'updatedAt' => $a->clock], JSON_THROW_ON_ERROR));
 $categoryForm = json_decode(IPS_GetConfigurationForm($childID), true);
 $categorized = $categoryForm['actions'][2]['values'][0];
 $check($categorized['Mobile1'] === '+49 170 1000001' && $categorized['Mobile2'] === '+49 170 1000002'
@@ -116,7 +116,7 @@ $check($categorized['Mobile1'] === '+49 170 1000001' && $categorized['Mobile2'] 
 $check(str_contains($categorized['Fax'], '+49 30 1000007') && str_contains($categorized['Fax'], '+49 30 1000008')
     && $categorized['Pager'] === '+49 170 1000009', 'Fax subtypes and pager numbers must remain visible.');
 $check($categorized['OtherPhones'] === '+49 30 1000010', 'Only unclassified numbers without a mobile prefix may remain in Other phones.');
-$check(json_decode($child->GetContact('synthetic-contact-1'), true)['contact']['phones'] === \SymconiCloud\ContactsDirectory::normalize([$categories])[0]['phones'], 'Column formatting must not change the public recipient schema or provider labels.');
+$check(json_decode($child->GetContact('synthetic-contact-1'), true)['contact']['phones'] === \ICloudServices\ContactsDirectory::normalize([$categories])[0]['phones'], 'Column formatting must not change the public recipient schema or provider labels.');
 $fallback = $row;
 $fallback['phones'] = [
     ['field' => '+491701234501'], ['label'                              => 'backup', 'field' => '0170 / 1234502'],
@@ -126,7 +126,7 @@ $fallback['phones'] = [
     ['label' => 'PAGER', 'field' => '01701234509'], ['label'            => 'FAX', 'field' => '+491701234510'],
     ['field' => '+49 30 1234511'], ['field'                             => '+33 170 1234512'], ['field' => '01invalid']
 ];
-$setAttribute($a, 'ContactsCache', json_encode(['contacts' => \SymconiCloud\ContactsDirectory::normalize([$fallback]), 'updatedAt' => $a->clock], JSON_THROW_ON_ERROR));
+$setAttribute($a, 'ContactsCache', json_encode(['contacts' => \ICloudServices\ContactsDirectory::normalize([$fallback]), 'updatedAt' => $a->clock], JSON_THROW_ON_ERROR));
 $fallbackRow = json_decode(IPS_GetConfigurationForm($childID), true)['actions'][2]['values'][0];
 $check($fallbackRow['Mobile1'] === '+491701234501' && $fallbackRow['Mobile2'] === 'backup: 0170 / 1234502'
     && $fallbackRow['Mobile3'] === 'Telephone: +49 (171) 123-4503; 0160 1234504', 'Unclassified German mobile prefixes must fill three separate slots and keep overflow in Mobile3 without changing values or custom labels.');
@@ -134,7 +134,7 @@ $check($fallbackRow['Work'] === '+491701234505' && $fallbackRow['Home'] === '017
     && $fallbackRow['IPhone'] === '01701234508' && $fallbackRow['Pager'] === '01701234509' && $fallbackRow['Fax'] === '+491701234510', 'Explicit categories must always take priority over a matching mobile prefix.');
 $check(!str_contains($fallbackRow['OtherPhones'], '0160 1234504') && str_contains($fallbackRow['OtherPhones'], '+49 30 1234511')
     && str_contains($fallbackRow['OtherPhones'], '+33 170 1234512') && str_contains($fallbackRow['OtherPhones'], '01invalid'), 'Overflow, other prefixes and non-numeric destinations must not disappear or take a mobile slot.');
-$check(json_decode($child->GetContact('synthetic-contact-1'), true)['contact']['phones'] === \SymconiCloud\ContactsDirectory::normalize([$fallback])[0]['phones'], 'The prefix rule must only affect presentation, not public contact data.');
+$check(json_decode($child->GetContact('synthetic-contact-1'), true)['contact']['phones'] === \ICloudServices\ContactsDirectory::normalize([$fallback])[0]['phones'], 'The prefix rule must only affect presentation, not public contact data.');
 $setAttribute($a, 'ContactsCache', $beforeCategorization);
 ICCT_SearchContacts($childID, 'not-present');
 $check(json_decode(IPS_GetConfigurationForm($childID), true)['actions'][2]['values'] === [], 'Search must update the local read-only list.');
@@ -231,11 +231,11 @@ for ($i = 0; $i < 30; $i++) {
     $copy['phones'] = array_map(static fn ($n) => ['label' => str_repeat('x', 240), 'phoneNumber' => str_repeat('1', 240) . $n], range(1, 20));
     $large[] = $copy;
 }
-$large = \SymconiCloud\ContactsDirectory::normalize($large);
+$large = \ICloudServices\ContactsDirectory::normalize($large);
 $offset = 0;
 $seen = [];
 do {
-    $page = \SymconiCloud\ContactsDirectory::page($large, '', $offset, 100);
+    $page = \ICloudServices\ContactsDirectory::page($large, '', $offset, 100);
     $check(strlen(json_encode($page, JSON_UNESCAPED_UNICODE)) < 60000 && $page['contacts'] !== [], 'Transport pages must stay below the Symcon string budget and make progress.');
     $seen = [...$seen, ...array_column($page['contacts'], 'id')];
     $offset = $page['nextOffset'];
@@ -246,16 +246,16 @@ $check(count(array_unique($seen)) === 30 && count($seen) === 30, 'Byte-limited c
 $oversized = $row;
 $oversized['phones'][0]['field'] = str_repeat('1', 257);
 try {
-    \SymconiCloud\ContactsDirectory::normalize([$oversized]);
+    \ICloudServices\ContactsDirectory::normalize([$oversized]);
     throw new RuntimeException('A destination was silently shortened.');
-} catch (\SymconiCloud\AppleException $error) {
+} catch (\ICloudServices\AppleException $error) {
     $check($error->reason === 'contactsLimit', 'Overlong destinations require a size failure.');
 }
 $oversized['phones'] = array_fill(0, 21, $row['phones'][0]);
 try {
-    \SymconiCloud\ContactsDirectory::normalize([$oversized]);
+    \ICloudServices\ContactsDirectory::normalize([$oversized]);
     throw new RuntimeException('Addresses were silently dropped.');
-} catch (\SymconiCloud\AppleException $error) {
+} catch (\ICloudServices\AppleException $error) {
     $check($error->reason === 'contactsLimit', 'An oversized address list must not be truncated silently.');
 }
 foreach (['', 'https://p01-contacts.icloud.com.evil.invalid', 'https://p01-contacts.icloud.com/private?token=secret'] as $endpoint) {
@@ -277,11 +277,11 @@ $restored->ApplyPersistence($saved);
 $restored->ApplyChanges();
 $restored->ApplyChanges();
 $check($attrs($restored)['ContactsCache'] === $saved['attributes']['ContactsCache'] && $restored->transport === null && json_decode($restored->GetContacts(), true)['total'] === 1, 'Restart and repeated ApplyChanges must preserve contacts without creating a transport.');
-IPS_SemaphoreEnter('SymconiCloud.' . $restoredID, 1000);
+IPS_SemaphoreEnter('ICloudServices.' . $restoredID, 1000);
 try {
     $check(!$restored->RefreshContacts() && $restored->transport === null, 'Concurrent account operations must not start a second contact request.');
 } finally {
-    IPS_SemaphoreLeave('SymconiCloud.' . $restoredID);
+    IPS_SemaphoreLeave('ICloudServices.' . $restoredID);
 }
 
 echo "Read-only Contacts discovery, recipient schema, protected account cache, module API, privacy and paging passed.\n";

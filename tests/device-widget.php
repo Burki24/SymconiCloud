@@ -173,7 +173,7 @@ IPS_ConnectInstance($widgetID, $secondAccount);
 IPS_ApplyChanges($widgetID);
 $check($read()['state']['location'] === null, 'Account changes also clear historical data even for an equal device ID.');
 $locale = json_decode(file_get_contents(dirname(__DIR__) . '/iCloud Device/locale.json'), true)['translations']['de'];
-foreach ((new ReflectionClass(\SymconiCloud\DeviceWidget::class))->getConstant('DEVICE_WIDGET_TEXT') as $key) {
+foreach ((new ReflectionClass(\ICloudServices\DeviceWidget::class))->getConstant('DEVICE_WIDGET_TEXT') as $key) {
     $check(isset($locale[$key]), 'All visible device widget labels need German translations: ' . $key);
 }
 ob_end_clean();

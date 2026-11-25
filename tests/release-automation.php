@@ -20,7 +20,7 @@ $check(!is_file($root . '/.github/scripts/update_library_metadata.py'), 'Version
 foreach (glob($root . '/*/module.json') as $path) {
     $module = json_decode(file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
     $folder = basename(dirname($path));
-    $expected = 'https://github.com/Burki24/SymconiCloud/blob/dev/' . rawurlencode($folder) . '/README.md';
+    $expected = 'https://github.com/Burki24/iCloudServices/blob/dev/' . rawurlencode($folder) . '/README.md';
     $check($module['url'] === $expected && is_file(dirname($path) . '/README.md'), 'Module documentation must target its existing Beta guide: ' . $folder);
 }
 echo "Central versioning workflow, safe publishing and current module documentation contracts passed.\n";

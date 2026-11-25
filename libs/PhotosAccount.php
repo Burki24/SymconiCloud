@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace SymconiCloud;
+namespace ICloudServices;
 
 require_once __DIR__ . '/PhotoDiskCache.php';
 require_once __DIR__ . '/ApplePhotoDownload.php';
@@ -65,22 +65,28 @@ trait PhotosAccount
         $this->WriteAttributeString('PhotoError', '');
         $this->WriteAttributeBoolean('PhotoAccess', false);
         $this->WriteAttributeInteger('PhotoRetryAt', 0);
-        try {
-            (new PhotoDiskCache($this->PhotoCacheDirectory(), 50, 104857600, '', ''))->clear();
-            (new PhotoDiskCache($this->LegacyPhotoCacheDirectory(), 50, 104857600))->clear();
-        }
-        catch (\Throwable) {
-            $this->WriteAttributeString('PhotoError', $this->Translate('Photo cache unavailable or configured limits are invalid.'));
+        $previousPrivateDirectory = $this->FormerPrivatePhotoCacheDirectory();
+        foreach ([[$this->FormerUserPhotoCacheDirectory(), ''], [$previousPrivateDirectory, ''], [$previousPrivateDirectory, null], [$this->PhotoCacheDirectory(), '']] as [$path, $key]) {
+            try {
+                (new PhotoDiskCache($path, 50, 104857600, '', $key))->clear();
+            } catch (\Throwable) {
+                $this->WriteAttributeString('PhotoError', $this->Translate('Photo cache unavailable or configured limits are invalid.'));
+            }
         }
     }
 
-    /** Encrypted previews under the Symcon user directory. The key stays in the account. */
+    /** Encrypted previews in the private Symcon data directory. */
     protected function PhotoCacheDirectory(): string
+    {
+        return rtrim(IPS_GetKernelDir(), '/\\') . '/iCloudServices/photos/' . $this->InstanceID;
+    }
+
+    protected function FormerUserPhotoCacheDirectory(): string
     {
         return rtrim(IPS_GetKernelDir(), '/\\') . '/user/iPhotos/' . $this->InstanceID;
     }
 
-    protected function LegacyPhotoCacheDirectory(): string
+    protected function FormerPrivatePhotoCacheDirectory(): string
     {
         return rtrim(IPS_GetKernelDir(), '/\\') . '/SymconiCloud/photos/' . $this->InstanceID;
     }
@@ -93,12 +99,12 @@ trait PhotosAccount
         return $image;
     }
 
-    protected function PhotoCache(): PhotoDiskCache
+    protected function PhotoCache(?string $directory = null): PhotoDiskCache
     {
         [$count, $bytes] = PhotoDiskCache::limits($this->ReadPropertyString('PhotoCacheProfile'), $this->ReadPropertyInteger('PhotoCacheImages'), $this->ReadPropertyInteger('PhotoCacheMiB'));
         $key = $this->ReadAttributeString('PhotoStorageKey');
         $key = preg_match('/\A[a-f0-9]{64}\z/D', $key) === 1 ? hex2bin($key) : '';
-        return new PhotoDiskCache($this->PhotoCacheDirectory(), $count, $bytes, $this->ReadAttributeString('PhotoStorageID'), $key);
+        return new PhotoDiskCache($directory ?? $this->PhotoCacheDirectory(), $count, $bytes, $this->ReadAttributeString('PhotoStorageID'), $key);
     }
 
     protected function ApplyPhotoStorageConfiguration(): void
@@ -108,6 +114,9 @@ trait PhotosAccount
         }
         $this->importLegacyPhotoStorage();
         $this->PhotoCache()->trim();
+        if ($this->ReadAttributeString('PhotoError') === $this->Translate('Photo cache unavailable or configured limits are invalid.')) {
+            $this->WriteAttributeString('PhotoError', '');
+        }
     }
 
     protected function ForwardPhotosRequest(array $request): array
@@ -151,8 +160,15 @@ trait PhotosAccount
 
     private function importLegacyPhotoStorage(): void
     {
+        $privateDirectory = $this->FormerPrivatePhotoCacheDirectory();
+        foreach ([$this->FormerUserPhotoCacheDirectory(), $privateDirectory] as $formerDirectory) {
+            $formerCache = $this->PhotoCache($formerDirectory);
+            if ($formerCache->hasStoredPhotos()) {
+                $this->PhotoCache()->importStoredPhotos($formerCache);
+            }
+        }
         [$count, $bytes] = PhotoDiskCache::limits($this->ReadPropertyString('PhotoCacheProfile'), $this->ReadPropertyInteger('PhotoCacheImages'), $this->ReadPropertyInteger('PhotoCacheMiB'));
-        $legacy = new PhotoDiskCache($this->LegacyPhotoCacheDirectory(), $count, $bytes, $this->ReadAttributeString('PhotoStorageID'));
+        $legacy = new PhotoDiskCache($privateDirectory, $count, $bytes, $this->ReadAttributeString('PhotoStorageID'));
         if ($legacy->hasStoredPhotos()) {
             $this->initializePhotoStorage();
             $this->PhotoCache()->importStoredPhotos($legacy);
@@ -234,7 +250,7 @@ trait PhotosAccount
 
     private function operatePhotos(string $operation, string $albumID = ''): array
     {
-        if (!IPS_SemaphoreEnter('SymconiCloud.' . $this->InstanceID, 1000)) {
+        if (!IPS_SemaphoreEnter('ICloudServices.' . $this->InstanceID, 1000)) {
             $this->CloudDebugProblem('busy', __FUNCTION__, __LINE__);
             return ['success' => false, 'error' => $this->Translate('Account request already running.')];
         }
@@ -310,7 +326,7 @@ trait PhotosAccount
                 }
                 $this->updateState();
             } finally {
-                IPS_SemaphoreLeave('SymconiCloud.' . $this->InstanceID);
+                IPS_SemaphoreLeave('ICloudServices.' . $this->InstanceID);
             }
             if (($this->readSession()['state'] ?? 'signedOut') !== $previousState) {
                 $this->notifyChildren();

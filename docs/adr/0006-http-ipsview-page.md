@@ -8,7 +8,7 @@ Der Benutzer beobachtet 403-Sperrkacheln des öffentlichen OSM-Anbieters in IPSV
 
 ## Entscheidung
 
-Die bestehende WebContent-Variable wird vom zentralen IPSViewHTMLPageHelper weiterhin als stabile Ausgabe verwaltet. Sie enthält nur einen Loader, der ein iframe einmalig auf die echte instanzbezogene Symcon-HTTP(S)-Route `/hook/SymconiCloudWoIst<ID>/page` navigiert. Ein iframe-srcdoc, data-Kartendokument oder Kartenproxy wird nicht verwendet. Der Loader leitet den Zielserver ausschließlich aus der expliziten Server-Adresse oder seiner eigenen HTTP(S)-Adresse ab. Ohne diese Information zeigt er einen Konfigurationshinweis.
+Die bestehende WebContent-Variable wird vom zentralen IPSViewHTMLPageHelper weiterhin als stabile Ausgabe verwaltet. Sie enthält nur einen Loader, der ein iframe einmalig auf die echte instanzbezogene Symcon-HTTP(S)-Route `/hook/ICloudServicesWoIst<ID>/page` navigiert. Ein iframe-srcdoc, data-Kartendokument oder Kartenproxy wird nicht verwendet. Der Loader leitet den Zielserver ausschließlich aus der expliziten Server-Adresse oder seiner eigenen HTTP(S)-Adresse ab. Ohne diese Information zeigt er einen Konfigurationshinweis.
 
 GET auf der exakten Seitenroute liefert die lokalen Leaflet-/Modulassets und eine leere Seitenschale. Die öffentliche Seite enthält keine Geräte, Standorte, Zugangstokens oder privaten Kartenanbieter-URLs beziehungsweise Attributionstexte. `Referrer-Policy: origin`, UTF-8, No-Store und Nosniff werden im HTTP-Header gesetzt. Der Daten-POST bleibt authentifiziert und ausschließlich lesend. Query-Token und andere Routen werden nicht angenommen. Apple-Anfragen entstehen weder beim GET der Seite noch beim Polling.
 

@@ -33,7 +33,7 @@ function harness(input = sample, fragment = false) {
     PhotoURL.createObjectURL = () => 'blob:synthetic-' + ++seq;
     PhotoURL.revokeObjectURL = value => revoked.push(value);
     const window = {document: {getElementById: id => nodes[id]},
-        sessionStorage: {getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value)},
+        sessionStorage: {getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key)},
         addEventListener: (name, fn) => { events[name] = fn; },
         URL: PhotoURL, Blob, atob, setTimeout(fn, ms) { tasks.set(++seq, {fn, ms}); return seq; }, clearTimeout(id) { tasks.delete(id); },
         SymconHTTPOrigin: {resolve: () => 'http://symcon.example.invalid'},
@@ -78,10 +78,15 @@ const poll = async h => { const entry = [...h.tasks].find(([, task]) => task.ms 
     assert.equal(h.nodes['photo-error'].hidden, true, 'A recovered connection must dismiss its warning without reloading the image.');
     assert.equal(h.nodes.pause.attributes['aria-pressed'], 'true');
     h.events.pagehide();
+    const sessionKey = 'ICloudServices.photos.123.symcon.source-one';
+    const formerSessionKey = 'SymconiCloud.photos.123.symcon.source-one';
+    storage.set(formerSessionKey, storage.get(sessionKey));
+    storage.delete(sessionKey);
     const restored = harness(); await tick();
     assert.match(restored.nodes['photo-caption'].textContent, /Second/, 'Document replacement must restore image selection from session storage.');
     assert.equal(restored.nodes.pause.attributes['aria-pressed'], 'true');
     assert.equal(restored.nodes['photo-caption'].scrollTop, 14);
+    assert.ok(storage.has(sessionKey) && !storage.has(formerSessionKey), 'The existing slideshow state must move to the new storage key.');
     restored.window.SymconVisualizationInteraction.wheel({deltaY: 120, deltaX: 0}); await tick();
     assert.match(restored.nodes['photo-caption'].textContent, /Later/, 'The central wheel region must navigate across lazy page boundaries.');
     restored.deny(); await poll(restored);

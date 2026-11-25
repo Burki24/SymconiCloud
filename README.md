@@ -1,14 +1,14 @@
-# SymconiCloud
+# iCloud Services
 
 [![Symcon](https://img.shields.io/badge/Symcon-PHPModul-brown.svg)](https://www.symcon.de)
 [![Symcon Version](https://img.shields.io/badge/Symcon%20Version-9.0%2B-blue.svg)](library.json)
 [![License](https://img.shields.io/badge/License-PolyForm%20Noncommercial%201.0.0-brightgreen.svg)](LICENSE)
-[![Check Style](https://github.com/Burki24/SymconiCloud/actions/workflows/style.yml/badge.svg?branch=dev)](https://github.com/Burki24/SymconiCloud/actions/workflows/style.yml?query=branch%3Adev)
-[![Tests](https://github.com/Burki24/SymconiCloud/actions/workflows/tests.yml/badge.svg?branch=dev)](https://github.com/Burki24/SymconiCloud/actions/workflows/tests.yml?query=branch%3Adev)
+[![Check Style](https://github.com/Burki24/iCloudServices/actions/workflows/style.yml/badge.svg?branch=dev)](https://github.com/Burki24/iCloudServices/actions/workflows/style.yml?query=branch%3Adev)
+[![Tests](https://github.com/Burki24/iCloudServices/actions/workflows/tests.yml/badge.svg?branch=dev)](https://github.com/Burki24/iCloudServices/actions/workflows/tests.yml?query=branch%3Adev)
 
 [![PayPal.Me](https://img.shields.io/badge/PayPal-Me-lightblue.svg)](#spenden)
 
-SymconiCloud verbindet Apple-iCloud-Dienste mit IP-Symcon. Die Library bietet Apple-Anmeldung mit Zwei-Faktor-Bestätigung, einen Gerätekonfigurator und **iCloud Gerät** zur Anzeige der von Apple gelieferten Geräte-, Akku- und Standortdaten.
+iCloud Services ist eine unabhängige Integration für ausgewählte Apple-iCloud-Dienste in IP-Symcon. Die Library bietet Apple-Anmeldung mit Zwei-Faktor-Bestätigung, einen Gerätekonfigurator und **iCloud Gerät** zur Anzeige der von Apple gelieferten Geräte-, Akku- und Standortdaten.
 
 **[WoIst](iCloud%20WoIst/README.md)** zeigt die Gerätepositionen eines oder mehrerer ausgewählter iCloud-Konten gemeinsam auf einer Karte mit Kontofilter und optionaler Geräteauswahl in der Kachelvisualisierung oder als IPSView-WebContent. Beide Ausgaben besitzen einen Designer; IPSView kann das Kachel-Design übernehmen. Kalender und iCloud Drive sind nicht enthalten.
 
@@ -62,7 +62,7 @@ Die Anbindung verwendet Apples Web-Endpunkte. Apple stellt dafür keine zugesich
 
 ## Installation und Einrichtung
 
-1. `https://github.com/Burki24/SymconiCloud` in der Modulverwaltung als Bibliothek hinzufügen. Die erste Entwicklung liegt auf `dev`.
+1. `https://github.com/Burki24/iCloudServices` in der Modulverwaltung als Bibliothek hinzufügen. Die erste Entwicklung liegt auf `dev`.
 2. **[iCloud Konto](iCloud%20Account/README.md)** anlegen, aktivieren, Zugangsdaten speichern und **Anmelden** wählen.
 3. Den Code vom vertrauenswürdigen Apple-Gerät unter **Zwei-Faktor-Authentifizierung** eingeben und bestätigen. Nach erfolgreicher Anmeldung wird die Geräteliste abgerufen.
 4. Bei Bedarf den **[iCloud Geräte Konfigurator](iCloud%20Device%20Configurator/README.md)** anlegen und mit diesem Konto verbinden.
@@ -76,6 +76,11 @@ Die Anbindung verwendet Apples Web-Endpunkte. Apple stellt dafür keine zugesich
    gewünschte Foto- beziehungsweise Kontaktinstanz mit diesem Konto verbinden.
 
 Ein Konto kann mehrere Geräte bedienen; mehrere Apple-Konten verwenden getrennte Kontoinstanzen. Das Konto speichert Sitzung und Gerätecache über Symcon-Neustarts hinweg. Passwörter und Sitzungstokens gehören zu den vertraulichen Instanzdaten; Symcon-Konfiguration und Backups entsprechend schützen.
+
+Beim Update auf iCloud Services behalten bestehende Instanzen ihre
+Konfiguration. Die Library erzeugt die IPSView-Einbindungen für Fotos und
+WoIst mit den neuen WebHook-Adressen. Wer eine WebHook-Adresse direkt
+gespeichert hat, übernimmt die aktuelle Adresse aus der IPSView-Ausgabe.
 
 ## Verhalten
 

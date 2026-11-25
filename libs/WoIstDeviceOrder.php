@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace SymconiCloud;
+namespace ICloudServices;
 
 /** Instance-wide display order; no property edits, authentication or Apple requests. */
 trait WoIstDeviceOrder
@@ -12,7 +12,7 @@ trait WoIstDeviceOrder
     {
         return $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($JSON): bool
         {
-            $lock = 'SymconiCloud.WoIstOrder.' . $this->InstanceID;
+            $lock = 'ICloudServices.WoIstOrder.' . $this->InstanceID;
             if (!\IPS_SemaphoreEnter($lock, 0)) {
                 $this->DebugFlowEvent(__FUNCTION__, __LINE__, 'FEHLER', 'Eine andere Sortieraktion läuft bereits. Diese Anfrage wird nicht gespeichert; nach deren Abschluss erneut versuchen.');
                 return false;
@@ -101,7 +101,7 @@ trait WoIstDeviceOrder
 
     private function RememberWoIstDeviceOrder(array $data): void
     {
-        $lock = 'SymconiCloud.WoIstOrder.' . $this->InstanceID;
+        $lock = 'ICloudServices.WoIstOrder.' . $this->InstanceID;
         if (!\IPS_SemaphoreEnter($lock, 0)) {
             return;
         }

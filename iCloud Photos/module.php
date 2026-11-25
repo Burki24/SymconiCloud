@@ -11,11 +11,11 @@ require_once __DIR__ . '/../libs/PhotosWidget.php';
 /** Read-only album widget; all Apple access and image storage belong to the account. */
 class iCloudPhotos extends IPSModuleStrict
 {
-    use \SymconiCloud\CloudDebug;
+    use \ICloudServices\CloudDebug;
     use \Burki24\SymconModuleHelper\ConfigurationFormHelper;
     use \Burki24\SymconModuleHelper\ParentConnectionHelper;
     use \Burki24\SymconModuleHelper\DataFlowHelper;
-    use \SymconiCloud\PhotosWidget;
+    use \ICloudServices\PhotosWidget;
 
     private const ACCOUNT_MODULE = '{10BF9A03-98A3-495A-B0FA-A4FA0B1002D5}';
     private const REQUEST_DATA = '{1E60F0BE-03E4-4AA4-A1CE-AA838725A4E2}';
@@ -115,7 +115,7 @@ class iCloudPhotos extends IPSModuleStrict
                 $this->CloudDebugProblem('Photo instance disabled or album missing.', __FUNCTION__, __LINE__);
                 return false;
             }
-            if (!IPS_SemaphoreEnter('SymconiCloud.Photos.' . $this->InstanceID, 1000)) {
+            if (!IPS_SemaphoreEnter('ICloudServices.Photos.' . $this->InstanceID, 1000)) {
                 $this->CloudDebugProblem('busy', __FUNCTION__, __LINE__);
                 return false;
             }
@@ -134,7 +134,7 @@ class iCloudPhotos extends IPSModuleStrict
                     $this->PublishPhotos();
                     $this->ReloadForm();
                 } finally {
-                    IPS_SemaphoreLeave('SymconiCloud.Photos.' . $this->InstanceID);
+                    IPS_SemaphoreLeave('ICloudServices.Photos.' . $this->InstanceID);
                 }
             }
         });

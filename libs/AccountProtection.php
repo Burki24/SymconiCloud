@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace SymconiCloud;
+namespace ICloudServices;
 
 require_once __DIR__ . '/helper/DebugHelper.php';
 
@@ -21,7 +21,7 @@ trait AccountProtection
     {
         $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
         {
-            if (!IPS_SemaphoreEnter('SymconiCloud.' . $this->InstanceID, 1000)) {
+            if (!IPS_SemaphoreEnter('ICloudServices.' . $this->InstanceID, 1000)) {
                 $this->CloudDebugProblem('busy', __FUNCTION__, __LINE__);
                 return;
             }
@@ -42,7 +42,7 @@ trait AccountProtection
                 $this->updateState();
                 $this->setAuthenticationFeedback('resume', 'ok');
             } finally {
-                IPS_SemaphoreLeave('SymconiCloud.' . $this->InstanceID);
+                IPS_SemaphoreLeave('ICloudServices.' . $this->InstanceID);
             }
             $this->notifyChildren();
             $this->ReloadForm();
@@ -72,7 +72,7 @@ trait AccountProtection
     {
         $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
         {
-            if (!IPS_SemaphoreEnter('SymconiCloud.' . $this->InstanceID, 1000)) {
+            if (!IPS_SemaphoreEnter('ICloudServices.' . $this->InstanceID, 1000)) {
                 $this->CloudDebugProblem('busy', __FUNCTION__, __LINE__);
                 return;
             }
@@ -81,7 +81,7 @@ trait AccountProtection
                 $this->WriteAttributeString('AccountSecurityDiagnostics', $this->GetAccountSecurityDiagnostics());
                 $this->WriteAttributeString('AccountDiagnostics', '[]');
             } finally {
-                IPS_SemaphoreLeave('SymconiCloud.' . $this->InstanceID);
+                IPS_SemaphoreLeave('ICloudServices.' . $this->InstanceID);
             }
             $this->ReloadForm();
         }, true);
@@ -115,14 +115,14 @@ trait AccountProtection
     {
         $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
         {
-            if (!IPS_SemaphoreEnter('SymconiCloud.' . $this->InstanceID, 1000)) {
+            if (!IPS_SemaphoreEnter('ICloudServices.' . $this->InstanceID, 1000)) {
                 $this->CloudDebugProblem('busy', __FUNCTION__, __LINE__);
                 return;
             }
             try {
                 $this->WriteAttributeString('AccountSecurityDiagnostics', '[]');
             } finally {
-                IPS_SemaphoreLeave('SymconiCloud.' . $this->InstanceID);
+                IPS_SemaphoreLeave('ICloudServices.' . $this->InstanceID);
             }
             $this->ReloadForm();
         }, true);

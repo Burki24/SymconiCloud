@@ -11,11 +11,23 @@ trait FailingVisualizationHook
 {
     public bool $allowHook = false;
     public int $hookAttempts = 0;
+    public array $unregisteredHooks = [];
+
+    public function seedFormerHookRegistration(): void
+    {
+        $this->SetBuffer('VisualizationHookRegistered', '1');
+    }
 
     protected function RegisterHook(string $HookPath): bool
     {
         $this->hookAttempts++;
         return $this->allowHook;
+    }
+
+    protected function UnregisterHook(string $HookPath): bool
+    {
+        $this->unregisteredHooks[] = $HookPath;
+        return true;
     }
 
     protected function LoadConfigurationForm(): array
@@ -57,6 +69,7 @@ foreach ([HookUnavailableMap::class, HookUnavailablePresence::class, HookUnavail
         'Class'      => $class
     ]);
     $module = IPS\InstanceManager::getInstanceInterface($id);
+    $module->seedFormerHookRegistration();
     $attemptsAfterCreate = $module->hookAttempts;
     $check($attemptsAfterCreate > 0, 'The instance must try to register its hook on creation.');
     IPS_SetProperty($id, 'EnableIPSView', true);
@@ -70,6 +83,12 @@ foreach ([HookUnavailableMap::class, HookUnavailablePresence::class, HookUnavail
     IPS_ApplyChanges($id);
     $check($module->hookAttempts === $attemptsAfterCreate + 2 && !str_contains($module->GetConfigurationForm(), $warning), $class . ' must recover when applying the configuration.');
     $check(!str_contains($module->GetIPSViewHTML(), $warning), 'The IPSView output must recover after registration succeeds.');
+    $formerHook = match ($class) {
+        HookUnavailableMap::class    => ['SymconiCloudWoIst' . $id],
+        HookUnavailablePhotos::class => ['SymconiCloudPhotos' . $id],
+        default                      => []
+    };
+    $check($module->unregisteredHooks === $formerHook, 'The previous hook must be removed only after the new hook is available.');
     IPS_ApplyChanges($id);
     $check($module->hookAttempts === $attemptsAfterCreate + 2, 'Applying changes must preserve an already registered hook.');
 }

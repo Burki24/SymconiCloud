@@ -8,7 +8,7 @@ im [iCloud Konto](../iCloud%20Account/README.md).
 
 ## Voraussetzungen
 
-- Symcon 9.0 und die installierte Library SymconiCloud.
+- Symcon 9.0 und die installierte Library iCloud Services.
 - Ein eingerichtetes, angemeldetes iCloud-Konto dieser Library mit abgerufener
   Geräteliste. Für das erste Einrichten die Kontoanleitung verwenden.
 

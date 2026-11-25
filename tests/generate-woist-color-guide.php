@@ -13,7 +13,7 @@ require dirname(__DIR__) . '/libs/WoIstColorGuide.php';
 use Burki24\SymconModuleHelper\SVGPreviewHelper as SVG;
 
 $root = dirname(__DIR__);
-$labels = (new ReflectionClass(SymconiCloud\WoIstColorGuide::class))->getConstant('WOIST_GUIDE_LABELS');
+$labels = (new ReflectionClass(ICloudServices\WoIstColorGuide::class))->getConstant('WOIST_GUIDE_LABELS');
 $catalogs = [];
 foreach (['IPSViewStyleHelper'] as $name) {
     $catalogs[$name] = json_decode(file_get_contents($root . '/libs/helper/translations/' . $name . '.json'), true)['translations'];

@@ -49,5 +49,5 @@ Verfügbarkeitsvariablen unterscheiden fehlende Werte von gültigen Nullwerten.
 Der Helper wird ausschließlich über das vorhandene Abonnement verteilt. Lokale
 Paketprüfungen erfolgen in isolierten Kopien; ein vorläufiger Vendor-Stand bleibt
 nicht im normalen Arbeitsbaum zurück. Die neue Subscription muss vor dem
-zentralen Verteilungslauf auf `SymconiCloud/dev` stehen. Vor dem fachlichen
+zentralen Verteilungslauf auf `iCloudServices/dev` stehen. Vor dem fachlichen
 Modulcommit muss das regulär erzeugte Paket integriert und gepullt sein.

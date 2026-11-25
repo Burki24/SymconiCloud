@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace SymconiCloud;
+namespace ICloudServices;
 
 require_once __DIR__ . '/ApplePhotoDownload.php';
 
@@ -15,7 +15,7 @@ final class PhotoDiskCache
     private const TAG_BYTES = 16;
     private const ENCRYPTION_BYTES = self::NONCE_BYTES + self::TAG_BYTES;
 
-    /** A null key is reserved for the old cache outside the web directory. */
+    /** A null key is reserved for the old unencrypted cache format. */
     public function __construct(private readonly string $directory, private readonly int $maxImages, private readonly int $maxBytes, private readonly string $owner = '', private readonly ?string $key = null)
     {
         if ($maxImages < 1 || $maxBytes < 1) {
@@ -156,13 +156,14 @@ final class PhotoDiskCache
         if (!is_dir($this->directory) || is_link($this->directory)) {
             return;
         }
+        // Keep the indexes available for a retry until image cleanup succeeds.
+        $this->prune([], true);
         foreach (['albums.json', 'index.json'] as $name) {
             $file = $this->storagePath($name);
             if ((is_file($file) || is_link($file)) && !unlink($file)) {
                 throw new \RuntimeException('Photo cache unavailable.');
             }
         }
-        $this->prune([]);
     }
 
     public function stats(): array
@@ -176,28 +177,56 @@ final class PhotoDiskCache
         return !is_link($this->directory) && (is_file($this->storagePath('albums.json')) || is_file($this->storagePath('index.json')));
     }
 
-    /** Import the former cache without Apple requests. The source is cleared after publishing the encrypted copy. */
+    /** Remove source files only after the encrypted destination has been published. */
     public function importStoredPhotos(self $source): void
     {
         if (!$source->hasStoredPhotos()) {
             return;
         }
-        if ($this->albums() === [] && $this->legacyImages() === []) {
-            $albums = $source->applyLimits($source->albums());
-            if ($albums !== []) {
-                foreach ($source->referencedImages($albums) as $version => $photo) {
-                    $content = $source->readPreview($version);
-                    if ($content === false || strlen($content) !== $photo['bytes']) {
-                        throw new \RuntimeException('Photo cache unavailable.');
-                    }
-                    $this->writePreview($version, $content);
-                }
-                $this->save($albums);
-            } else {
+        $sealedSource = $source->key !== null;
+        if ($sealedSource && (strlen($source->key) !== 32 || realpath($source->directory) === realpath($this->directory))) {
+            throw new \RuntimeException('Photo cache unavailable.');
+        }
+        $albums = $this->albums();
+        if ($sealedSource || ($albums === [] && $this->legacyImages() === [])) {
+            $sourceAlbums = $source->albums($sealedSource);
+            if ($sourceAlbums !== []) {
+                $this->importAlbumSnapshots($source, $sourceAlbums, $albums);
+            } elseif ($albums === [] && $this->legacyImages() === []) {
                 $this->importLegacyIndex($source);
             }
         }
         $source->clear();
+    }
+
+    private function importAlbumSnapshots(self $source, array $sourceAlbums, array $albums): void
+    {
+        $incoming = [];
+        foreach ($sourceAlbums as $id => $album) {
+            if (!isset($albums[$id]) || $album['updatedAt'] > $albums[$id]['updatedAt']) {
+                $incoming[$id] = $album;
+            }
+        }
+        if ($incoming === []) {
+            return;
+        }
+        $incoming = $source->applyLimits($incoming);
+        $previous = $this->referencedImages($albums);
+        foreach ($source->referencedImages($incoming) as $version => $photo) {
+            if (isset($previous[$version]) && $this->imageSize($version) === $photo['bytes']) {
+                continue;
+            }
+            $content = $source->readPreview($version);
+            if ($content === false || strlen($content) !== $photo['bytes']) {
+                throw new \RuntimeException('Photo cache unavailable.');
+            }
+            $this->writePreview($version, $content);
+        }
+        $merged = $incoming + $albums;
+        uasort($merged, static fn (array $left, array $right): int => $right['updatedAt'] <=> $left['updatedAt']);
+        $merged = $this->applyLimits($merged);
+        $this->save($merged);
+        $this->prune($this->referencedImages($merged));
     }
 
     private function importLegacyIndex(self $source): void
@@ -228,7 +257,7 @@ final class PhotoDiskCache
         }
     }
 
-    private function albums(): array
+    private function albums(bool $requireOwner = false): array
     {
         $path = $this->storagePath('albums.json');
         if (is_link($this->directory) || is_link($path)) {
@@ -238,6 +267,9 @@ final class PhotoDiskCache
             return [];
         }
         $manifest = json_decode($this->open((string) @file_get_contents($path), 'albums'), true, 32, JSON_THROW_ON_ERROR);
+        if ($requireOwner && (($manifest['owner'] ?? null) !== $this->owner || !is_array($manifest['albums'] ?? null))) {
+            throw new \RuntimeException('Photo cache unavailable.');
+        }
         return ($manifest['owner'] ?? null) === $this->owner ? $manifest['albums'] : [];
     }
 
@@ -429,7 +461,7 @@ final class PhotoDiskCache
 
     private function atomic(string $path, string|\Closure $bytes): void
     {
-        if (is_link($this->directory) || (!is_dir($this->directory) && !mkdir($this->directory, 0700, true) && !is_dir($this->directory))) {
+        if (is_link($this->directory) || (!is_dir($this->directory) && !@mkdir($this->directory, 0700, true) && !is_dir($this->directory))) {
             throw new \RuntimeException('Photo cache unavailable.');
         }
         $temporary = $this->directory . '/' . $this->temporaryPrefix() . bin2hex(random_bytes(12));

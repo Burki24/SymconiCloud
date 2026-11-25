@@ -9,7 +9,7 @@ require_once __DIR__ . '/../libs/helper/ParentConnectionHelper.php';
 
 class iCloudDeviceConfigurator extends IPSModuleStrict
 {
-    use \SymconiCloud\CloudDebug;
+    use \ICloudServices\CloudDebug;
     use \Burki24\SymconModuleHelper\ConfigurationFormHelper;
     use \Burki24\SymconModuleHelper\DataFlowHelper;
     use \Burki24\SymconModuleHelper\ParentConnectionHelper;

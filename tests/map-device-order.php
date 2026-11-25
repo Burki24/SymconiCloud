@@ -78,7 +78,7 @@ $savedServer = $_SERVER;
 $hook = new ReflectionMethod($httpMap, 'ProcessHookData');
 $runHook = static function (string $method, string $token) use ($hook, $httpMap, $httpID): string
 {
-    $_SERVER['REQUEST_URI'] = '/hook/SymconiCloudWoIst' . $httpID . '/order';
+    $_SERVER['REQUEST_URI'] = '/hook/ICloudServicesWoIst' . $httpID . '/order';
     $_SERVER['REQUEST_METHOD'] = $method;
     $_SERVER['HTTP_X_WOIST_TOKEN'] = $token;
     ob_start();

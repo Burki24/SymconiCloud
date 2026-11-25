@@ -11,7 +11,7 @@ $assert = static function (bool $condition, string $message): void
 };
 $json = static fn (string $path): array => json_decode(file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
 $library = $json($root . '/library.json');
-$assert($library['name'] === 'SymconiCloud' && $library['compatibility']['version'] === '9.0', 'Library identity/platform');
+$assert($library['name'] === 'iCloud Services' && $library['compatibility']['version'] === '9.0', 'Library identity/platform');
 $assert(str_contains(file_get_contents($root . '/LICENSE'), 'PolyForm Noncommercial License 1.0.0'), 'PolyForm license');
 $required = ['AGENTS.md', 'README.md', 'CHANGELOG.md', 'PROJECT_CONTEXT.md', '.gitattributes', '.editorconfig', '.gitmodules', '.helper-sync.json',
     '.style/.php-cs-fixer.php', '.style/json-check.php', 'tests/stubs/autoload.php', '.github/workflows/tests.yml', '.github/workflows/style.yml'];

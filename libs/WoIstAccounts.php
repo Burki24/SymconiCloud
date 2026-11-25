@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace SymconiCloud;
+namespace ICloudServices;
 
 /** Explicitly assigned account caches; authentication and transport remain in each account. */
 trait WoIstAccounts

@@ -1,6 +1,6 @@
-# SymconiCloud
+# iCloud Services
 
-SymconiCloud verbindet iCloud-Geräte, Standorte, Fotos und Kontakte mit Symcon.
+iCloud Services verbindet iCloud-Geräte, Standorte, Fotos und Kontakte mit Symcon.
 Die erste öffentliche Beta ist Version 0.3.
 
 ## Funktionen
@@ -38,13 +38,13 @@ zusätzliche Sicherheitsprüfungen bleiben möglich.
 
 ## Installation
 
-Im Module Store nach **SymconiCloud** suchen und den **Beta-Kanal** wählen.
+Im Module Store nach **iCloud Services** suchen und den **Beta-Kanal** wählen.
 Danach **iCloud Konto** anlegen, anmelden und die gewünschten Instanzen mit
 diesem Konto verbinden.
 
 ## Dokumentation und Changelog
 
-- [Dokumentation und Einrichtung](https://github.com/Burki24/SymconiCloud/blob/dev/README.md)
-- [Changelog](https://github.com/Burki24/SymconiCloud/blob/dev/CHANGELOG.md)
+- [Dokumentation und Einrichtung](https://github.com/Burki24/iCloudServices/blob/dev/README.md)
+- [Changelog](https://github.com/Burki24/iCloudServices/blob/dev/CHANGELOG.md)
 
 Rückmeldungen und Fehler bitte hier im Thread melden.

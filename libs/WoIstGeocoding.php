@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace SymconiCloud;
+namespace ICloudServices;
 
 /** WoIst-specific opt-in and background scheduling; HTTP and caching live centrally. */
 trait WoIstGeocoding
@@ -35,7 +35,7 @@ trait WoIstGeocoding
     {
         return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): bool
         {
-            $lock = 'SymconiCloud.Geocoding.' . $this->InstanceID;
+            $lock = 'ICloudServices.Geocoding.' . $this->InstanceID;
             if (!\IPS_SemaphoreEnter($lock, 0)) {
                 $this->CloudDebugProblem('busy', __FUNCTION__, __LINE__);
                 return false;

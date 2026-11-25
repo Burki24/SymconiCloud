@@ -6,9 +6,9 @@ ob_start();
 require __DIR__ . '/account.php';
 ob_end_clean();
 
-use SymconiCloud\AppleException;
-use SymconiCloud\ApplePhotoDownload;
-use SymconiCloud\PhotosLibrary;
+use ICloudServices\AppleException;
+use ICloudServices\ApplePhotoDownload;
+use ICloudServices\PhotosLibrary;
 
 class PhotosFixtureAccount extends AccountFixtureModule
 {
@@ -22,9 +22,14 @@ class PhotosFixtureAccount extends AccountFixtureModule
         return self::$root . '/' . $this->InstanceID;
     }
 
-    protected function LegacyPhotoCacheDirectory(): string
+    protected function FormerUserPhotoCacheDirectory(): string
     {
-        return self::$root . '/legacy-' . $this->InstanceID;
+        return self::$root . '/user-' . $this->InstanceID;
+    }
+
+    protected function FormerPrivatePhotoCacheDirectory(): string
+    {
+        return self::$root . '/previous-' . $this->InstanceID;
     }
 
     protected function DownloadPhotoPreview(string $url): string
@@ -58,10 +63,12 @@ $persistence['attributes']['PhotoAssets'] = '{"legacy":{"url":"https://test.iclo
 $photoAccount->ApplyPersistence($persistence);
 $photoAccount->transport = new AccountFixtureTransport();
 $transport = $photoAccount->transport;
-$expectedSuffix = '/user/iPhotos/' . $photoAccountID;
+$expectedSuffix = '/iCloudServices/photos/' . $photoAccountID;
 $realPath = (new ReflectionMethod(iCloudAccount::class, 'PhotoCacheDirectory'))->invoke($photoAccount);
-$check(str_ends_with(str_replace('\\', '/', $realPath), $expectedSuffix), 'Production previews must use the Symcon user/iPhotos directory.');
-$legacyDirectory = PhotosFixtureAccount::$root . '/legacy-' . $photoAccountID;
+$check(str_ends_with(str_replace('\\', '/', $realPath), $expectedSuffix), 'Production previews must use the private Symcon data directory.');
+$privateDirectory = PhotosFixtureAccount::$root . '/' . $photoAccountID;
+$formerUserDirectory = PhotosFixtureAccount::$root . '/user-' . $photoAccountID;
+$legacyDirectory = PhotosFixtureAccount::$root . '/previous-' . $photoAccountID;
 mkdir($legacyDirectory, 0700, true);
 $legacyPreview = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD1sAAAAASUVORK5CYII=', true);
 $legacyKey = hash('sha256', 'legacy-photo:revision');
@@ -138,6 +145,34 @@ try {
     $check(!$forward('GetPhotoImage', $album + ['PhotoID' => 'photo-2', 'URL' => 'https://evil.invalid'])['success'], 'Extra forwarding parameters must be rejected.');
     $check(count($transport->requests) === $before && $photoAccount->downloads === 3, 'Model, pagination and image reads must never request Apple.');
 
+    // Beta 0.49 stored the same sealed format in user/iPhotos.
+    $attributesBeforeMigration = $photoAccount->GetPersistence()['attributes'];
+    rename($privateDirectory, $formerUserDirectory);
+    file_put_contents($formerUserDirectory . '/unrelated.txt', 'user file');
+    file_put_contents($privateDirectory, 'blocked target');
+    IPS_ApplyChanges($photoAccountID);
+    $check(is_file($formerUserDirectory . '/scphoto-albums.json') && file_get_contents($privateDirectory) === 'blocked target', 'A failed move must leave the former album and the obstructing file intact.');
+    $check($photoAccount->GetPersistence()['attributes']['PhotoError'] !== '', 'A failed move must surface a photo storage error.');
+    unlink($privateDirectory);
+    IPS_ApplyChanges($photoAccountID);
+    IPS_ApplyChanges($photoAccountID);
+    $afterMigration = $forward('GetPhotoImagePage', $pageArgs + ['Version' => $image['version']]);
+    $check($forward('GetPhotoPage', $album) === $snapshot && ($afterMigration['success'] ?? false) && base64_decode($afterMigration['data'], true) === $legacyPreview, 'The album and image bytes must survive a retried move without a new synchronization.');
+    $check(count($transport->requests) === $before && $photoAccount->downloads === 3, 'Applying the photo migration must remain entirely local.');
+    $attributesAfterMigration = $photoAccount->GetPersistence()['attributes'];
+    $check($attributesAfterMigration['PhotoError'] === ''
+        && $attributesAfterMigration['PhotoStorageKey'] === $attributesBeforeMigration['PhotoStorageKey']
+        && $attributesAfterMigration['PhotoStorageID'] === $attributesBeforeMigration['PhotoStorageID'], 'Successful migration must clear the error and preserve the account storage identity.');
+    $check(glob($formerUserDirectory . '/scphoto-*') === [] && file_get_contents($formerUserDirectory . '/unrelated.txt') === 'user file', 'Only the managed files must be removed from the former location.');
+
+    rename($privateDirectory, $legacyDirectory);
+    IPS_ApplyChanges($photoAccountID);
+    $check($forward('GetPhotoPage', $album) === $snapshot
+        && $forward('GetPhotoImagePage', $pageArgs + ['Version' => $image['version']]) === $afterMigration
+        && glob($legacyDirectory . '/scphoto-*') === []
+        && count($transport->requests) === $before, 'The previous private folder must also migrate complete albums without a cloud request.');
+    rmdir($legacyDirectory);
+
     $photoAccount->failID = 'failed';
     $page(array_merge($master('staged'), $master('failed')));
     $check(!$child->Refresh(), 'A failed preview download must fail the requested synchronization.');
@@ -185,7 +220,7 @@ try {
     unset($optionalSession['photos']);
     $optionalTransport = new AccountFixtureTransport();
     $optionalTransport->enqueue('POST', '/accountLogin', 200, ['dsInfo' => ['dsid' => 'synthetic', 'hsaVersion' => 2], 'hsaTrustedBrowser' => true, 'webservices' => ['findme' => ['url' => 'https://findme.icloud.com']]]);
-    $optionalClient = new \SymconiCloud\AppleClient($optionalTransport, $optionalSession);
+    $optionalClient = new \ICloudServices\AppleClient($optionalTransport, $optionalSession);
     try {
         $optionalClient->photoAlbums();
         throw new RuntimeException('Missing optional Photos service claimed available.');
@@ -218,8 +253,17 @@ try {
     }
 } finally {
     $photoAccount->Logout();
+    if (is_file($privateDirectory)) {
+        unlink($privateDirectory);
+    }
     if (is_dir(PhotosFixtureAccount::$root . '/' . $photoAccountID)) {
         rmdir(PhotosFixtureAccount::$root . '/' . $photoAccountID);
+    }
+    if (is_dir($formerUserDirectory)) {
+        if (is_file($formerUserDirectory . '/unrelated.txt')) {
+            unlink($formerUserDirectory . '/unrelated.txt');
+        }
+        rmdir($formerUserDirectory);
     }
     if (is_dir(PhotosFixtureAccount::$root)) {
         rmdir(PhotosFixtureAccount::$root);

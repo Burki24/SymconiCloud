@@ -6,7 +6,7 @@ iCloud Anwesenheit bietet jeweils ein kompaktes Widget für native Kachel und
 IPSView. Gesamtanwesenheit und ausgewählte Einzelgeräte teilen den verfügbaren
 Bereich. Keine neue Instanz, vollständige Seite oder zusätzliche Apple-Abfrage.
 
-Der librarylokale Trait `SymconiCloud\PresenceWidget` besitzt Darstellung, unabhängige Designer,
+Der librarylokale Trait `ICloudServices\PresenceWidget` besitzt Darstellung, unabhängige Designer,
 Bildprüfung und lesenden IPSView-Cachetransport. Er verwendet bestehende Theme-,
 Style-, HTML-, Interaktions-, HTTP- und Layouthelper. Die Modulklasse übersetzt nur
 bereits ausgewertete Variablen in das Fachmodell. Koordinaten, Apple-Geräte-IDs
@@ -34,7 +34,7 @@ Interaktionsvertrag. IPSView-Stile bleiben von Kachelfarben unabhängig.
 ## Verteilung und Prüfung
 
 Der Baustein liegt unter `libs/PresenceWidget.php`, seine HTML/CSS/JS-Ressourcen
-beim Anwesenheitsmodul. Er wird ausschließlich von SymconiCloud genutzt und darf
+beim Anwesenheitsmodul. Er wird ausschließlich von iCloud Services genutzt und darf
 nach der zentralen Festlegung deshalb nicht in Symcon_ModuleHelper liegen.
 Mehrere Module innerhalb einer Library oder denkbare weitere Nutzer genügen
 nicht. Erst bei tatsächlicher Nutzung in einer zweiten Library wird er zentralisiert.

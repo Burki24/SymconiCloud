@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace SymconiCloud;
+namespace ICloudServices;
 
 /** Library-local configuration bridge. Never calls a delivery or notification-level function. */
 trait ContactsRecipientTransfer
@@ -15,7 +15,7 @@ trait ContactsRecipientTransfer
     {
         return $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($TargetID, $ContactID, $Phone, $Email, $UserID, $Level, $Action): bool
         {
-            if (!IPS_SemaphoreEnter('SymconiCloud.RecipientTransfer.' . $this->InstanceID, 1000)) {
+            if (!IPS_SemaphoreEnter('ICloudServices.RecipientTransfer.' . $this->InstanceID, 1000)) {
                 $this->CloudDebugProblem('busy', __FUNCTION__, __LINE__);
                 return false;
             }
@@ -44,7 +44,7 @@ trait ContactsRecipientTransfer
                 $this->recipientTransferFeedback($this->recipientTransferError($error), []);
                 return false;
             } finally {
-                IPS_SemaphoreLeave('SymconiCloud.RecipientTransfer.' . $this->InstanceID);
+                IPS_SemaphoreLeave('ICloudServices.RecipientTransfer.' . $this->InstanceID);
             }
         });
     }
@@ -58,7 +58,7 @@ trait ContactsRecipientTransfer
                 $this->DebugFlowEvent($this->CloudDebugFunction(__FUNCTION__), __LINE__, 'AKTION', 'Empfängerübernahme nicht bestätigt oder abgebrochen. Zielkonfiguration bleibt unverändert; keine Nachricht wird versendet.');
                 return false;
             }
-            if (!IPS_SemaphoreEnter('SymconiCloud.RecipientTransfer.' . $this->InstanceID, 1000)) {
+            if (!IPS_SemaphoreEnter('ICloudServices.RecipientTransfer.' . $this->InstanceID, 1000)) {
                 $this->CloudDebugProblem('busy', __FUNCTION__, __LINE__);
                 return false;
             }
@@ -74,7 +74,7 @@ trait ContactsRecipientTransfer
                     || $this->RecipientTransferTime() < $pending['createdAt'] || $pending['parent'] !== $this->GetParentID()) {
                     throw new \RuntimeException('Preview expired or changed. Create a new preview.');
                 }
-                $targetLock = 'SymconiCloud.RecipientTarget.' . $pending['target'];
+                $targetLock = 'ICloudServices.RecipientTarget.' . $pending['target'];
                 if (!IPS_SemaphoreEnter($targetLock, 1000)) {
                     $this->CloudDebugProblem('busy', __FUNCTION__, __LINE__);
                     $targetLock = null;
@@ -98,7 +98,7 @@ trait ContactsRecipientTransfer
                 if ($targetLock !== null) {
                     IPS_SemaphoreLeave($targetLock);
                 }
-                IPS_SemaphoreLeave('SymconiCloud.RecipientTransfer.' . $this->InstanceID);
+                IPS_SemaphoreLeave('ICloudServices.RecipientTransfer.' . $this->InstanceID);
             }
         });
     }

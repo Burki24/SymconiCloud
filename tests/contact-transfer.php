@@ -115,7 +115,7 @@ $check($preview($noticeID, 'SAFE'), 'Source conflict seed failed.');
 $cacheBefore = $attrs($a)['ContactsCache'];
 $changed = $row;
 $changed['firstName'] = 'Changed after preview';
-$setAttribute($a, 'ContactsCache', json_encode(['contacts' => \SymconiCloud\ContactsDirectory::normalize([$changed]), 'updatedAt' => $a->clock], JSON_THROW_ON_ERROR));
+$setAttribute($a, 'ContactsCache', json_encode(['contacts' => \ICloudServices\ContactsDirectory::normalize([$changed]), 'updatedAt' => $a->clock], JSON_THROW_ON_ERROR));
 $check(!$bridge->ApplyRecipientTransfer(true), 'Changed source contacts invalidate previews.');
 $setAttribute($a, 'ContactsCache', $cacheBefore);
 $bridge->now = time();

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/libs/PhotoDiskCache.php';
 
-use SymconiCloud\PhotoDiskCache;
+use ICloudServices\PhotoDiskCache;
 
 $check = static function (bool $ok, string $message): void
 { if (!$ok) { throw new RuntimeException($message); } };
@@ -13,10 +13,12 @@ foreach (['compact' => [50, 100], 'standard' => [250, 500], 'large' => [1000, 20
 }
 $root = sys_get_temp_dir() . '/symcon-photo-cache-' . bin2hex(random_bytes(8));
 $webRoot = $root . '-user';
+$privateRoot = $root . '-private';
 $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD1sAAAAASUVORK5CYII=', true);
 $cache = new PhotoDiskCache($root, 2, strlen($png) * 2);
 $key = random_bytes(32);
 $webCache = new PhotoDiskCache($webRoot, 2, strlen($png) * 2, '', $key);
+$privateCache = new PhotoDiskCache($privateRoot, 2, strlen($png) * 2, '', $key);
 $photo = static fn (string $id): array => ['id' => $id, 'name' => $id, 'date' => 1, 'revision' => 'revision', 'url' => $id];
 $requests = [];
 $download = static function (string $id) use ($png, &$requests): string
@@ -69,7 +71,13 @@ try {
     $webCache->importStoredPhotos($cache);
     $previousRequests = $requests;
     $check($webCache->synchronize('first', [$photo('a')], $download)['count'] === 1 && $requests === $previousRequests, 'Old previews without album metadata must remain reusable after the move.');
+
+    $privateCache->synchronize('previously migrated', [$photo('b')], $download);
+    $privateCache->importStoredPhotos($webCache);
+    $check($privateCache->page('first', 0)['total'] === 1 && $privateCache->page('previously migrated', 0)['total'] === 1, 'Migration must preserve distinct album snapshots if both paths contain photos.');
+    $check(!$webCache->hasStoredPhotos(), 'Successfully merged snapshots must be removed from the old location.');
 } finally {
+    $privateCache->clear();
     $webCache->clear();
     $cache->clear();
     if (is_dir($root)) {
@@ -77,6 +85,9 @@ try {
     }
     if (is_dir($webRoot)) {
         rmdir($webRoot);
+    }
+    if (is_dir($privateRoot)) {
+        rmdir($privateRoot);
     }
 }
 echo "Photo resource profiles, snapshot budgets, legacy reuse and cleanup passed.\n";

@@ -1,4 +1,33 @@
-# Symcon Module Store – erste Beta-Einreichung
+# Symcon Module Store – Einreichungsdaten
+
+## Nächste Stable-Einreichung
+
+| Store-Feld | Wert |
+| --- | --- |
+| Bundle-ID | `de.burki24.symconicloud` |
+| Kanal | **Stable** |
+| Lokalisierung | **Deutsch** |
+| Anzeigename | **iCloud Services** |
+| Git-URL | `https://github.com/Burki24/iCloudServices` |
+| Git-Commit | Vollständiger SHA des geprüften Kandidaten mit der neuen Fotoablage |
+
+**Einleitung der Beschreibung**
+
+> iCloud Services ist eine unabhängige Integration für ausgewählte Apple-iCloud-Dienste in Symcon ab Version 9.0. Sie bindet WoIst, Fotos und Kontakte ein.
+
+**Ergänzung der Versionsinformationen**
+
+> Die Library und der Store-Eintrag heißen jetzt iCloud Services. iCloud Fotos speichert
+> Vorschauen und Albumindizes verschlüsselt im allgemeinen Symcon-Datenverzeichnis
+> unter `iCloudServices/photos/<Konto-ID>/`. Das Update übernimmt bereits
+> synchronisierte Alben aus Beta 0.49 lokal. Einzelbild und Diashow können
+> sie direkt weiterverwenden.
+
+Die Hinweise zur Vorabstimmung über Empfängerübernahme (H2) und
+Mehrkonten-Karte (H3) aus der letzten Stable-Einreichung gehören weiterhin in die
+Versionsinformationen. Den Dokumentationslink auf den geprüften Commit setzen.
+
+## Historische Vorbereitung der ersten Beta
 
 Vorbereitete Angaben nach dem Verfahren von OpenHomeAlarm. Die Texte können
 in die Vorlage im Symcon-Entwicklerkonto übernommen werden. Dieses Dokument
@@ -15,13 +44,13 @@ abschließenden Prüfung des Kandidaten betätigen.
 | --- | --- |
 | Bundle-ID | `de.burki24.symconicloud` – Vorschlag nach dem bestehenden Burki24-Schema; Verfügbarkeit und gegebenenfalls bereits vorhandene ID im Entwicklerkonto prüfen |
 | Initialer Kanal | **Beta** |
-| GIT-URL | `https://github.com/Burki24/SymconiCloud` |
+| GIT-URL | `https://github.com/Burki24/iCloudServices` |
 | GIT-Commit | Vollständiger SHA des abschließend geprüften Metadaten-Commits auf `dev`; siehe [Release-Prozess](RELEASE_PROCESS.md) |
 | Lokalisierung | **Deutsch** |
-| Name | **SymconiCloud** |
+| Name | **iCloud Services** |
 | Beschreibung | Nachfolgender deutscher Beschreibungstext |
 | Versionsinformation | Nachfolgende Hinweise zur ersten öffentlichen Beta |
-| Link zur Dokumentation | `https://github.com/Burki24/SymconiCloud/blob/dev/README.md` |
+| Link zur Dokumentation | `https://github.com/Burki24/iCloudServices/blob/dev/README.md` |
 | Kategorien | Mindestens eine passende Kategorie im Entwicklerkonto auswählen; bevorzugt eine dort angebotene Kategorie für Ortung/Anwesenheit bzw. Dienste. Die tatsächlich verfügbaren Bezeichnungen wurden nicht im Portal bestätigt. |
 | Aktualisierung beinhaltet keine funktionalen Änderungen | **Nicht aktivieren**; erste funktionale Veröffentlichung |
 
@@ -37,7 +66,7 @@ englische Lokalisierung mitveröffentlichen.
 ## Beschreibung – Deutsch
 
 ```text
-SymconiCloud verbindet ausgewählte Apple-iCloud-Dienste mit Symcon ab Version 9.0.
+iCloud Services verbindet ausgewählte Apple-iCloud-Dienste mit Symcon ab Version 9.0.
 
 Ein gemeinsames iCloud-Konto übernimmt Anmeldung mit Zwei-Faktor-Bestätigung, Sitzung und begrenzte Datenabfragen. Darauf bauen sieben Module auf:
 
@@ -61,7 +90,7 @@ Lizenz: PolyForm Noncommercial License 1.0.0. Einzelheiten, Einrichtung und Eins
 ## Versionsinformation – Deutsch
 
 ```text
-Erste öffentliche Beta von SymconiCloud für Symcon 9.0 / PHP 8.5.
+Erste öffentliche Beta von iCloud Services für Symcon 9.0 / PHP 8.5.
 
 Enthalten sind ein gemeinsames iCloud-Konto mit Zwei-Faktor-Anmeldung und Kontoschutz, der Gerätekonfigurator, Gerätevariablen und Geräteaktionen, die WoIst-Karte, Anwesenheit für mehrere Geräte, Fotos mit Albumwahl und Diashow sowie ein lesendes Kontaktverzeichnis mit bestätigter Empfängerübernahme.
 
@@ -116,9 +145,9 @@ Ausgangsstand vor diesen Dokumentationsänderungen:
 | Library-Version | `0.2` |
 | Build | `1563103` |
 | Metadaten-Zeitstempel | `1793048438` |
-| GitHub Tests | [Erfolgreich](https://github.com/Burki24/SymconiCloud/actions/runs/40402032681) |
-| GitHub Check Style | [Erfolgreich](https://github.com/Burki24/SymconiCloud/actions/runs/40402033011) |
-| Automatische Versionierung des Quellcommits | [Erfolgreich](https://github.com/Burki24/SymconiCloud/actions/runs/40400724487) |
+| GitHub Tests | [Erfolgreich](https://github.com/Burki24/iCloudServices/actions/runs/40402032681) |
+| GitHub Check Style | [Erfolgreich](https://github.com/Burki24/iCloudServices/actions/runs/40402033011) |
+| Automatische Versionierung des Quellcommits | [Erfolgreich](https://github.com/Burki24/iCloudServices/actions/runs/40400724487) |
 
 Die Versionierung des Bot-Commits wird anschließend erwartungsgemäß
 übersprungen, damit keine Schleife entsteht. Der Benutzer hat den erfolgreichen

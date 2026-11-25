@@ -99,12 +99,17 @@ den gespeicherten Bilddateien. Der Browser hält jeweils das angezeigte Bild.
 ausdrückliche Aktion für den Abgleich mit iCloud.
 
 Apple-Sitzung und signierte Bildadressen bleiben im Konto. Vorschauen und ihre
-Albumindizes liegen verschlüsselt unter `user/iPhotos/<Konto-ID>` im
-Symcon-Kernelverzeichnis. Der Schlüssel bleibt in der Kontoinstanz. Die
+Albumindizes liegen verschlüsselt unter `iCloudServices/photos/<Konto-ID>/` im
+allgemeinen Symcon-Datenverzeichnis. Der Schlüssel bleibt in der Kontoinstanz. Die
 Wiedergabe verwendet den geschützten HTTP-Hook. Tokens werden im URL-Fragment
 übergeben und anschließend nur als Autorisierungsheader verwendet.
-Die Speicherung benötigt OpenSSL mit AES-256-GCM. Beim Modulupdate übernimmt
-das Konto vorhandene Vorschauen aus dem bisherigen Ablageort.
+Die Speicherung benötigt OpenSSL mit AES-256-GCM. Beim Update von Beta 0.49
+übernimmt das Konto synchronisierte Alben und Vorschauen lokal aus
+`user/iPhotos/<Konto-ID>/` oder aus dem früheren privaten Fotoordner. Die
+Diashow kann sie sofort weiterverwenden. Ist der Zielordner vorübergehend
+unzugänglich, zeigt das Konto einen Speicherfehler an. Sobald der Ordner
+wieder zugänglich ist, führt **Übernehmen** im Kontomodul die Migration erneut
+aus.
 HTML-Variablen und Symcon-Backups enthalten
 vertrauliche Daten und müssen entsprechend geschützt werden. Deaktivieren des
 Fotozugriffs, Abmelden und Ändern der Kontozugangsdaten leeren den Fotocache.

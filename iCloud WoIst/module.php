@@ -25,7 +25,7 @@ require_once __DIR__ . '/../libs/WoIstDeviceOrder.php';
 /** Assigned account device positions, rendered through the authenticated HTML SDK. */
 class iCloudWoIst extends IPSModuleStrict
 {
-    use \SymconiCloud\CloudDebug;
+    use \ICloudServices\CloudDebug;
     use \Burki24\SymconModuleHelper\ConfigurationFormHelper;
     use \Burki24\SymconModuleHelper\DataFlowHelper;
     use \Burki24\SymconModuleHelper\ParentConnectionHelper;
@@ -35,15 +35,15 @@ class iCloudWoIst extends IPSModuleStrict
     use \Burki24\SymconModuleHelper\ResponsiveVisualizationHelper;
     use \Burki24\SymconModuleHelper\IPSViewHTMLPageHelper;
     use \Burki24\SymconModuleHelper\OpenFreeMapHelper;
-    use \SymconiCloud\WoIstDesign;
-    use \SymconiCloud\WoIstIPSViewTransport;
+    use \ICloudServices\WoIstDesign;
+    use \ICloudServices\WoIstIPSViewTransport;
     use \Burki24\SymconModuleHelper\HttpResponseHelper;
     use \Burki24\SymconModuleHelper\ReverseGeocodingHelper;
-    use \SymconiCloud\WoIstGeocoding;
-    use \SymconiCloud\IPSViewFrame;
-    use \SymconiCloud\WoIstAccounts;
-    use \SymconiCloud\WoIstDeviceSelection;
-    use \SymconiCloud\WoIstDeviceOrder;
+    use \ICloudServices\WoIstGeocoding;
+    use \ICloudServices\IPSViewFrame;
+    use \ICloudServices\WoIstAccounts;
+    use \ICloudServices\WoIstDeviceSelection;
+    use \ICloudServices\WoIstDeviceOrder;
 
     private const ACCOUNT_MODULE = '{10BF9A03-98A3-495A-B0FA-A4FA0B1002D5}';
     private const REQUEST_DATA = '{1E60F0BE-03E4-4AA4-A1CE-AA838725A4E2}';
@@ -78,7 +78,7 @@ class iCloudWoIst extends IPSModuleStrict
         {
             parent::ApplyChanges();
             $this->SetVisualizationType(1);
-            $this->EnsureVisualizationHook($this->WoIstIPSViewHookName());
+            $this->EnsureVisualizationHook($this->WoIstIPSViewHookName(), 'WoIst');
             $this->RegisterIPSViewStyleMediaMessages();
             $this->MaintainIPSViewHTMLVariable('IPSViewWoIst', $this->Translate('WoIst for IPSView'), 100, '', false);
             $this->ConfigureWoIstIPSViewTransport();

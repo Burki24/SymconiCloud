@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../libs/AppleClient.php';
 
-use SymconiCloud\AppleClient;
-use SymconiCloud\AppleException;
-use SymconiCloud\AppleHttpClient;
-use SymconiCloud\AppleSrp;
-use SymconiCloud\AppleTransport;
+use ICloudServices\AppleClient;
+use ICloudServices\AppleException;
+use ICloudServices\AppleHttpClient;
+use ICloudServices\AppleSrp;
+use ICloudServices\AppleTransport;
 
 function check(bool $condition, string $message): void
 {

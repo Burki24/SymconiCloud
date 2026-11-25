@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace SymconiCloud;
+namespace ICloudServices;
 
 require_once __DIR__ . '/helper/DebugFlowHelper.php';
 

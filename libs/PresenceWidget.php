@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace SymconiCloud;
+namespace ICloudServices;
 
 use Throwable;
 
@@ -17,7 +17,7 @@ require_once __DIR__ . '/IPSViewFrame.php';
 require_once __DIR__ . '/DesignerColorGuide.php';
 
 /**
- * SymconiCloud presence widget layout, images and cached IPSView output.
+ * ICloudServices presence widget layout, images and cached IPSView output.
  * Uses the existing shared theme, style, HTTP, interaction and layout helpers.
  * Remains local until used by at least two different libraries.
  */

@@ -9,8 +9,8 @@ $root = dirname(__DIR__);
 $subscriptions = json_decode(file_get_contents($root . '/.helper-sync.json'), true, 512, JSON_THROW_ON_ERROR)['helpers'];
 $check(!isset($subscriptions['StatusWidgetHelper']), 'The single-library widget must not subscribe to a central helper.');
 $check(($subscriptions['RasterImageHelper']['target'] ?? '') === 'libs/helper/RasterImageHelper.php', 'Raster preparation must use the explicitly authorized central helper subscription.');
-$widgetTrait = new ReflectionClass(\SymconiCloud\PresenceWidget::class);
-$check(realpath($widgetTrait->getFileName()) === realpath($root . '/libs/PresenceWidget.php'), 'Widget implementation must ship inside SymconiCloud.');
+$widgetTrait = new ReflectionClass(\ICloudServices\PresenceWidget::class);
+$check(realpath($widgetTrait->getFileName()) === realpath($root . '/libs/PresenceWidget.php'), 'Widget implementation must ship inside ICloudServices.');
 $locale = json_decode(file_get_contents($root . '/iCloud Presence/locale.json'), true, 512, JSON_THROW_ON_ERROR)['translations']['de'];
 foreach ($widgetTrait->getConstant('PRESENCE_WIDGET_TEXT') as $caption) {
     $check(isset($locale[$caption]), 'Local widget caption must have a local German translation: ' . $caption);
@@ -116,7 +116,7 @@ foreach (['View-Hintergrund', 'Label-Schrift', 'Informationsfarbe', 'Akzentfarbe
     $check(str_contains(json_encode($guidePanel, JSON_UNESCAPED_UNICODE), $caption), 'The text legend must also use the German designer captions: ' . $caption);
 }
 $englishGuideWidget = new class() {
-    use \SymconiCloud\PresenceWidget;
+    use \ICloudServices\PresenceWidget;
     use \Burki24\SymconModuleHelper\HelperTranslationHelper;
 
     public function guide(): array

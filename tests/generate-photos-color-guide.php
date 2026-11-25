@@ -9,7 +9,7 @@ use Burki24\SymconModuleHelper\SVGPreviewHelper as SVG;
 
 class PhotosGuideFixture
 {
-    use SymconiCloud\PhotosWidget;
+    use ICloudServices\PhotosWidget;
 }
 $trait = new ReflectionClass(PhotosGuideFixture::class);
 foreach (['photos-color-guide' => 'PHOTO_GUIDE_LABELS', 'photos-tile-color-guide' => 'PHOTO_TILE_GUIDE_LABELS'] as $stem => $constant) {

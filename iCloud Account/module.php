@@ -12,10 +12,10 @@ require_once __DIR__ . '/../libs/helper/DataFlowHelper.php';
 
 class iCloudAccount extends IPSModuleStrict
 {
-    use \SymconiCloud\CloudDebug;
-    use \SymconiCloud\PhotosAccount;
-    use \SymconiCloud\ContactsAccount;
-    use \SymconiCloud\AccountProtection;
+    use \ICloudServices\CloudDebug;
+    use \ICloudServices\PhotosAccount;
+    use \ICloudServices\ContactsAccount;
+    use \ICloudServices\AccountProtection;
     use \Burki24\SymconModuleHelper\ConfigurationFormHelper;
     use \Burki24\SymconModuleHelper\DataFlowHelper;
 
@@ -52,7 +52,7 @@ class iCloudAccount extends IPSModuleStrict
         $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
         {
             parent::ApplyChanges();
-            if (!IPS_SemaphoreEnter('SymconiCloud.' . $this->InstanceID, 1000)) {
+            if (!IPS_SemaphoreEnter('ICloudServices.' . $this->InstanceID, 1000)) {
                 $this->CloudDebugProblem('busy', __FUNCTION__, __LINE__);
                 return;
             }
@@ -84,7 +84,7 @@ class iCloudAccount extends IPSModuleStrict
                 }
                 $this->updateState();
             } finally {
-                IPS_SemaphoreLeave('SymconiCloud.' . $this->InstanceID);
+                IPS_SemaphoreLeave('ICloudServices.' . $this->InstanceID);
             }
             $this->notifyChildren();
         }, true);
@@ -111,7 +111,7 @@ class iCloudAccount extends IPSModuleStrict
             $form['actions'][] = ['type' => 'Label', 'caption' => $block === '' ? '' : $this->Translate('Account requests stopped: manual review required') . ': ' . $this->errorMessage($block)];
             try {
                 $wait = $this->AuthenticationWait('login');
-            } catch (\SymconiCloud\AppleException) {
+            } catch (\ICloudServices\AppleException) {
                 $wait = -1;
             }
             $form['actions'][] = ['type' => 'Label', 'caption' => $this->Translate('Password login wait in seconds') . ': ' . $wait];
@@ -209,7 +209,7 @@ class iCloudAccount extends IPSModuleStrict
     {
         $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): void
         {
-            if (!IPS_SemaphoreEnter('SymconiCloud.' . $this->InstanceID, 1000)) {
+            if (!IPS_SemaphoreEnter('ICloudServices.' . $this->InstanceID, 1000)) {
                 $this->CloudDebugProblem('busy', __FUNCTION__, __LINE__);
                 return;
             }
@@ -217,7 +217,7 @@ class iCloudAccount extends IPSModuleStrict
                 $this->clearState();
                 $this->updateState();
             } finally {
-                IPS_SemaphoreLeave('SymconiCloud.' . $this->InstanceID);
+                IPS_SemaphoreLeave('ICloudServices.' . $this->InstanceID);
             }
             $this->notifyChildren();
             $this->ReloadForm();
@@ -310,10 +310,10 @@ class iCloudAccount extends IPSModuleStrict
     }
 
     /** Transport seam for offline integration tests; production owns its cookie jar. */
-    protected function CreateAppleClient(array $session): \SymconiCloud\AppleClient
+    protected function CreateAppleClient(array $session): \ICloudServices\AppleClient
     {
-        return new \SymconiCloud\AppleClient(
-            new \SymconiCloud\AppleHttpClient($session['cookies'] ?? []),
+        return new \ICloudServices\AppleClient(
+            new \ICloudServices\AppleHttpClient($session['cookies'] ?? []),
             $session,
             fn ($operation, $status, $reason, $appleCode = '') => $this->RecordAccountDiagnostic($operation, $status, $reason, $appleCode),
             fn () => $this->ReserveAuthenticationAttempt('resend'),
@@ -323,7 +323,7 @@ class iCloudAccount extends IPSModuleStrict
 
     private function operate(string $operation, string $value = ''): bool
     {
-        if (!IPS_SemaphoreEnter('SymconiCloud.' . $this->InstanceID, 1000)) {
+        if (!IPS_SemaphoreEnter('ICloudServices.' . $this->InstanceID, 1000)) {
             $this->CloudDebugProblem('busy', __FUNCTION__, __LINE__);
             if ($operation !== 'devices') {
                 $this->setAuthenticationFeedback($operation, 'busy');
@@ -335,7 +335,7 @@ class iCloudAccount extends IPSModuleStrict
         $feedbackReason = 'internal';
         try {
             if (!$this->configurationValid()) {
-                throw new \SymconiCloud\AppleException('configuration');
+                throw new \ICloudServices\AppleException('configuration');
             }
             if ($this->credentialFingerprint() !== $this->ReadAttributeString('CredentialFingerprint')) {
                 $this->clearState();
@@ -349,13 +349,13 @@ class iCloudAccount extends IPSModuleStrict
                 return true;
             }
             if (in_array($operation, ['login', 'verify', 'resend'], true) && !$this->ReadPropertyBoolean('AllowAuthentication')) {
-                throw new \SymconiCloud\AppleException('authenticationDisabled');
+                throw new \ICloudServices\AppleException('authenticationDisabled');
             }
             if ($operation === 'login' && $state === 'awaiting2FA' && ($this->readSession()['challengeAt'] ?? 0) > time() - 600) {
-                throw new \SymconiCloud\AppleException('challengePending');
+                throw new \ICloudServices\AppleException('challengePending');
             }
             if ($operation === 'verify' && preg_match('/\A[0-9]{6}\z/D', $value) !== 1) {
-                throw new \SymconiCloud\AppleException('codeFormat');
+                throw new \ICloudServices\AppleException('codeFormat');
             }
             if (in_array($operation, ['login', 'verify'], true)) {
                 $this->ReserveAuthenticationAttempt($operation);
@@ -393,7 +393,7 @@ class iCloudAccount extends IPSModuleStrict
             $this->WriteAttributeInteger('TransientFailures', 0);
             $this->RecordAccountDiagnostic($operation, 0, $success ? 'ok' : ($state === 'awaiting2FA' ? 'verificationRequired' : 'authentication'));
             $feedbackReason = $success ? 'ok' : ($state === 'awaiting2FA' ? 'verificationRequired' : 'authentication');
-        } catch (\SymconiCloud\AppleException $exception) {
+        } catch (\ICloudServices\AppleException $exception) {
             $feedbackReason = $exception->reason;
             if (!in_array($exception->reason, ['requestsPaused', 'accountBlocked', 'challengePending', 'retryBackoff', 'authenticationDisabled'], true)) {
                 $this->WriteAttributeString('LastError', $exception->reason);
@@ -408,7 +408,7 @@ class iCloudAccount extends IPSModuleStrict
                 $this->WriteAttributeString('Session', json_encode($client->session(), JSON_THROW_ON_ERROR));
             }
             $this->updateState();
-            IPS_SemaphoreLeave('SymconiCloud.' . $this->InstanceID);
+            IPS_SemaphoreLeave('ICloudServices.' . $this->InstanceID);
             if ($operation !== 'devices') {
                 $this->setAuthenticationFeedback($operation, $feedbackReason);
             }
@@ -423,7 +423,7 @@ class iCloudAccount extends IPSModuleStrict
     /** Device actions share account locking, membership checks, session state and cooldown. */
     private function performDeviceAction(string $deviceID, string $action, array $parameters = []): array
     {
-        if (!IPS_SemaphoreEnter('SymconiCloud.' . $this->InstanceID, 1000)) {
+        if (!IPS_SemaphoreEnter('ICloudServices.' . $this->InstanceID, 1000)) {
             $this->CloudDebugProblem('busy', __FUNCTION__, __LINE__);
             return ['success' => false, 'message' => $this->Translate('Account request already running.')];
         }
@@ -432,11 +432,11 @@ class iCloudAccount extends IPSModuleStrict
         $reason = '';
         try {
             if (!$this->configurationValid() || $this->credentialFingerprint() !== $this->ReadAttributeString('CredentialFingerprint')) {
-                throw new \SymconiCloud\AppleException('configuration');
+                throw new \ICloudServices\AppleException('configuration');
             }
             $this->AssertAccountRequestsAllowed();
             if (($this->readSession()['state'] ?? '') !== 'authenticated') {
-                throw new \SymconiCloud\AppleException('authentication');
+                throw new \ICloudServices\AppleException('authentication');
             }
             $cache = json_decode($this->ReadAttributeString('DeviceCache'), true, 512, JSON_THROW_ON_ERROR);
             $target = null;
@@ -447,16 +447,16 @@ class iCloudAccount extends IPSModuleStrict
                 }
             }
             if ($target === null || (int) ($cache['updatedAt'] ?? 0) <= 0) {
-                throw new \SymconiCloud\AppleException('deviceUnknown');
+                throw new \ICloudServices\AppleException('deviceUnknown');
             }
             if (in_array($action, ['ActivateLostMode', 'DeactivateLostMode'], true) && ($target['details']['lostModeCapable'] ?? null) !== true) {
-                throw new \SymconiCloud\AppleException('lostModeUnsupported');
+                throw new \ICloudServices\AppleException('lostModeUnsupported');
             }
             if ($action === 'ActivateLostMode') {
                 if (($target['details']['lostModeEnabled'] ?? null) === true) {
-                    throw new \SymconiCloud\AppleException('lostModeActive');
+                    throw new \ICloudServices\AppleException('lostModeActive');
                 }
-                \SymconiCloud\AppleClient::validateLostModeInput(...$parameters);
+                \ICloudServices\AppleClient::validateLostModeInput(...$parameters);
             }
             $client = $this->CreateAppleClient($this->readSession());
             if ($action === 'ActivateLostMode') {
@@ -470,7 +470,7 @@ class iCloudAccount extends IPSModuleStrict
             $success = true;
             $this->WriteAttributeInteger('TransientFailures', 0);
             $this->RecordAccountDiagnostic($action, 0, 'ok');
-        } catch (\SymconiCloud\AppleException $exception) {
+        } catch (\ICloudServices\AppleException $exception) {
             $reason = $exception->reason;
             $this->AccountRequestFailed($action, $exception, $client !== null);
         } catch (Throwable) {
@@ -481,7 +481,7 @@ class iCloudAccount extends IPSModuleStrict
                 $this->WriteAttributeString('Session', json_encode($client->session(), JSON_THROW_ON_ERROR));
             }
             $this->updateState();
-            IPS_SemaphoreLeave('SymconiCloud.' . $this->InstanceID);
+            IPS_SemaphoreLeave('ICloudServices.' . $this->InstanceID);
         }
         if ($client !== null && ($client->session()['state'] ?? '') === 'expired') {
             $this->notifyChildren();
@@ -657,7 +657,7 @@ class iCloudAccount extends IPSModuleStrict
         if ($kind !== null) {
             try {
                 $wait = max($wait, $this->AuthenticationWait($kind));
-            } catch (\SymconiCloud\AppleException) {
+            } catch (\ICloudServices\AppleException) {
                 // The protection-state error is reported by the authentication action itself.
             }
         }

@@ -11,11 +11,11 @@ require_once __DIR__ . '/../libs/ContactsRecipientTransfer.php';
 
 class iCloudContacts extends IPSModuleStrict
 {
-    use \SymconiCloud\CloudDebug;
+    use \ICloudServices\CloudDebug;
     use \Burki24\SymconModuleHelper\ConfigurationFormHelper;
     use \Burki24\SymconModuleHelper\DataFlowHelper;
     use \Burki24\SymconModuleHelper\ParentConnectionHelper;
-    use \SymconiCloud\ContactsRecipientTransfer;
+    use \ICloudServices\ContactsRecipientTransfer;
 
     private const REQUEST_DATA = '{1E60F0BE-03E4-4AA4-A1CE-AA838725A4E2}';
     private const NOTIFICATION_DATA = '{FCE7780F-9520-4E52-92F3-60034FFAED6D}';
@@ -64,7 +64,7 @@ class iCloudContacts extends IPSModuleStrict
     {
         return $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($Query, $Offset, $Limit): string
         {
-            \SymconiCloud\ContactsDirectory::page([], $Query, $Offset, $Limit);
+            \ICloudServices\ContactsDirectory::page([], $Query, $Offset, $Limit);
             return json_encode($this->request('GetContacts', ['Query' => $Query, 'Offset' => $Offset, 'Limit' => $Limit]), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
         });
     }
@@ -96,7 +96,7 @@ class iCloudContacts extends IPSModuleStrict
     {
         $this->CloudDebugCall(__FUNCTION__, __LINE__, function () use ($Query): void
         {
-            \SymconiCloud\ContactsDirectory::page([], $Query, 0, 1);
+            \ICloudServices\ContactsDirectory::page([], $Query, 0, 1);
             $this->SetBuffer('ContactSearch', $Query);
             $this->FirstContacts();
         }, true);

@@ -23,7 +23,7 @@ foreach (array_values($flags) as $offset => $key) {
 $normalize = static function (array $device): array
 {
     $transport = new ScriptedAppleTransport([['POST', '/refreshClient?', 200, ['content' => [$device]]]]);
-    $client = new SymconiCloud\AppleClient($transport, [
+    $client = new ICloudServices\AppleClient($transport, [
         'state'  => 'authenticated', 'dsid' => 'synthetic',
         'findme' => 'https://p01-fmipweb.icloud.com', 'headers' => []
     ]);

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace SymconiCloud;
+namespace ICloudServices;
 
 /** Per-instance cache transport with authenticated refresh and display-order actions. */
 trait WoIstIPSViewTransport
@@ -95,12 +95,12 @@ trait WoIstIPSViewTransport
         $this->RegisterAttributeString('IPSViewTransportAccounts', '');
         // Volatile hooks belong to Create and must survive output toggles.
         // ProcessHookData enforces activation and authorization independently.
-        $this->EnsureVisualizationHook($this->WoIstIPSViewHookName());
+        $this->EnsureVisualizationHook($this->WoIstIPSViewHookName(), 'WoIst');
     }
 
     private function WoIstIPSViewHookName(): string
     {
-        return 'SymconiCloudWoIst' . $this->InstanceID;
+        return 'ICloudServicesWoIst' . $this->InstanceID;
     }
 
     private function WoIstIPSViewServerURLValid(): bool

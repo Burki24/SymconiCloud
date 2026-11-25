@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace SymconiCloud;
+namespace ICloudServices;
 
 /** Library-local, read-only recipient schema. Provider tokens and unrelated personal fields are discarded. */
 final class ContactsDirectory

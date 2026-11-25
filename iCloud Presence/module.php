@@ -13,13 +13,13 @@ require_once __DIR__ . '/../libs/PresenceWidget.php';
 
 class iCloudPresence extends IPSModuleStrict
 {
-    use \SymconiCloud\CloudDebug;
+    use \ICloudServices\CloudDebug;
     use \Burki24\SymconModuleHelper\ConfigurationFormHelper;
     use \Burki24\SymconModuleHelper\DataFlowHelper;
     use \Burki24\SymconModuleHelper\ParentConnectionHelper;
     use \Burki24\SymconModuleHelper\VariablePresentationHelper;
     use \Burki24\SymconModuleHelper\GeofenceHelper;
-    use \SymconiCloud\PresenceWidget;
+    use \ICloudServices\PresenceWidget;
     use \Burki24\SymconModuleHelper\IPSViewHTMLPageHelper;
     use \Burki24\SymconModuleHelper\VisualizationAssetHelper;
     use \Burki24\SymconModuleHelper\VisualizationThemeConfigurationHelper;
@@ -110,7 +110,7 @@ class iCloudPresence extends IPSModuleStrict
     {
         return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): bool
         {
-            if (!IPS_SemaphoreEnter('SymconiCloud.Presence.' . $this->InstanceID, 1000)) {
+            if (!IPS_SemaphoreEnter('ICloudServices.Presence.' . $this->InstanceID, 1000)) {
                 $this->CloudDebugProblem('busy', __FUNCTION__, __LINE__);
                 return false;
             }
@@ -170,7 +170,7 @@ class iCloudPresence extends IPSModuleStrict
                 try {
                     $this->publishWidget();
                 } finally {
-                    IPS_SemaphoreLeave('SymconiCloud.Presence.' . $this->InstanceID);
+                    IPS_SemaphoreLeave('ICloudServices.Presence.' . $this->InstanceID);
                 }
             }
         });
@@ -254,7 +254,7 @@ class iCloudPresence extends IPSModuleStrict
                 foreach ($data['devices'] ?? [] as $device) {
                     if (is_array($device) && is_string($device['id'] ?? null) && $device['id'] !== '' && !isset($known[$device['id']])) {
                         $name = (string) ($device['name'] ?? $this->Translate('Device'));
-                        $options[] = ['caption' => \SymconiCloud\DeviceSelectionCaption::withModel($name, $device), 'value' => $device['id']];
+                        $options[] = ['caption' => \ICloudServices\DeviceSelectionCaption::withModel($name, $device), 'value' => $device['id']];
                         $known[$device['id']] = true;
                     }
                 }

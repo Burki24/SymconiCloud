@@ -35,7 +35,7 @@
     const controllers = new Set();
     const translate = value => (options.text || {})[value] || value;
     function error(value) { message.textContent = value; message.hidden = !value; }
-    const storageKey = () => 'SymconiCloud.photos.' + options.instance + '.' + (boot.mode || 'symcon') + '.' + state.source;
+    const storageKey = (prefix = 'ICloudServices') => prefix + '.photos.' + options.instance + '.' + (boot.mode || 'symcon') + '.' + state.source;
     function remember() {
         try { global.sessionStorage.setItem(storageKey(), JSON.stringify({id: state.id, offset: state.page.offset || 0, paused: state.paused, scroll: caption.scrollTop})); } catch (_) { /* Private webviews may disable storage. */ }
     }
@@ -174,7 +174,16 @@
         if (!restored) {
             restored = true;
             try {
-                const saved = JSON.parse(global.sessionStorage.getItem(storageKey()) || 'null');
+                const storage = global.sessionStorage;
+                const key = storageKey();
+                const formerKey = storageKey('SymconiCloud');
+                const current = storage.getItem(key);
+                const previous = current === null ? storage.getItem(formerKey) : null;
+                if (previous !== null) {
+                    storage.setItem(key, previous);
+                    storage.removeItem(formerKey);
+                }
+                const saved = JSON.parse(current ?? previous ?? 'null');
                 if (saved && typeof saved.paused === 'boolean') {
                     state.paused = saved.paused;
                     if (Number.isInteger(saved.offset) && saved.offset > 0) await loadPage(saved.offset);

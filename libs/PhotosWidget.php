@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace SymconiCloud;
+namespace ICloudServices;
 
 require_once __DIR__ . '/helper/IPSViewHTMLPageHelper.php';
 require_once __DIR__ . '/helper/VisualizationAssetHelper.php';
@@ -106,12 +106,12 @@ trait PhotosWidget
         }
         $this->RegisterAttributeString('PhotoToken', '');
         $this->SetVisualizationType(1);
-        $this->EnsureVisualizationHook($this->PhotoHook());
+        $this->EnsureVisualizationHook($this->PhotoHook(), 'Photos');
     }
 
     protected function ConfigurePhotoWidget(): void
     {
-        $this->EnsureVisualizationHook($this->PhotoHook());
+        $this->EnsureVisualizationHook($this->PhotoHook(), 'Photos');
         $this->RegisterIPSViewStyleMediaMessages();
         if (!$this->IsVisualizationHookAvailable() || !$this->ReadPropertyBoolean('Enabled') || !$this->PhotoOriginValid()) {
             $this->WriteAttributeString('PhotoToken', '');
@@ -230,7 +230,7 @@ trait PhotosWidget
 
     private function PhotoHook(): string
     {
-        return 'SymconiCloudPhotos' . $this->InstanceID;
+        return 'ICloudServicesPhotos' . $this->InstanceID;
     }
 
     private function PhotoOriginValid(): bool

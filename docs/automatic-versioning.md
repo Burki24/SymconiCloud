@@ -1,6 +1,6 @@
 # Automatische Versionierung
 
-SymconiCloud verwendet denselben Versionsvertrag wie OpenHomeAlarm und
+iCloud Services verwendet denselben Versionsvertrag wie OpenHomeAlarm und
 SymconECharts. Die Berechnung liegt zentral in
 `Symcon_ModuleCI/library-metadata`; in dieser Library gibt es keine Kopie des
 Generators. Tests und Stilprüfung bleiben auf `Symcon_ModuleCI@v1.0.0`.
@@ -29,14 +29,14 @@ ausführen. Ein unbekannter/Null-Vorgänger löst nur einen Versionsschritt aus.
 ## Einrichtung und Reihenfolge
 
 Zuerst die neue Action auf **Symcon_ModuleCI/dev** committen und pushen, dann
-die Einbindung auf **SymconiCloud/dev**. Die neue Action verwendet zunächst
+die Einbindung auf **iCloudServices/dev**. Die neue Action verwendet zunächst
 `@dev` zur Erprobung; nach Freigabe des nächsten ModuleCI-Release-Tags wird
 ausschließlich dieser neue Verweis auf den tatsächlichen Tag umgestellt.
 Der bestehende Tag `v1.0.0` wird nicht verändert.
 
 Die bereits für Helper-Verteilung verwendete GitHub App muss auch auf
-SymconiCloud installiert sein und **Contents: write** besitzen. Unter
-**Settings → Secrets and variables → Actions** benötigt SymconiCloud:
+iCloud Services installiert sein und **Contents: write** besitzen. Unter
+**Settings → Secrets and variables → Actions** benötigt iCloud Services:
 
 - Variable `HELPER_SYNC_APP_CLIENT_ID` mit der Client-ID der App.
 - Secret `HELPER_SYNC_APP_PRIVATE_KEY` mit deren privatem Schlüssel.

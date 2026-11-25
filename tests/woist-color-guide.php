@@ -5,7 +5,7 @@ declare(strict_types=1);
 ob_start();
 require __DIR__ . '/map.php';
 $root = dirname(__DIR__);
-$guideTrait = new ReflectionClass(\SymconiCloud\WoIstColorGuide::class);
+$guideTrait = new ReflectionClass(\ICloudServices\WoIstColorGuide::class);
 $roles = $guideTrait->getConstant('WOIST_GUIDE_ROLES');
 $labels = $guideTrait->getConstant('WOIST_GUIDE_LABELS');
 $locale = json_decode(file_get_contents($root . '/iCloud WoIst/locale.json'), true)['translations']['de'];
@@ -16,7 +16,7 @@ foreach (['IPSViewStyleHelper', 'OpenFreeMapHelper'] as $catalog) {
 $check(count($roles) === 19 && array_keys($roles) === array_keys($labels), 'The WoIst guide needs complete labels for its 19 interface and position color roles.');
 foreach (['de', 'en'] as $language) {
     $guide = new class($language) {
-        use \SymconiCloud\WoIstColorGuide;
+        use \ICloudServices\WoIstColorGuide;
         use \Burki24\SymconModuleHelper\HelperTranslationHelper;
 
         public function __construct(private string $language)

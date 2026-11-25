@@ -1,4 +1,4 @@
-# Interner Debug-Vertrag von SymconiCloud
+# Interner Debug-Vertrag von iCloud Services
 
 Stand: 28.10.2026. Maßgeblich ist `SymconDevelopment/standards/DEBUG_OUTPUT.md`.
 Dieses Dokument beschreibt Implementierung und Prüfung, keine Anwenderbedienung.

@@ -20,7 +20,7 @@ foreach ([200, 204, 409] as $status) {
             check($body['dsWebAuthToken'] === 'synthetic-verified-token' && $body['trustToken'] === 'synthetic-trust', 'Trust and account login must use the newly issued tokens.');
         }]
     ]);
-    $client = new \SymconiCloud\AppleClient($transport, $pending);
+    $client = new \ICloudServices\AppleClient($transport, $pending);
     check($client->verifyCode('654321') === 'authenticated', 'Accepted verification must finish session trust and account login: ' . $status);
     check($client->session()['challengeAt'] === 0, 'Only completed account login clears the pending challenge.');
     check(!str_contains(json_encode($client->session()), '654321'), 'The code must never enter the persisted session.');
@@ -29,7 +29,7 @@ foreach ([200, 204, 409] as $status) {
 
 foreach ([[], ['securityCode' => null], ['securityCode' => true], ['securityCode' => []], ['securityCode' => ['valid' => false]], ['securityCode' => ['valid' => null]], ['securityCode' => ['valid' => 1]], ['securityCode' => ['valid' => 'true']]] as $body) {
     $transport = new ScriptedAppleTransport([['POST', '/verify/trusteddevice/securitycode', 409, $body]]);
-    $client = new \SymconiCloud\AppleClient($transport, $pending);
+    $client = new \ICloudServices\AppleClient($transport, $pending);
     fails(fn () => $client->verifyCode('654321'), 'response');
     check($client->session()['state'] === 'awaiting2FA' && count($transport->calls) === 1, 'An unconfirmed 409 must not trust, log in, or resend automatically.');
     $transport->complete();
@@ -38,7 +38,7 @@ foreach ([[], ['securityCode' => null], ['securityCode' => true], ['securityCode
 foreach ([['serviceErrors' => [['code' => '-20209']], 'accountLocked'], ['termsUpdateNeeded' => true, 'termsRequired']] as $case) {
     $reason = array_pop($case);
     $transport = new ScriptedAppleTransport([['POST', '/verify/trusteddevice/securitycode', 409, $case + ['securityCode' => ['valid' => true]]]]);
-    $client = new \SymconiCloud\AppleClient($transport, $pending);
+    $client = new \ICloudServices\AppleClient($transport, $pending);
     fails(fn () => $client->verifyCode('654321'), $reason);
     check(count($transport->calls) === 1, 'Account-wide security decisions must take precedence over a valid code.');
     $transport->complete();
@@ -49,7 +49,7 @@ $transport = new ScriptedAppleTransport([
     ['POST', '/verify/trusteddevice/securitycode', 409, ['securityCode' => ['valid' => true]], $verifiedHeaders],
     ['GET', '/2sv/trust', 403]
 ]);
-$client = new \SymconiCloud\AppleClient($transport, $pending);
+$client = new \ICloudServices\AppleClient($transport, $pending);
 fails(fn () => $client->verifyCode('654321'), 'accessDenied');
 check($client->session()['state'] !== 'authenticated', 'A refused trust step cannot produce a signed-in session.');
 $transport->complete();
@@ -58,7 +58,7 @@ $transport = new ScriptedAppleTransport([
     ['GET', '/2sv/trust', 204],
     ['POST', '/accountLogin', 200, array_replace($account, ['hsaTrustedBrowser' => false])]
 ]);
-$client = new \SymconiCloud\AppleClient($transport, $pending);
+$client = new \ICloudServices\AppleClient($transport, $pending);
 check($client->verifyCode('654321') === 'awaiting2FA', 'A remaining Apple challenge must not be reported as authenticated.');
 $transport->complete();
 
@@ -77,7 +77,7 @@ foreach ([
 ] as [$operation, $steps]) {
     $events = [];
     $transport = new ScriptedAppleTransport($steps);
-    $client = new \SymconiCloud\AppleClient($transport, $pending, static function ($kind, $status, $reason) use (&$events): void
+    $client = new \ICloudServices\AppleClient($transport, $pending, static function ($kind, $status, $reason) use (&$events): void
     {
         $events[] = compact('kind', 'status', 'reason');
     });
@@ -94,10 +94,10 @@ foreach ([
 // The real HTTP parser rejects non-JSON 2xx bodies before returning headers/body.
 $transport = new ScriptedAppleTransport([['POST', '/verify/trusteddevice/securitycode', 202, [], [], static function (): void
 {
-    throw new \SymconiCloud\AppleException('response', 202);
+    throw new \ICloudServices\AppleException('response', 202);
 }]]);
 $events = [];
-$client = new \SymconiCloud\AppleClient($transport, $pending, static function ($kind, $status, $reason) use (&$events): void
+$client = new \ICloudServices\AppleClient($transport, $pending, static function ($kind, $status, $reason) use (&$events): void
 {
     $events[] = compact('kind', 'status', 'reason');
 });
@@ -106,11 +106,11 @@ check(end($events)['status'] === 202 && end($events)['reason'] === 'authenticati
 $transport->complete();
 
 $transport = new ScriptedAppleTransport([['POST', '/verify/trusteddevice/securitycode', 202, ['securityCode' => ['valid' => true], 'serviceErrors' => [['code' => '-20209']]]]]);
-$client = new \SymconiCloud\AppleClient($transport, $pending);
+$client = new \ICloudServices\AppleClient($transport, $pending);
 fails(fn () => $client->verifyCode('654321'), 'accountLocked');
 $transport->complete();
 $transport = new ScriptedAppleTransport([['POST', '/refreshClient?', 202, ['securityCode' => ['valid' => true]]]]);
-$client = new \SymconiCloud\AppleClient($transport, $authenticated);
+$client = new \ICloudServices\AppleClient($transport, $authenticated);
 fails(fn () => $client->devices(), 'response');
 $transport->complete();
 

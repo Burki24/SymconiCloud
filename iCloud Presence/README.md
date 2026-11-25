@@ -234,7 +234,7 @@ bleiben beim Entfernen, bei erneuter Auswahl und beim Modulupdate erhalten.
 Bereits ausgeblendete Variablen lassen sich bei Bedarf im Objektbaum einblenden.
 Eine bewusst geleerte Liste bleibt leer.
 
-Ein vollständiges SymconiCloud-Modulupdate enthält auch die benötigten Helper
+Ein vollständiges iCloud Services-Modulupdate enthält auch die benötigten Helper
 und Widget-Ressourcen. Anwender müssen keine Helper einzeln herunterladen oder
 Dateien in die Library kopieren.
 

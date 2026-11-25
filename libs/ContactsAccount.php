@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace SymconiCloud;
+namespace ICloudServices;
 
 /** Shared account-owned Contacts cache. No mutations or credentials are exposed to consumers. */
 trait ContactsAccount
@@ -45,7 +45,7 @@ trait ContactsAccount
     {
         return $this->CloudDebugCall(__FUNCTION__, __LINE__, function (): bool
         {
-            if (!IPS_SemaphoreEnter('SymconiCloud.' . $this->InstanceID, 1000)) {
+            if (!IPS_SemaphoreEnter('ICloudServices.' . $this->InstanceID, 1000)) {
                 $this->CloudDebugProblem('busy', __FUNCTION__, __LINE__);
                 return false;
             }
@@ -93,7 +93,7 @@ trait ContactsAccount
                     $this->WriteAttributeString('Session', json_encode($client->session(), JSON_THROW_ON_ERROR));
                 }
                 $this->updateState();
-                IPS_SemaphoreLeave('SymconiCloud.' . $this->InstanceID);
+                IPS_SemaphoreLeave('ICloudServices.' . $this->InstanceID);
             }
             $this->notifyChildren();
             return $success;

@@ -47,7 +47,7 @@ Schnellere Datenträger können den Import deutlich beschleunigen.
 Die Aufteilung ist bewusst unabhängig von Symcon:
 
 ```text
-SymconiCloud / WoIst
+iCloud Services / WoIst
         |
         | HTTP auf Port 8088
         v

@@ -1,11 +1,11 @@
-# ADR 0001: Erweiterbare SymconiCloud-Library mit WoIst als erstem Dienst
+# ADR 0001: Erweiterbare iCloud Services-Library mit WoIst als erstem Dienst
 
 - Status: Angenommen für den ersten Entwicklungsstand
 - Datum: 21.10.2026
 
 ## Entscheidung
 
-Die Library heißt auf Benutzerwunsch SymconiCloud. Sie ist keine Portierung von iCloud3 und enthält keinen daraus übernommenen Code. Eigene Apple-Protokolllogik liegt unter `libs/`. Allgemeine Fähigkeiten kommen unverändert aus Symcon_ModuleHelper.
+Die Library heißt auf Benutzerwunsch iCloud Services. Sie ist keine Portierung von iCloud3 und enthält keinen daraus übernommenen Code. Eigene Apple-Protokolllogik liegt unter `libs/`. Allgemeine Fähigkeiten kommen unverändert aus Symcon_ModuleHelper.
 
 Das Kontomodul ist ein offizieller Splitter (Typ 2), der mehrere Dienst-/Geräteinstanzen an eine Kontoidentität und Sitzung bindet. HTTPS wird über PHP-cURL im Konto ausgeführt. Es gibt keinen separaten, zustandslosen I/O-Durchreicher: keine dauerhaft offene Verbindung, kein gemeinsamer austauschbarer Transport und keine eigenständige Transportkonfiguration benötigen eine solche Instanz. Das entspricht der vorhandenen Kalender-Konto-Struktur und Symcons Möglichkeit, Splitter ohne I/O einzusetzen.
 

@@ -28,12 +28,12 @@ $modules['{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}']['Class'] = HookLifecycleMap::
 $metadata->setValue(null, $modules);
 $lifecycleID = IPS_CreateInstance('{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}');
 $lifecycle = IPS\InstanceManager::getInstanceInterface($lifecycleID);
-$check(isset($lifecycle->registeredHooks['SymconiCloudWoIst' . $lifecycleID]), 'Create must register the hook even with IPSView disabled.');
+$check(isset($lifecycle->registeredHooks['ICloudServicesWoIst' . $lifecycleID]), 'Create must register the hook even with IPSView disabled.');
 $configureTransport = new ReflectionMethod($lifecycle, 'ConfigureWoIstIPSViewTransport');
 foreach ([true, false, true] as $enabled) {
     IPS_SetProperty($lifecycleID, 'EnableIPSView', $enabled);
     $configureTransport->invoke($lifecycle);
-    $check(isset($lifecycle->registeredHooks['SymconiCloudWoIst' . $lifecycleID]), 'Output toggles must retain the registered hook.');
+    $check(isset($lifecycle->registeredHooks['ICloudServicesWoIst' . $lifecycleID]), 'Output toggles must retain the registered hook.');
 }
 $modules['{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}']['Class'] = iCloudWoIst::class;
 $metadata->setValue(null, $modules);
@@ -64,7 +64,7 @@ IPS_SetProperty($missingID, 'EnableIPSView', true);
 IPS_ApplyChanges($missingID);
 $missingMap = IPS\InstanceManager::getInstanceInterface($missingID);
 (new ReflectionMethod($missingMap, 'ConfigureWoIstIPSViewTransport'))->invoke($missingMap);
-$_SERVER = ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/hook/SymconiCloudWoIst' . $missingID . '/page'];
+$_SERVER = ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/hook/ICloudServicesWoIst' . $missingID . '/page'];
 ob_start();
 (new ReflectionMethod($missingMap, 'ProcessHookData'))->invoke($missingMap);
 $missingHTML = ob_get_clean();
@@ -197,7 +197,7 @@ try {
 $hook = new ReflectionMethod($map, 'ProcessHookData');
 $callHook = static function (string $method = 'POST', ?string $provided = null, ?string $path = null) use ($map, $mapID, $hook): array
 {
-    $_SERVER = ['REQUEST_METHOD' => $method, 'REQUEST_URI' => $path ?? '/hook/SymconiCloudWoIst' . $mapID];
+    $_SERVER = ['REQUEST_METHOD' => $method, 'REQUEST_URI' => $path ?? '/hook/ICloudServicesWoIst' . $mapID];
     if ($provided !== null) {
         $_SERVER['HTTP_X_WOIST_TOKEN'] = $provided;
     }
@@ -217,7 +217,7 @@ IPS_ApplyChanges($mapID);
 $outputID = IPS_GetObjectIDByIdent('IPSViewWoIst', $mapID);
 $html = GetValueString($outputID);
 $check(str_contains($html, '/page') && !str_contains($html, 'leaflet'), 'IPSView must create a small loader for the real HTTP map page.');
-[$pageStatus, $pageHTML] = $callHook('GET', null, '/hook/SymconiCloudWoIst' . $mapID . '/page');
+[$pageStatus, $pageHTML] = $callHook('GET', null, '/hook/ICloudServicesWoIst' . $mapID . '/page');
 $check(str_contains($pageHTML, '"tileHeaderVisible":false'), 'Standalone IPSView pages must not reserve a native Symcon title.');
 $check($pageStatus === 200 && str_contains($pageHTML, '"mode":"ipsview"') && str_contains($pageHTML, '--symc-background'), 'The HTTP page must embed the complete standalone map and theme.');
 $check(IPS_GetVariable($outputID)['VariableType'] === VARIABLETYPE_STRING, 'IPSView output must be a String WebContent variable.');
@@ -245,7 +245,7 @@ IPS_SetProperty($mapID, 'TileMapTheme', 'light');
 IPS_SetProperty($mapID, 'TileMapLightWaterColor', 0x123456);
 IPS_SetProperty($mapID, 'TileMarkerSize', 7);
 IPS_ApplyChanges($mapID);
-$check(str_contains($callHook('GET', null, '/hook/SymconiCloudWoIst' . $mapID . '/page')[1], '"markerSize":13'), 'The HTTP page must render its independent IPSView design.');
+$check(str_contains($callHook('GET', null, '/hook/ICloudServicesWoIst' . $mapID . '/page')[1], '"markerSize":13'), 'The HTTP page must render its independent IPSView design.');
 $check(str_contains($map->GetVisualizationTile(), '"markerSize":7'), 'Native tile must retain its own design.');
 $check(json_decode($callHook('POST', (new ReflectionMethod($map, 'ReadAttributeString'))->invoke($map, 'IPSViewTransportToken'))[1], true)['options']['openFreeMap']['theme'] === 'dark', 'IPSView map design must be independent.');
 IPS_SetProperty($mapID, 'IPSViewUseTileDesign', true);
@@ -277,8 +277,8 @@ IPS_ApplyChanges($mapID);
 $check(IPS_GetObjectIDByIdent('IPSViewWoIst', $mapID) === $outputID && GetValueString($outputID) === $lastHtml, 'Disabling optional output must retain its variable and content.');
 $map->ReceiveData(json_encode(['DataID' => '{FCE7780F-9520-4E52-92F3-60034FFAED6D}'] + $notification, JSON_THROW_ON_ERROR));
 $check(GetValueString($outputID) === $lastHtml, 'Disabled IPSView output must stop updating retained content.');
-$check($callHook('GET', null, '/hook/SymconiCloudWoIst' . $mapID . '/page')[0] === 404, 'Disabled output must reject the page even while the hook remains registered.');
-$check($callHook('POST', null, '/hook/SymconiCloudWoIst' . $mapID . '/refresh')[0] === 404, 'Disabled output must not expose the refresh operation.');
+$check($callHook('GET', null, '/hook/ICloudServicesWoIst' . $mapID . '/page')[0] === 404, 'Disabled output must reject the page even while the hook remains registered.');
+$check($callHook('POST', null, '/hook/ICloudServicesWoIst' . $mapID . '/refresh')[0] === 404, 'Disabled output must not expose the refresh operation.');
 
 // The standalone document receives data through a read-only authenticated cache endpoint.
 IPS_SetProperty($mapID, 'EnableIPSView', true);
@@ -295,7 +295,7 @@ $payload = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
 $check($status === 200 && $payload['state']['devices'][0]['name'] === 'Synthetic IPSView update', 'Authenticated polling must deliver current notifications from the sanitized cache.');
 $check(!str_contains($body, $token) && $payload['options']['design']['markerSize'] === 7, 'State responses must preserve IPSView design and omit transport credentials.');
 $check(GetValueString($outputID) === $stableHtml && $firstBoundary->commands === [], 'Polling and notifications must neither rewrite HTML nor contact the account.');
-$refreshPath = '/hook/SymconiCloudWoIst' . $mapID . '/refresh';
+$refreshPath = '/hook/ICloudServicesWoIst' . $mapID . '/refresh';
 $check($callHook('POST', null, $refreshPath)[0] === 403, 'An explicit refresh requires the existing transport token.');
 $check($callHook('POST', 'invalid', $refreshPath)[0] === 403, 'An incorrect bearer must not trigger Apple refresh.');
 $check($callHook('GET', $token, $refreshPath)[0] === 405, 'GET must never trigger an account refresh.');
@@ -314,9 +314,9 @@ $firstBoundary->result = $beforeRefreshFailure;
 $firstBoundary->commands = [];
 $check($callHook('OPTIONS')[0] === 204 && $callHook('OPTIONS')[1] === '', 'CORS preflight must return no device state.');
 $check($callHook('POST')[0] === 403 && $callHook('POST', 'invalid')[0] === 403, 'Missing and incorrect transport tokens must be rejected.');
-[$rendererStatus, $rendererBytes] = $callHook('GET', null, '/hook/SymconiCloudWoIst' . $mapID . '/assets/maplibre-gl.js');
+[$rendererStatus, $rendererBytes] = $callHook('GET', null, '/hook/ICloudServicesWoIst' . $mapID . '/assets/maplibre-gl.js');
 $check($rendererStatus === 200 && strlen($rendererBytes) < 1048576 && hash('sha256', gzdecode($rendererBytes)) === hash_file('sha256', dirname(__DIR__) . '/libs/helper/maps/vendor/maplibre-gl.js'), 'The renderer must be compressed, immutable vendor code below the output limit.');
-$check($callHook('GET', $token)[0] === 405 && $callHook('POST', $token, '/hook/SymconiCloudWoIst' . $mapID . '/extra')[0] === 404, 'Only POST on the exact instance hook is allowed.');
+$check($callHook('GET', $token)[0] === 405 && $callHook('POST', $token, '/hook/ICloudServicesWoIst' . $mapID . '/extra')[0] === 404, 'Only POST on the exact instance hook is allowed.');
 // A public shell has no private bootstrap and accepts neither credentials in URLs nor extra routes.
 $provider = IPS_GetProperty($mapID, 'IPSViewMapLightStyleURL');
 $attribution = IPS_GetProperty($mapID, 'IPSViewMapDarkStyleURL');
@@ -324,15 +324,15 @@ IPS_SetProperty($mapID, 'IPSViewMapLightStyleURL', 'https://styles.example.inval
 IPS_SetProperty($mapID, 'IPSViewMapDarkStyleURL', 'https://styles.example.invalid/map.json?key=synthetic-private-attribution');
 IPS_ApplyChanges($mapID);
 $firstBoundary->commands = [];
-[$pageStatus, $pageHTML] = $callHook('GET', null, '/hook/SymconiCloudWoIst' . $mapID . '/page');
+[$pageStatus, $pageHTML] = $callHook('GET', null, '/hook/ICloudServicesWoIst' . $mapID . '/page');
 $check($pageStatus === 200 && str_contains($pageHTML, '"fragmentToken":true') && str_contains($pageHTML, '"openFreeMap":null'), 'Public HTTP shell must wait for fragment authentication before loading provider tiles.');
 foreach ([$token, 'Synthetic IPSView update', 'synthetic-provider-secret', 'synthetic-private-attribution', '51.25'] as $privateValue) {
     $check(!str_contains($pageHTML, $privateValue), 'Public HTTP shell must never embed account data, provider credentials or bearer tokens.');
 }
 $check($firstBoundary->commands === [], 'Rendering the public HTTP page must not read the account cache.');
-$pagePath = '/hook/SymconiCloudWoIst' . $mapID . '/page';
+$pagePath = '/hook/ICloudServicesWoIst' . $mapID . '/page';
 $check($callHook('POST', $token, $pagePath)[0] === 405, 'Public HTTP shell allows GET only.');
-foreach ([$pagePath . '?token=' . $token, $pagePath . '/' . $token, $pagePath . '/extra', $pagePath . '/', '/hook/SymconiCloudWoIst' . $mapID . '?token=' . $token] as $invalidPath) {
+foreach ([$pagePath . '?token=' . $token, $pagePath . '/' . $token, $pagePath . '/extra', $pagePath . '/', '/hook/ICloudServicesWoIst' . $mapID . '?token=' . $token] as $invalidPath) {
     $check($callHook('GET', null, $invalidPath)[0] === 404, 'Query credentials and non-exact page paths must be rejected.');
 }
 IPS_SetProperty($mapID, 'IPSViewMapLightStyleURL', $provider);
@@ -357,7 +357,7 @@ foreach (['https://user@example.invalid', 'https://example.invalid/path', 'https
 }
 IPS_SetProperty($mapID, 'IPSViewServerURL', 'https://symcon.example.invalid:3777');
 IPS_ApplyChanges($mapID);
-$check(str_contains(str_replace('\\/', '/', $map->GetIPSViewHTML()), 'https://symcon.example.invalid:3777/hook/SymconiCloudWoIst'), 'Configured origins must resolve the IPSView endpoint explicitly.');
+$check(str_contains(str_replace('\\/', '/', $map->GetIPSViewHTML()), 'https://symcon.example.invalid:3777/hook/ICloudServicesWoIst'), 'Configured origins must resolve the IPSView endpoint explicitly.');
 $otherMapID = IPS_CreateInstance('{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}');
 IPS_ConnectInstance($otherMapID, $secondAccount);
 IPS_SetProperty($otherMapID, 'EnableIPSView', true);

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace SymconiCloud;
+namespace ICloudServices;
 
 /** Contains only fixed, non-sensitive error identifiers. */
 final class AppleException extends \RuntimeException

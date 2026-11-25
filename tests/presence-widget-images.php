@@ -13,7 +13,7 @@ function checkImage(mixed $expected, mixed $actual, string $message): void
 
 final class StatusWidgetImageHarness
 {
-    use \SymconiCloud\PresenceWidget {
+    use \ICloudServices\PresenceWidget {
         PrepareRasterImage as private uncachedPrepareRasterImage;
     }
     public int $preparations = 0;

@@ -49,7 +49,7 @@ der Instanzen stehen aus. Es gibt keine Live-Installation oder Apple-Anfrage.
 Die Formular-/WebFront-Abnahme auf dem betroffenen Symcon-9.0-Build bleibt offen.
 
 Nachweise unter PHP 8.5.10: Die zentrale Helper-Suite und die vollständige
-SymconiCloud-Suite bestehen in einer isolierten Kopie mit über den regulären
+iCloud Services-Suite bestehen in einer isolierten Kopie mit über den regulären
 Metadaten-/Bundle-Generator erzeugtem Kandidatenpaket. Der neue ApplyChanges-Test
 prüft eine alte native Optionsdefinition bei gleichzeitig vorhandener eigener
 Darstellung; nur die native Definition wird aktualisiert, alle Benutzerdaten und
@@ -327,7 +327,7 @@ ebenfalls frei; Arbeitsbereichsbreiten bleiben gleich. Ein Browserklick auf
 Aktualisieren erreichte nur die lokale Testgrenze, ohne echte Apple-Abfrage.
 
 Die Helper-Änderung muss zuerst freigegeben und regulär verteilt werden, bevor
-SymconiCloud aktualisiert wird. Das bestehende Abonnement genügt; es gibt keine
+iCloud Services aktualisiert wird. Das bestehende Abonnement genügt; es gibt keine
 neuen Bundle-Dateien oder Ressourcen. Keine provisorischen Helperkopien bleiben
 im Consumer. Keine laufende Instanz wurde verändert; die Prüfung in der echten
 nativen Kachel bleibt bis zum Benutzerupdate offen.
@@ -340,7 +340,7 @@ vorgeschalteten Test. Im laufenden System verursachte der fehlende
 libs/helper/DebugFlowHelper.php einen require_once-Fatalfehler in CloudDebug.php;
 dadurch konnten die Instanzschnittstellen und Formulare nicht geladen werden.
 
-Der erfolgreiche zentrale Sync 40509315918 prüfte SymconiCloud um 14:16 Uhr
+Der erfolgreiche zentrale Sync 40509315918 prüfte iCloud Services um 14:16 Uhr
 MEZ und meldete ausdrücklich, dass DebugFlowHelper noch nicht abonniert war.
 Das Abonnement wurde erst mit 3a2542d um 14:35 Uhr MEZ gepusht. Ein bereits
 abgeschlossener zentraler Lauf reagiert nicht nachträglich auf Consumer-Commits.
@@ -538,7 +538,7 @@ Store-Updates oder Produktivinstallation wurden durchgeführt.
 
 Die Library-README enthält jetzt die fünf gewünschten Badges: Symcon/PHPModul,
 Symcon ab 9.0, tatsächliche PolyForm-Noncommercial-Lizenz sowie dynamische
-Check-Style- und Tests-Badges für SymconiCloud/dev. Das Beispielbild wurde
+Check-Style- und Tests-Badges für iCloudServices/dev. Das Beispielbild wurde
 nicht mit seiner abweichenden CC-Lizenz übernommen. library.json bleibt
 unverändert; eine manuell gepflegte Library-Versionsanzeige wurde nicht ergänzt.
 
@@ -546,7 +546,7 @@ Die Pflicht gilt künftig zentral über SymconDevelopment/AGENTS.md,
 standards/README_CONTENT.md und templates/REPO_README.md für alle
 Library-READMEs. Andere Libraries wurden hier nicht geändert.
 docs/FORUM_POST.md enthält den kurzen Entwurf mit den gewünschten Abschnitten
-SymconiCloud, Funktionen, Enthaltene Instanzen, Screenshots, Voraussetzungen,
+iCloud Services, Funktionen, Enthaltene Instanzen, Screenshots, Voraussetzungen,
 Installation sowie Dokumentation und Changelog. Beide Benachrichtigungsmodule
 sind über ihre deutschen Store-Seiten verlinkt. Den Screenshot-Abschnitt
 befüllt der Benutzer selbst; es wurden keine Bilder in den Entwurf eingebettet.
@@ -604,7 +604,7 @@ Versionsworkflows von OpenHomeAlarm/SymconECharts geprüft. Deren Vertrag wird
 übernommen: zweite Versionszahl pro Quellcommit erhöhen, Metadaten-Commits
 ausnehmen, Build aus den ersten sieben SHA-Hexstellen, Datum aus dem
 Quellcommit. Die wiederverwendbare Berechnung liegt neu in
-Symcon_ModuleCI/library-metadata; SymconiCloud enthält nur Workflow und
+Symcon_ModuleCI/library-metadata; iCloud Services enthält nur Workflow und
 Einbindungsvertrag. Runtime-Helper, öffentliche Modulverträge und
 Instanzkonfigurationen bleiben unverändert.
 
@@ -649,7 +649,7 @@ nachgewiesen; die Ursache der Apple-Sperre bleibt offen. Der bisherige
 Vor der Umsetzung wurden die vorhandenen zentralen Helper und ihre Verträge
 geprüft. DebugHelper und ConfigurationFormHelper werden unverändert verwendet.
 Die Apple-spezifische Antwortklassifizierung und Kontoschutzpolitik bleiben in
-SymconiCloud; es gibt keine zweite nutzende Library und deshalb keinen neuen
+iCloud Services; es gibt keine zweite nutzende Library und deshalb keinen neuen
 zentralen Helper oder lokal abweichenden Verteilungsstand.
 
 Bekannte Dienstcodes werden an der gemeinsamen AppleClient-Antwortgrenze
@@ -971,7 +971,7 @@ Benachrichtigung. Kein neues Projekt, keine vollständige Kontakt-Exportvariable
 kein Versand und kein automatischer Abgleich. Die Adapter liegen librarylokal
 in `ContactsRecipientTransfer`; zentrale ConfigurationForm-, DataFlow- und
 ParentConnection-Helper werden unverändert genutzt. Für diese ausschließlich
-in SymconiCloud eingesetzte Integration wird kein zentraler Helper angelegt.
+in iCloud Services eingesetzte Integration wird kein zentraler Helper angelegt.
 
 Notice-Benutzer werden anhand eines stabilen Kürzels ergänzt/zusammengeführt;
 neue Einträge bleiben inaktiv. Vorhandene Kennungen, nicht ausgewählte Adressen,
@@ -1050,7 +1050,7 @@ Wiederverwendet werden die regulär verteilten zentralen Helper für Themen,
 IPSView-Stile, responsive Kacheltitelabstände, HTTP-Antworten, Origin-Ermittlung,
 Mausrad und HTML-WebContent. Die bestehende librarylokale IPSView-Einbettung und
 Farbkartenstruktur werden ebenfalls verwendet. Foto-Protokoll, Cache und
-Widgetlogik verbleiben gemäß der Zwei-Libraries-Regel in SymconiCloud.
+Widgetlogik verbleiben gemäß der Zwei-Libraries-Regel in iCloud Services.
 `libs/helper` und seine Verteilungs-/Hashverträge wurden nicht verändert.
 Beide Designer enthalten zum Foto-Widget passende deutsche/englische Farbkarten.
 
@@ -1087,7 +1087,7 @@ bereits ausgewertete Werte, keine Koordinaten oder Apple-Kennungen. IPSView-
 Datenupdates schreiben die HTML-Variable nicht neu.
 
 Die Widget-Tests einschließlich Bildvalidierung und JavaScript-Laufzeit liegen
-in SymconiCloud. Die Verlagerung entfernt kein Verhalten und keine Testabdeckung.
+in iCloud Services. Die Verlagerung entfernt kein Verhalten und keine Testabdeckung.
 Die unveränderten zentralen Basishelper werden weiterhin regulär verteilt.
 
 MCP: getrennte temporäre Library mit zwölf synthetischen Geräten (Anwesend,
@@ -1107,7 +1107,7 @@ WebContent-Vorschau des Symcon-Clients blieb im Ladezustand mit einem Fehler in
 
 Zuständigkeitskorrektur: Tatsächliche Nutzung in mindestens zwei verschiedenen
 Libraries ist die Voraussetzung für Zentralisierung. Für diesen Widget-Baustein
-ist nur SymconiCloud belegt; Abonnement, zentraler Quellcode und zentrale Tests
+ist nur iCloud Services belegt; Abonnement, zentraler Quellcode und zentrale Tests
 werden deshalb entfernt. Das Widget wird unmittelbar mit der Library ausgeliefert.
 Der CI-Lauf 39967522183 scheiterte an `Unknown helper dependency: StatusWidgetHelper`,
 weil der beim Pull ausgelagerte Manifest-Eintrag vor dem Commit nicht wieder
@@ -1315,7 +1315,7 @@ Geräte; die neue Gruppenvariable verwendete die deutsche Modulübersetzung.
 
 Die MCP-Prüfung nutzte kontrollierte Zeitpunkte und synthetische Kontocachedaten.
 Reale GPS-Bewegungen und der Transport vom Apple-Server waren nicht Teil dieses
-Nachweises. Die installierte SymconiCloud-Library wurde nicht verändert oder
+Nachweises. Die installierte iCloud Services-Library wurde nicht verändert oder
 neu geladen. Konfigurationen, Kontoverbindungen und Variablen-IDs aller zuvor
 vorhandenen Anwesenheitsinstanzen waren nach der Prüfung unverändert.
 Testinstanzen, Testdateien und die temporäre Modul-/Library-Registrierung
@@ -1454,14 +1454,14 @@ Helper am laufenden System. Die folgende Reihenfolge dokumentiert die erstmalige
 Einbindung der neuen Abhängigkeit. Lokale Testkopien verbleiben nicht im
 normalen Arbeitsbaum, damit sie den Pull des regulären Pakets nicht blockieren.
 
-1. In SymconiCloud zunächst ausschließlich `.helper-sync.json` über GitHub Desktop
+1. In iCloud Services zunächst ausschließlich `.helper-sync.json` über GitHub Desktop
    committen und nach `dev` pushen. Die laufenden Module nutzen den neuen Helper
    dabei noch nicht. Die strenge Integritätsprüfung meldet bis zum Eingang des
    Pakets die noch fehlende abonnierte Datei; sie wird nicht gelockert.
 2. Die zentrale GeofenceHelper-Ergänzung nach dem vorhandenen Benutzerworkflow
    freigeben. Automatische Versionierung und Verteilung laufen auf
    `Symcon_ModuleHelper/main`; der Sync liest die nun vorhandene Subscription
-   aus `SymconiCloud/dev` und liefert das vollständige Paket per Helper-PR.
+   aus `iCloudServices/dev` und liefert das vollständige Paket per Helper-PR.
    Falls der zentrale Stand vorher freigegeben wurde, den vorhandenen Workflow
    **Sync Helpers to Consumers** danach für `GeofenceHelper` erneut starten.
 3. Nach erfolgreicher Integration des regulären Pakets in `dev` dieses in GitHub
@@ -1889,7 +1889,7 @@ nicht abgeschaltet; der globale Symcon-Betrieb erhielt keine neuen Limits.
   eine spätere Aktualisierung oder Gebietserweiterung benötigt einen geplanten
   Neuimport. Apple-Standortaktualisierungen bleiben davon unabhängig.
 
-### HTTP-Dienst und SymconiCloud-Anbindung
+### HTTP-Dienst und iCloud Services-Anbindung
 
 `nominatim-api.service` verwendet die vorhandene virtuelle Umgebung mit Falcon
 und Gunicorn (Installationsvorgabe 25.1.0), `--worker-class asgi`, einen Worker,
@@ -2150,7 +2150,7 @@ Deaktivierte Ausgabe, falsche Tokens und abweichende Pfade werden abgewiesen.
 WoIst und Anwesenheit verwenden denselben Loader unter libs/IPSViewFrame.php
 und libs/visualization. Die vorhandenen zentralen Helper liefern JSON-Kodierung,
 HTTP-Antworten, Seitenerstellung, Ursprungsermittlung und Mausrad-/Frame-Routing.
-Der Loader bleibt wegen tatsächlicher Nutzung nur in SymconiCloud librarylokal;
+Der Loader bleibt wegen tatsächlicher Nutzung nur in iCloud Services librarylokal;
 Symcon_ModuleHelper und regulär verteilte Dateien unter libs/helper sind unverändert.
 
 MCP-Nachweis auf dem freigegebenen Testsystem mit vorübergehendem Prüfstand:
@@ -2213,7 +2213,7 @@ Prüfansicht, neue HTML-Variable und zusätzliche Laufzeitdateien wurden entfern
 Ursprüngliche Konfiguration, Kontoverbindung und alle bisherigen Variablen-IDs
 sind wiederhergestellt (Status 102), ebenso die gesicherten Modul-/Helperquellen.
 Keine zusätzliche Apple-Abfrage. Erst den zentralen Helper regulär freigeben und
-verteilen, das Bundle in SymconiCloud integrieren und installieren; danach die
+verteilen, das Bundle in iCloud Services integrieren und installieren; danach die
 Instanzkonfiguration übernehmen, damit gespeicherte Loader das neue Script enthalten.
 
 ## Geraetebilder vom Konsolenrechner (2026-10-24)
@@ -2303,7 +2303,7 @@ auf 512 x 256 Pixel und 592 Byte WebP reduziert; Alpha erhalten, erneute
 Aufbereitung unveraendert. Keine Quellen installiert, keine Instanzkonfiguration
 geaendert. Der echte Dateidialog muss nach dem regulaeren Update abgenommen werden.
 
-Rollout: Zuerst die neue Subscription in SymconiCloud/dev bekannt machen, danach
+Rollout: Zuerst die neue Subscription in iCloudServices/dev bekannt machen, danach
 den zentralen Helper freigeben und automatisch verteilen. Das komplette Modul
 erst nach dem eingegangenen Helper-Bundle installieren. Bis zur Verteilung ist
 der neue Helper im normalen lokalen Consumer-Arbeitsbaum noch nicht vorhanden;
@@ -2610,7 +2610,7 @@ sind separat angebunden. Daraus folgt keine vorhandene Synchronisation mit
 den eigenstaendigen Aufgaben-/Einkaufslisten der Apple-App Erinnerungen.
 
 Apple-Erinnerungen sind deshalb eine moegliche zusaetzliche Datenquelle,
-keine bereits beschlossene SymconiCloud-Erweiterung. Vorher sind Bedarf,
+keine bereits beschlossene iCloud Services-Erweiterung. Vorher sind Bedarf,
 Zustaendigkeit im Verhaeltnis zu OpenCalendar und die technische Erreichbarkeit
 der aktuellen iCloud-Erinnerungslisten zu klaeren. Die gemeinsame Anzeige
 terminierter Erinnerungen in Apples Kalender-App ist kein Nachweis, dass diese
@@ -2738,7 +2738,7 @@ Fehlerrueckmeldung und unveraenderte IDs bei wiederholter Konfiguration.
 
 MCP pruefte einen isolierten temporaeren Pruefstand mit demselben Geraetecode
 (nur Klassen-/Modulkennungen und Importpfade fuer die Isolation angepasst).
-Die Helper wurden direkt aus der vorhandenen SymconiCloud-Library eingebunden,
+Die Helper wurden direkt aus der vorhandenen iCloud Services-Library eingebunden,
 nicht kopiert oder veraendert. Ein synthetisches Gateway nahm zwei echte
 Kernel-RequestAction-Aufrufe an, zaehlte genau zwei Auftraege und bestaetigte
 jeweils den neutralen Variablenwert. Reset, ApplyChanges und Cacheupdate liessen
@@ -2827,7 +2827,7 @@ unveraendert.
 Vor der Umsetzung wurden die kanonischen Helper und vergleichbare Formular-
 aktionen geprueft. ConfigurationFormHelper, DataFlowHelper und
 ParentConnectionHelper werden unveraendert verwendet. Die iCloud-spezifische
-Aktionslogik verbleibt in SymconiCloud; es entsteht weder ein neuer zentraler
+Aktionslogik verbleibt in iCloud Services; es entsteht weder ein neuer zentraler
 Helper noch eine lokale Aenderung am automatisch verteilten Helper-Paket.
 
 Nachweise: Der neue gezielte Test scheiterte zunaechst an der fehlenden Aktion.
@@ -2898,7 +2898,7 @@ und die bereinigte Ergebnisanzeige LostModeResult.
 
 ConfigurationFormHelper, DataFlowHelper und ParentConnectionHelper bleiben
 unveraendert eingebunden. Die providerbezogene Logik bleibt innerhalb von
-SymconiCloud; zentrale Helper und deren automatische Verteilung werden nicht
+iCloud Services; zentrale Helper und deren automatische Verteilung werden nicht
 geaendert. Das Konto verwendet dieselbe Semaphore, Sitzung, Geraetepruefung
 und Sperrfrist wie Suchton und Aktivierung. Der Datenfluss erlaubt fuer die
 Deaktivierung ausschliesslich Command, DeviceID und Confirmed neben DataID.
@@ -3215,7 +3215,7 @@ lesendes Empfaengerverzeichnis. Es verwendet die zentralen Helper
 ConfigurationFormHelper, DataFlowHelper und ParentConnectionHelper. Der
 vorhandene zentrale DebugHelper bleibt die Basis der datensparsamen
 Kontodiagnose. Apple-Protokoll, Kontaktschema und Konto-Cache bleiben in
-SymconiCloud; eine tatsaechliche Verwendung durch eine zweite Library besteht
+iCloud Services; eine tatsaechliche Verwendung durch eine zweite Library besteht
 noch nicht und rechtfertigt daher keine neue Zentralisierung.
 
 Der Benutzer aktiviert den optionalen Zugriff im bestehenden Konto mit

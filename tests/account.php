@@ -9,7 +9,7 @@ IPS\Kernel::reset();
 IPS\ModuleLoader::loadLibrary(dirname(__DIR__) . '/library.json');
 
 /** Queued synthetic HTTPS responses, with strict request method/path checks. */
-final class AccountFixtureTransport implements \SymconiCloud\AppleTransport
+final class AccountFixtureTransport implements \ICloudServices\AppleTransport
 {
     /** @var list<array<string, mixed>> */
     public array $queue = [];
@@ -57,11 +57,11 @@ class AccountFixtureModule extends iCloudAccount
         return json_decode(file_get_contents(dirname(__DIR__) . '/iCloud Account/form.json'), true, 512, JSON_THROW_ON_ERROR);
     }
 
-    protected function CreateAppleClient(array $session): \SymconiCloud\AppleClient
+    protected function CreateAppleClient(array $session): \ICloudServices\AppleClient
     {
         $this->restoredSessions[] = $session;
         $this->transport ??= new AccountFixtureTransport();
-        return new \SymconiCloud\AppleClient(
+        return new \ICloudServices\AppleClient(
             $this->transport,
             $session,
             fn ($operation, $status, $reason, $appleCode = '') => $this->RecordAccountDiagnostic($operation, $status, $reason, $appleCode),

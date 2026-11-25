@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace SymconiCloud;
+namespace ICloudServices;
 
 /** Shared form structure inside this library; illustrations and mappings remain module-specific. */
 trait DesignerColorGuide

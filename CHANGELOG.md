@@ -2,12 +2,16 @@
 
 ## Fixes
 
+- **iCloud Services:** Die Library und der Store-Eintrag tragen den neuen Namen.
+  Bestehende Installationen behalten ihre Instanzen. Beim Update erzeugt die
+  Library die IPSView-Ausgaben mit den neuen WebHook-Adressen.
 - **iCloud Fotos:** Alben werden per Klick synchronisiert. Der Abgleich lädt
   neue oder geänderte Vorschauen. Diashow und Einzelbild lesen den
   synchronisierten Stand direkt aus der geschützten lokalen Ablage.
 - **iCloud Fotos:** Das Konto speichert Vorschauen und Albumindizes
-  verschlüsselt unter `user/iPhotos/<Konto-ID>`. Vorhandene Vorschauen werden
-  beim Modulupdate lokal übernommen.
+  verschlüsselt unter `iCloudServices/photos/<Konto-ID>/` im allgemeinen
+  Symcon-Datenverzeichnis. Das Modulupdate übernimmt die synchronisierten
+  Alben aus der bisherigen Ablage lokal und erhält die Wiedergabe.
 
 - **WoIst, Anwesenheit und Fotos:** Die Instanzen lassen sich auch bei
   fehlgeschlagener WebHook-Registrierung anlegen und konfigurieren. Die
@@ -434,7 +438,7 @@
 - OpenStreetMap-Kartenhintergrund mit lokal ausgeliefertem Leaflet; Kachel-URL und Quellenangabe sind konfigurierbar. Beim Kartenanbieter werden die sichtbare Kartenregion und die Browser-IP angefragt.
 - Geräteinstanz und Konfigurator heißen jetzt iCloud Gerät und iCloud Geräte Konfigurator; die Präfixe sind ICID und ICDC. Achtung: Die bisherigen Test-APIs ICWD und ICWC entfallen. Testinstanzen können bei Bedarf neu angelegt werden.
 - WoIst ist ausschließlich für ein späteres Kartenmodul vorgesehen; eine Karte ist in diesem Stand nicht enthalten.
-- Erste SymconiCloud-Library mit eigenständigem iCloud-Konto und lesender WoIst-Geräteanbindung.
+- Erste iCloud Services-Library mit eigenständigem iCloud-Konto und lesender WoIst-Geräteanbindung.
 - Apple-Anmeldung mit SRP und sechsstelliger Zwei-Faktor-Bestätigung über ein vertrauenswürdiges Gerät.
 - Persistente Sitzungen, kontrollierte Wiederherstellung und getrennte Gerätecaches je Konto.
 - WoIst-Konfigurator und ausschließlich lesbare Gerätevariablen für Akku, Gerätestatus und vorhandene Standortdaten.

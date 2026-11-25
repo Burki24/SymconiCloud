@@ -413,7 +413,7 @@ Bei deaktivierter IPSView-Ausgabe ist der Zugriff gesperrt.
 Eine Server-IP wird nicht grundsätzlich benötigt: In einer HTTP(S)-Seite auf demselben Server verwendet die Einbindung automatisch den aktuellen Ursprung. Bei `data:`-/`about:`-Einbettungen verwendet die Ausgabe automatisch den verfügbaren HTTP(S)-Ursprung des einbettenden Kontexts. Native IPSView-Apps ohne solche Browserinformationen benötigen die vom Anzeigegerät erreichbare Serveradresse. Das kann auch ein DNS-Name oder eine HTTPS-Adresse über einen Reverse-Proxy sein. Eine automatisch ermittelte lokale IP wäre außerhalb des lokalen Netzes unter Umständen nicht erreichbar.
 
 Bei einer Meldung über nicht verfügbare Kartendateien das vollständige
-SymconiCloud-Modulupdate installieren. Die benötigten Dateien sind enthalten
+iCloud Services-Modulupdate installieren. Die benötigten Dateien sind enthalten
 und müssen nicht einzeln heruntergeladen werden.
 
 ### Farben und IPSView-Stil

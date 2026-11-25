@@ -48,7 +48,7 @@ $a = $newAccount();
 $check($a->LoginFromForm(false) && $a->transport->requests === [] && str_contains($feedback($a), 'existing session'), 'Reused authentication must be clearly distinguished from a new password login.');
 $form = json_decode($a->GetConfigurationForm(), true);
 $check(!isset($form['actions'][2]['confirm']) && str_contains($form['actions'][2]['onClick'], 'false'), 'Normal Sign in must not request a hold-release confirmation.');
-$lock = 'SymconiCloud.' . $idOf($a);
+$lock = 'ICloudServices.' . $idOf($a);
 IPS_SemaphoreEnter($lock, 1000);
 try {
     $check(!$a->Login() && str_contains($feedback($a), 'already running') && $a->transport->requests === [], 'A busy account must return visible feedback without a transport.');
