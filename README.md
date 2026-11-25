@@ -6,6 +6,8 @@
 [![Check Style](https://github.com/Burki24/iCloudServices/actions/workflows/style.yml/badge.svg?branch=dev)](https://github.com/Burki24/iCloudServices/actions/workflows/style.yml?query=branch%3Adev)
 [![Tests](https://github.com/Burki24/iCloudServices/actions/workflows/tests.yml/badge.svg?branch=dev)](https://github.com/Burki24/iCloudServices/actions/workflows/tests.yml?query=branch%3Adev)
 
+SymconiCloud verbindet Apple-iCloud-Dienste mit IP-Symcon. Der erste Dienst ist **WoIst**: Apple-Anmeldung mit Zwei-Faktor-Bestätigung, lesender Abruf der verfügbaren Geräte und Anzeige der von Apple gelieferten Geräte-, Akku- und Standortdaten.
+
 [![PayPal.Me](https://img.shields.io/badge/PayPal-Me-lightblue.svg)](#spenden)
 
 iCloud Services ist eine unabhängige Integration für ausgewählte Apple-iCloud-Dienste in IP-Symcon. Die Library bietet Apple-Anmeldung mit Zwei-Faktor-Bestätigung, einen Gerätekonfigurator und **iCloud Gerät** zur Anzeige der von Apple gelieferten Geräte-, Akku- und Standortdaten.
