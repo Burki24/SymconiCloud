@@ -37,12 +37,12 @@ pad = lambda value: value.to_bytes(256, 'big')
 k = int.from_bytes(h(raw(n) + pad(2)), 'big')
 
 # Deterministically search realistic 256-bit a until A needs leading-zero pad.
-a = int.from_bytes(h(b'SymconiCloud independent synthetic ephemeral'), 'big')
+a = int.from_bytes(h(b'ICloudServices independent synthetic ephemeral'), 'big')
 while pow(2, a, n).bit_length() > 2040:
     a += 1
 A = pow(2, a, n)
 assert len(raw(A)) < 256
-b = int.from_bytes(h(b'SymconiCloud synthetic server ephemeral'), 'big')
+b = int.from_bytes(h(b'ICloudServices synthetic server ephemeral'), 'big')
 username = 'synthetic.fixture@example.invalid'
 password = 'Synthetic-Passwort-\u00e4-2026!'
 salt = bytes.fromhex('00112233445566778899aabbccddeeff')

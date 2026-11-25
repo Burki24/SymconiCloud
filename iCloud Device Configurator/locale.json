@@ -1,0 +1,23 @@
+{
+    "translations": {
+        "de": {
+            "Devices": "Geräte",
+            "Device": "Gerät",
+            "Model": "Modell",
+            "Cached device list. Refresh explicitly to contact Apple.": "Gespeicherte Geräteliste. Zum Abruf bei Apple ausdrücklich aktualisieren.",
+            "Reload cached list": "Gespeicherte Liste neu laden",
+            "Refresh devices from Apple": "Geräte bei Apple aktualisieren",
+            "No iCloud account connected.": "Kein iCloud-Konto verbunden.",
+            "Account data unavailable.": "Kontodaten nicht verfügbar.",
+            "Not in current list": "Nicht in aktueller Liste",
+            "Presence evaluations": "Anwesenheitsauswertungen",
+            "Presence groups": "Anwesenheitsgruppen",
+            "Presence group": "Anwesenheitsgruppe",
+            "Evaluation": "Auswertung",
+            "Shared zones and multiple devices": "Gemeinsame Zonen und mehrere Geräte",
+            "Configure devices, zones and one reference zone.": "Geräte, Zonen und genau eine Referenzzone konfigurieren.",
+            "Waiting for the first successful account update.": "Wartet auf die erste erfolgreiche Kontoaktualisierung.",
+            "Selected devices are missing from the current account cache.": "Ausgewählte Geräte fehlen im aktuellen Kontocache."
+        }
+    }
+}

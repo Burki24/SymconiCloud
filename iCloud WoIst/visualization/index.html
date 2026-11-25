@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="{{HTML_LANGUAGE}}" class="{{HTML_CLASSES}}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="{{VIEWPORT_CONTENT}}">
+    <meta name="referrer" content="origin">
+    <title>{{DOCUMENT_TITLE}}</title>
+    <style>html { font-size: {{ROOT_FONT_SIZE}}; }</style>
+    <style>{{LEAFLET_CSS}}</style>
+    <style>{{VECTOR_CSS}}</style>
+    <style id="woist-theme">{{VISUALIZATION_THEME}}{{IPSVIEW_STYLE}}</style>
+    <style>{{RESPONSIVE_CSS}}</style>
+    <style>{{MODULE_STYLE}}</style>
+    <style id="woist-design">{{DESIGN_CSS}}</style>
+</head>
+<body>
+    <main id="woist-app">
+        <header class="toolbar" data-symc-tile-toolbar>
+            <div id="woist-heading"><h1 id="title">iCloud WoIst</h1><p id="updated" aria-live="polite"></p></div>
+            <label id="woist-account-filter" hidden><span id="account-filter-label">Account filter</span><select id="account-filter"></select></label>
+            <div id="woist-controls" class="controls"><button id="fit" type="button">Show all</button><button id="refresh" type="button" disabled>Refresh devices</button></div>
+        </header>
+        <p id="account-message" class="message" role="status" hidden></p>
+        <p id="transport-message" class="message" role="status" hidden></p>
+        <p id="map-message" class="message" role="status" hidden></p>
+        <p id="geocoding-message" class="message" role="status" hidden></p>
+        <p id="order-message" class="message" role="status" hidden></p>
+        <div class="workspace">
+            <section id="map" aria-label="Device locations"></section>
+            <aside id="woist-devices"><div class="device-list-heading"><h2 id="devices-title">Devices</h2><button id="reset-order" type="button">Alphabetical order</button></div><p id="empty" hidden></p><ul id="device-list"></ul></aside>
+        </div>
+        <p id="geocoding-attribution" hidden><a href="https://www.geoapify.com/" target="_blank" rel="noopener noreferrer">Powered by Geoapify</a> · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a></p>
+    </main>
+    <script id="woist-bootstrap" type="application/json">{{BOOTSTRAP}}</script>
+    <script>window.SymconVisualization = {{BOOTSTRAP_JSON}};</script>
+    <script>{{LEAFLET_JS}}</script>
+    <script>{{VECTOR_JS}}</script>
+    <script>{{MODULE_SCRIPT}}</script>
+</body>
+</html>

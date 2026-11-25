@@ -1,11 +1,11 @@
-# ADR 0001: Erweiterbare SymconiCloud-Library mit WoIst als erstem Dienst
+# ADR 0001: Erweiterbare iCloud Services-Library mit WoIst als erstem Dienst
 
 - Status: Angenommen für den ersten Entwicklungsstand
 - Datum: 21.10.2026
 
 ## Entscheidung
 
-Die Library heißt auf Benutzerwunsch SymconiCloud. Sie ist keine Portierung von iCloud3 und enthält keinen daraus übernommenen Code. Eigene Apple-Protokolllogik liegt unter `libs/`. Allgemeine Fähigkeiten kommen unverändert aus Symcon_ModuleHelper.
+Die Library heißt auf Benutzerwunsch iCloud Services. Sie ist keine Portierung von iCloud3 und enthält keinen daraus übernommenen Code. Eigene Apple-Protokolllogik liegt unter `libs/`. Allgemeine Fähigkeiten kommen unverändert aus Symcon_ModuleHelper.
 
 Das Kontomodul ist ein offizieller Splitter (Typ 2), der mehrere Dienst-/Geräteinstanzen an eine Kontoidentität und Sitzung bindet. HTTPS wird über PHP-cURL im Konto ausgeführt. Es gibt keinen separaten, zustandslosen I/O-Durchreicher: keine dauerhaft offene Verbindung, kein gemeinsamer austauschbarer Transport und keine eigenständige Transportkonfiguration benötigen eine solche Instanz. Das entspricht der vorhandenen Kalender-Konto-Struktur und Symcons Möglichkeit, Splitter ohne I/O einzusetzen.
 
@@ -22,6 +22,19 @@ Zugangsdaten sind Properties; Cookiejar und Sitzung persistente Attribute. Cooki
 2FA-Challenge zehn Minuten, keine Speicherung des Codes. Wiederanlauf verwendet vorhandene Sitzungscookies. Ein fehlgeschlagener Geräteabruf darf genau einmal tokenbasiertes accountLogin und einen neuen Abruf versuchen; keine automatische Passwortanmeldung. Rate-Limit setzt eine persistente Sperrfrist. Fehlgeschlagene Antworten werden nie als leere, erfolgreich abgefragte Geräteliste dargestellt.
 
 ## Grenzen und Nachweise
+
+### Ergänzung zur Codebestätigung (27.10.2026)
+
+Ein HTTP-409-Ergebnis am Gerätecode-Endpunkt wird ausschließlich bei einem
+ausdrücklichen booleschen `securityCode.valid=true` als akzeptierter Code
+weiterverarbeitet. Trust und Kontositzung bleiben separat zu bestätigen;
+bekannte Apple-Sicherheitsablehnungen haben Vorrang. HTTP 202 allein bestätigt
+keinen abgeschlossenen Authentifizierungsschritt und löst keine automatische
+Fortsetzung oder Wiederholung aus. Seine noch unbekannte konkrete Bedeutung im
+gemeldeten Anwenderfall wird nicht durch einen angenommenen Apple-Workflow
+ersetzt. Die Einordnung bleibt librarylokale Apple-Protokolllogik; zentrale
+Formular-/Debug-Helper und die bestehenden Kontoschutzgrenzen bleiben erhalten.
+Protokollquelle: [gültige Gerätecodes mit HTTP 409](https://github.com/timlaing/pyicloud/pull/372).
 
 Apples Web-Schnittstelle ist nicht als öffentliche Drittanbieter-WoIst-API zugesichert. Insbesondere shouldLocate=false ist eine aus dem Protokollfeld abgeleitete Inventarabfrage und benötigt eine reale Abnahme. Globaler Dienst, vertrauenswürdiger Gerätecode; SMS, Sicherheitsschlüssel und China-Endpunkte sind nicht implementiert.
 

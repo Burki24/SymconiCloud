@@ -1,0 +1,247 @@
+<?php
+
+declare(strict_types=1);
+
+ob_start();
+require_once __DIR__ . '/presence-group.php';
+
+$root = dirname(__DIR__);
+$subscriptions = json_decode(file_get_contents($root . '/.helper-sync.json'), true, 512, JSON_THROW_ON_ERROR)['helpers'];
+$check(!isset($subscriptions['StatusWidgetHelper']), 'The single-library widget must not subscribe to a central helper.');
+$check(($subscriptions['RasterImageHelper']['target'] ?? '') === 'libs/helper/RasterImageHelper.php', 'Raster preparation must use the explicitly authorized central helper subscription.');
+$widgetTrait = new ReflectionClass(\ICloudServices\PresenceWidget::class);
+$check(realpath($widgetTrait->getFileName()) === realpath($root . '/libs/PresenceWidget.php'), 'Widget implementation must ship inside ICloudServices.');
+$locale = json_decode(file_get_contents($root . '/iCloud Presence/locale.json'), true, 512, JSON_THROW_ON_ERROR)['translations']['de'];
+foreach ($widgetTrait->getConstant('PRESENCE_WIDGET_TEXT') as $caption) {
+    $check(isset($locale[$caption]), 'Local widget caption must have a local German translation: ' . $caption);
+}
+foreach (['index.html', 'style.css', 'app.js'] as $asset) {
+    $check(is_file($root . '/iCloud Presence/visualization/' . $asset), 'Widget resource must be part of the library package: ' . $asset);
+}
+foreach (['ipsview-page.html', 'ipsview-page.js'] as $asset) {
+    $check(is_file($root . '/libs/visualization/' . $asset), 'Shared library frame resource must ship with the module: ' . $asset);
+}
+
+$selection = [['deviceID' => 'alpha', 'name' => '<script>widget</script>', 'picture' => 0], ['deviceID' => 'beta', 'name' => 'Second', 'picture' => 99999]];
+$firstBoundary->result = $envelope;
+$firstBoundary->result['devices'] = [$makeDevice('alpha', 0), $makeDevice('beta', 0.002, 1700000000, 1000)];
+$widgetID = IPS_CreateInstance($presenceModule);
+$widget = IPS\InstanceManager::getInstanceInterface($widgetID);
+IPS_ConnectInstance($widgetID, $firstAccount);
+IPS_SetProperty($widgetID, 'Devices', json_encode($selection, JSON_THROW_ON_ERROR));
+IPS_SetProperty($widgetID, 'Zones', json_encode($zones, JSON_THROW_ON_ERROR));
+IPS_ApplyChanges($widgetID);
+$ids = IPS_GetChildrenIDs($widgetID);
+$decodeWidget = static function (string $html): array
+{
+    if (!preg_match('#<script type="application/json" id="widget-bootstrap">(.*?)</script>#s', $html, $match)) {
+        throw new RuntimeException('Widget bootstrap missing.');
+    }
+    return json_decode($match[1], true, 512, JSON_THROW_ON_ERROR);
+};
+$readAttribute = new ReflectionMethod($widget, 'ReadAttributeString');
+$native = $decodeWidget($widget->GetVisualizationTile());
+$check($native['state']['summary']['tone'] === 'positive' && count($native['state']['members']) === 2, 'Compact widget shows aggregate and selected members.');
+$check(array_column($native['state']['members'], 'presenceLabel') === ['Present', 'Unknown'], 'The tile must receive separate labels for confirmed and unknown presence.');
+$check($native['state']['members'][1]['tone'] === 'unknown' && $native['state']['members'][1]['detail'] === '', 'Unknown GPS must not display fabricated distance or duration.');
+$check(array_column($native['state']['members'][0]['detailLines'], 'label') === ['Distance to reference zone', 'Stay'], 'The tile can render distance and stay independently.');
+$check($native['state']['members'][1]['detailLines'] === [], 'Unavailable distance and stay are omitted from the structured details.');
+$check($native['state']['members'][1]['image'] === '', 'Missing pictures fall back safely.');
+$widget->clock += 10;
+$firstBoundary->result['devices'][0]['location'] = $makeDevice('alpha', 0.002, $widget->clock)['location'];
+$firstBoundary->broadcast();
+$pendingWidget = $decodeWidget($widget->GetVisualizationTile());
+$check(str_contains($pendingWidget['state']['summary']['detail'], 'change awaiting confirmation') && str_contains($pendingWidget['state']['members'][0]['status'], 'Change awaiting confirmation'), 'Pending changes must be visible in both aggregate and member status.');
+$widget->clock += 31;
+$firstBoundary->result['devices'][0]['location']['timestamp'] = $widget->clock;
+$firstBoundary->result['devices'][1]['location'] = $makeDevice('beta', 0.012, $widget->clock, 5)['location'];
+$firstBoundary->broadcast();
+$distanceWidget = $decodeWidget($widget->GetVisualizationTile());
+$check($distanceWidget['state']['members'][0]['presenceLabel'] === 'Absent', 'A confirmed absence must have a separate label without its zone.');
+$check(str_contains($distanceWidget['state']['members'][1]['detail'], 'km'), 'Widget distances of at least one kilometre must use an adaptive kilometre display.');
+$check(str_ends_with($distanceWidget['state']['members'][1]['detailLines'][0]['value'], ' km'), 'Distance and its unit belong in a single detail value.');
+$check(!str_contains($widget->GetVisualizationTile(), '<script>widget</script>'), 'Device labels cannot escape bootstrap JSON.');
+$check(!str_contains(json_encode($native), 'latitude') && !str_contains(json_encode($native), 'alpha'), 'Widget state contains opaque IDs and no coordinates or account IDs.');
+$check($native['options']['tileHeaderInset'] === 58 && $native['options']['transport'] === null, 'Native widget reserves its heading and uses SDK pushes.');
+$firstBoundary->commands = [];
+$widget->GetVisualizationTile();
+$widget->GetIPSViewHTML();
+$check($firstBoundary->commands === [], 'Rendering widgets never reads or refreshes Apple.');
+$form = json_decode($widget->GetConfigurationForm(), true, 512, JSON_THROW_ON_ERROR);
+$fields = [];
+$walk = static function (array $items) use (&$walk, &$fields): void
+{
+    foreach ($items as $item) {
+        if (isset($item['name'])) {
+            $fields[$item['name']] = $item;
+        }
+        $walk($item['items'] ?? []);
+    }
+};
+$walk($form['elements']);
+foreach (['Tile', 'IPSView'] as $prefix) {
+    $check(($fields[$prefix . 'WidgetShowSummary']['type'] ?? '') === 'CheckBox', 'Each designer needs a checkbox for its own overall presence summary.');
+}
+foreach (['VisualizationThemeTextColor', 'VisualizationThemeBackgroundColor', 'IPSViewStyleViewBackgroundColor', 'TileWidgetPhotos', 'IPSViewWidgetPhotos', 'TileWidgetSpacing', 'IPSViewWidgetSpacing'] as $field) {
+    $check(isset($fields[$field]), 'Independent designers must expose ' . $field);
+}
+$guide = $fields['PresenceIPSViewColorGuide'] ?? [];
+$check(($guide['type'] ?? '') === 'Image' && ($guide['width'] ?? '') === '100%', 'The IPSView designer needs a responsive explanatory image.');
+$guidePrefix = 'data:image/svg+xml;base64,';
+$check(str_starts_with($guide['image'], $guidePrefix), 'Color guide must be a self-contained SVG image, without a server or remote image dependency.');
+$guideSVG = base64_decode(substr($guide['image'], strlen($guidePrefix)), true);
+$check($guideSVG === file_get_contents($root . '/iCloud Presence/visualization/color-guide-de.svg'), 'The German designer must use its localized guide image.');
+foreach (['color-guide', 'color-guide-de'] as $asset) {
+    $encodedGuide = trim(file_get_contents($root . '/iCloud Presence/visualization/' . $asset . '.image'));
+    $check(base64_decode(substr($encodedGuide, strlen($guidePrefix)), true) === file_get_contents($root . '/iCloud Presence/visualization/' . $asset . '.svg'), 'Each localized image must exactly match its SVG source.');
+}
+$styleCatalog = json_decode(file_get_contents($root . '/libs/helper/translations/IPSViewStyleHelper.json'), true)['translations'];
+foreach (['view_background', 'control_background', 'label_text', 'text_inactive', 'positive', 'information', 'warning', 'border', 'accent', 'control_active_background', 'shadow'] as $key) {
+    $check(str_contains($guideSVG, $styleCatalog['color.' . $key]['de']), 'Guide must use the exact central German designer caption: ' . $key);
+}
+$guideXML = new DOMDocument();
+$check($guideXML->loadXML($guideSVG, LIBXML_NONET) && $guideXML->documentElement->localName === 'svg', 'Color guide must remain a valid vector document.');
+$check(!preg_match('/<(?:script|foreignObject|image)\b|\bhref\s*=|<!DOCTYPE/i', $guideSVG), 'Guide cannot execute scripts or load any external resources.');
+$guidePanel = (new ReflectionMethod($widget, 'StatusWidgetColorGuide'))->invoke($widget);
+foreach ($guidePanel['items'] as $item) {
+    if (($item['type'] ?? '') === 'Label') {
+        $caption = $item['caption'];
+        if (preg_match('/^\d+\. .* \([A-Za-z]+\): (.*)$/u', $caption, $parts)) {
+            $caption = $parts[1];
+        }
+        $check(isset($locale[$caption]), 'Color guide caption needs a German translation: ' . $caption);
+    }
+}
+foreach (['View-Hintergrund', 'Label-Schrift', 'Informationsfarbe', 'Akzentfarbe', 'Schattenfarbe'] as $caption) {
+    $check(str_contains(json_encode($guidePanel, JSON_UNESCAPED_UNICODE), $caption), 'The text legend must also use the German designer captions: ' . $caption);
+}
+$englishGuideWidget = new class() {
+    use \ICloudServices\PresenceWidget;
+    use \Burki24\SymconModuleHelper\HelperTranslationHelper;
+
+    public function guide(): array
+    {
+        return $this->StatusWidgetColorGuide();
+    }
+
+    protected function HelperTranslationLanguageOverride(): string
+    {
+        return 'en';
+    }
+
+    protected function Translate(string $text): string
+    {
+        return $text;
+    }
+
+    protected function VisualizationAsset(string $name): string
+    {
+        return file_get_contents(dirname(__DIR__) . '/iCloud Presence/visualization/' . $name);
+    }
+};
+$englishGuide = $englishGuideWidget->guide();
+$check($englishGuide['items'][1]['image'] === trim(file_get_contents($root . '/iCloud Presence/visualization/color-guide.image')), 'English designers retain their English explanatory image.');
+$check(str_contains(json_encode($englishGuide), 'View background (ViewBackground)'), 'The English text legend uses the central English designer labels.');
+foreach (['Widget', 'WidgetCompact', 'ViewBackground', 'ControlBackground', 'LabelText', 'TextInactive', 'Positive', 'Information', 'Warning', 'Border', 'Accent', 'AccentSoft', 'ControlActiveBackground', 'ShadowColor'] as $term) {
+    $check(str_contains($guideSVG, $term), 'Guide must show both variants and the relevant style role: ' . $term);
+}
+$check(!str_contains($widget->GetVisualizationTile(), 'PresenceIPSViewColorGuide'), 'The explanatory guide belongs to the designer, not to the live widget.');
+$check($form['elements'][1]['columns'][2]['edit']['type'] === 'SelectMedia', 'Pictures use the documented media selector.');
+$deviceForm = array_column($form['elements'][1]['form'], null, 'name');
+$check($deviceForm['pictureUpload']['type'] === 'SelectFile' && $deviceForm['pictureUpload']['extensions'] === '.png,.jpg,.jpeg,.gif,.webp', 'The device dialog must accept a local console image file.');
+$check($deviceForm['deviceID']['options'] === $form['elements'][1]['columns'][0]['edit']['options'], 'Device selection retains cached choices in the custom row dialog.');
+$check($form['elements'][1]['columns'][4]['visible'] === false && $form['elements'][1]['columns'][4]['save'] === true, 'Uploaded bytes must persist without appearing in the device table.');
+$check(isset($deviceForm['PictureUploadError']) && !$deviceForm['PictureUploadError']['visible'], 'A picture draft needs a dedicated inline error field.');
+foreach (['pictureSource', 'pictureUpload'] as $field) {
+    $check($deviceForm[$field]['onChange'] === 'ICPR_ValidatePictureUpload($id, $pictureSource, $pictureUpload);', 'Both changing the source and the file must validate the current draft.');
+}
+$draftConfiguration = IPS_GetConfiguration($widgetID);
+$draftIDs = IPS_GetChildrenIDs($widgetID);
+$firstBoundary->commands = [];
+ICPR_ValidatePictureUpload($widgetID, 'upload', base64_encode(str_repeat('x', 10485761)));
+$check($widget->fieldUpdates['PictureUploadError']['visible'] && str_contains($widget->fieldUpdates['PictureUploadError']['caption'], '10 MiB'), 'An excessive source file must show a useful correction immediately.');
+ICPR_ValidatePictureUpload($widgetID, 'upload', 'not an image');
+$check($widget->fieldUpdates['PictureUploadError']['visible'] && str_contains($widget->fieldUpdates['PictureUploadError']['caption'], 'PNG'), 'Malformed files must explain accepted image formats.');
+foreach ([['media', 'invalid'], ['upload', ''], ['upload', 'R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=']] as [$source, $content]) {
+    ICPR_ValidatePictureUpload($widgetID, $source, $content);
+    $check(!$widget->fieldUpdates['PictureUploadError']['visible'] && $widget->fieldUpdates['PictureUploadError']['caption'] === '', 'Selecting media, removing the file or choosing a valid file clears obsolete errors.');
+}
+$check(IPS_GetConfiguration($widgetID) === $draftConfiguration && IPS_GetChildrenIDs($widgetID) === $draftIDs && $firstBoundary->commands === [], 'Picture validation must not save configuration, alter variables or contact the account.');
+$picture = imagecreatetruecolor(1200, 600);
+imagefill($picture, 0, 0, imagecolorallocate($picture, 60, 100, 180));
+ob_start();
+imagepng($picture);
+$largePicture = base64_encode(ob_get_clean() . str_repeat("\0", 203100));
+ICPR_ValidatePictureUpload($widgetID, 'upload', $largePicture);
+$preparedPicture = $widget->fieldUpdates['pictureUpload']['value'];
+$preparedBytes = base64_decode($preparedPicture);
+$check(!$widget->fieldUpdates['PictureUploadError']['visible'] && strlen($preparedBytes) <= 131072 && getimagesizefromstring($preparedBytes)[0] === 512, 'Large real uploads are resized and replace only the unsaved file field.');
+$check(IPS_GetConfiguration($widgetID) === $draftConfiguration, 'Preparing a draft must wait for the user to accept and apply it.');
+IPS_SetProperty($widgetID, 'EnableIPSView', true);
+IPS_SetProperty($widgetID, 'IPSViewWidgetPhotos', false);
+IPS_ApplyChanges($widgetID);
+$webID = IPS_GetObjectIDByIdent('IPSViewPresence', $widgetID);
+$compactWebID = IPS_GetObjectIDByIdent('IPSViewPresenceCompact', $widgetID);
+$html = GetValue($webID);
+$check(str_contains($html, 'id="ipsview-page"') && !str_contains($html, 'id="members"'), 'IPSView embeds a real HTTP page, not an opaque data document with cross-origin polling.');
+$hook = new ReflectionMethod($widget, 'ProcessHookData');
+$request = static function (string $method, string $credential, string $suffix = '') use ($hook, $widget, $widgetID): array
+{
+    $_SERVER = ['REQUEST_METHOD' => $method, 'REQUEST_URI' => '/hook/SymconStatusWidget' . $widgetID . $suffix, 'HTTP_X_STATUS_WIDGET_TOKEN' => $credential];
+    ob_start();
+    $hook->invoke($widget);
+    return [http_response_code(), ob_get_clean()];
+};
+[$pageStatus, $page] = $request('GET', '', '/page');
+$check($pageStatus === 200, 'Public HTTP shell is available while output is enabled.');
+$shell = $decodeWidget($page);
+$check($shell['state']['members'] === [] && !str_contains($page, '<script>widget</script>'), 'Public HTTP shell exposes no device data.');
+$web = json_decode($request('POST', $readAttribute->invoke($widget, 'StatusWidgetToken'))[1], true, 512, JSON_THROW_ON_ERROR);
+$check($web['options']['tileHeaderInset'] === 0 && !$web['options']['design']['photos'] && $decodeWidget($widget->GetVisualizationTile())['options']['design']['photos'], 'IPSView has independent design and no native heading reservation.');
+$token = $readAttribute->invoke($widget, 'StatusWidgetToken');
+$check(strlen($token) === 64, 'IPSView uses a per-instance authorization token.');
+$check(str_contains($html, 'SymconVisualizationInteraction') && str_contains($html, 'SymconHTTPOrigin'), 'Outer data frame uses the central origin and wheel-forwarding helpers.');
+$check(str_contains($html, 'name="burki24.wheel.v1"'), 'Only the owned IPSView child frame explicitly joins the shared wheel bridge.');
+$check(!str_contains($page, $token) && $shell['options']['transport']['fragmentToken'] === true, 'Token travels only in the frame fragment, never in a public page response.');
+$check($request('POST', $token, '/page')[0] === 405 && $request('GET', '', '/page?token=x')[0] === 404, 'Page route accepts only the exact GET path.');
+$check($request('POST', '')[0] === 403 && $request('GET', $token)[0] === 405 && $request('POST', $token, '?token=x')[0] === 404, 'Cache endpoint rejects unauthenticated, query and non-POST requests.');
+$check($request('OPTIONS', '')[0] === 204 && $request('POST', $token)[0] === 200, 'Hook accepts OPTIONS and authenticated POST; the browser uses the same-origin HTTP page.');
+$oldIdentity = $readAttribute->invoke($widget, 'SourceIdentity');
+$oldStates = $readAttribute->invoke($widget, 'MemberStates');
+$selection[0]['picture'] = 99999;
+$selection[0]['pictureSource'] = 'upload';
+$selection[0]['pictureUpload'] = $largePicture;
+IPS_SetProperty($widgetID, 'Devices', json_encode($selection, JSON_THROW_ON_ERROR));
+IPS_SetProperty($widgetID, 'TileWidgetSpacing', 20);
+IPS_ApplyChanges($widgetID);
+$check($readAttribute->invoke($widget, 'SourceIdentity') === $oldIdentity && $readAttribute->invoke($widget, 'MemberStates') === $oldStates, 'Picture/design changes cannot reset GPS confirmation or observed stays.');
+$expectedImage = 'data:' . getimagesizefromstring($preparedBytes)['mime'] . ';base64,' . $preparedPicture;
+$check($decodeWidget($widget->GetVisualizationTile())['state']['members'][0]['image'] === $expectedImage, 'A local upload renders in the native widget independently of any media ID.');
+$check(json_decode($request('POST', $token)[1], true)['state']['members'][0]['image'] === $expectedImage, 'Authenticated IPSView data carries the same validated image.');
+$check(!str_contains($request('GET', '', '/page')[1], $selection[0]['pictureUpload']), 'The public HTTP shell must not disclose uploaded pictures.');
+$selection[0]['pictureUpload'] = base64_encode('<svg onload="alert(1)"></svg>');
+IPS_SetProperty($widgetID, 'Devices', json_encode($selection, JSON_THROW_ON_ERROR));
+IPS_ApplyChanges($widgetID);
+$check($decodeWidget($widget->GetVisualizationTile())['state']['members'][0]['image'] === '', 'Invalid uploaded content falls back to initials.');
+$selection[0]['pictureUpload'] = substr($expectedImage, strpos($expectedImage, ',') + 1);
+$selection[0]['pictureSource'] = 'media';
+IPS_SetProperty($widgetID, 'Devices', json_encode($selection, JSON_THROW_ON_ERROR));
+IPS_ApplyChanges($widgetID);
+$check($decodeWidget($widget->GetVisualizationTile())['state']['members'][0]['image'] === '', 'Switching to media stops using a previously uploaded picture.');
+$firstBoundary->commands = [];
+$widget->clock += 15;
+$widget->Update();
+$check(GetValue($webID) === $html && $request('POST', $token)[0] === 200, 'Data updates keep IPSView HTML and token stable.');
+$check(array_values(array_diff(IPS_GetChildrenIDs($widgetID), [$webID, $compactWebID])) === $ids, 'Existing variable IDs survive widget activation and updates.');
+$check($firstBoundary->commands === ['GetDevices'], 'Only the regular evaluation reads the account cache; polling reads no account data.');
+IPS_SetProperty($widgetID, 'EnableIPSView', false);
+IPS_ApplyChanges($widgetID);
+$check($request('POST', $token)[0] === 404 && IPS_VariableExists($webID) && $readAttribute->invoke($widget, 'StatusWidgetToken') === '', 'Disabling output revokes access and retains the variable.');
+$check($request('GET', '', '/page')[0] === 404, 'Disabling output also removes the public HTTP page.');
+IPS_SetProperty($widgetID, 'EnableIPSView', true);
+IPS_SetProperty($widgetID, 'IPSViewServerURL', 'https://example.invalid/path');
+IPS_ApplyChanges($widgetID);
+$check($request('POST', $token)[0] === 404, 'Invalid explicit server origins disable transport.');
+$_SERVER = [];
+ob_end_clean();
+echo "Presence widget model, independent designers, media selection, transport and state preservation passed.\n";

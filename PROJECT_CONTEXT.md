@@ -1,11 +1,1992 @@
 # Entwicklungsstand
 
+## Automatische Boolean-Aktualisierung nach Modulupdate (2026-10-31)
+
+Die bisherigen Hinweise auf ein manuelles Übernehmen nach dem Update waren
+falsch. Laut offiziellem SDK-Vertrag läuft Migrate nach einem Modulupdate mit
+anschließendem ApplyChanges:
+https://www.symcon.de/de/service/dokumentation/entwicklerbereich/sdk-tools/sdk-php/module/migrate/
+Die vorhandenen ApplyChanges-Pfade registrieren die Boolean-Variablen bereits
+neu; zusätzlicher Produktivcode ist nicht erforderlich. Der regulär verteilte
+VariablePresentationHelper 2.1.1 enthält die vollständigen Optionsfelder.
+
+tests/boolean-update.php simuliert zweimal den Reload mit Create, persistierten
+Daten, Migrate und dem vom Kernel vorgesehenen ApplyChanges. Alle elf Boolean-
+Definitionen von Gerät und Anwesenheit werden aus alten Definitionen erneuert.
+IDs, Werte bei unverändertem Cache, Namen, Icons, Positionen und vollständige
+wie unvollständige eigene Darstellungen bleiben erhalten. Es gibt keine
+Konfigurationsänderung und ausschließlich einen lokalen GetDevices-Cachezugriff.
+Der Test belegt den Modulpfad, nicht die Ausführung im echten Symcon-Kernel.
+Ein echtes Update und die Formular-/WebFront-Abnahme im gemeldeten Symcon-9.0-
+Build bleiben als Praxisnachweis offen. Eigene fehlerhafte Darstellungen werden
+bewusst nicht überschrieben. Keine Live-Installation oder Apple-Anmeldung.
+
+Frische Prüfungen: php tests/run.php vollständig grün (GD nur temporär aktiviert),
+php tests/validate_structure.php, README-Beispiele, offizieller StylePHP-Ablauf
+(php-cs-fixer im Prüfmodus und JSON-Prüfung) sowie git diff --check grün.
+
+## Symcon-9.0-Boolean-Optionen und Bestandsvariablen (2026-10-31)
+
+Der gemeldete 9.0-Windows-Build 5b5346950c61 greift im Wertanzeigeformular direkt
+auf IconActive, ColorActive und ContentColorActive sowie deren Werte zu. Der
+zentrale VariablePresentationHelper ergänzt künftig fehlende neutrale Felder;
+Details und Regressionen liegen in Symcon_ModuleHelper. Dies belegt keinen
+Versionsunterschied zu 9.1 und noch keine erfolgreiche WebFront-Abnahme.
+
+Als notwendige Bestandskorrektur erneuert ApplyChanges jetzt auch die native
+Definition einer bereits vorhandenen AccuracyAvailable-Variable. Die bisherige
+idempotente Prüfung bleibt für Cache-/Snapshotpfade ohne Refresh erhalten.
+Die neue Regression war vorher rot: Eine alte native Definition blieb trotz
+ApplyChanges erhalten. Danach werden die aktuellen Helper-Beschriftungen
+verwendet, während benutzerdefinierte Darstellung, Objekt-ID, Name, Icon und
+Position erhalten bleiben. Die vollständigen Optionsfelder werden ausschließlich
+über das regulär erzeugte zentrale Bundle eingebunden; libs/helper bleibt hier
+unverändert. Unvollständige gespeicherte Benutzerdarstellungen werden nicht
+automatisch überschrieben oder nachträglich normalisiert.
+
+Die Verteilung der zentralen Helper-Korrektur und anschließendes Übernehmen
+der Instanzen stehen aus. Es gibt keine Live-Installation oder Apple-Anfrage.
+Die Formular-/WebFront-Abnahme auf dem betroffenen Symcon-9.0-Build bleibt offen.
+
+Nachweise unter PHP 8.5.10: Die zentrale Helper-Suite und die vollständige
+iCloud Services-Suite bestehen in einer isolierten Kopie mit über den regulären
+Metadaten-/Bundle-Generator erzeugtem Kandidatenpaket. Der neue ApplyChanges-Test
+prüft eine alte native Optionsdefinition bei gleichzeitig vorhandener eigener
+Darstellung; nur die native Definition wird aktualisiert, alle Benutzerdaten und
+Objektmetadaten bleiben erhalten. Zentrale Metadaten-, Bundle-, Auto-Merge-,
+Verteilungs- und Inhaltsprüfungen sind erfolgreich. GD war nur in der temporären
+Testkonfiguration aktiv. Struktur, JSON, php-cs-fixer im Prüfmodus, Signaturen,
+UTF-8/LF und git diff --check sind geprüft. Das echte libs/helper und zentrale
+Release-Metadaten bleiben unverändert; kein Testbundle muss vor dem Pull entfernt
+werden. Unvollständige gespeicherte Benutzerdarstellungen und die echte
+9.0-Formular-/WebFront-Abnahme bleiben ausdrücklich außerhalb dieses Nachweises.
+
+## Benachrichtigung vor erster Snapshot-Migration (2026-10-31)
+
+Ein zusätzlicher Test reproduzierte die Reihenfolge-Lücke von 594c4c5: Eine alte
+Instanz mit LocationAvailable=true, fehlendem AccuracyAvailable und positivem
+historischem Snapshot konnte dessen Genauigkeit vor dem ersten Kachellesen
+überschreiben. RememberDeviceLocation migriert und sichert jetzt den bisherigen
+Standort vor jedem möglichen Überschreiben. Passende historische Daten bleiben
+bei unbekannter aktueller Genauigkeit erhalten, einschließlich zugehöriger Adresse.
+Ein separater interner Capture-Pfad nach erfolgreicher Cacheanwendung erfasst
+dagegen ausdrücklich die Qualität der neu verarbeiteten Position. Fehlende
+Genauigkeit einer neuen Messung bleibt null; es wird kein alter Radius übernommen.
+
+Die Upgrade-Matrix beginnt ohne vorheriges Kachellesen und ohne ApplyChanges mit
+einer fehlerhaften Nachricht, nicht verfügbaren Kontodaten oder einer Nachricht
+ohne Position. Positive historische Genauigkeit, belegte Null und unbekannte
+Genauigkeit werden jeweils mit wiederholter Nachricht geprüft. Vollständige
+Historie und keine zusätzlichen Kontoanfragen sind abgesichert. Die vorhandenen
+Nullkoordinaten-, Identitäts-, Metadaten-, Wiederanlauf- und Quellenwechseltests
+bleiben bestehen. Ein zusätzlicher Regressionsfall verhindert, dass neu erforderliches
+Lesen eines unlesbaren Alt-JSON die Verarbeitung gültiger neuer Daten blockiert:
+solche Historie ist nicht verfügbar und kann durch eine neue Messung ersetzt werden.
+
+Private und öffentliche Snapshotverträge bleiben getrennt; keine neue öffentliche
+Methode oder Änderung an Variablentypen, Idents, Positionen und Helper-/Vendor-Dateien.
+Offen bleiben ein echter Symcon-9.0-Reload/Neustart mit Kontopush vor dem ersten
+Kachellesen sowie die visuelle Nullwert- und Scrollabnahme im echten Kachelhost.
+Keine Apple-Abfrage, Anmeldung, Live-Installation oder Versionsanhebung.
+
+Abschlussnachweis unter PHP 8.5.10: vollständige Offline-Suite einschließlich
+der neuen Benachrichtigung-zuerst-Matrix, bestehender Upgrade-/Nullwert-/Adress-
+und Identitätsprüfungen, Node-Verträge und Syntaxprüfung erfolgreich. GD war nur
+über die anschließend entfernte temporäre Testkonfiguration aktiviert. Struktur-
+und Helperhashprüfung, offizieller StylePHP-JSON-Check, php-cs-fixer im Prüfmodus,
+unveränderte öffentliche/geschützte Signaturen, UTF-8/LF und git diff --check
+bestanden. Die Reihenfolge- und Wiederherstellungsfälle waren vor ihrer Korrektur
+rot und sind danach grün. Keine weitere Regression in diesen Offline-Prüfungen
+festgestellt; die Praxisnachweise bleiben wie oben benannt offen.
+
+## Migration mehrdeutiger historischer Genauigkeitsnullwerte (2026-10-31)
+
+Die zusätzliche Prüfung nach 21d4cd6 reproduzierte einen alten WidgetLocation-
+Snapshot mit accuracy=0 aus dem früheren Missing-to-zero-Verhalten. Bei fehlender
+Position blieb er erhalten und die korrigierte Kachel zeigte ihn als 0 m an.
+Der neue Upgrade-Test war vor der Korrektur rot.
+
+Neue private Snapshots tragen accuracyKnown. Die Ausgabe entfernt dieses interne
+Feld; öffentliche Standortfelder und öffentliche Signaturen bleiben unverändert.
+Unmarkierte Snapshots werden beim Lesen idempotent migriert: positive endliche
+Genauigkeit bleibt bekannt, mehrdeutige Null wird null. Ein unmarkierter Nullwert
+darf nur dann bekannt bleiben, wenn LocationAvailable und AccuracyAvailable wahr
+sind und Genauigkeit, Koordinaten sowie Standortzeit zur aktuellen Messung passen.
+Numerische Nullkoordinaten überstehen dabei den JSON-Integer/Float-Wechsel.
+Andere Messungen übernehmen nicht die Verfügbarkeit der aktuellen Position.
+Neu aufgezeichnete bekannte Nullwerte behalten ihre interne Herkunft auch bei
+Kontofehlern, Standortverlust und erneutem Laden der Persistenz. Ein unmarkierter
+historischer Nullwert ohne eindeutigen Nachweis kann nicht nachträglich als echt
+bestätigt werden und wird deshalb konservativ unbekannt.
+
+Die librarylokale Migration verwendet die vorhandenen zentralen JSON-
+und DebugFlow-Verträge; keine Helper-/Vendor-Änderung. Der vollständige Standort
+einschließlich Adresse bleibt erhalten. Tests prüfen Lesen vor ApplyChanges,
+wiederholtes Lesen, fehlerhafte Kontobenachrichtigungen, fehlende Position,
+unveränderte Objektdaten, keine zusätzlichen Kontoanfragen, positive/null/mehrdeutige
+Genauigkeit, neue echte Nullwerte, Persistenz, Nullkoordinaten und abweichende
+Messungen. Der öffentliche Payload enthält keine zusätzliche Herkunftskennung.
+
+Offen bleiben echter Symcon-9.0-Reload/Neustart mit historischem Snapshot und
+Kontopush sowie visuelle Nullwert- und Mausrad-/Scrollabnahme im echten Kachelhost.
+Die synthetischen Nachweise ersetzen diese Praxisabnahme nicht. Keine reale
+Apple-Abfrage, Anmeldung, Live-Installation oder Versionsanhebung.
+
+Abschlussnachweis unter PHP 8.5.10: gesamte Offline-Suite einschließlich Node-
+Verträgen und Syntaxprüfung erfolgreich; GD ausschließlich über die anschließend
+entfernte temporäre PHP-Testkonfiguration aktiviert. Struktur-/Helperhashprüfung,
+offizieller StylePHP-JSON-Check und php-cs-fixer im Prüfmodus bestanden. Öffentliche
+und geschützte Signaturen sind unverändert; UTF-8 ohne BOM, LF und git diff --check
+sind geprüft. Die gezielten Alt-Snapshot- und Nullkoordinatenfälle waren vor ihren
+Korrekturen rot und sind danach grün. Keine weitere Regression in diesen
+Offline-Nachweisen festgestellt; die genannten Praxisprüfungen bleiben offen.
+
+## Upgrade vor ApplyChanges und sichtbarer Genauigkeitsnullwert (2026-10-31)
+
+Die Nachprüfung von c4a77ab zeigte zwei Restlücken: Eine bestehende Geräteinstanz
+ohne AccuracyAvailable konnte vor dem manuellen ApplyChanges bei Update oder
+ReceiveData abbrechen; die Kachel blendete einen bekannten Radius 0 weiterhin aus.
+Beide Fälle wurden zuerst mit fehlschlagenden Regressionen reproduziert.
+
+Der bereits bestehende interne Snapshotpfad initialisiert die neue Variable
+jetzt vor jedem möglichen Zugriff idempotent, auch bei fehlerhaften Nachrichten
+und nicht verfügbaren Kontodaten. Vorhandene Idents werden nur geprüft, nicht
+erneut registriert; Darstellung und Benutzermetadaten bleiben bei Cacheupdates
+unverändert. Die unveränderte angehängte Position ist 29, nach PlaySound (28).
+Es gibt keine neue öffentliche Methode und keinen zusätzlichen Kontozugriff.
+Vorhandene zentrale Darstellungs-Helper und das zentrale DebugFlow bleiben
+unverändert; die iCloud-spezifische Initialisierung bleibt librarylokal.
+
+Die Kachel zeigt endliche nicht negative numerische Genauigkeit einschließlich
+0 m. Null, negative Werte und Zahlenstrings werden nicht als bekannte Genauigkeit
+angezeigt. Tests prüfen Update, gültige/ungültige ReceiveData, nicht verfügbare
+Daten, erneutes ApplyChanges, Metadaten-/Darstellungserhalt und die lokalen
+Kontobefehle. Der Node-Test prüft 0, null, negative Werte, Strings und positive
+Radien über die echte Renderingfunktion sowie unveränderte Aktionsanzahl.
+
+Offene Praxisnachweise: Kein echter Symcon-9.0-Reload mit eintreffendem Kontopush
+vor ApplyChanges wurde ausgeführt. Die Nullwertanzeige und Mausrad-/Scrollbedienung
+sind nicht erneut im echten Kachelhost abgenommen; die vorhandenen synthetischen
+UI-Verträge ersetzen diese Abnahme nicht. Keine Apple-Anfrage, Live-Installation,
+Versionsanhebung oder Änderungen an Helper-/Vendor-Dateien.
+
+Abschlussprüfung unter PHP 8.5.10: vollständige Offline-Suite erfolgreich, GD
+nur über eine anschließend entfernte temporäre Testkonfiguration aktiviert.
+Struktur-/Helperhashprüfung, offizieller StylePHP-JSON-Check, php-cs-fixer im
+Prüfmodus, unveränderte öffentliche Signaturen, UTF-8/LF und git diff --check
+bestanden. Die gezielten Upgrade- und UI-Tests waren vor der Korrektur rot und
+sind danach grün; auch die bestehenden Standort-/Historienverträge bestehen.
+
+## Datenqualität und ergänzte zentrale Standards (2026-10-31)
+
+Die öffentliche Cacheform und bestehende Variablentypen bleiben erhalten:
+`location.isOld` bleibt Boolean. Nur ein echtes `false` bedeutet nicht alt;
+fehlende/ungültige Rohdaten und entsprechende alte Gerätecaches gelten
+konservativ als alt. Dies ist eine eigene Sicherheitsregel und keine neue
+Behauptung über Apples Protokoll. `Accuracy` bleibt ein Float mit seinem
+letzten bekannten Wert; das hinten angefügte `AccuracyAvailable` kennzeichnet
+die Zuordnung zur aktuell verfügbaren Position. Fehlende Genauigkeit ist im
+Widget-Snapshot `null`; ein echter metrischer Nullwert bleibt bekannt.
+Bestehende Idents, IDs und Positionen bleiben erhalten. Keine Migration von
+Benutzerwerten und keine neue öffentliche Methode sind erforderlich.
+
+Vorhandene zentrale Boolean-/Dezimaldarstellungen und DebugFlow-Schreibabläufe
+werden unverändert genutzt. Die iCloud-spezifische Verfügbarkeitsregel bleibt
+librarylokal. Neue Tests sichern fehlende/ungültige/echte Nullwerte, Wiederkehr,
+historische Genauigkeit, alte Alterskennzeichnungen und eigene Namen/Symbole
+der Geräte- sowie dynamischen Gruppenvariablen ab. Ein fehlender
+Verfügbarkeitsident machte den neuen Test vor der Umsetzung rot; die gezielten
+Datenqualitäts- und Gruppenprüfungen bestehen nach der Korrektur.
+
+Alle sieben READMEs ergänzen Typen, Kennungsherkunft, Rückgabeverträge und
+synthetische, lokale Skriptbeispiele. `tests/readme-examples.php` führt die
+Beispiele gegen die tatsächlichen Module in den Offline-Stubs aus und prüft
+ihre Ergebnisse bei fehlenden Quellen sowie dokumentierte Property-Typen.
+`docs/PROTOCOL_VALUES.md` ordnet die handgerechneten Gerätevektoren der
+externen Protokollbeobachtung zu. Akkuskala, Millisekundenzeitbasis und
+metrische Genauigkeit bleiben ausdrücklich als nicht offiziell von Apple
+garantierte Protokollannahmen gekennzeichnet. Keine kopierte Implementierung.
+
+Keine Apple-Anfragen, Live-Installation, Versionsanhebung oder Änderungen an
+zentralen Helpern. Unbelegte Symcon-9.1-/Rust-Aussagen werden nicht übernommen.
+Ein neuer Symcon-9.0-Laufzeitnachweis sowie eine reale Kachel-/IPSView-Abnahme
+wurden für diese Änderung nicht erhoben; die UI-Interaktion bleibt unverändert.
+
+Abschlussnachweis unter PHP 8.5.10: vollständiges `php tests/run.php`
+einschließlich der sieben ausführbaren README-Beispiele, Gerätevektoren,
+Metadaten-/Upgrade-Regressionsfälle, Node-Verträge und Syntaxprüfungen erfolgreich.
+Die vorhandene GD-Erweiterung wurde nur über eine temporäre PHP-Konfiguration
+für den Testprozess und seine Kinder aktiviert; Systemkonfiguration unverändert,
+temporäre Dateien anschließend entfernt. `php tests/validate_structure.php`,
+offizieller StylePHP-JSON-Check und php-cs-fixer 3.95.27 mit offiziellen Regeln
+im Prüfmodus bestanden. Der Fixer-Hinweis zur optionalen fehlenden composer.json
+ist unverändert und nicht fatal. Relative Dateilinks, UTF-8 ohne BOM, LF und
+`git diff --check` wurden geprüft. Keine Änderungen in libs/helper oder vendor.
+
+## Gemeinsame WoIst-Gerätereihenfolge mit Ziehgriff (2026-10-28)
+
+Das Runtime-Attribut WoIstDeviceOrder speichert bis zu 4096 konto- und
+gerätebezogene Schlüssel. Normale Cacheupdates ergänzen neue Geräte am Ende,
+vorübergehend fehlende behalten ihren Rang. ChangeDeviceOrder verarbeitet
+höchstens 1024 Byte für einen relativen Move oder expliziten alphabetischen
+Reset; keine Propertyänderung oder ApplyChanges beim Sortieren. Ein
+instanzbezogenes Semaphore serialisiert Änderungen. Relative Moves bewahren
+die Reihenfolge anderer, auch ausgefilterter Geräte und prüfen Quell-/Zielgeräte
+gegen die aktuelle zugewiesene Geräteauswahl. Abgewiesene Operationen verändern
+nichts. Die bestehende native RequestAction-Allowlist und der authentifizierte
+IPSView-POST-Endpunkt /order verwenden dieselbe Methode und denselben Zustand.
+Tokenprüfung erfolgt vor dem Lesen des beschränkten Requestbodys. GET, ungültige
+Tokens, ungültige Inhalte und nicht mehr verfügbare Geräte werden abgewiesen.
+Es gibt weder automatische Sortierwiederholung noch Apple-Abfrage/Anmeldung.
+
+Ein eigener Ziehgriff mit Pointer-Capture, Einfügemarkierung und Randscrollen
+vermeidet Konflikte mit Kartenwahl und normalem Listenwischen. Separate Tasten
+für hoch/runter sowie Pfeiltasten am Griff stehen als Alternative bereit.
+Native Datenupdates während des Ziehens tauschen den erfassten Griff nicht aus.
+Abbruch/Captureverlust speichert nichts. Der Server bleibt maßgeblich; Fokus,
+Scroll und sichtbare Geräteauswahl bleiben beim Neurendern erhalten. Reorder
+dreht weder Token noch Loader/Sitzungsschlüssel und erzeugt keine neue HTML-Seite.
+Allgemeine Formular-, Debug-, HTTP-, Layout-, Theme- und Speichermöglichkeiten
+werden unverändert zentral genutzt. Ein bestehender Sortier-Helper wurde nicht
+gefunden; die iCloud-spezifische Fähigkeit bleibt nach der Zwei-Libraries-Regel
+librarylokal. Es gibt keine Änderungen an libs/helper oder zentralen Metadaten.
+
+Offline-Regressionen prüfen relative Moves, Filter, neue/fehlende Geräte,
+Konfigurationsübernahme, Reset, fehlerhafte Anfragen, übereinstimmenden
+Transportzustand, Token-/Loadererhalt und datensparsame Diagnose. HTTP-Fixtures
+prüfen 403 vor Body-Lesen, 405 bei GET, 400 bei ungültigem JSON und den
+autorisierten 200-Zustand. JavaScript prüft Pointer-/Tastaturbedienung, Abbruch,
+Datenupdates während des Ziehens, erhaltene Kamera/Scroll/Auswahl und keine
+automatischen Replays nach Transportfehlern. Die vollständige Offline-Suite
+besteht unter PHP 8.5.10.
+
+Im synthetischen lokalen Browserhost mit tatsächlichem Modul-HTML/CSS/JS und
+Leaflet wurden echte Ziehbewegungen in nativer SDK- und IPSView-Einbettung
+ausgeführt. Gemeinsamer Stand, Hoch-/Runter, Tastaturfokus, Alphabetisch-Reset,
+Listenrandscrollen und Mausrad ohne äußeres Seitenscrollen sind bestätigt.
+Die HTTP-Testgrenze verwendet nur synthetische Konten/Geräte. Kein Live-Modul
+wurde installiert oder geändert und keine Apple-Anfrage ausgeführt. Die native
+IPSView-App und Touchhardware bleiben nach dem Benutzerupdate zu prüfen.
+
+## Geräteauswahl für WoIst-Kachel und IPSView (2026-10-28)
+
+ShowAllDevices bleibt standardmäßig true; SelectedDevices speichert optional
+bis zu 1000 Zeilen mit DeviceKey. Die Schlüssel verknüpfen Konto-ID und Hash
+der ursprünglichen Geräte-ID, unabhängig von Namen und primärer/zusätzlicher
+Kontorolle. Die bestehenden Client-Gerätekennungen werden nicht verändert.
+Der neue Formularbereich nutzt den vorhandenen ConfigurationFormHelper und
+List/Select mit Cacheoptionen, ohne neue öffentliche Aktion oder Apple-Abfrage.
+Fehlende Geräte bleiben als gespeicherte Optionen sichtbar. Ungültige aktive
+Auswahlen schlagen geschlossen mit dem bestehenden Konfigurationsstatus fehl;
+eine leere gültige Auswahl bleibt dagegen eine erfolgreiche leere Anzeige.
+
+Filterung erfolgt vor dem gemeinsamen sanitisierten Darstellungs-Payload für
+native Kachel und IPSView. Karte, Liste und Positionsübersicht erhalten nur die
+Auswahl; der Kontofilter schränkt weiter ein. Konto-/Adressversorgung und die
+bestehenden expliziten Refreshregeln bleiben erhalten. GetDeviceAddress und der
+Adressworker verwenden weiterhin den ungefilterten Cachepfad. Der IPSView-Token,
+WebContent-Variable, Loader und Sitzungsschlüssel wechseln durch Geräteauswahl
+nicht. Sichere deutsche Debugereignisse melden Modus und Anzahlen, keine
+Gerätenamen, Schlüssel, Koordinaten oder privaten Nutzlasten. Die iCloud-Logik
+bleibt librarylokal; zentrale Helper werden unverändert wiederverwendet.
+
+Regressionen prüfen Standardverhalten, identische IDs mehrerer Konten, doppelte
+Auswahl, leere und ungültige Konfiguration, neu gefundene Geräte, Quellenausfall
+und Wiederkehr, Umbenennung, Parentwechsel sowie Kontoentfernung. Formularabruf
+verändert keine Properties. Transportzustand ist identisch gefiltert und Token,
+Loader und Variablen-ID bleiben stabil. Beide JavaScript-Ausgabewege prüfen
+Marker, Liste, Fit-Grenzen, Schnittmenge mit Kontofilter, Scrollposition, Auswahl
+und Kamera. Die vollständige Offline-Suite besteht unter PHP 8.5.10.
+Die Prüfung am aktualisierten Live-Modul bleibt offen; keine laufende Instanz
+wurde verändert und keine reale Apple-Abfrage oder Anmeldung ausgelöst.
+
+## WoIst-Bedienleiste bei ausgeblendetem nativen Titel (2026-10-28)
+
+Der native Maximieren-Pfeil bleibt sichtbar, wenn nur die Kachelüberschrift
+ausgeblendet ist, und überdeckte dann den Aktualisieren-Button. Der vorhandene
+ResponsiveVisualizationHelper liest jetzt Titel und Maximieren gemeinsam aus
+den offiziellen Objektflags. Zusätzliche tileMaximizeVisible/tileActionInset-
+Metadaten reservieren nur bei verborgenem Titel und sichtbarem Pfeil 44 Pixel
+rechts in einer explizit markierten oberen Bedienleiste. Karte und Geräteliste
+behalten ihre Breite; sind beide verborgen, bleibt kein Leerraum. IPSView
+reserviert keine nativen Bedienelemente. Der Client übernimmt den Wert bei Start
+und SDK-Updates ohne Kartenneuaufbau. Teilnachrichten verwerfen ihn nicht.
+
+Regressionen reproduzierten vor der Korrektur die fehlenden Metadaten und die
+fehlende Client-Reservierung. Danach bestanden alle vier Titel-/Pfeilzustände,
+fehlende Felder, fehlgeschlagene Objektabfrage und IPSView ohne Objektzugriff.
+UI-Tests sichern Auswahl, Scrollposition, Zoom und Ausschnitt bei Updates,
+Rücknahme des Abstands und ungültige Metadaten. Unter PHP 8.5.10 bestanden die
+vollständigen Helper-/Modulsuiten sowie ein zusätzlicher realer Modul-/Stub-Test
+aller vier Zustände im isolierten, zentral generierten Paket (19 Abos, 67 Dateien).
+
+Browserprüfung im synthetischen Host mit tatsächlichem WoIst-HTML/CSS/JS,
+Leaflet und zentralem CSS bei 360/760/1280 Pixeln: Die alte Variante überlappt,
+die korrigierte nicht. Sichtbarer Titel, beide ausgeblendet und IPSView sind
+ebenfalls frei; Arbeitsbereichsbreiten bleiben gleich. Ein Browserklick auf
+Aktualisieren erreichte nur die lokale Testgrenze, ohne echte Apple-Abfrage.
+
+Die Helper-Änderung muss zuerst freigegeben und regulär verteilt werden, bevor
+iCloud Services aktualisiert wird. Das bestehende Abonnement genügt; es gibt keine
+neuen Bundle-Dateien oder Ressourcen. Keine provisorischen Helperkopien bleiben
+im Consumer. Keine laufende Instanz wurde verändert; die Prüfung in der echten
+nativen Kachel bleibt bis zum Benutzerupdate offen.
+
+## Fehlenden DebugFlowHelper im Auslieferungspaket ergänzt (2026-10-27)
+
+Der GitHub-Testlauf 40513391537 für 733e838 scheiterte bereits an der
+Helper-Abonnementprüfung. Die automatische Versionierung scheiterte am selben
+vorgeschalteten Test. Im laufenden System verursachte der fehlende
+libs/helper/DebugFlowHelper.php einen require_once-Fatalfehler in CloudDebug.php;
+dadurch konnten die Instanzschnittstellen und Formulare nicht geladen werden.
+
+Der erfolgreiche zentrale Sync 40509315918 prüfte iCloud Services um 14:16 Uhr
+MEZ und meldete ausdrücklich, dass DebugFlowHelper noch nicht abonniert war.
+Das Abonnement wurde erst mit 3a2542d um 14:35 Uhr MEZ gepusht. Ein bereits
+abgeschlossener zentraler Lauf reagiert nicht nachträglich auf Consumer-Commits.
+Es lag weder ein Apple-Anmeldefehler noch ein Defekt der Formularlogik vor.
+
+Das vollständige Paket wurde mit dem unveränderten zentralen Bundle-Verfahren
+aus dem veröffentlichten main a80c7b9fc1d943651a37128d174ee56be0cb275f
+(Repository 3.29.0) abgeglichen: 19 Abonnements, 67 Paketdateien. Ausschließlich
+DebugFlowHelper 1.1.0, sein Manifest-Eintrag und die automatisch erzeugte
+Helper-Dateiliste fehlten und wurden ergänzt. Keine provisorische dev-Kopie,
+kein Fallback, keine manuelle Versionierung und keine Änderungen an übrigen
+Helpern. Library- und Modul-READMEs bleiben unverändert.
+
+Die bestehende CI-Strukturprüfung benennt fehlende Abonnements und Dateien
+jetzt eindeutig und prüft auch transitive Abhängigkeiten sowie Ressourcen
+gegen ihre Hashes. Die bestehenden Sieben-Modul-Tests laden alle echten Klassen,
+erstellen Instanzen und rufen ApplyChanges und GetConfigurationForm offline auf.
+Es wurden keine laufenden Instanzen verändert und keine Apple-Anfragen ausgelöst.
+
+Prüfbelege mit PHP 8.5.10: php tests/run.php vollständig erfolgreich,
+php tests/validate_structure.php erfolgreich, offizieller php-cs-fixer-Prüflauf
+ohne Änderungen, StylePHP-JSON und git diff --check erfolgreich. Die zentralen
+Manifest- und Bundleprüfungen bestehen ebenfalls. Eine isolierte Library-Kopie
+wies gezielt einen fehlenden DebugFlowHelper-Manifesteintrag, die fehlende
+Helperdatei, eine fehlende transitive PersistentJsonCacheHelper-Abhängigkeit
+und eine beschädigte http-origin.js-Ressource mit eindeutigen Meldungen ab;
+nach Wiederherstellung bestand die Prüfung. Der lokale Arbeitsbaum enthält
+das vollständige veröffentlichte Paket. Der erneute GitHub-Lauf und die
+Live-Formularprüfung bleiben bis zum Benutzer-Push und Modulupdate offen.
+
+## Verständliche Debug-Ausgaben nach zentralem Vertrag (2026-10-27)
+
+Die bisher zwei eigenen Debugstellen wurden durch den vereinbarten Ablauf
+ersetzt. 106 libraryeigene Einstiege in allen sieben Modulen einschließlich
+Fach-Traits, Lebenszyklus, Timer, Bedienung, Exporten und eigener WebHooks
+erhalten Start/Ende über den vorhandenen zentralen DebugFlowHelper. Der Helper
+erhält eine rückgabewert-/ausnahmetreue Callback-API sowie optionale sichere
+Schreibmetadaten; Formatierung und Maskierung bleiben zentral. CloudDebug
+enthält nur iCloud-Fachmeldungen. Der Umfang und die beiden reinen Getter-
+Ausnahmen sind intern in docs/DEBUG_CONTRACT.md dokumentiert.
+
+Deutsche Erklärungen umfassen Pause, Schutzsperren, Codeanforderung und
+HTTP-Ergebnisse, fehlende Quellen, Cachezustand, GPS-Stabilisierung, Einheiten,
+Adressquellen, Suchton-/Verloren-Modus-Annahme, Empfängervorschau/-abbruch/
+Übernahme, Downloadumfang und WebHook-Ablehnungen. Keine neue Anmeldung,
+Netzwerk-/Geräteaktion oder Messwertabfrage wird für Debug erzeugt. Private
+Inhalte und beliebige Exception-Texte werden nicht an den Kanal übergeben;
+der bisherige direkte Exception-Text der Anwesenheit wurde entfernt.
+
+Gezielte Offline-Prüfungen sichern die realen sieben Module, ausgeglichene
+Start-/Endpaare auch bei Fehlern, korrekte Instanz-IDs, gemeinsame verschachtelte
+Vorgänge, neue äußere/Standalone-Vorgänge, unveränderte Rückgaben/Ausnahmen,
+Geheimnisschutz sowie das Weiterarbeiten trotz absichtlich defektem Debugkanal.
+GPS-/Kontakt-/Empfänger-Fixtures bleiben synthetisch. Es wurden weder echte
+Apple-Anmeldungen noch Nachrichten oder Geräteaktionen ausgelöst und keine
+laufende Instanz geändert. Die echten Debug-Fenster und Laufzeitkosten bleiben
+für die Abnahme nach dem Benutzerupdate offen.
+
+Eine zusätzlich erstellte Anwender-Debuganleitung und deren README-Verweise
+wurden nach Benutzerkorrektur vollständig entfernt. Library-/Modul-READMEs
+bleiben für dieses Arbeitspaket unverändert. Implementierungsvertrag und
+Prüfbelege gehören ausschließlich in diese interne Dokumentation; AGENTS.md
+verweist darauf und die CI-Vertragsprüfungen sichern die Einbindung.
+
+Der gleichzeitig gemeldete GitHub-Fehler des Commits 25fb0cd wurde lesend
+eingegrenzt: Tests 40499565709, Job 122173543613 scheitert an
+tests/map-ui.js:324 (Wiederherstellung des Kontofilters). Die 2FA-Tests bestehen.
+Die Versionierung 40499565807 scheitert am selben vorgeschalteten Test, nicht
+an ihrer Metadatenlogik. Die Karten-Speichererweiterung lag bei der Prüfung nur
+auf dem zentralen dev, nicht im freigegebenen main. Der Benutzer übernimmt
+die Helper-Freigabe; kein Test wurde dafür entfernt oder abgeschwächt.
+
+Auch die neuen DebugFlow-APIs benötigen die zentrale Freigabe und reguläre
+Verteilung vor dem Consumer-Update. Der integrierte Stand wird nur temporär
+über die normalen Generatoren geprüft (67 Dateien, 19 Abonnements); im
+Arbeitsbaum bleiben keine provisorischen Helperkopien und library.json wird
+nicht manuell angepasst. Keine Commits, Pushs, Merges oder Live-Updates.
+
+Abschlussnachweis: Die vollständigen Helper- und Consumer-Suiten mit PHP 8.5.10,
+GD/EXIF und Node, Metadaten-/Bundleprüfung, offizieller JSON-Check sowie
+PHP-CS-Fixer im Prüfmodus (0 von 74 Library- bzw. 77 Helper-Dateien) bestehen.
+Der vollständige Integrationslog enthält sämtliche neuen Debugfälle ohne
+PHP-Warnungen oder Notices. UTF-8/LF und git diff --check sind geprüft.
+Auch die zusätzlichen README-API-Ergänzungen im Helper-Projekt wurden zugunsten
+interner Dokumentation entfernt; sämtliche READMEs beider Repositories bleiben
+in diesem Arbeitspaket unverändert. Die neue Helper-API steht intern in
+Symcon_ModuleHelper/docs/DEBUG_FLOW_CONTRACT.md und im PHPDoc.
+
+## 2FA: ausdrücklich gültige HTTP-409-Codes und unvollständige HTTP-202-Schritte (2026-10-27)
+
+Der öffentliche Beta-Forumsthread meldete eine nach Codeeingabe weiterhin offene
+Bestätigung mit HTTP 409. Die Protokollbeobachtung aus PyiCloud PR 372 beschreibt
+einen gültigen Gerätecode mit HTTP 409 und dem booleschen Antwortfeld
+securityCode.valid=true. Der Fehler wurde mit einer synthetischen Antwort gegen
+den vorhandenen AppleClient reproduziert: bisher response statt Fortsetzung zur
+Vertrauensbestätigung. Die bisherigen Tests waren grün, enthielten diesen Fall
+aber nicht. Quelle: https://github.com/timlaing/pyicloud/pull/372
+
+Die Korrektur akzeptiert genau diesen expliziten 409-Fall, keine allgemeinen
+Konfliktantworten oder als String/Zahl gemeldeten Wahrheitswerte. Anschließend
+bleiben 2sv/trust und accountLogin erforderlich. Die Kontoaktion meldet erst
+nach erfolgreichem Geräteabruf Erfolg. Rotierte Challenge-/Sitzungsheader werden
+wie bisher übernommen. Bekannte Apple-Sicherheitsfehler haben auch bei gültigem
+Code Vorrang. Ein akzeptierter 409-Code wird mit HTTP 409 und Ergebnis ok
+diagnostiziert, nicht als vermeintlicher Verarbeitungsfehler.
+
+Für den ebenfalls gemeldeten HTTP-202-Fall liegt kein konkreter Antwortinhalt
+des betroffenen Kontos vor. Deshalb wurde kein zusätzlicher Apple-Workflow
+unterstellt: 202 bleibt ein nicht abgeschlossener Authentifizierungsschritt und
+erhält den festen Grund authenticationIncomplete samt verständlicher deutscher
+Rückmeldung. Weder ein Codeflag noch eine scheinbar vollständige Kontonutzlast
+bei 202 dürfen Anmeldung oder Trust als abgeschlossen freigeben. Auch die vom
+HTTP-Parser abgewiesene Nicht-JSON-202-Antwort wird entsprechend eingeordnet.
+Der bekannte HTTP-Status bleibt dann in der Diagnose erhalten. Es werden keine
+Antworttexte, Codes oder Sitzungsgeheimnisse protokolliert und keine neuen
+automatischen Wiederholungen, Passwortanmeldungen oder Codeanforderungen eingeführt.
+
+Die zusätzlichen Tests apple-2fa.php und account-2fa.php laufen in der regulären
+CI und schließen die bestehenden Client-/Kontoschutzprüfungen ein. Red-first
+nachgewiesen wurden die fehlende 409-Annahme, die unklare 202-Einordnung und der
+irreführende 409-Diagnoseeintrag. Positive/negative Codewerte, fehlerhafte
+Trust-/Inventarschritte, ausstehende erneute Challenge, Sicherheitsvorrang,
+Headerwechsel, Cacheerhalt, Formularfeedback und das unveränderte Fünf-Code-Limit
+werden über synthetische Transporte geprüft. Keine echten Anmeldungen, keine
+Apple-Anfragen und kein Zugriff auf laufende Test-/Produktivsysteme.
+
+Gezielte Tests, Struktur-/Helper-Hashprüfung, offizieller JSON-Check,
+PHP-CS-Fixer im Prüfmodus (0 von 70 Dateien) und git diff --check bestehen.
+Die vollständige PHP-/Node-Suite besteht unter PHP 8.5.10 mit GD/EXIF in einer
+temporären Kopie mit regulär erzeugtem aktuellem zentralem Helper-Bundle
+(66 Dateien, 18 Abonnements); dessen Manifest-/Bundleprüfungen bestehen ebenfalls.
+Der vorhandene lokale Consumer-Helper enthält noch nicht die vorherige
+Kartenfilter-Speichererweiterung: der zugehörige WoIst-Wiederaufbautest scheitert
+dort weiterhin unabhängig von dieser 2FA-Korrektur. Für den Gesamttest wurden
+Metadaten nur in der temporären Kopie über den normalen Generator erzeugt.
+Es verbleiben keine vorläufigen Helper-Kopien im Modul; library.json und zentrale
+Helperquellen wurden nicht geändert. Der tatsächliche Login auf den betroffenen
+Apple-Konten bleibt der Abnahme nach dem Benutzerupdate vorbehalten.
+
+## WoIst mit zusätzlichen Konten und Kontofilter (2026-10-27)
+
+Die öffentliche Beta und der Forumsthread wurden vom Benutzer bestätigt.
+WoIst wurde auf Wunsch um AdditionalAccounts mit bis zu 20 zusätzlichen
+Kontoinstanzen erweitert. Der bestehende Parent bleibt im regulären Datenfluss,
+zusätzliche ausdrücklich ausgewählte Konten werden nach Prüfung der Modul-GUID
+über deren öffentliche Cache-/Refresh-APIs gelesen. Ein Timer liest lokale
+Caches im Fünfsekundentakt; keine zusätzliche Anmeldung oder Apple-Abfrage
+beim Öffnen, Filtern oder Polling. Die eigene Kontoschutzlogik bleibt je Konto
+unverändert. ADR 0012 dokumentiert Grenze und Kompatibilitätsentscheidung.
+
+Primäre Gerätekennungen bleiben erhalten, zusätzliche werden nach Konto
+namensräumlich getrennt. Die gemeinsame Karte bietet Alle Konten oder einzelne
+Konten; Teilfehler werden pro Quelle dargestellt. Der zentrale OpenFreeMap-
+Speicher erhält optionale validierte Filter-/Scrollfelder, abwärtskompatibel
+zu alten Speicherständen. HTML-/Variablen-IDs bleiben stabil; IPSView-Token
+werden nur bei geänderter Kontozuordnung bzw. bestehender Tokenpolitik erneuert.
+
+MCP-Nachweis auf dem Windows-Testsystem: temporäre separate Preview-Library
+mit zwei synthetischen Konten und 28 Geräten, einschließlich identischer
+Ausgangskennungen. Kein Login-/Refresh-Transport und keine Änderungen echter
+Konten oder Karten. Die öffentliche Cache-API eines vorhandenen echten Kontos
+wurde zusätzlich lesend auf ihren Vertrag geprüft. Native Vorschau: Filter B,
+Geräteauswahl, Zoom, verschobener Ausschnitt und Mausrad-Scrollen; nach
+Seiten-Neuaufbau Auswahl/Filter/Scroll identisch und Popup-Kartenanker ohne
+Pixelabweichung. Die MCP-Vorschau beweist keinen nativen Live-Push.
+
+IPSView-HTTP-Seite: echte Cache-Updates über den Pollingtransport nachgewiesen;
+geänderter Akkustand kam an, Filter/Auswahl/Scroll und Kartenansicht blieben
+erhalten. Ein simuliert ausgefallenes Primärkonto beeinträchtigte Konto B
+nicht; Filter A zeigte nur alte Positionen. Beim Zurückfiltern blieb B gewählt.
+Nach vollständigem Dokument-Neuaufbau mit unverändertem Token wurden die
+Ansicht und die aktuellen Daten wiederhergestellt, ohne Pixelabweichung des
+Popup-Ankers oder Transportfehler. Das ist ein Wiederaufbau-Test, keine
+physische Netzwerkunterbrechung und kein Test des nativen IPSView-Clients.
+
+Der vollständige Bundle-Stand wurde isoliert über die normalen Generatoren
+erstellt (64 Dateien, 18 abonnierte Helper). Die neue Wiederaufbau-Regression
+schlägt mit dem alten Consumer-Helper erwartungsgemäß fehl. Deshalb zentrale
+Helper-Freigabe und automatische Verteilung vor der Modulfreigabe; keine
+vorläufigen Helper-Dateien oder Metadaten verbleiben in libs/helper.
+
+Abschluss: Die temporären drei Instanzen samt IPSView-Variable und die eigene
+Preview-Library wurden entfernt; Browser-Tabs wurden geschlossen. Bestehende
+echte Konto-/Karteninstanzen blieben erhalten. Vollständige Offline-Suite unter
+PHP 8.5.10 mit GD/EXIF und Node, Frontend-Wiederaufbau für beide Modi, zentrale
+Helper-Suite, Bundle-/Manifestprüfungen und offizielle PHP-Stilprüfungen bestehen
+für den isolierten vollständigen Integrationsstand. Die zuletzt ergänzte
+Regression kennzeichnet auch frische Cachekoordinaten eines ausgefallenen
+Kontos ausdrücklich als zuletzt bekannt, zusätzlich zur Markerfarbe.
+Konfigurationseinstellungen und die IPSView-Variablen-ID werden in Regressionen
+vollständig verglichen. Keine manuellen Versionsänderungen, Commits, Pushs,
+Store-Updates oder Produktivinstallation wurden durchgeführt.
+
+## README-Badges und Forumsvorlage (2026-10-27)
+
+Die Library-README enthält jetzt die fünf gewünschten Badges: Symcon/PHPModul,
+Symcon ab 9.0, tatsächliche PolyForm-Noncommercial-Lizenz sowie dynamische
+Check-Style- und Tests-Badges für iCloudServices/dev. Das Beispielbild wurde
+nicht mit seiner abweichenden CC-Lizenz übernommen. library.json bleibt
+unverändert; eine manuell gepflegte Library-Versionsanzeige wurde nicht ergänzt.
+
+Die Pflicht gilt künftig zentral über SymconDevelopment/AGENTS.md,
+standards/README_CONTENT.md und templates/REPO_README.md für alle
+Library-READMEs. Andere Libraries wurden hier nicht geändert.
+docs/FORUM_POST.md enthält den kurzen Entwurf mit den gewünschten Abschnitten
+iCloud Services, Funktionen, Enthaltene Instanzen, Screenshots, Voraussetzungen,
+Installation sowie Dokumentation und Changelog. Beide Benachrichtigungsmodule
+sind über ihre deutschen Store-Seiten verlinkt. Den Screenshot-Abschnitt
+befüllt der Benutzer selbst; es wurden keine Bilder in den Entwurf eingebettet.
+Der Text ist zur Verwendung
+nach tatsächlicher Beta-Veröffentlichung vorgesehen; es wurde kein
+Forumsbeitrag gesendet und nichts veröffentlicht.
+
+## Store-Vorbereitung für die erste öffentliche Beta (2026-10-26)
+
+Nach Benutzerbestätigung der laufenden automatischen Versionierung wurde der
+Store-Eintrag wie bei OpenHomeAlarm vorbereitet: docs/STORE_SUBMISSION.md
+enthält die Feldwerte, eine deutsche Beschreibung, Versionsinformationen,
+Funktionsgrenzen und die Portal-Checkliste. Vorgeschlagene Bundle-ID ist
+de.burki24.symconicloud; deren Verfügbarkeit oder eine bereits vorhandene
+Vorlage und die tatsächlich angebotenen Kategorien sind im Entwicklerkonto
+noch zu bestätigen. Alle sieben Module bilden ein Library-Bundle. Nur die
+deutsche Store-Lokalisierung ist für diese erste Vorlage vorgesehen.
+
+docs/RELEASE_PROCESS.md beschreibt die Reihenfolge Benutzer-Commit/Push,
+Metadaten-Bot, Pull, Tests und Style auf genau dem finalen Metadaten-Commit,
+anschließende Auswahl des vollständigen SHA und Speichern der Vorlage.
+Der Ausgangsstand 2ae43fdf509f4b9d25357fdcbced4a18174c3686 besitzt automatisch
+erzeugte Version 0.2, Build 1563103 und Datum 1793048438. GitHub Tests
+40402032681 und Check Style 40402033011 wurden lesend als erfolgreich
+bestätigt. Versionsworkflow 40400724487 war erfolgreich; das Überspringen des
+Folgelaufs auf dem Bot-Commit ist die beabsichtigte Schleifenvermeidung.
+Nach dem Dokumentations-Commit ist ein neuer finaler Kandidat zu bestimmen.
+
+Die aktuellen offiziellen Einreichungsvorgaben wurden geprüft: Beta wird
+bereits beim Einreichen unmittelbar veröffentlicht. Deshalb wurden kein
+Store-Entwurf im Konto gespeichert, keine Einreichung, kein Merge/Tag/Release
+und kein Live-Update ausgeführt. Die Texte behaupten keine offizielle
+Apple-Unterstützung oder Garantie gegen Kontosperren und benennen optionale
+Fremddienste, vertrauliche Daten, Foto-Dateicache und bestätigte Empfänger-
+änderungen ausdrücklich. Runtime-Helper und Modulcode bleiben unverändert.
+
+Frische Nachweise: vollständige Offline-Suite mit PHP 8.5/GD/EXIF und Node,
+Struktur-/Manifest-/LF-Prüfung, JSON-Stilprüfung und offizieller PHP-CS-Fixer
+im Prüfmodus bestehen. Der statische Store-Scanner meldet null Blocker;
+ignorierte Preview-Artefakte wurden nicht zum Kandidaten gerechnet. Lokale
+Dateizugriffe, explizite Designeraktionen, Variablen-Sichtbarkeitsverwaltung und
+bestätigte Empfängerübernahme wurden als relevante Quellgrenzen betrachtet.
+Es erfolgte keine neue vollständige Live-Abnahme. Die Vorbereitung ist bedingt
+einreichungsreif: Portal-Pflichtfelder und finaler SHA samt Folge-CI sind noch
+zu bestätigen. Es wurden keine Versionsmetadaten von Hand verändert.
+
+## Beta: automatische Versionierung und Dokumentationslinks (2026-10-26)
+
+Der Benutzer hat Beobachtungsbetrieb und Installations-/Updateprüfung als
+erledigt bestätigt. Store-Eintrag und Veröffentlichung bleiben ausdrücklich
+dem nächsten Arbeitsschritt vorbehalten.
+
+Vor der Umsetzung wurden die vorhandenen Helper, zentralen CI-Verträge und
+Versionsworkflows von OpenHomeAlarm/SymconECharts geprüft. Deren Vertrag wird
+übernommen: zweite Versionszahl pro Quellcommit erhöhen, Metadaten-Commits
+ausnehmen, Build aus den ersten sieben SHA-Hexstellen, Datum aus dem
+Quellcommit. Die wiederverwendbare Berechnung liegt neu in
+Symcon_ModuleCI/library-metadata; iCloud Services enthält nur Workflow und
+Einbindungsvertrag. Runtime-Helper, öffentliche Modulverträge und
+Instanzkonfigurationen bleiben unverändert.
+
+Der Workflow prüft vor dem Schreiben die vollständige Modultestsuite und
+nach der Berechnung die Struktur. Nur library.json wird mit der bestehenden
+GitHub App zurückgeschrieben; Metadaten-Commits starten Folgeprüfungen ohne
+Versionierungsschleife. Wiederholungen sind idempotent, überholte Quellen
+werden übersprungen, Force-Push ist ausgeschlossen. Modul-URLs zeigen für
+alle sieben Module auf die existierende jeweilige README unter dev.
+
+Die neue zentrale Action muss vor der Consumer-Einbindung auf ModuleCI/dev
+verfügbar sein. Sie wird zunächst mit @dev erprobt und nach dem nächsten
+tatsächlichen ModuleCI-Release auf dessen Tag umgestellt. Bestehende
+Tests-/Style-Actions bleiben auf v1.0.0. Einrichtung und lokaler Pull des
+Bot-Commits sind in docs/automatic-versioning.md beschrieben. Es wurden
+keine Commits, Pushs, Releases oder Live-Updates ausgeführt.
+
+Nachweise: Der Consumer-Vertrag schlug zunächst wegen des fehlenden Workflows
+fehl und besteht nach der Einbindung. Die 12 zentralen Python-Regressionen
+decken unter anderem Push-Batches, Metadaten-Schleifen, Wiederholungen auch
+beim Wurzelcommit, überholte Quellen, ungültige Eingaben und Dry-run ab.
+Eine isolierte Kopie der echten Git-Historie bestätigt Versionsschritt,
+Build/Datum, unveränderte Identitätsfelder, idempotente Wiederholung und die
+ausschließliche Änderung von library.json ohne Commit. Die originale
+library.json wurde dabei nicht verändert. Vollständige Offline-Suite mit
+GD/EXIF, Struktur-/Manifestprüfung, JSON-Prüfung, PHP-CS-Fixer im Prüfmodus
+beider Repositories und YAML-Syntaxprüfung bestehen. Der GitHub-Lauf nach
+Push und die Verfügbarkeit der App-Variable/des Secrets bleiben remote zu
+prüfen; die lokale GitHub-CLI ist nicht angemeldet.
+
+## Apple-Sicherheitsantworten und getrennte Sicherheitshistorie (2026-10-26)
+
+Nach erneuter Kontosperre wurden Code und vorhandene Diagnosen beider Systeme
+lesend untersucht. Die erhaltene Folge zeigt eine abgewiesene Geräteabfrage,
+genau eine abgewiesene Token-Erneuerung und danach die persistente lokale
+Schutzsperre. Eine spätere Anmeldung wurde abgewiesen, eine weitere gelang.
+Der Benutzer bestätigte die Entsperrung mit PIN und bestehendem Passwort, ohne
+Passwortänderung. Eine automatische Passwort-Anmeldeschleife wurde nicht
+nachgewiesen; die Ursache der Apple-Sperre bleibt offen. Der bisherige
+50er-Verlauf allein kann ältere Auslöser nicht rekonstruieren.
+
+Vor der Umsetzung wurden die vorhandenen zentralen Helper und ihre Verträge
+geprüft. DebugHelper und ConfigurationFormHelper werden unverändert verwendet.
+Die Apple-spezifische Antwortklassifizierung und Kontoschutzpolitik bleiben in
+iCloud Services; es gibt keine zweite nutzende Library und deshalb keinen neuen
+zentralen Helper oder lokal abweichenden Verteilungsstand.
+
+Bekannte Dienstcodes werden an der gemeinsamen AppleClient-Antwortgrenze
+ausgewertet, bevor ein Dienst eine 403-Antwort als reine Berechtigungsfrage
+behandelt. -20209 stoppt kontoübergreifend alle Dienste dieser Instanz, auch
+bei HTTP 200 oder 409; -20101 bleibt eine Anmeldeablehnung ohne Behauptung eines
+tatsächlich falschen Passworts. Die Codes werden aus serviceErrors und den
+skalaren Fehlerfeldern errorCode/serverErrorCode gelesen. Unbekannte Codes und
+freie Meldungstexte bleiben außerhalb von Exceptions und Diagnosedaten.
+HTTP 412 im Authentifizierungsablauf sowie termsUpdateNeeded benötigen eine
+manuelle Browserprüfung und setzen ebenfalls eine Schutzsperre. Bedingungen
+werden nicht automatisch akzeptiert. HTTP 429 behält auch zusammen mit einer
+strukturierten Sicherheitsantwort seine Wartefrist. Vorhandene Limits,
+einmalige Token-Erneuerung und dienstspezifische Freigabefehler bleiben erhalten.
+
+GetAccountDiagnostics behält seine bisherigen fünf Felder und 50 Einträge.
+GetAccountSecurityDiagnostics ergänzt einen separaten persistenten Verlauf:
+höchstens 200 Ereignisse aus 30 Tagen, dieselben fünf Felder plus ausschließlich
+allowlist-basiertem appleCode. Erfolgreiche Datenabfragen und wiederholte lokale
+Polling-Abweisungen verdrängen keine Sicherheitsereignisse. Die 30-Tage-Grenze
+wird lesend gefiltert und beim nächsten Eintrag auch persistent bereinigt.
+Vorhandene relevante Alt-Einträge werden vor dem ersten neuen Eintrag bzw. vor
+einer sofortigen Bereinigung des alten Verlaufs übernommen. Ein leeres Array
+kennzeichnet eine bereits erfolgte Übernahme oder bewusste Bereinigung.
+Die neue separate Löschaktion ist zu bestätigen und verändert keine Sitzung,
+Schutzsperre, Wartefrist oder Versuchszähler. Das Formular erläutert Ergebnisse
+auf Deutsch; Öffnen und Lesen verursachen keinen Apple-Zugriff.
+
+AllowAuthentication hat den kompatiblen Standard true. Nach ausdrücklicher
+Anmeldung kann die Option auf einem Zweitsystem ausgeschaltet werden, ohne
+Sitzung oder Caches zu löschen. Bestehende Datenabfragen und Token-Erneuerung
+bleiben möglich, Passwortanmeldungen und Code-Prüfungen/-Anforderungen werden
+dagegen vor Transporterzeugung und Versuchszählung abgewiesen. Die kombinierte
+Anmelde-/Freigabeaktion löst dann keine bestehende Schutzsperre. Die Anleitung
+empfiehlt zusätzlich die bestehende Abfragepause für ungenutzte Systeme.
+Ohne nutzbare Sitzung zeigt die ausgeschaltete Anmeldung den lokalen Status
+211 statt eines Apple-Abfragefehlers; angemeldete Sitzungen bleiben aktiv.
+Sperren und Limits bleiben ausdrücklich instanzlokal; keine automatische
+Koordination oder Übertragung von Sitzungen zwischen getrennten Servern.
+
+Nachweise: Der neue Test account-security schlug vor der Umsetzung wegen der
+fehlenden separaten Sicherheitshistorie fehl. Danach bestanden die gezielten
+Regressionen einschließlich kontoweiter Sperren aus Geräten/Fotos/Kontakten,
+mehrdeutiger 403-Antworten, Sicherheitsprüfung/Bedingungen, sekundärer
+Anmeldepolitik, einmaliger Token-Erneuerung ohne Passwort-Fallback,
+Altübernahme, Wiederherstellung, getrennter Löschung, Größen-/Altersgrenzen und
+Ausschluss unbekannter Providerdaten. Die vollständige Offline-Suite unter
+PHP 8.5.10 mit GD/EXIF, Struktur-/Manifest-/LF-Prüfung sowie JSON-Stilprüfung
+bestanden. Fehlendes GD im üblichen lokalen CLI-Profil wurde ausschließlich
+für die Prüfprozesse ergänzt, ohne die globale PHP-Konfiguration zu ändern.
+Die Formatprüfung mit der offiziellen StylePHP-Konfiguration bestand ebenfalls.
+Kein Live-Deployment, kein Apple-Login, keine reale Bestätigung oder Geräteaktion
+wurde für die Umsetzung ausgelöst. Die neue Live-Formularprüfung bleibt nach
+dem regulären Modulupdate offen.
+
+Quellen für die Protokolleinordnung, keine übernommene Implementierung:
+[Apple-Kontosperren](https://support.apple.com/de-de/102640),
+[Pyicloud-Fehlercodes](https://github.com/timlaing/pyicloud/blob/main/pyicloud/const.py)
+und [Pyicloud-Antwortbehandlung](https://github.com/timlaing/pyicloud/blob/main/pyicloud/session.py).
+Die Erweiterung kann Apples interne Sperrentscheidung nicht garantieren oder
+den früheren Auslöser rückwirkend beweisen.
+
+## Nominatim-Pi-Installation als Benutzeranleitung (2026-10-26)
+
+Den Abschnitt `Eigener Nominatim-Server` der WoIst-README um das am 22.10.
+erfolgreich eingerichtete Pi-Beispiel und die konkreten deutschen Formularfelder
+ergänzt. Der bestehende öffentliche Abschnittsanker bleibt erhalten.
+Die ausführliche Schrittfolge steht in `docs/nominatim-raspberry-pi.md`:
+Debian 12/aarch64, Nominatim 5.3.3, PostgreSQL 15/PostGIS, PyICU aus Debian,
+Gunicorn 25.1.0, gemeinsame Slice-Grenzen, separater Cluster/Peer-Rollen,
+Geofabrik Brandenburg mit Berlin, Einmalimport, Freiplatzschutz und HTTP/LAN.
+Die Datenträgerbezeichnung ist ausdrücklich nur ein anzupassendes Beispiel;
+private Endpunkte bleiben Platzhalter. Kein Eingriff in den laufenden Pi.
+
+Die Dateibeispiele wurden aus dem vorhandenen Installationsnachweis als
+zusammenhängende Neuinstallationsanleitung rekonstruiert; es sind keine frisch
+vom Pi exportierten Dienstdateien. Abgleich mit Nominatim 5.3.3 Installation,
+Import, Settings und Deployment, Geofabrik, Raspberry-Pi-Bootdokumentation und
+systemd-252-Ressourcenreferenz. PyPI-Metadaten bestätigen Python >=3.9 für
+Nominatim 5.3.3 und >=3.10 für Gunicorn 25.1.0; dessen Pin verhindert einen
+versehentlichen Wechsel auf einen neueren Python-Mindeststand. Der konkrete
+Falcon-Einstieg `nominatim_api.server.falcon.server:run_wsgi()` wurde zusätzlich
+im veröffentlichten 5.3.3-Paket geprüft.
+
+Wesentliche Grenzen sind erklärt: mögliche Bootunterbrechung nur bei fehlendem
+Speichercontroller, bestehende Cluster unangetastet lassen, keine Garantie
+gleichbleibender Symcon-Latenz, Mindestfreiplatz und getrennte Dateisysteme,
+keine erneuten Initialimporte auf bestehender Datenbank und keine laufenden
+OSM-Updates bei `--no-updates`. Der historische Erfolgsnachweis bleibt von
+einer noch nicht ausgeführten erneuten Installation dieser Anleitung getrennt.
+
+Prüfung der Dokumentation: 17 Bash-Blöcke und der eingebettete Guard bestehen
+`bash -n`; sechs systemd-Beispiele sind als INI gelesen und auf Benutzer,
+Slice, lokale Datenbank, HTTP-Bindung und Import-Abhängigkeiten abgeglichen.
+77 lokale README-/Anleitungslinks einschließlich Sprungmarken sind gültig.
+Struktur-/Helperhash-/JSON-/LF-Prüfung und `git diff --check` bestanden.
+Keine Pakete installiert, keine Dienste gestartet und keine Linux-/Pi-Befehle
+aus den Beispielen ausgeführt; kein neuer Praxisnachweis behauptet.
+
+## Praxisbilder in den Modul-READMEs (2026-10-26)
+
+Die fünf vom Benutzer bereitgestellten Screenshots sind in den Anleitungen
+für WoIst, Gerät, Anwesenheit (Widget und WidgetCompact) sowie Fotos eingebunden.
+Das normale Anwesenheitswidget verwendet auf Benutzerwunsch den nachgereichten
+Screenshot mit größerer Statusschrift und zwei anwesenden sowie zwei abwesenden
+Geräten (2541 × 266 Pixel). Die Datei wurde unverändert übernommen; der
+README-Bildpfad bleibt bestehen. Es enthält nur sRGB-, Gamma- und DPI-Metadaten,
+keine personenbezogenen Textmetadaten. WidgetCompact ist unverändert.
+Der Benutzer erlaubt ausdrücklich die sichtbaren Namen und die klassische,
+pixelgenaue Bildbearbeitung statt KI-Nachzeichnung. Namen, Profilbilder,
+Bedienelemente und Statusangaben bleiben unverändert. Die KI-Vorentwürfe wurden
+wegen veränderter Abmessungen und zusätzlicher Ränder verworfen und sind nicht
+im Repository enthalten.
+
+Die endgültigen PNGs unter `docs/images/*-redacted.png` haben dieselben
+Abmessungen wie die Originale. In WoIst sind alle sichtbaren Adresszeilen,
+einschließlich der angeschnittenen letzten Zeile, unkenntlich gemacht und die
+privaten Gerätemarkierungen entfernt. Auf Benutzerwunsch bleibt der eigentliche
+Kartenhintergrund scharf und unverändert; eine zunächst vollflächige
+Kartenunschärfe wurde ersetzt. Zoomtasten und vollständige Quellenangaben
+bleiben erhalten. Bei der Geräte-Kachel ist nur die Adresse
+betroffen; beim Foto-Widget der private Dateiname. Die beiden Anwesenheitsbilder
+enthalten keine Adresszeilen und bleiben pixelgleich mit der Vorlage.
+
+Klassische lokale Verarbeitung: Schriftinformationen der Schutzzeilen durch
+Verkleinerung entfernt, anschließend weichgezeichnet; die überlagerten
+Gerätemarker durch einen unkritischen Kartenausschnitt des Hintergrunds ersetzt.
+Bei den neu codierten Bildern wurden keine PNG-Metadaten übernommen. Originaldateien
+bleiben außerhalb des Repositorys unverändert. Pixelvergleich bestätigt für
+alle fünf Bilder unveränderte Inhalte außerhalb der festgelegten Schutzbereiche.
+Alle Endbilder wurden visuell geprüft; die READMEs kennzeichnen unkenntlich
+gemachte Inhalte. Keine Änderung an Modulcode, Helpern oder Versionsmetadaten.
+
+Abschlussprüfung: alle fünf PNGs gültig; Originalmaße und Pixelvergleich erneut
+am endgültigen Stand bestätigt. Alle 54 lokalen README-Datei-/Bildverweise,
+Bibliotheksstruktur, Helper-Prüfsummen, JSON-/LF-Verträge und `git diff --check`
+bestanden. Keine erneuten Funktionstests für diese reine Dokumentationsänderung.
+
+## Geräte-Kachel mit letztem bekannten Standort (2026-10-26)
+
+Die Geräteinstanz bietet zusätzlich zur unveränderten Suchton-Variablenkachel
+eine instanzspezifische HTML-SDK-Kachel. Sie verbindet den ausdrücklichen
+Suchton-Taster mit Name, Modell, verfügbarer Batterie und letztem Standort.
+Eine vorhandene WoIst-Adresse hat Vorrang vor Koordinaten. Standortzeit und
+positive Genauigkeit gehören zur jeweiligen gespeicherten Position; fehlender
+Standort erzeugt keine Nullposition. Neue Koordinaten übernehmen keine ältere
+Adresse. Bei zeitweilig fehlendem GPS oder Konto bleibt der historische Ort
+sichtbar. Apple-Altersflag, fehlende aktuelle Position, fehlende Standortzeit
+und ein Alter über 15 Minuten erzeugen eine Warnung; die vorhandene Variable
+LocationIsOld bleibt in ihrer bisherigen Bedeutung unverändert.
+
+Vor Umsetzung vorhandene zentrale Renderer-, Theme-, Responsive- und
+Interaktionshelper sowie die Anwesenheits-/Kartenintegration geprüft. Die
+unveränderten Helper übernehmen Seitengerüst, sichere Bootstrap-Kodierung,
+Hostfarben, Titelabstand und Eingabeunterstützung. Fachlicher Zustand und
+Ressourcen verbleiben in `libs/DeviceWidget.php` und beim Gerät; keine neue
+Zentralisierung und keine lokalen Helper-Testkopien. Die Kachel verwendet das
+Symcon-Design ohne zusätzliche eigene Farbfelder oder Designer.
+
+GetVisualizationTile und die interne GetState-Aktion lesen nur lokale Werte.
+Datenupdates veröffentlichen SDK-Nachrichten ohne HTML-Neuladen. Ein vorhandener
+Zeitstempel erlaubt auch nach einem Update des bisherigen Moduls die Übernahme
+seiner historischen Koordinaten. Geräte-/Kontowechsel löschen den Verlauf.
+Alle bisherigen Variablen-IDs, Aktionen und Kontoschutzgrenzen bleiben erhalten.
+Der Suchton verwendet ausschließlich die bestehende PlaySound-Aktion. Bis zur
+Rückmeldung mit neuer Ergebnisrevision ist der Taster gesperrt; Promise- oder
+void-Rückgaben des SDK sind keine Bestätigung. Nach spätestens 30 Sekunden wird
+ein unbestätigter Auftrag gemeldet, ohne ihn zu wiederholen.
+
+Nachweise: gezielte PHP-Verträge für Fallback, historisches GPS, Nullkoordinaten,
+Adressbindung, Geräte-/Kontowechsel, Variablen-IDs und nebenwirkungsfreies Rendern.
+Node prüft sichere Textausgabe, Alterswarnung, Update-/Scroll-Erhalt sowie
+Bestätigung, Doppelklickschutz, void-SDK, Timeout und fehlende Wiederholung.
+Die Gesamtsuite besteht mit den vorhandenen PHP-GD-/Exif-Erweiterungen, die nur
+über eine temporäre Prüfkonfiguration geladen wurden; keine Systemänderung.
+
+MCP-Browserprüfung des echten Renderers mit synthetischem Konto und inertem
+Suchtontransport: Adresse, Koordinaten, Leerzustand, Alterswarnung, Hell/Dunkel
+und kleine/große Kacheln geprüft. Mausrad bewegt den Scrollcontainer abwärts
+von 0 auf 138 und aufwärts zurück auf 0; ein Datenupdate erhält 138 unverändert.
+Keine horizontale Überbreite bei 280 Pixeln. Der synthetische Suchton zeigt eine
+Rückmeldung, ohne Apple-/Symcon-Zugriff. Screenshot mit ausschließlich
+synthetischen Angaben unter `docs/images/device-location-tile.png`.
+In der instrumentierten srcdoc-Prüfseite meldet die Browsersteuerung weiterhin
+MutationObserver.observe; der Widget-Fehlerlistener erfasst dabei keinen Fehler.
+Die separat geladene identische Widgetseite hat keine Browserfehler. Weder
+Modulskript noch verwendetes Interaktionsskript enthalten MutationObserver.
+Die genaue Instrumentierungsquelle ist damit nicht abschließend nachgewiesen;
+kein daraus abgeleiteter Eingriff in zentrale Helper. Abnahme von echten
+nativen Live-Pushs und realem Suchton nach Installation bleibt offen.
+
+Abschluss: vollständige Offline-Suite einschließlich der neuen PHP-/Node-Tests,
+Struktur-/Helperhash-/LF-Prüfung, JSON-Stil, php-cs-fixer im Prüfmodus und
+`git diff --check` bestanden. Die englische PHP-CS-Fixer-Meldung zur fehlenden
+optionalen composer.json ist ein Hinweis; der Prüfstatus ist erfolgreich.
+
+## README-Prüfung und verständliche Geräteanleitungen (2026-10-26)
+
+Bibliotheks-README und alle sieben Modul-READMEs mit Implementierung,
+Formularen und Übersetzungskatalogen abgeglichen. Schwerpunkt waren Gerät und
+Gerätekonfigurator: vollständige Erstinstallation, Datenfluss statt Ordnerbezug,
+automatische Geräte-ID, gespeicherte gegenüber neu abgerufenen Daten sowie
+Unterschiede zwischen Online, Verfügbarkeit, GPS-Zeit und Abrufzeit.
+Die Gerätevariablen nennen jetzt auch ihre deutschen Anzeigenamen; die
+Statuscodes 102/201/202/203 und ihre nächsten Bedienungsschritte sind erklärt.
+Suchton, bestätigte Verloren-Modus-Aktionen und Adressquelle bleiben vollständig
+dokumentiert. Keine Änderung an öffentlichen Funktionen oder Laufzeitcode.
+
+Die Übersicht grenzt Konto, Konfigurator, Geräteinstanz, Karte, Anwesenheit,
+Fotos und Kontakte ab. Foto-/Kontaktfreigaben, optionale PHP-Erweiterungen,
+fehlende Fotoeinstellungen und die IPSView-Fotovariable sind ergänzt.
+Der globale Grenzpuffer der Anwesenheit wird korrekt nur auf übernehmende
+Zonen bezogen. WoIst verwendet die tatsächlichen deutschen Designerbezeichnungen
+und trennt übernommene Kartenparameter vom unabhängigen IPSView-Stil.
+Lizenzabschnitte stehen am Ende; Kontakte besitzt nun einen eigenen Lizenzlink.
+Veraltete Nominatim-Anker und anwenderfremde Helper-Freigabeanweisungen wurden
+ersetzt. Interne Architektur- und Prüfhinweise verbleiben im Projektkontext.
+
+MCP las die installierten Geräte-/Konfiguratorformulare ohne Änderung der
+Konfiguration und ohne Apple-Abruf. Der PNG-Screenshot
+`docs/images/device-find-phone-tile.png` stammt aus der echten nativen
+Suchton-Variablenkachel in der MCP-Vorschau. Ladeabschluss wurde vor DOM-Abfragen
+geprüft; aufgenommen wurde ausschließlich der unkritische Kachelbereich.
+Keine nachgebildete Oberfläche und kein behaupteter neuer Versand-/Tonversuch.
+Der Screenshot wurde visuell geprüft und enthält keine Gerätenamen,
+Gerätekennungen, Objekt-IDs, Serveradressen, Standortdaten oder Zugangstokens.
+
+Abschlussprüfung: Alle acht READMEs und 57 lokale Datei-, Bild- und
+Sprungmarkenverweise geprüft. Bibliotheksstruktur, Helper-Prüfsummen,
+JSON-/LF-Verträge und `git diff --check` bestanden. Den fertigen PNG-Screenshot
+visuell kontrolliert. Für diese reine Dokumentationsänderung wurden keine
+Laufzeitaktionen ausgelöst und keine neuen Funktionstests behauptet.
+
+## Anwesenheit: benutzereigene Variablensichtbarkeit erhalten (2026-10-26)
+
+Die Testing-Vorprüfung fand zwei wiederholte Sichtbarkeitsschreibzugriffe:
+`registerMember` blendete alle ausgewählten Gerätevariablen bei jeder
+Auswertung ein; `synchronizeVariables` blendete entfernte Variablen bei jedem
+Update erneut aus. Dadurch wurden manuelle Einstellungen überschrieben.
+
+Die vorhandenen zentralen VariablePresentation-, Formular- und
+Visualisierungshelper wurden geprüft. Sie enthalten keinen passenden Vertrag
+für diese Anwesenheitsauswahl. Die Korrektur bleibt deshalb librarylokal und
+verwendet weiterhin die unveränderten zentralen Variablendarstellungen; keine
+zusätzliche Zentralisierung oder lokale Kopie eines zentralen Helpers.
+
+Reguläre Cache-/Push-Updates und ApplyChanges schreiben die Sichtbarkeit
+ausgewählter Variablen nicht mehr. Beim erstmaligen Entfernen speichert das
+persistente Attribut `InactiveVariableVisibility` je Ident die Objekt-ID,
+vorherige Sichtbarkeit und die Berechtigung zur Rücknahme der vorübergehenden
+Modulausblendung. Weitere Updates wiederholen die Ausblendung nicht. Eine
+beobachtete manuelle Einblendung gibt diese Berechtigung ab; auch spätere
+manuelle Änderungen bleiben dadurch bei Wiederaufnahme erhalten. Die
+Wiederaufnahme stellt nur eine noch verwaltete Ausblendung zurück. Alte
+Snapshots werden danach entfernt und binden niemals eine andere Objekt-ID.
+
+Beim Update bleibt eine bereits bestehende Ausblendung erhalten. Ein vor dieser
+Korrektur überschriebener Benutzerwunsch kann mangels historischer Information
+nicht rekonstruiert werden. Geräteauswahl, Variablen-Idents/-IDs, Werte,
+Archivbezug und GPS-Auswertung werden nicht migriert oder zurückgesetzt.
+
+Regression in `tests/presence-group.php`: der alte Stand scheitert gezielt am
+Erhalt einer manuellen Ausblendung; eine zweite Red-/Green-Prüfung sichert den
+Verzicht auf Wiederherstellung nach beobachteter manueller Änderung ab.
+Geprüft werden Cacheabruf, Push, mehrfaches ApplyChanges, Entfernen,
+Wiederaufnahme, vorher verborgene Variablen, manuelle Änderungen bei entfernten
+Geräten, mehrere Auswahlzyklen und unveränderte Objekt-IDs. Die bestehenden
+Gruppen-, Aufenthalts- und Migrationsprüfungen bleiben grün.
+
+Abschlussnachweis: `php tests/run.php` unter PHP 8.5.10 vollständig erfolgreich,
+einschließlich Node-Verträgen und Syntaxprüfung. Die vorhandenen GD-/EXIF-
+Erweiterungen wurden nur für den Prüflauf geladen. Auch Struktur-/Helperhash-
+Prüfung, JSON-Stil, php-cs-fixer im Prüfmodus und `git diff --check` bestanden.
+
+Kein Live-System wurde verändert und kein neuer MCP-/Browsernachweis behauptet.
+Release-Metadaten und Store-Einreichung bleiben außerhalb dieser Korrektur.
+
+## Rückmeldung und bestätigte Wiederanmeldung im Kontoformular (2026-10-25)
+
+Ursache des scheinbar wirkungslosen Buttons: `ICAC_Login` wurde durch den lokalen
+`AccountBlock` vor einem Apple-Aufruf abgewiesen. Der boolesche Rückgabewert des
+Formularcallbacks wurde nicht sichtbar ausgewertet; die reguläre Fehlerzeile
+konnte zugleich leer sein. Ein Browserlogin bei iCloud hebt diese lokale
+Schutzsperre nicht auf und sagt nichts über die Sitzung der Symcon-Instanz aus.
+Die per MCP gelesene Diagnose bestätigte `login / HTTP 0 / accountBlocked`.
+
+`AuthenticationResult` zeigt nun das feste, übersetzte Ergebnis der letzten
+manuellen Authentifizierungsaktion. Erfolg, Sitzungswiederverwendung, ausstehende
+2FA, Ablehnung, belegte Instanz und verbleibende Wartezeit sind unterscheidbar.
+Die Meldung enthält keine Apple-Antworttexte, Zugangsdaten oder Bestätigungscodes.
+Formularneuladen behält sie bei, Geräteabfragen überschreiben sie nicht;
+Löschen der lokalen Sitzung entfernt auch eine alte Erfolgsmeldung.
+
+Bei lokaler Schutzsperre erhält der Anmelden-Button einen Bestätigungsdialog.
+`ICAC_LoginFromForm($InstanceID, true)` verwendet nach Bestätigung die vorhandene
+lokale Freigabe und danach den regulären begrenzten Login. Ohne Bestätigung
+bleibt die Sperre bestehen; die bestehende `ICAC_Login`-Schnittstelle sowie Timer
+umgehen sie weiterhin nicht. Pause verhindert auch die Freigabe. Wartefristen,
+persistente Zähler und neue Sperren nach einer erneuten Ablehnung bleiben
+erhalten. Die lokale Konto-/Apple-Logik bleibt in dieser Library; vorhandene
+zentrale Formular- und Debug-Helper werden unverändert verwendet.
+
+Gezielte synthetische Regressionen prüfen die bestätigte Wiederanmeldung,
+Abbruch ohne Anfrage, unveränderte Limits, Pause, Cooldown, 2FA, Erfolg,
+Sitzungswiederverwendung und datensparsame Rückmeldungen. Es werden keine echten
+Anmeldungen oder künstlichen Kontosperren zu Testzwecken ausgelöst.
+Abschlussnachweis: vollständige Offline-Testsuite, Formular-/Erstellungsverträge,
+Struktur-/Helperhashprüfung, PHP-Syntaxprüfung, JSON-Stil und php-cs-fixer im
+Prüfmodus erfolgreich. Der echte Anmelde-/2FA-Abschluss und die anschließende
+Empfängerübernahme mit realen Kontakten bleiben nach Benutzerupdate und
+manueller Anmeldung zu prüfen; am verbundenen System wurde nur die bestehende
+lokale Sperre diagnostiziert.
+
+## Empfängerübernahme aus iCloud Kontakte (2026-10-25)
+
+Die bestehende Kontaktinstanz konfiguriert nach ausdrücklicher Vorschau und
+Bestätigung ausgewählte Empfänger in IPSymconNotice / Mitteilungen und Symcon
+Benachrichtigung. Kein neues Projekt, keine vollständige Kontakt-Exportvariable,
+kein Versand und kein automatischer Abgleich. Die Adapter liegen librarylokal
+in `ContactsRecipientTransfer`; zentrale ConfigurationForm-, DataFlow- und
+ParentConnection-Helper werden unverändert genutzt. Für diese ausschließlich
+in iCloud Services eingesetzte Integration wird kein zentraler Helper angelegt.
+
+Notice-Benutzer werden anhand eines stabilen Kürzels ergänzt/zusammengeführt;
+neue Einträge bleiben inaktiv. Vorhandene Kennungen, nicht ausgewählte Adressen,
+Flags, Zuordnungen, Skriptparameter und sonstige Einstellungen bleiben erhalten.
+Benachrichtigung ändert nur `recipientAddress` einer ausdrücklich gewählten
+vorhandenen SMTP-/SMS-Aktion, Stufen und Aktionen ab 1. Unbekannte JSON-Felder
+und Objekttypen bleiben erhalten. Vollständige Zielkonfigurationen werden weder
+in Vorschau noch Diagnose veröffentlicht; temporär gespeichert werden nur
+ausgewählte Änderungen, Argumente und Snapshot-Hashes.
+
+Bestätigungen sind einmalig und fünf Minuten gültig. Aktuelle, nicht pausierte
+Quelldaten, unveränderte Quelle/Verbindung und unveränderte Zielkonfiguration
+sind Voraussetzung. Offene Zieländerungen werden abgewiesen. Semaphore sichern
+die Übernahme zwischen Kontaktinstanzen; fehlgeschlagenes ApplyChanges versucht
+die vorherige Property wiederherzustellen. Keine automatische Apple-Anmeldung,
+kein Aktualisierungsaufruf und keine Versand-/Eskalationsfunktion.
+
+MCP-Nachweis am Windows-Testsystem mit den tatsächlich installierten Zielmodulen:
+Vorschau und Abbrechen ohne gestagte oder übernommene Zieländerungen, bestätigtes
+Ergänzen eines inaktiven Notice-Benutzers, Aktualisieren eines vorhandenen Benutzers
+bei Erhalt anderer Felder/Benutzer, SMTP-Adressübernahme bei ansonsten identischer
+Benachrichtigungskonfiguration, Einmaligkeit und Ablehnung nach Zieländerung.
+Das echte Kontaktformular enthält die explizite Bestätigung und beide Zieltypen.
+Mangels aktiviertem Kontaktzugriff diente ein synthetischer Kontakt über eine
+kurzlebige Prüfklasse als Quelle; kein echter Apple-Kontaktabruf wurde behauptet.
+Der reguläre öffentliche Aufruf weist diese nicht vorhandene Quelle korrekt ab.
+
+Auf ausdrücklichen Benutzerwunsch bleiben die gekennzeichneten Testinstanzen
+beider Zielmodule samt SMTP-Instanz ohne Zugang und inaktivem Auslöser bestehen.
+Mitteilungen bleibt deaktiviert, der neue Notice-Benutzer inaktiv;
+Benachrichtigungsstufe inaktiv, Laufzeit-Level 0, Active und Auslöser false.
+Es wurde keine Nachricht versendet. Das vorhandene Benachrichtigungsmodul sowie
+Apple-Konto, Sitzung und Kontaktfreigabe wurden nicht verändert.
+
+Offline-Regressionen prüfen zusätzlich SMS, fehlende Adressen, falsche Zieltypen,
+offene Zieländerungen, geänderte Kontakte, Pause, Ablauf, Eingabeinvalidierung,
+vollständigen Erhalt unbekannter JSON-Objekte und Rollback bei ApplyChanges-Fehlern.
+Abschluss: `php tests/run.php` einschließlich Struktur-/Formularverträgen und
+Syntaxprüfungen erfolgreich; JSON-Stilprüfung und php-cs-fixer im vollständigen
+Prüfmodus ohne Befund. Der zentrale Helperbestand und seine Hashverträge bleiben
+unverändert.
+
+## iCloud Fotos: erste lesende Version und Ressourcenprofile (2026-10-24)
+
+Neues Modul `iCloud Photos` / „iCloud Fotos“, Präfix `ICPH`, als Konto-Kind.
+Persönliche Alben, Favoriten und alle Fotos verwenden die optionale
+`ckdatabasews`-Capability der bestehenden Apple-Sitzung. Abfragen sind auf
+CloudKit-Index-/Album-/Metadaten-Queries beschränkt; keine Mutationsrouten,
+Uploads, Löschungen oder automatische Passwort-Neuanmeldung. Nicht freigegebener
+Webzugriff, ADP-Freigabe und laufende Indizierung haben eigene Fehlermeldungen.
+Das bestehende Find-My-Verhalten bleibt unabhängig von der optionalen Capability.
+
+Einzelbild-/Diashow-Widgets für Kachel und IPSView besitzen getrennte Designer,
+Beschriftung, contain/cover, Vor/Zurück, Pause, Intervall und seitenweisen Zufall.
+Albumseiten werden bedarfsgerecht geladen. Das Backend fordert JPEG-Vorschauen
+an und filtert Videos, versteckte und gelöschte Einträge. Ein Client hält jeweils
+nur ein Bild als Blob, keine komplette Mediathek oder vorab gefüllten Bildspeicher.
+
+Ressourcenprofile gelten pro Konto, unabhängig von einer angenommenen Hardware:
+Kompakt (Standard) 50 Bilder/100 MiB, Standard 250/500 MiB, Groß 1000/2 GiB,
+Eigene Grenzen 1–100000 Bilder und 1–65536 MiB. Die zuerst erreichte Anzahl-/
+Bytegrenze gilt. Der geteilte private Festplatten-Cache verwendet LRU, atomare
+Dateien und räumt abgebrochene Cache-Schreibvorgänge auf. Reduzierte Grenzen
+werden beim Übernehmen durchgesetzt. Kleine Indexdateien kommen zum Bildbudget.
+Einzelne Vorschauen sind auf 8 MiB/20 Millionen Pixel begrenzt. Disk- und
+Netzwerkfehler werden angezeigt; Serverfehler erhalten eine Fotobackoffzeit.
+
+Apple-Sitzung und signierte Downloadadressen bleiben ausschließlich im Konto.
+Album- und Bildanfragen der Browser sind an die konfigurierte Quelle gebunden,
+der HTTP-Hook verlangt ein Token im Header. Der öffentliche Seitenschirm enthält
+keine Fotometadaten und kein Token. Lokale Bilder werden selbst bei einem
+Cachetreffer nur mit aktuellem Kontozugriff ausgeliefert. Album-/Kontowechsel
+rotieren das Widget-Token; Deaktivierung und Abmeldung leeren den Kontocache.
+
+Wiederverwendet werden die regulär verteilten zentralen Helper für Themen,
+IPSView-Stile, responsive Kacheltitelabstände, HTTP-Antworten, Origin-Ermittlung,
+Mausrad und HTML-WebContent. Die bestehende librarylokale IPSView-Einbettung und
+Farbkartenstruktur werden ebenfalls verwendet. Foto-Protokoll, Cache und
+Widgetlogik verbleiben gemäß der Zwei-Libraries-Regel in iCloud Services.
+`libs/helper` und seine Verteilungs-/Hashverträge wurden nicht verändert.
+Beide Designer enthalten zum Foto-Widget passende deutsche/englische Farbkarten.
+
+Nachweise mit synthetischen Daten: gemeinsamer Download zweier Widgets,
+Anzahl-/Bytegrenzen, LRU, Verkleinern des Budgets, Crash-Aufräumen, Seitenwechsel,
+Ausschluss versteckter Bilder, Host-/MIME-Prüfung, widerrufener Zugriff trotz
+vorhandener Cachedatei, Tokenwechsel, Backoff und unveränderte Formularverträge.
+JavaScript-Tests prüfen Auswahl, Pause, Beschriftungs-Scrollposition, langsame
+Downloads, neue Daten, Quellenwechsel und Wiederverbindung einschließlich
+Sitzungsspeicher. Headless Edge rendert die echten Modulvorlagen lokal mit
+synthetischen HTTP-Antworten: native Kachel und IPSView-Seite, Mausrad,
+230 × 240 Pixel, heller/dunkler Zentralstil, Ausfall/Wiederanlauf und Entzug des
+Zugriffs ohne Browserfehler. Ein bei dieser Prüfung gefundener stehenbleibender
+Verbindungshinweis wurde korrigiert und mit einem Regressionstest abgesichert.
+
+Grenzen: Keine Live-Installation, keine Apple-Anmeldung und kein Zugriff auf
+reale Fotos. MCP-Praxisprüfung auf Symcon und in der nativen IPSView-App sowie
+Apple-Freigabe/Album-/Vorschaudaten mit dem realen Konto sind nach dem Update
+noch offen. Der lokale Browsernachweis ersetzt diese Praxisprüfungen nicht.
+Die vollständige Offline-Suite mit GD/Exif, Struktur-/Helper-Hashes, StylePHP und
+php-cs-fixer dienen als Übergabeprüfungen; Version/Build bleiben unverändert.
+
+## Kompakte Anwesenheitswidgets (2026-10-23)
+
+Native HTML-Kachel und optionale IPSView-WebContent-Variable zeigen
+Gesamtanwesenheit und ausgewählte Einzelgeräte, ohne vollständige Dashboardseite.
+Ein optionales Bildmedium ergänzt jede `Devices`-Zeile; fehlende/ungültige Bilder
+verwenden Initialen. Zonen, GPS-Zustände und bestehende Variablenkennungen bleiben.
+
+Darstellung, Bildprüfung, Cachetransport und unabhängige Designer liegen im
+librarylokalen Trait `libs/PresenceWidget.php`; Ressourcen beim Anwesenheitsmodul. Bestehende Helper liefern Theme, IPSView-Farben,
+Schriften, Interaktionen und Reservierung des Kacheltitels. Das Modul liefert
+bereits ausgewertete Werte, keine Koordinaten oder Apple-Kennungen. IPSView-
+Datenupdates schreiben die HTML-Variable nicht neu.
+
+Die Widget-Tests einschließlich Bildvalidierung und JavaScript-Laufzeit liegen
+in iCloud Services. Die Verlagerung entfernt kein Verhalten und keine Testabdeckung.
+Die unveränderten zentralen Basishelper werden weiterhin regulär verteilt.
+
+MCP: getrennte temporäre Library mit zwölf synthetischen Geräten (Anwesend,
+Abwesend, Unbekannt) und lokalem Testbild. Kachelvorschau in Hell/Dunkel, responsive
+Abmessungen, Bild/Initialen und Mausrad in beide Richtungen erfolgreich.
+IPSView-Testeinbettung bei 360 × 320 Pixeln: echter Cache-Datenwechsel ohne Neuladen.
+Sichtbarer Status wechselte, eingebetteter Bootstrap blieb unverändert, Auswahl und
+Scrollposition blieben erhalten. Der zentrale Dunkelstil wurde ohne Dokumentwechsel
+übernommen. Bei unterbrochenem Cache-Zugriff erschien ein Hinweis, während Auswahl
+und Scrollposition erhalten blieben.
+
+Grenzen: Statische Kachelvorschau bestätigt keine nativen Live-Pushs.
+IPSView-Testeinbettung ersetzt weder echten Webclient noch native IPSView-App;
+diese Hostprüfungen bleiben nach regulärer Installation offen. Die zusätzliche
+WebContent-Vorschau des Symcon-Clients blieb im Ladezustand mit einem Fehler in
+`main.dart.js`; direkte HTML-Kachel und Widget wurden getrennt davon geprüft.
+
+Zuständigkeitskorrektur: Tatsächliche Nutzung in mindestens zwei verschiedenen
+Libraries ist die Voraussetzung für Zentralisierung. Für diesen Widget-Baustein
+ist nur iCloud Services belegt; Abonnement, zentraler Quellcode und zentrale Tests
+werden deshalb entfernt. Das Widget wird unmittelbar mit der Library ausgeliefert.
+Der CI-Lauf 39967522183 scheiterte an `Unknown helper dependency: StatusWidgetHelper`,
+weil der beim Pull ausgelagerte Manifest-Eintrag vor dem Commit nicht wieder
+enthalten war. Die korrigierte lokale Zuständigkeit benötigt diesen Eintrag nicht.
+Keine Commits, Pushs, Merges oder Releases durch den Agenten.
+
+Nach der Zuständigkeitskorrektur bestehen die vollständige lokale Modulsuite,
+Bild-/JavaScript-Tests, lokale Ressourcen-/Übersetzungsverträge und Stilprüfung
+unter PHP 8.5.10. Das zentrale Manifest umfasst wieder 30 Helper; Bundle-,
+Übersetzungs- und Helper-Prüfungen sowie die isolierte CI-Metadatenvorbereitung
+mit den Sicherheits-/Verteilungstests bestehen ebenfalls.
+Erneute MCP-Prüfung mit synthetischen Daten bestätigt die librarylokalen Pfade:
+native Strict-Instanz aktiv, beide HTML-Ausgaben gefüllt, Kacheltitelabstand,
+deutsche Designertexte und gemischte Gesamtanwesenheit korrekt. Prüfinstanz und
+Library wurden entfernt; die bestehende Anwesenheitskonfiguration samt IDs und
+Verbindung blieb unverändert. Die früher dokumentierten Grenzen für echte
+Host-Live-Pushs und die native IPSView-App bleiben bestehen.
+
+Nach der Prüfung wurden temporäre Instanz, Bilddatei, Library und Hook entfernt.
+Der Vorher-/Nachhervergleich der bestehenden Anwesenheitsinstanz bestätigt
+unveränderte Konfiguration, Verbindung und vollständige Variablen-ID-Liste.
+
+## Installierte Zonen-GPS-Vorgaben: MCP-Prüfung und Wiederherstellung (2026-10-23)
+
+Nach den vom Benutzer abgeschlossenen Updates wurde die bestehende
+Anwesenheitsinstanz auf dem angeschlossenen Symcon-System geprüft. Die neuen
+Modulfunktionen und GeofenceHelper 1.2.0 waren geladen; dessen Datei entsprach
+dem SHA-256 des installierten Helper-Manifests. Die Instanz war aktiv und
+verwaltete zwei Geräte mit einer gemeinsamen Referenzzone und 29 Variablen.
+
+Der abschließende Lauf bestand mit **29 Prüfungen ohne Warnungen oder Fehler**.
+Temporäre Konfigurationen und kontrollierte Standortdaten wurden an der
+Auswertungsgrenze der bestehenden Instanz verwendet. Der Apple-Kontocache blieb
+unverändert; zusätzliche Apple-Abfragen oder Neuortungen wurden nicht ausgelöst.
+Geprüft wurden globale Übernahme trotz ruhender eigener Werte, abweichende
+GPS-Vorgaben beider Zonen, wirksame Radius-/Puffergrenzen, deutsche dynamische
+Formularbeschriftungen sowie getrennte Gerätewerte und Gesamtanwesenheit.
+
+Eintritt und Austritt berücksichtigten die längere Bestätigungszeit von Herkunft
+und Ziel. Wiederholte Cachepositionen bestätigten keinen Wechsel. Ungenaue Daten
+führten zu Unbekannt und unterbrachen den Aufenthalt; weder spätere ungenaue
+Positionen noch ein Wechsel über Unbekannt umgingen Herkunftsqualität oder
+Bestätigungszeit. Eine weit entfernte Zielzone durfte ihre eigene großzügigere
+Genauigkeitsgrenze nutzen. Auch eigener Grenzpuffer, Austritt aus allen Zonen,
+Beginn und Dauer eines bestätigten Aufenthalts sowie sichere Ablehnung einer
+ungültigen Rückkehr zu globalen Vorgaben wurden nachgewiesen.
+
+Die Wiederherstellung erfolgte im Abschluss-/Fehlerpfad und wurde anschließend
+erneut lesend geprüft: vollständige ursprüngliche Konfiguration, Kontoverbindung,
+15-Sekunden-Timer, alle 29 Variablen-IDs und beide bisherigen Aufenthaltsbeginne
+waren erhalten. Die beiden archivierten Anwesenheitsvariablen wurden während der
+kontrollierten Testwechsel kurz von der Protokollierung ausgenommen; ihre
+ursprüngliche Archivierung war danach wieder aktiv. Gesicherte Auswertungszustände
+wurden zurückgespielt und über die normale Modulauswertung mit den Echtwerten
+abgeglichen. Status 102, beide Geräte Anwesend und Gesamtanwesenheit Anwesend
+waren wiederhergestellt. Ein nachfolgender regulärer Timerlauf aktualisierte
+beide Aufenthaltsdauern weiter, ohne deren Beginn zurückzusetzen.
+
+Beim ersten Lauf wies Symcon direkte Wiederherstellungsversuche an den
+schreibgeschützten Variablen ab. Die Teststeuerung wurde auf den moduleigenen
+SDK-Wertzugriff korrigiert; der danach vollständig wiederholte Lauf war
+warnungsfrei. Dies erforderte keine Änderung am Modul oder an den Helpern.
+Private Geräte-/Objektkennungen, Endpunkte und Koordinaten werden hier nicht
+gespeichert. Reale GPS-Bewegungen und die interaktive Bedienung des neuen
+Zonendialogs sind durch diesen kontrollierten Lauf nicht nachgewiesen.
+
+## Anwesenheit: optionale GPS-Vorgaben je Zone (2026-10-23)
+
+Zonen können im eigenen Bearbeitungsdialog **Eigene GPS-Einstellungen für diese
+Zone verwenden** aktivieren: Grenzpuffer, maximale Standortungenauigkeit und
+Bestätigungszeit. Standardmäßig werden weiterhin die globalen Werte übernommen.
+Der zentrale GeofenceHelper löst aktive Überschreibungen auf und prüft jeden
+Radius mit seinem wirksamen Puffer. Standortalter und Geschwindigkeitsprüfung
+bleiben global. Die Entscheidung und der kompatible Zustandsvertrag stehen in
+[ADR 0009](docs/adr/0009-zone-gps-inheritance.md).
+
+Wechsel berücksichtigen Herkunft und Ziel sowie die längere Bestätigungszeit.
+Eine ungenaue Position oder ein Wechsel über Unbekannt kann die strengeren
+Austrittsregeln nicht umgehen. Auch nach Qualitätsverlust benötigt der Wechsel
+in eine andere Zone eine neue bestätigende Position nach Ablauf der Zeit.
+Währenddessen bleiben Anwesenheit unbekannt und Aufenthalt nicht verfügbar.
+Die Priorität der Referenzzone bei Überlappungen bleibt erhalten.
+
+Bestehende Zonen und Zustände bleiben lesbar. Ohne aktive Überschreibungen bleibt
+die normalisierte Quellidentität unverändert; Variablen werden nicht neu angelegt.
+Der Zeilendialog wird für jede Öffnung neu aus den aktuellen, auch ungespeicherten
+globalen Werten erzeugt. Eigene Werte sind optional sichtbar, werden bei
+Deaktivierung behalten und nicht angewendet. Radius-/Puffergrenzen gelten auch
+beim Umschalten der Übernahme. Die dynamischen Beschriftungen werden ausdrücklich
+über den Modul-Sprachkontext übersetzt. Das Zeilenfeld `id` kann die Instanz-ID
+der Formularaktionen nicht überschreiben.
+
+### Nachweis und Auslieferung
+
+Unter PHP 8.5.10 bestanden die vollständigen Helper- und Modulsuiten mit einem
+isoliert erzeugten vollständigen Consumer-Paket: 15 abonnierte Helper und 61
+Helper-/Ressourcendateien. Manifest-, Abhängigkeits-, Übersetzungs-, Struktur-,
+JSON-/LF- und Stilprüfungen bestanden. Die neuen Regressionen prüfen Vererbung,
+wirksame Eingabegrenzen, beide Wechselrichtungen, Bestätigungszeiten, wiederholte
+Cachepositionen, Herkunftsschutz nach Unbekannt, Referenzüberlappung, Dauer,
+Formularaktionsverträge und unveränderte Variablen-IDs.
+
+Der abschließende MCP-Lauf in einer temporären nativen Bibliothek bestand mit
+28 Prüfungen. Nur Uhrzeit und Kontocache waren synthetisch; Erstellung,
+Konfiguration, Attribute, Variablen, Übersetzung und generierte Modulaufrufe
+liefen nativ. Der Lauf prüfte zwei Geräte, Gesamtanwesenheit, Ein-/Austritt,
+Qualitätsverlust mit bestätigter Wiederaufnahme, Aufenthaltsdauer, globale
+Übernahme, eigene Werte, ungültige Einstellungen, Referenzüberlappungen und IDs.
+Die Testinstanz und Bibliothek wurden vollständig entfernt. Die bestehende
+Anwesenheitsinstanz blieb aktiv; Konfiguration, Kontoverbindung und alle
+29 Variablen-IDs waren unverändert. Private Kennungen und Koordinaten werden
+hier nicht gespeichert. Interaktive Bedienung des neuen Dialogs im regulär
+aktualisierten Client und echte GPS-Bewegungen sind damit noch nicht nachgewiesen.
+
+Zuerst die zentrale Helper-Änderung freigeben und automatisch verteilen lassen,
+dann das reguläre Paket pullen und die Moduländerung veröffentlichen. Der normale
+Consumer enthält keine lokalen Helper-Testkopien. Bestehende Subscription und
+Verteilungsregeln reichen aus; neue Ressourcen sind nicht erforderlich.
+
+## Anwesenheit: Formulargrenzen und erneute Laufzeitprüfung (2026-10-23)
+
+Die fachliche Bedingung `radius > hysteresis` bleibt im zentralen GeofenceHelper
+verbindlich. Das Modul verwendet weiterhin den ConfigurationFormHelper für das
+dynamische Formular. Modulbezogene Eingabegrenzen begrenzen den Radius-Editor
+auf `buffer + 1` und den ganzzahligen Puffer auf einen Wert unter dem kleinsten
+Radius aller Zonen. Die dokumentierten List-Ereignisse `onAdd`, `onEdit` und
+`onDelete` sowie `NumberSpinner.onChange` verwenden die noch nicht übernommenen
+Formularwerte. Komplexe Editor-Updates werden JSON-codiert übergeben. Die
+Formularprüfung persistiert keine Properties und liest keinen Kontocache.
+Bei ungültigen gespeicherten Kombinationen nennt der Fehlertext Zone und Werte;
+die unabhängige Laufzeitprüfung bleibt aktiv und hält den Timer angehalten.
+
+Gezielte Regressionen prüfen Gleichheit, die kleinste Neben-/Referenzzone,
+ungespeicherte Änderungen, Warnung und Korrektur, leere bzw. fehlerhafte Listen,
+JSON-Updates, unveränderte Properties/Variablen-IDs und ausbleibende Kontoaufrufe.
+Die dokumentbasierten CI-Vertragsprüfungen berücksichtigen zusätzlich die drei
+List-Ereignisse und die JSON-Serialisierung bekannter Formularfelder.
+
+Die erneute lesende MCP-Prüfung der installierten Anwesenheitsgruppe ergab
+Status 102 bei zwei ausgewählten Geräten, einer gemeinsamen Referenzzone und
+29 Variablen. Der Benutzer hatte den Grenzpuffer auf 9 m bei 10 m Radius und
+15 m maximaler Ungenauigkeit korrigiert. Der 15-Sekunden-Timer aktualisierte die
+Werte; beide Entfernungen stimmten mit einer unabhängigen Großkreisberechnung
+aus dem Kontocache überein. Ein zuverlässig abwesendes und ein im Grenzbereich
+unbekanntes Gerät ergaben korrekt eine unbekannte Gesamtanwesenheit mit den
+passenden Zählern. Bei beiden Geräten waren Aufenthalt und Beginn 0 und als
+nicht verfügbar gekennzeichnet. Ein fortlaufender positiver Aufenthalt ließ
+sich in dieser realen Konstellation daher nicht prüfen.
+
+Konfiguration und alle 29 Variablen-IDs blieben während der erneuten Prüfung
+unverändert. Die zuvor erfassten Einzelgeräteinstanzen waren nicht mehr vorhanden;
+eine ID-Migration vom früheren Einzelgerätebestand kann dieser Lauf somit nicht
+bestätigen. Die neu ergänzte Formularabsicherung wurde lokal geprüft und noch
+nicht auf das angeschlossene System installiert. Ein nativer Bediennachweis
+dieser neuen Grenzen bleibt bis zum regulären Modulupdate offen. Es wurden weder
+Einstellungen geändert noch zusätzliche Apple-Abfragen ausgelöst.
+
+## Anwesenheitsgruppen: mehrere Geräte und gemeinsame Zonen (2026-10-23)
+
+Die Anwesenheitsinstanz wurde auf eine Gruppe mit mehreren Geräten desselben
+Kontos umgebaut. Geräte werden einmal in `Devices` ausgewählt; Zonen,
+Referenzzone und GPS-Einstellungen gelten gemeinsam. Elf Gerätevariablen sowie
+je Gerät getrennte Zustände und Aufenthaltsdauern bleiben erhalten. Sieben
+Gruppenvariablen zeigen Gesamtanwesenheit, Geräteanzahlen und Kontoverfügbarkeit.
+Die Architektur- und Migrationsentscheidung steht in
+[ADR 0008](docs/adr/0008-shared-zone-presence-groups.md).
+
+`GeofenceHelper::AggregateGeofencePresence` bildet zentral den Gesamtstatus:
+mindestens ein anwesendes Gerät genügt für Anwesend; Abwesend erfordert eine
+nichtleere Auswahl ausschließlich abwesender Geräte. Sonst gilt Unbekannt.
+Fehlende, veraltete oder ungenaue Geräte werden nicht als abwesend gezählt.
+Die Gruppe liest den Kontocache nur einmal je Aktualisierung. Es entstehen
+keine weiteren Apple-Abfragen oder Ortungsanforderungen.
+
+Die offizielle SDK-Migration übernimmt eine alte Einzelgeräte-Auswahl nur bei
+noch fehlender neuer Liste. Eine bewusst leere Liste bleibt leer. Alte
+Gerätevariablen behalten ihre Objekt-IDs und werden auf Geräte-Idents umbenannt;
+die Gesamtanwesenheit erhält eine eigene Variable. Ein bestehender Aufenthalt
+wird bei unveränderter Quellzuordnung übernommen. Hinzufügen, Umbenennen und
+Umordnen beeinflussen andere Geräte nicht. Entfernte Geräte werden aus der
+Berechnung genommen; ihre Variablen bleiben unbekannt und ausgeblendet erhalten.
+Die neue API `ICPR_GetDeviceVariableIdent` liefert stabile Idents für Skripte.
+Der Konfigurator ordnet Anwesenheitsgruppen anhand des Kontos zu und erstellt
+eine leere Gruppe, anstatt je Gerät eine neue Instanz anzubieten.
+
+### Offline- und MCP-Nachweis
+
+Die vollständigen Helper- und Modulsuiten unter PHP 8.5.10 bestanden mit einem
+isoliert erzeugten vollständigen Helper-Paket. Die bisherigen Einzelgeräte-
+Regressionen laufen weiterhin; zusätzliche Gruppenprüfungen erfassen
+Mischzustände, unabhängige Bestätigung und Aufenthaltsdauer, fehlende Geräte,
+Auswahländerungen, Quellenfehler, Alterung, Variablen-IDs und Migration.
+Auch der bisherige committete Modulstand bestand mit dem erweiterten Helper:
+Das zentrale Paket kann vor der fachlichen Moduländerung verteilt werden.
+
+Per MCP wurde die neue Implementierung in einer eigenen temporären Bibliothek
+mit nativ registriertem Modul geprüft. 25 Prüfungen bestanden ohne Warnungen
+oder Fehler im erfolgreichen Lauf. Sie erfassten native Erstellung und
+Konfigurationsanwendung, persistente Attribute, getrennte Variablenblöcke,
+Klartextanzeige, Gesamtstatus und Anzahlen, Zonenwechsel mit Bestätigung,
+unbekannte und fehlende Geräte, Aufenthaltsdauern, Reihenfolge und erneute
+Auswahl, Kontofehler mit Wiederaufnahme, Standortalterung und SDK-Migration.
+Das Formular enthielt sowohl gelistete als auch weiterhin ausgewählte fehlende
+Geräte; die neue Gruppenvariable verwendete die deutsche Modulübersetzung.
+
+Die MCP-Prüfung nutzte kontrollierte Zeitpunkte und synthetische Kontocachedaten.
+Reale GPS-Bewegungen und der Transport vom Apple-Server waren nicht Teil dieses
+Nachweises. Die installierte iCloud Services-Library wurde nicht verändert oder
+neu geladen. Konfigurationen, Kontoverbindungen und Variablen-IDs aller zuvor
+vorhandenen Anwesenheitsinstanzen waren nach der Prüfung unverändert.
+Testinstanzen, Testdateien und die temporäre Modul-/Library-Registrierung
+wurden entfernt. Private Instanz- und Gerätekennungen oder Koordinaten werden
+hier nicht gespeichert.
+
+Ein erster Test mit manuell aufgerufenem `Create` konnte neue Attribute nicht
+registrieren: Symcon erlaubt dies ausschließlich im nativen Erstellungszyklus.
+Dieser abgebrochene Test wurde nicht als Erfolg gewertet. Die anschließende
+Prüfung nutzte deshalb eine eigene temporäre Bibliothek mit echtem Lebenszyklus.
+Ein statischer Formularcaption-Vergleich war außerdem kein Sprachvertrag der
+API-Ausgabe; die Übersetzung wurde stattdessen am tatsächlich registrierten
+nativen Variablennamen nachgewiesen.
+
+### Auslieferung
+
+Zunächst die zentrale Helper-Ergänzung über den Benutzerworkflow freigeben und
+den vorhandenen automatischen Helper-Sync integrieren und pullen. Es ist keine
+neue Subscription erforderlich; `libs/helper` bleibt hier frei von lokalen
+Testkopien. Anschließend den tatsächlichen Integrationsstand mit
+`php tests/run.php` prüfen und die fachliche Moduländerung veröffentlichen.
+Die vorhandenen Anwesenheitsinstanzen wurden während der MCP-Prüfung noch nicht
+auf den neuen fachlichen Stand umgestellt. Ein echter Serverneustart und die
+interaktive native Formularbedienung nach dem regulären Update bleiben offen.
+
+## iCloud Anwesenheit: erfolgreiche MCP-Prüfung (2026-10-23)
+
+Nach dem vom Benutzer abgeschlossenen Modulupdate wurde die vorhandene
+Anwesenheitsinstanz auf dem angeschlossenen Symcon-System per MCP geprüft.
+Kontoverbindung, Gerätezuordnung, geladenes Anwesenheitsmodul und zentraler
+`GeofenceHelper` 1.0.0 waren vorhanden. Alle elf Variablen waren angelegt und
+ausschließlich lesbar; die native Integer-Darstellung zeigte Klartext.
+
+Auf ausdrücklichen Auftrag wurden folgende Einstellungen übernommen:
+
+| Einstellung | Gewählter Wert |
+| --- | --- |
+| Radius der Referenzzone | 100 m |
+| Grenzpuffer (`Hysteresis`) | 25 m |
+| Maximale Standortungenauigkeit (`MaxAccuracy`) | 50 m |
+
+Die nach dem Übernehmen zurückgelesene Konfiguration entsprach den gewünschten
+Änderungen; Gerätezuordnung, Zonenmittelpunkt und übrige Einstellungen blieben
+erhalten. Der Radius ist größer als der Grenzpuffer. Mit der gelieferten
+Standortgenauigkeit lag die Position einschließlich Unsicherheitsradius eindeutig
+innerhalb der verkleinerten Eintrittsgrenze der Referenzzone.
+
+Der Laufzeitnachweis bestätigte Status **102 / Aktiv**, **Anwesend**, die
+zugehörige Referenzzone und eine verlässliche Standortbewertung. Kontodaten,
+Entfernung und Aufenthaltsdauer waren als verfügbar gekennzeichnet. Die
+Entfernung entsprach einer unabhängig aus den Koordinaten berechneten Luftlinie
+zum Referenzmittelpunkt; die native Anzeige formatierte sie mit einer
+Nachkommastelle und der Einheit Meter.
+
+Die Aufenthaltsdauer stieg beim nächsten automatischen lokalen Auswertungslauf
+um genau **15 Sekunden**. Das entsprach exakt dem Abstand der Variablenupdates;
+Anwesenheit und Entfernung blieben erhalten. Der Aufenthaltsbeginn entsprach
+dem Zeitstempel der akzeptierten GPS-Position, nicht dem Zeitpunkt des
+Übernehmens der Konfiguration. Die Dauer wurde nativ als Stunden:Minuten:Sekunden
+angezeigt. Damit sind Cache-Auswertung und fortlaufende Dauer auf dem echten
+System bestätigt.
+
+Die Prüfung verwendete ausschließlich den bestehenden Kontocache. Es erfolgten
+keine zusätzliche Apple-Abfrage, Anmeldung oder aktive Neuortung und keine
+Änderungen am Modul- oder Helper-Code. Reale Zonenwechsel, Standortalterung,
+GPS-Sprünge und ein echter Symcon-Neustart wurden in diesem MCP-Lauf nicht
+ausgelöst; die vorhandenen Offline-Nachweise dafür bleiben getrennt.
+Private Objekt- und Gerätekennungen, Koordinaten und Standortzeitpunkte werden
+hier nicht gespeichert.
+
+## iCloud Anwesenheit: Zonen und GPS-Stabilisierung (2026-10-23)
+
+Umgesetzt ist das neue Modul `iCloud Presence`, Alias **iCloud Anwesenheit**,
+Präfix **ICPR**, Modul-GUID `{00438FA2-CF5C-45B0-AFF0-A5A5CE66595E}`. Eine Instanz
+wertet ein Gerät direkt am bestehenden Kontosplitter aus. Der Geräte-Konfigurator
+erhält eine eigene Liste **Anwesenheitsauswertungen** mit kontogebundenem
+Instanzabgleich und Erstellungsvorgaben. Geräteinstanz und Karte sind dafür
+nicht erforderlich. Die Architekturentscheidung steht in
+[ADR 0007](docs/adr/0007-presence-and-geofencing.md).
+
+Eine bis 64 Kreiszonen besitzen stabile IDs, Namen, Mittelpunkt und Radius;
+genau eine Referenzzone wird markiert. `Presence` verwendet die bereits zentral
+vorhandene native Integer-Klartextdarstellung: **-1 Unbekannt**, **0 Abwesend**,
+**1 Anwesend**. Andere bestätigte Zonen zählen als abwesend von der Referenzzone.
+Zusätzlich entstehen aktuelle Zone/ID, Bewertungsgrund, Luftlinienentfernung
+zum Referenzmittelpunkt, Aufenthaltsbeginn und -dauer sowie eigene
+Verfügbarkeits- und Bestätigungskennzeichnungen. Alle Variablen sind lesend.
+
+Die generische Berechnung liegt ausschließlich im neuen zentralen
+`GeofenceHelper`. Er verarbeitet Genauigkeitsradius, Altersgrenze, Hysterese,
+zeitlich getrennte Bestätigungen und unplausible Sprünge. Referenztreffer haben
+bei Überlappungen Vorrang. Grenzfälle halten bekannte Zustände, ohne vorherige
+Bestätigung bleiben sie unbekannt. Fehlende, alte oder unbrauchbare Positionen
+ergeben Unbekannt; ein alter wiederholter Cachetreffer darf einen unterbrochenen
+Aufenthalt nicht neu bestätigen. Die Dauer zählt beobachtete Zeit innerhalb einer
+bestätigten Zone. Zustände sind persistent und durch eine Identität aus Konto,
+Gerät, Zonen und Einstellungen getrennt.
+
+Vorgaben: Standortalter 900 s, maximale Unsicherheit 100 m, Grenzpuffer 25 m,
+Bestätigungszeit 30 s, plausible Geschwindigkeit 300 km/h. Der lokale
+15-Sekunden-Timer liest nur `GetDevices` aus dem Kontocache und prüft Alter und
+Dauer. Dieselbe Position bestätigt keinen Wechsel. Der tatsächliche
+Kontoabrufrhythmus und die von Apple gelieferten Zeitstempel begrenzen die
+Reaktionszeit. Es gibt keine neue Anmeldung, aktive Neuortung, Adressabfrage
+oder weitere Netzwerkverbindung.
+
+### Prüfung
+
+Unter PHP 8.5.10 bestanden die vollständige zentrale Helpersuite und die
+vollständige Modulsuite einschließlich der bisherigen Karten-/Browser-Verträge.
+Die neuen Regressionen prüfen Geometrie einschließlich Datumsgrenze, Ein- und
+Austritt mit Bestätigung, Randfälle und Rückkehr, Genauigkeits-/Altersfehler,
+Sprünge, doppelte und rückläufige Zeitstempel, serialisierten Neustartzustand,
+Beobachtungslücken, lokale Timer, Variablen-IDs, Konto-/Konfigurationswechsel,
+entfernte Geräte, abgeschaltete Auswertung und ungültige Konfiguration.
+Formularaktionen und beide Konfigurator-Erstellungsvorgaben werden durch die
+dokumentbasierten SDK-Vertragsprüfungen erfasst.
+
+Die Manifest- und Bundle-Prüfung bestätigt den neuen Helper bytegleich mit
+seiner kanonischen Quelle und ohne weitere Laufzeitabhängigkeiten. Das gesamte
+abonnierte Consumer-Paket wurde über den vorhandenen Bundle-Generator erzeugt
+und in isolierten Kopien geprüft. Zusätzlich bestand der bisherige committete
+Modulstand mit neuer Subscription und neuem Paket: Der vorgelagerte Sync kann
+somit vor der Veröffentlichung des Anwesenheitsmoduls geprüft werden.
+Im normalen Arbeitsbaum wurden für diese Offline-Prüfung keine Vendor-Dateien
+ausgetauscht. Zu diesem Zeitpunkt war noch nichts installiert oder veröffentlicht.
+Der anschließende MCP-Nachweis am installierten Stand steht im vorangehenden
+Abschnitt. Ein echter Symcon-Neustart und die native Formularbedienung wurden
+auch dort nicht geprüft.
+
+### Verteilung und Übergabe
+
+Das neue Modul benötigt `GeofenceHelper` ab 1.0.0. Der Benutzer hat das komplette
+Modulupdate inzwischen bestätigt; der MCP-Nachweis bestätigt den geladenen
+Helper am laufenden System. Die folgende Reihenfolge dokumentiert die erstmalige
+Einbindung der neuen Abhängigkeit. Lokale Testkopien verbleiben nicht im
+normalen Arbeitsbaum, damit sie den Pull des regulären Pakets nicht blockieren.
+
+1. In iCloud Services zunächst ausschließlich `.helper-sync.json` über GitHub Desktop
+   committen und nach `dev` pushen. Die laufenden Module nutzen den neuen Helper
+   dabei noch nicht. Die strenge Integritätsprüfung meldet bis zum Eingang des
+   Pakets die noch fehlende abonnierte Datei; sie wird nicht gelockert.
+2. Die zentrale GeofenceHelper-Ergänzung nach dem vorhandenen Benutzerworkflow
+   freigeben. Automatische Versionierung und Verteilung laufen auf
+   `Symcon_ModuleHelper/main`; der Sync liest die nun vorhandene Subscription
+   aus `iCloudServices/dev` und liefert das vollständige Paket per Helper-PR.
+   Falls der zentrale Stand vorher freigegeben wurde, den vorhandenen Workflow
+   **Sync Helpers to Consumers** danach für `GeofenceHelper` erneut starten.
+3. Nach erfolgreicher Integration des regulären Pakets in `dev` dieses in GitHub
+   Desktop pullen. Die hier geprüften fachlichen Änderungen liegen außerhalb von
+   `libs/helper` und überschneiden sich nicht mit dem Paket-Pull. Den tatsächlichen
+   Integrationsstand mit `php tests/run.php` erneut prüfen und erst dann die
+   übrigen Moduländerungen committen, pushen und zum Test installieren.
+
+## Lesbare Integer-Statusanzeigen: MCP-Nachweis und Korrektur (2026-10-23)
+
+Der Benutzer meldete Rohwerte wie `-1` anstelle lesbarer Texte bei den neuen
+Gerätestatusvariablen. Die MCP-Prüfung auf dem Windows-Testsystem bestätigte
+die Ursache: Bei einer Integer-Variable mit nativer Wertanzeige verwirft Symcon
+`OPTIONS`. Laut offiziellem SDK gilt dieser Parameter nur für Boolean und
+String; Integer benötigen `INTERVALS_ACTIVE` und konstante Beschriftungen in
+`INTERVALS`. Die bisherige synthetische Prüfung hatte lediglich die falsche
+Optionsstruktur bestätigt und wird durch diesen dokumentbasierten Vertrag ersetzt.
+
+Zusätzlich enthielt der Kontocache zunächst noch keine Zusatzfelder. Ein
+lesender Abruf über die bestehende Sitzung bestätigte danach die normalisierten
+Kennzeichnungen und die Übernahme von Nein-/Ja-Zuständen in Gerätevariablen.
+Eine neue Anmeldung oder aktive Neuortung war nicht nötig.
+
+Die Korrektur liegt zentral in `VariablePresentationHelper::IntegerOptionsPresentation`.
+Die Geräteinstanz verwendet diese neue Funktion. Integer-Zustände erhalten
+je Wert ein exaktes Intervall mit
+`ConstantActive=true` und `ConstantValue=Caption`. Boolean-/String-Optionen
+und die bisherige `OptionsPresentation`-API bleiben unverändert. Variablentyp,
+Idents und gespeicherte Werte werden nicht geändert; eine zusätzliche
+Modulimplementierung der Darstellung ist unnötig.
+
+Eine temporäre, anschließend gelöschte Integer-Testvariable auf dem echten
+Symcon-System bestätigte per MCP und `GetValueFormatted` ohne Warnungen:
+`-1` → **Nicht verfügbar**, `0` → **Nein**, `1` → **Ja**. Ein nicht definierter
+Wert `2` blieb unverändert als **2** sichtbar. Die native Intervallstruktur
+akzeptiert für Farben `ColorValue`; der in der abgerufenen SDK-Tabelle genannte
+Schlüssel `Color` wurde mit einer Warnung abgewiesen. Der Helper und die
+Regressionen verwenden deshalb den tatsächlich bestätigten Vertrag.
+
+Die neue Helper-Datei wird über das vorhandene Abonnement verteilt. Tests des
+erzeugten Pakets erfolgen in einer isolierten Kopie; im normalen Modul-Arbeitsbaum
+bleiben keine temporären Helper-Dateien oder Testmetadaten zurück, die einen
+späteren Pull blockieren könnten. Zuerst die zentrale Korrektur freigeben und
+verteilen lassen, dann den regulären Helper-Sync im Modul pullen und die
+Geräteinstanzkonfiguration erneut übernehmen. Die echten Gerätevariablen
+erhielten in dieser Prüfung keine dauerhaften benutzerdefinierten Darstellungen.
+
+Die vollständigen Helper- und Modulsuiten unter PHP 8.5.10, Paket-/Manifestprüfung,
+php-cs-fixer im Prüfmodus und der StylePHP-JSON-Check des Moduls bestanden.
+Auch der bisherige Modulstand einschließlich seiner unveränderten Tests bestand
+mit dem neuen Helper-Paket in der isolierten Umgebung: Der automatische Sync
+kann somit vor der Umstellung des Moduls auf die neue API geprüft werden.
+
+## Zusätzliche Geräteangaben: MCP-Befund und Umsetzung (2026-10-23)
+
+Auf dem angeschlossenen Windows-Testsystem wurde per MCP eine lesende
+Geräteabfrage über die vorhandene Kontositzung erfolgreich ausgeführt. Die
+kurzzeitige Diagnose erfasste ausschließlich Feldnamen, Datentypen und deren
+Häufigkeit, keine Feldwerte, Gerätenamen, IDs, Koordinaten oder Zugangsdaten.
+Die acht Statusfelder `lowPowerMode`, `locationEnabled`, `locationCapable`,
+`isLocating`, `lostModeEnabled`, `lostModeCapable`, `activationLocked` und
+`fmlyShare` waren in der geprüften Antwort jeweils als Boolean vorhanden;
+`rawDeviceModel` war ein String. Bei vorhandenen Positionen lieferte Apple
+zusätzlich `isInaccurate` und `locationFinished` als Boolean. Dieser Befund ist
+eine Momentaufnahme der angeschlossenen Geräte, keine allgemeine
+Verfügbarkeitsgarantie für alle Apple-Geräte.
+
+Die temporäre Diagnoseänderung an AppleClient wurde nach dem Abruf vollständig
+zurückgesetzt; die identische ursprüngliche SHA-256-Prüfsumme und das Entfernen
+der temporären Datei wurden per MCP bestätigt. Es erfolgten weder eine neue
+Apple-Anmeldung noch Gerätebefehle oder eine aktive Neuortung.
+
+Der lokale Implementierungsstand übernimmt diese Angaben über eine feste
+Allowlist. Acht optionale Gerätekennzeichnungen liegen im Kontocache unter
+`details`, die Standortkennzeichnungen unter `location.isInaccurate` und
+`location.finished`, die technische Modellkennung unter `modelIdentifier`.
+Die Geräteinstanz ergänzt zehn ausschließlich lesbare Integer-Statusvariablen
+mit **-1 = Nicht verfügbar**, **0 = Nein**, **1 = Ja** sowie `ModelIdentifier`
+als Text mit **Nicht verfügbar** bei fehlender Angabe. Die Darstellung verwendet
+den vorhandenen zentralen `VariablePresentationHelper::OptionsPresentation`;
+Helper-Dateien und Verteilungspaket werden nicht geändert.
+
+Fehlende oder ungültige Angaben, Kontofehler, entfernte Geräte und Wechsel der
+Gerätezuordnung lassen keine alten optionalen Werte stehen. Alte Kontocaches
+bleiben kompatibel und liefern zunächst unbekannte Zusatzangaben. Bestehende
+Variablen, Idents, Adressregeln und Abfrageintervalle bleiben erhalten. Es gibt
+keine zusätzlichen Gerätetimer oder HTTP-Abfragen. Nach dem Update die
+Geräteinstanzkonfiguration übernehmen; neue Apple-Felder erscheinen mit dem
+nächsten erfolgreichen Kontoabruf.
+
+Synthetische Regressionen prüfen den Weg vom Apple-Transport über die
+Normalisierung und den Kontodatenfluss bis zu den Gerätevariablen, echte
+Boolean-Werte gegenüber fehlenden/ungültigen Werten, alte Caches, Wiederaufnahme,
+Instanzlebenszyklus, stabile Variablen-IDs und ausschließlich lesbare native
+Darstellungen. Die vollständige Offline-Suite unter PHP 8.5.10 einschließlich
+der neuen Verträge und der bestehenden Karten-/Adressprüfungen, die offizielle
+StylePHP-JSON-Prüfung und php-cs-fixer im Prüfmodus liefen erfolgreich.
+Die MCP-Prüfung belegt die gelieferten Quellfelder und die
+Wiederherstellung der Diagnose; die neuen Gerätevariablen wurden damit noch
+nicht auf dem laufenden System installiert oder praktisch abgenommen.
+
+## Einheitliche kompakte Adressen (2026-10-23)
+
+Der zentrale ReverseGeocodingHelper normalisiert beide Anbieter auf dieselben
+strukturierten Felder und formatiert Straße/Hausnummer, PLZ/Ort und Land.
+Freitext aus Nominatims `display_name` bzw. Geoapifys `formatted` wird nicht
+mehr übernommen oder zerlegt. Bei Gebäuden/Straßen entfallen zusätzliche
+Verwaltungsebenen. Gebietsangaben enthalten höchstens einen Ortsteil; bei
+fehlendem Ort werden nur zulässige Dorf-/Gemeinde-/Gebietsangaben verwendet.
+Leerwerte, doppelte Angaben und überzählige Leerzeichen werden bereinigt.
+
+Die bestehenden Grenzen bleiben unverändert: Gebäude bis einschließlich 20 m,
+Straße bis 100 m, Gebiet bis 1000 m, darüber oder bei unbekannter Genauigkeit
+nur Ort bzw. gröbere Angaben. Die Modultexte für Ungefähr und unbekannte
+Genauigkeit bleiben unverändert. Liste, Popup und Gerätevariable lesen die
+einheitliche serverseitige Darstellung; eine lokale UI-Formatierung gibt es nicht.
+
+Cache-Schlüssel verwenden `compact-v1` statt `detail-v1`. Frühere formatierte
+Strings werden nicht als neue Treffer ausgegeben, sondern unter den bestehenden
+Timer-, Cache- und Quotenregeln neu aufgelöst. Der Geoapify-Verbrauchszähler
+bleibt bestehen, auch bei bereits ausgeschöpftem Budget. Das vorhandene
+ReverseGeocodingHelper-Bundle und dessen Abhängigkeit bleiben der Verteilungsweg.
+
+Gezielte synthetische Tests vergleichen beide Anbieter über alle Detailstufen,
+Genauigkeitsgrenzen, fehlende/doppelte Bestandteile, ländliche Orte und die
+Cacheumstellung. Die Modulprüfung vergleicht Kachel-/IPSView-Zustand und echte
+Gerätevariablen beider Quellen. Es werden keine privaten Standortdaten oder
+echten Anbieterabfragen für diese Prüfungen verwendet.
+
+Die vollständigen Offline-Suiten liefen mit PHP 8.5.10 erfolgreich. Die lokale
+Chromium-Prüfung mit synthetischen Daten bestätigt die kompakte Adresse in
+Liste und Popup der Kachelausgabe sowie einer verschachtelten IPSView-HTTP-
+Testeinbettung. Genauigkeits- und Theme-Wechsel erhalten Zoom, geografischen
+Mittelpunkt, Geräteauswahl, Popup und Dokument. Echte Mausradaktionen bestätigen
+Kartenzoom und Listenscrollen in beiden Richtungen; kompakte Größen bis
+320 × 240 Pixel bleiben innerhalb ihrer Fläche. Der neue Formatierungsstand
+wurde im Rahmen dieser lokalen Prüfungen vom Agenten nicht auf einem laufenden
+Symcon-System oder in der nativen IPSView-App installiert oder abgenommen.
+
+### Erfolgreiche Benutzer-Praxisabnahme (2026-10-23)
+
+Nach der Aktualisierung hat der Benutzer die kompakte Adressdarstellung für
+Nominatim und Geoapify erfolgreich geprüft und als passend bestätigt. Beide
+Anbieter liefern die gewünschte einheitliche, kurze Darstellung ohne die zuvor
+störende zusätzliche Verwaltungshierarchie.
+
+Dies ist ein vom Benutzer bestätigter Praxisnachweis, ergänzend zu den oben
+dokumentierten synthetischen Prüfungen. Die bestehenden Genauigkeitsregeln
+bleiben unverändert. Für diesen Dokumentationseintrag wurde keine zusätzliche
+Live-Prüfung durch den Agenten durchgeführt; private Adressen, Koordinaten,
+Gerätekennungen und Zugangsdaten werden nicht übernommen.
+
+## Geoapify als zweiter Adressanbieter (2026-10-22)
+
+WoIst verwendet `AddressProvider=nominatim` als kompatible Vorgabe. Geoapify
+wird ausdrücklich mit `AddressProvider=geoapify` ausgewählt und benötigt die
+maskiert eingegebene Stringproperty `GeoapifyAPIKey`. Es gibt keinen automatischen
+Anbieterwechsel. Der zentrale ReverseGeocodingHelper besitzt Validierung,
+festen HTTPS-Endpunkt, begrenzten Transport, Detailfilterung, Cache und Budget;
+WoIst steuert Auswahl, Übersetzung und serialisierten Hintergrundtimer.
+
+`GeoapifyDailyLimit` erlaubt 0 bis 1.000.000 HTTP-Versuche je Instanz und UTC-Tag;
+Vorgabe 2.500, 0 sperrt neue Anfragen. Das persistente Attribut
+`GeoapifyDailyUsage` wird vor HTTP geschrieben und zählt auch Fehler.
+Neustart, Schlüsselwechsel und Adresscacheleerung setzen den Zähler nicht zurück.
+Andere Instanzen, Systeme und Anwendungen mit demselben Key müssen ihre Budgets
+auf das gemeinsame Anbieter-Kontingent abstimmen. Cachetreffer sind budgetfrei.
+Bei ausgeschöpftem Budget wartet ausstehende Arbeit auf den nächsten UTC-Tag.
+Beschädigte Zähler sperren neue Abfragen konservativ; HTTP-Fehler nutzen die
+bestehende fünfminütige Wartezeit. Die Karte bleibt währenddessen bedienbar.
+
+Die bisherigen Detailstufen (Gebäude bis einschließlich 20 m, Straße bis 100 m,
+Gebiet bis 1000 m, sonst Ort) gelten unverändert. Unbekannte Genauigkeit erlaubt
+nur den Ort. API-Anfragen verwenden building/street/locality/city; gröbere
+Antworten werden zusätzlich lokal gefiltert. Schlüssel-Fingerabdruck, Sprache,
+Position und Detail trennen Caches. Karten-HTML, Zustände und Adresscaches
+enthalten keine API-Keys. Die bestehende Gerätevariable liest denselben Cache.
+Kachel und IPSView zeigen feste Geoapify-/OSM-Quellenlinks und bei Bedarf den
+Tageslimit-Hinweis, ohne das Kartendokument zu ersetzen.
+
+Tests verwenden synthetische Schlüssel, Geräte und Anbieterantworten. Es wurde
+kein Konto angelegt, kein echter Geoapify-Aufruf ausgeführt und kein laufendes
+Symcon-System verändert. Die Einbindung nutzt das vorhandene Helper-Abonnement
+einschließlich PersistentJsonCacheHelper; neue Kartenressourcen sind nicht nötig.
+
+Die gezielten Integrationsprüfungen belegen die Übernahme in die Gerätevariable,
+Maskierung im Formular, Cache-/Budgettrennung, Fehlerzählung, UTC-Tageswechsel,
+Wiederaufnahme-Timer, Limit 0 und Schutz vor Key-Ausgabe in HTML/JSON. Die lokale
+Chromium-Prüfung mit 24 synthetischen Geräten und ersetzten Kartenstilen prüft
+Kachelausgabe und verschachtelte IPSView-HTTP-Testeinbettung: Quellenlinks und
+Tageslimit-Meldung, Adress-/Theme-Wechsel ohne Dokumentwechsel, Erhalt von
+Mittelpunkt, Zoom, Auswahl und Popup sowie echte Mausradaktionen für Kartenzoom
+und Listenscrollen in beiden Richtungen. Kleine Ansichten bis 320 × 240 Pixel
+bleiben innerhalb ihrer Fläche; die Budgetmeldung ist dort begrenzt und scrollbar.
+Die echte Symcon-Kachel bzw. native IPSView-App mit diesem neuen Stand sowie ein
+echter Geoapify-Key sind noch nicht praktisch abgenommen.
+
+## Genauigkeitsabhängige Adressdetails (2026-10-22)
+
+Die zentrale Richtlinie `ReverseGeocodingPrecision` im ReverseGeocodingHelper
+erlaubt Gebäude bis einschließlich 20 m, Straßen bis 100 m, Gebiete bis 1000 m
+und darüber nur Ortsangaben. Fehlende, ungültige oder nicht positive Genauigkeit
+wird ausdrücklich als unbekannt behandelt und erlaubt ebenfalls nur den Ort.
+Diese Grenzen bestimmen die Anzeige und garantieren keine richtige Hausnummer.
+WoIst verwendet die zentrale Detailstufe für Cachelesen und Hintergrundabfragen;
+Nominatim erhält `zoom` und `layer=address`. Strukturierte Antworten werden
+zusätzlich auf erlaubte Felder beschränkt. Die Cache-Schlüssel sind nach Detail
+getrennt und versioniert; alte und zu präzise Treffer werden nicht übernommen.
+
+Liste und Popup zeigen gröbere Treffer als farblich hervorgehobenen, übersetzten
+Ungefähr-Hinweis. `ICWI_GetDeviceAddress` liefert denselben Hinweis als Präfix
+für die bestehende Gerätevariable. Beim Wechsel der Genauigkeit wird der
+Zustand neu aufgebaut; ein währenddessen eintreffendes Gebäude-Ergebnis kann
+keine gröbere aktuelle Position bedienen. Die vorhandenen Timer, Sperren und
+Benachrichtigungen bleiben erhalten. Zusätzliche Geräteabfragen gibt es nicht.
+
+Gezielte Helper-, Modul- und JavaScript-Verträge prüfen Grenzwerte einschließlich
+20/20,01 m, unbekannte Genauigkeit, Cachetrennung, veraltete Schlüssel,
+Detailfilterung und Genauigkeitswechsel während einer laufenden Abfrage.
+Die lokale Chromium-Prüfung verwendet 24 synthetische Geräte und ersetzte
+Kartenstile. Native Kachelausgabe und verschachtelte IPSView-HTTP-Testeinbettung
+behalten Mittelpunkt, Zoom, Auswahl, Popup und Dokument bei Adressupdates und
+Theme-Wechseln; der IPSView-Pfad empfängt die Änderung über seinen HTTP-Poll.
+Echte Mausradaktionen bestätigen Zoom und Listenscrollen in beiden Richtungen,
+ohne gegenseitige Beeinflussung. Hinweise wurden in Hell/Dunkel visuell geprüft.
+Die vollständigen Offline-Suiten liefen mit PHP 8.5.10 erfolgreich; Manifest,
+Übersetzungen und Abhängigkeitsbundles wurden zusätzlich validiert.
+Eine Prüfung des neuen Standes im echten IPSView-Client bzw. der nativen App
+erfordert dessen Installation und bleibt ein gesonderter Praxisnachweis.
+
+## Adresse als Gerätevariable (2026-10-22)
+
+`iCloud Device` ergänzt die lesbare Stringvariable `Address` mit der zentralen
+mehrzeiligen `TextPresentation`. Die bisherige Reihenfolge und Identität der
+Gerätevariablen bleiben erhalten. `AddressSource=0` wählt genau eine WoIst-Karte
+mit aktivierter Adressauflösung am selben physischen Konto; eine ausdrücklich
+gesetzte Quelle wird auf Modultyp und Kontoverbindung geprüft. Bei mehreren
+automatischen Kandidaten wird keine beliebige Karte gewählt. Das Formular
+verwendet den dokumentierten `SelectInstance`-Vertrag mit `validModules`.
+
+Die neue cachelesende Funktion `ICWI_GetDeviceAddress` liefert eine Adresse nur
+bei authentifiziertem Inventar, passender Geräte-ID und identischen aktuellen
+Koordinaten. WoIst aktualisiert nach seiner Veröffentlichung die verbundenen
+Geräteinstanzen über deren bestehendes `ICID_Update`; der Rücklesepfad erzeugt
+keine weitere Veröffentlichung. Kein neuer Abfragetimer, HTTP-Client oder
+Adresscache wurde eingeführt. HTTP und Cache bleiben in den vorhandenen
+zentralen `ReverseGeocodingHelper`-/`PersistentJsonCacheHelper`-Bausteinen;
+Auswahl und Zuordnung von iCloud-Modulinstanzen bleiben modulspezifisch.
+
+Fehlende Position, Konto-/Inventarfehler, Identitätswechsel und nicht passende
+Quellen leeren die Adresse. Neue Koordinaten übernehmen keine Adresse von der
+vorherigen Position. Gelöschte oder umverbundene Quellen werden beim nächsten
+Geräteupdate erneut bewertet. Eine ungültige optionale Quelle schaltet die
+übrigen Gerätedaten nicht ab. Native App-/Kachelbedienung und das Verhalten
+der Karte bei Adressankunft verwenden unverändert die bestehenden Pfade.
+
+Die gezielte Integration unter `tests/device-address.php` verwendet die echten
+Modulinstanzen und zentralen Caches mit synthetischem Nominatim-Transport. Sie
+prüft automatische Übernahme nach Hintergrundauflösung, bereits gefüllte
+Caches, native Stringdarstellung ohne Action, Quellenmehrdeutigkeit, explizite
+Auswahl, Kontoisolation, Positions-/Identitätswechsel, Ausfälle und gelöschte
+Quellen ohne zusätzlichen Apple-/Nominatim-Abruf. Der gemeinsame CI-Einstieg
+führt diese Prüfung einschließlich der bisherigen Geocoding-Verträge aus.
+Nachweise unter PHP 8.5.10: vollständige Offline-Suite einschließlich PHP-/JS-
+Kartenverträgen, SDK-/Struktur-/Hash-/LF-Prüfung, offizielle StylePHP-JSON-Prüfung
+und php-cs-fixer mit den offiziellen Regeln im Prüfmodus erfolgreich.
+Die Live-Abnahme der neuen Gerätevariable nach Benutzerupdate bleibt offen;
+der vorherige Pi-Nachweis betrifft die bereits bestätigte Adressanzeige in WoIst.
+
+## Optionale Nominatim-Adressauflösung (2026-10-22)
+
+- WoIst besitzt eine standardmäßig deaktivierte Adressauflösung mit eigener
+  HTTP(S)-Serverbasis und Sprache. Der konfigurierte Dienst muss bereits laufen;
+  der Nominatim-Fork enthält nur den Servercode. Die Implementierungsprüfungen
+  erfolgten ohne Serverinstallation oder Abfrage realer Gerätepositionen;
+  der anschließende Installations- und Praxisnachweis ist unten getrennt erfasst.
+- `ReverseGeocodingHelper` liegt kanonisch in Symcon_ModuleHelper und nutzt den
+  bestehenden `PersistentJsonCacheHelper`. Beide Dateien sind unverändert
+  eingebunden, manifestiert und über die neue Subscription automatisch verteilbar.
+- Formulare, native HTML-Ausgabe und authentifizierte Zustandsabrufe lesen nur
+  den Cache. Der separate Symcon-Timer verarbeitet maximal eine offene Position
+  pro Aufruf; er stoppt bei vollständig gefülltem Cache, ungültiger Konfiguration,
+  fehlender Anmeldung oder Serverwartezeit. Aktualisierungen nach Ablauf einer
+  Wartezeit/TTL starten offene Auflösungen erneut.
+- Offline-Nachweise: echte Modul-/Konto-Datenflussintegration, Cachepersistenz,
+  Positionswechsel einschließlich Änderung während HTTP, identische Positionen,
+  Providerwechsel, Deaktivierung während HTTP, gesperrter öffentlicher Endpunkt,
+  unbekannte Positionen, TTL, Fehlerwartezeit und Cachebegrenzung. Der reale
+  HTTP-Client wurde gegen einen lokalen synthetischen Dienst geprüft, einschließlich
+  User-Agent, fehlender Credentials/Cookies, Redirect-Sperre und Antwortlimit.
+- Lokale Browserprobe: gerenderte Kachel und verschachtelte IPSView-HTTP-Ausgabe
+  mit 24 synthetischen Geräten und lokal ersetztem Kartenstil. Adressankunft
+  aktualisiert Liste und offenes Popup bei unverändertem Zoom, Mittelpunkt und
+  gewähltem Gerät. Echte Mausradaktionen zoomen in beide Richtungen; Listen-Scroll
+  wurde jeweils mit 440 → 220 Pixeln gemessen, ohne gleichzeitigen Kartenzoom.
+  Schmale Ausgabe bei 430 Pixeln ohne horizontalen Überstand, keine JS-Fehler.
+- PHP 8.5.10: Modul- und Helper-Suiten, StylePHP/php-cs-fixer, Manifest-, Bundle-
+  und isolierte Verteilungsprüfungen erfolgreich. Die Adressanzeige mit eigenem
+  Nominatim-Server wurde anschließend vom Benutzer bestätigt (siehe unten).
+  Eine getrennte vollständige Live-Abnahme der Adressfunktion in tatsächlicher
+  Kachelvisualisierung und nativer IPSView-App bleibt offen; die lokale
+  Testeinbettung ersetzt diesen Nachweis nicht.
+
+## Zurückgestellt: regelmäßige Nominatim-Datenupdates (2026-10-22)
+
+Auf Benutzerwunsch wird die Einrichtung regelmäßiger OSM-Datenupdates auf einen
+späteren Arbeitsschritt verschoben. Aktuell hat die Weiterentwicklung des Moduls
+mit Geoapify als zweitem Weg zur Adressauflösung Vorrang. Es wurde kein
+OSM-Update-Timer eingerichtet oder aktiviert.
+
+Der vorhandene Import mit `--no-updates` ist nicht für Replikationsupdates
+geeignet. Als spätere Umsetzung ist ein einmaliger Import in eine separate
+Datenbank ohne diese Option vorgeschlagen. Nach Prüfung und kontrollierter
+Umschaltung könnten regionale Geofabrik-Änderungen für Brandenburg einschließlich
+Berlin regelmäßig in kleinen Paketen übernommen werden. Die bisherige Datenbank
+soll während des Neuaufbaus verfügbar bleiben und zunächst als Rückfall dienen.
+
+Vor Umsetzung Speicherbedarf und freie Kapazität für beide Datenbanken prüfen.
+Die bestehenden CPU-, RAM-, Swap- und I/O-Limits müssen Symcon weiter Vorrang
+geben. Update-Läufe serialisieren, Datenrückstand und Fehler überwachen und
+die erste Aktualisierung unter Beobachtung durchführen. Der bisherige
+Freiplatz-Guard darf nicht unverändert verwendet werden, da er den gemeinsamen
+Nominatim-PostgreSQL-Cluster stoppt; die neue Überwachung soll gezielt den
+Schreibauftrag begrenzen. Auf der gemeinsamen microSD ist trotz Limits keine
+garantiert unveränderte Symcon-Latenz zugesagt. Zeitplan, Grenzwerte und ein
+möglicher SSD-Einsatz werden erst bei Wiederaufnahme festgelegt.
+
+## Nominatim auf Raspberry Pi: Installation und Praxisnachweis am 22.10.2026
+
+Der Benutzer hat Nominatim ohne Docker auf demselben Raspberry Pi eingerichtet,
+auf dem bereits Symcon läuft. Die folgenden Ergebnisse beruhen auf seinen
+Terminalausgaben und der abschließenden Bestätigung samt Screenshot der
+Adressanzeige. Der Agent hat die Installation angeleitet, aber keine eigene
+SSH-/MCP-Prüfung oder Änderung am laufenden System vorgenommen. Private Hostnamen,
+Netzadressen, Gerätekennungen, Adressen, Koordinaten und Screenshots werden
+nicht in diesem Nachweis gespeichert. Die Loopback-URL unten ist generisch.
+
+### Plattform und Dienstaufteilung
+
+- Raspberry Pi 5 Model B, 4 GiB RAM, Debian 12 Bookworm, aarch64/64 Bit;
+  Root-Dateisystem auf einer microSD mit rund 59 GiB und rund 8,2 GiB Systemswap.
+- Nominatim 5.3.3 aus PyPI in `/srv/nominatim/venv`, mit
+  `--system-site-packages` für das über Debian bereitgestellte PyICU.
+  `pip check` meldete keine defekten Abhängigkeiten.
+- PostgreSQL 15.19, PostGIS 3.3 und osm2pgsql 1.8.0. Eigener Cluster
+  `15/nominatim` auf Port 5433; `listen_addresses = ''`, Verbindung nur über
+  den lokalen Unix-Socket. Der bei der Paketinstallation neu angelegte Cluster
+  `15/main` wurde gestoppt und auf manuellen Start gesetzt; das ist keine
+  allgemeine Anweisung, vorhandene PostgreSQL-Cluster anzuhalten.
+- Dienstbenutzer `nominatim`, Projektverzeichnis `/srv/nominatim/project` und
+  Downloadverzeichnis `/srv/nominatim/data`. Die gleichnamige Datenbankrolle
+  besitzt die für den Import benötigten Superuserrechte ausschließlich im
+  getrennten Cluster. Die API läuft als `www-data` mit der vom Import
+  eingerichteten lesenden Datenbankrolle und Peer-Authentifizierung.
+- Projektkonfiguration: `NOMINATIM_DATABASE_DSN` verwendet die Datenbank
+  `nominatim`, den Socket `/var/run/postgresql` und Port 5433;
+  `NOMINATIM_DATABASE_WEBUSER=www-data`, `NOMINATIM_IMPORT_STYLE=address`,
+  `NOMINATIM_DEFAULT_LANGUAGE=de` und `NOMINATIM_API_POOL_SIZE=2`.
+
+### Ressourcenlimits zum Schutz von Symcon
+
+Der cgroup-v2-Speichercontroller wurde über `cgroup_enable=memory` in der
+tatsächlich verwendeten `/boot/firmware/cmdline.txt` aktiviert und nach einem
+Neustart durch `memory` in `cgroup.controllers` bestätigt; Symcon war aktiv.
+Die Limits stehen in `/etc/systemd/system/nominatim.slice`. PostgreSQL,
+Importdienst und API werden gemeinsam dieser Slice zugeordnet, sodass die
+Grenzen für deren gesamten Verbrauch gelten.
+
+| Einstellung | Konfigurierter Wert / Bedeutung |
+| --- | --- |
+| `CPUQuota` | `100%`: insgesamt höchstens die Rechenzeit eines CPU-Kerns |
+| `CPUWeight` | `10` |
+| `MemoryHigh` | `2200M` |
+| `MemoryMax` | `2600M` = 2.726.297.600 Byte |
+| `MemorySwapMax` | `512M` = 536.870.912 Byte, nur für diese Slice |
+| `IOWeight` | `10` |
+| `IOReadBandwidthMax` | `/dev/mmcblk0 8M`, effektiv 8.000.000 Byte/s |
+| `IOWriteBandwidthMax` | `/dev/mmcblk0 2M`, effektiv 2.000.000 Byte/s |
+| Accounting | `CPUAccounting`, `MemoryAccounting`, `IOAccounting` aktiviert |
+| Dienstpriorität | `Nice=15`, `IOSchedulingClass=idle` für PostgreSQL, Import und API |
+
+`Slice=nominatim.slice` ist für PostgreSQL im Drop-in
+`/etc/systemd/system/postgresql@15-nominatim.service.d/resources.conf`
+hinterlegt. Die wirksamen cgroup-Werte für RAM, Swap, CPU und Datenträger wurden
+vor dem Import ausgelesen und bestätigt. Die Grenzen reduzieren die Belastung;
+sie garantieren wegen des gemeinsamen Datenträgers keine störungsfreie
+Symcon-Latenz.
+
+Die separate PostgreSQL-Konfiguration begrenzt zusätzlich `shared_buffers` auf
+128 MB, `effective_cache_size` auf 512 MB (Planerannahme, keine RAM-Reservierung),
+`work_mem` auf 4 MB, `maintenance_work_mem` auf 64 MB und `autovacuum_work_mem`
+auf 32 MB. `max_connections=20`, `autovacuum_max_workers=1`,
+`max_parallel_workers_per_gather=0`, `max_parallel_maintenance_workers=0` und
+`max_wal_size=512MB`. Autovacuum und die PostgreSQL-Dauerhaftigkeit wurden
+nicht abgeschaltet; der globale Symcon-Betrieb erhielt keine neuen Limits.
+
+### Import und Freiplatzschutz
+
+- Importquelle: Geofabrik `brandenburg-latest.osm.pbf`, einschließlich Berlin.
+  Die Datei-Prüfsumme wurde vor dem Import erfolgreich geprüft.
+- `nominatim-import.service` lief als `nominatim` im Projektverzeichnis mit
+  `OMP_NUM_THREADS=1` und folgendem Aufruf:
+
+  ```text
+  nominatim import --osm-file /srv/nominatim/data/brandenburg-latest.osm.pbf --threads 1 --osm2pgsql-cache 128 --reverse-only --no-updates
+  ```
+
+- `ExecStartPre` prüft über `/usr/local/sbin/nominatim-import-guard preflight`
+  die Prüfsumme und mindestens 20 GiB freien Platz. Der Import benötigt über
+  `Requires`/`After` PostgreSQL und `nominatim-disk-watch.timer`; die Überwachung
+  muss deshalb nicht separat von Hand gestartet werden.
+- Der Timer startet nach einer Sekunde und prüft ungefähr alle fünf Sekunden.
+  Unter 8 GiB freiem Platz würde der Guard Import und ausschließlich dessen
+  PostgreSQL-Cluster stoppen. Dieser Abbruchpfad wurde im erfolgreichen Lauf
+  nicht ausgelöst und nicht gesondert praktisch getestet.
+- Importbeginn 11:41:10, erfolgreiche Abschlussmeldung 18:00:19;
+  gemeldete Dauer 22.748,94 Sekunden, rund 6 Stunden 19 Minuten.
+  Rank 30 endete um 17:42:36; Interpolationen, ein separater Rank-0-Nachlauf
+  und Abschlussarbeiten folgten. Eine Rank-ETA ist keine Gesamtimport-ETA.
+- Fehlende optionale Wikipedia-/Wikidata-Zusatzdateien führten zum vorgesehenen
+  Standard-Ranking, nicht zu einem Importfehler. Der Importdienst wurde von
+  systemd erfolgreich deaktiviert; die Freiplatzüberwachung danach gestoppt.
+- `--no-updates` entfernt Strukturen für laufende OSM-Datenupdates. Der
+  Datenbestand wird in diesem Setup nicht per Replikation aktualisiert;
+  eine spätere Aktualisierung oder Gebietserweiterung benötigt einen geplanten
+  Neuimport. Apple-Standortaktualisierungen bleiben davon unabhängig.
+
+### HTTP-Dienst und iCloud Services-Anbindung
+
+`nominatim-api.service` verwendet die vorhandene virtuelle Umgebung mit Falcon
+und Gunicorn (Installationsvorgabe 25.1.0), `--worker-class asgi`, einen Worker,
+16 Worker-Verbindungen und `--timeout 120`. Arbeitsverzeichnis ist das
+Nominatim-Projekt, Dienstbenutzer `www-data`, `PrivateTmp=yes` und
+`PYTHONDONTWRITEBYTECODE=1`. Der Dienst benötigt den getrennten
+PostgreSQL-Cluster und verwendet dieselben Slice-/Prioritätsgrenzen.
+`Restart=on-failure` mit zehn Sekunden Abstand ist konfiguriert; der Dienst
+wurde für automatischen Start über `multi-user.target` eingerichtet.
+
+Gunicorn stellte HTTP zunächst ausschließlich auf `127.0.0.1:8088` bereit.
+Für das auf demselben Pi laufende Symcon genügt dieser lokale Zugang; für das
+getrennte Testsystem wurde anschließend eine zusätzliche LAN-Bindung ergänzt
+(siehe unten). nginx oder Änderungen an Symcons Webports sind dafür nicht
+erforderlich. Die Prüfpunkte sind `/status` und `/reverse` mit `format=jsonv2`,
+`addressdetails=1` und `accept-language=de`. Der Benutzer bestätigte die
+funktionierende Adressanzeige in WoIst.
+
+In **WoIst → Adressauflösung (Nominatim)** ist
+`EnableAddressResolution=true`, `NominatimServer=http://127.0.0.1:8088` und
+`AddressLanguage=de` vorgesehen; danach Konfiguration übernehmen. `/reverse`
+wird nicht in die Basis-URL eingetragen, sondern vom zentralen Helper ergänzt.
+Loopback funktioniert, weil die Auflösung serverseitig auf demselben Pi läuft;
+bei einem anderen Nominatim-Rechner wäre dessen erreichbare Basis-URL nötig.
+
+Der vorhandene `ReverseGeocodingHelper` mit `PersistentJsonCacheHelper` bleibt
+die zentrale Implementierung für HTTP und Cache. `WoIstGeocoding` steuert
+lediglich Opt-in, Hintergrundtimer und Veröffentlichung der Ergebnisse. Der
+Cache- und Aktualisierungsvertrag steht in
+[`iCloud WoIst/README.md`](iCloud%20WoIst/README.md#eigener-nominatim-server).
+Nominatim löst Adressen auf; die Kartendarstellung bleibt bei OpenFreeMap.
+
+### Zusätzliche LAN-Bindung und Testsystem (2026-10-22)
+
+Das getrennte Symcon-Testsystem verwendet denselben Nominatim-Dienst auf dem
+Pi. Die anfängliche Diagnose zeigte nur einen Listener auf `127.0.0.1:8088`:
+Der lokale `/status`-Abruf lieferte HTTP 200 mit `OK`, der Abruf über die
+LAN-Adresse scheiterte beim Verbindungsaufbau.
+
+In der bestehenden `ExecStart`-Zeile von
+`/etc/systemd/system/nominatim-api.service` wurde die Bindung erweitert:
+
+```text
+--bind 127.0.0.1:8088 --bind <Pi-LAN-IP>:8088
+```
+
+`<Pi-LAN-IP>` bezeichnet hier bewusst einen Platzhalter. Der lokale Listener
+bleibt bestehen; nur die zusätzliche Pi-LAN-Adresse wird gebunden. Die übrigen
+Startparameter und Ressourcenlimits bleiben unverändert. Nach Sicherung der
+Dienstdatei wurden `systemctl daemon-reload` und der Neustart ausschließlich
+von `nominatim-api.service` vorgesehen; Symcon und PostgreSQL benötigen dafür
+keinen Neustart. Der Datenbankzugang bleibt lokal über den Unix-Socket.
+
+Die WoIst-Konfiguration unterscheidet die beiden Systeme:
+
+| System | Nominatim-Basis-URL |
+| --- | --- |
+| Symcon auf dem Pi | `http://127.0.0.1:8088` |
+| Getrenntes Symcon-Testsystem | `http://<Pi-LAN-IP>:8088` |
+
+Adressauflösung aktivieren und die Konfiguration übernehmen; `/reverse` wird
+weiterhin vom zentralen Helper ergänzt. Die Anfragen erfolgen serverseitig
+vom jeweiligen Symcon-System, nicht vom Browser oder IPSView-Client. Beide
+Systeme verwenden ihre vorhandenen instanzlokalen Helper-Caches; eine zweite
+Nominatim-Installation oder ein weiterer OSM-Import ist nicht erforderlich.
+
+Der Benutzer bestätigte nach der Bindungsänderung den erfolgreichen Zugriff
+auch vom Testsystem. Dies ist ein Benutzer-Praxisnachweis; ein zusätzlicher
+unabhängiger MCP-Test wurde für die LAN-Erweiterung nicht durchgeführt.
+Reale interne Adressen und Hostnamen werden nicht im Repository festgehalten.
+
+### Nachweise und verbleibende Grenzen
+
+- `nominatim admin --check-database`: Verbindung, Versionsabgleich, Inhalt,
+  Tokenizer, Indexierungsstatus sowie vollständige und gültige Indizes jeweils
+  `OK`; optionale externe Daten erwartungsgemäß `not applicable`.
+- `nominatim reverse` für einen öffentlichen Referenzpunkt in Berlin lieferte
+  eine passende Adresse. Der Benutzer bestätigte nach HTTP-Einrichtung und
+  Modulkonfiguration zusätzlich die Adresse in der realen WoIst-Geräteliste.
+- Abschlussmessung: `pg_database_size` meldete `1474 MB` (rund 1,44 GiB),
+  Root-Dateisystem rund 25 GiB frei, RAM rund 2,9 GiB verfügbar, Systemswap
+  rund 50 MiB belegt und `systemctl is-active symcon` meldete `active`.
+- Kein unabhängiger neuer MCP-Nachweis für diese Installation. Autostart nach
+  Neustart, Ausfall-/Wiederanlauf der API, Freiplatz-Abbruch, spätere Neuimporte
+  sowie die neue Adressanzeige im Popup und getrennt in beiden echten
+  Visualisierungsclients wurden in diesem Lauf nicht zusätzlich abgenommen.
+  Die bisherigen Offline-Nachweise für Kamera-/Auswahlerhalt gelten weiterhin;
+  der Screenshot allein bestätigt diese Interaktionen nicht erneut.
+
 Zielplattform: Symcon 9.0 / PHP 8.5. Entwicklungsbranch: dev. Lizenz: PolyForm Noncommercial License 1.0.0. Version 0.1/build 0/date 0 bezeichnet ausschließlich den unveröffentlichten Ausgangsstand, keinen Release.
 
 ## Prüfung
 
 - `php tests/run.php`: Protokoll-, Konto- und Geräte-/Konfiguratorverhalten sowie Struktur und JSON.
 - `php tests/validate_structure.php`: Library, offizielle Modultypen, GUID-Datenfluss, Module, Helper-Integrität, LF und CI.
+- `php tests/sdk-contracts.php`: dokumentbasierte Formularaktionen (Callback, Parameter, Scope) und Configurator-Erstellungsvorgaben (bekanntes Modul, Konfigurationsobjekt, Property-Typen und tatsächliche Geräteanlage), einschließlich Negativfällen. Der Test ist in `tests/run.php` und damit im gemeinsamen CI-Testlauf enthalten. Unterstützt werden die einfachen Funktionsaufrufe, die dieses Projekt als Button-Skripte verwendet; dies ist kein allgemeiner PHP-/Symcon-Konsolenvalidator.
+- `php tests/map.php`, `node tests/map-ui.js` und `node tests/map-transport.js` und `node tests/map-loader.js`: WoIst-Backend-/Frontend-Verträge einschließlich SDK-Zustandsnachrichten, Cache-Isolation, Aktualität, leeren/ungültigen Positionen, Providerwechsel und sicherer Textdarstellung. Node 22 wird für den CI-Testlauf eingerichtet.
 - `php .style/json-check.php`: offizielle StylePHP-JSON-Prüfung.
 - `php-cs-fixer fix --config=.style/.php-cs-fixer.php --allow-risky=yes --dry-run --diff`: offizielle StylePHP-Regeln im Prüfmodus.
 - Gemeinsame CI: Burki24/Symcon_ModuleCI v1.0.0 mit PHP 8.5 sowie curl, bcmath, dom.
@@ -16,6 +1997,1496 @@ Zielplattform: Symcon 9.0 / PHP 8.5. Entwicklungsbranch: dev. Lizenz: PolyForm N
 
 Lokale Prüfung am 21.10.2026 mit PHP 8.5.10: Gesamtsuite einschließlich Syntaxprüfung, Strukturprüfung, offizielle StylePHP-JSON-Prüfung und php-cs-fixer 3.95.27 mit offiziellen Regeln im Prüfmodus erfolgreich. php-cs-fixer gibt einen unverbindlichen Hinweis auf die fehlende optionale composer.json aus; die Prüfung selbst endet erfolgreich. Die GitHub-CI wurde noch nicht ausgeführt.
 
-Noch nicht bestätigt: echte Apple-SRP-Anmeldung, tatsächliche 2FA-Codezustellung, Cookie-Vertrauen nach Neustart, Inventarabfrage mit shouldLocate=false, Mehrkonten-Anlage in der realen Konsole und Darstellung in schmaler/breiter Konsole. Ohne diese Abnahme ist der Stand kein als produktionsbereit geprüfter Release.
+Vom Benutzer am 21.10.2026 praktisch bestätigt: Apple-Anmeldung, Konfigurator, Geräteanlage und Anzeige der Gerätevariablen. Screenshots und private Geräte-/Standortdaten werden nicht versioniert. Noch offen sind unter anderem Cookie-Vertrauen nach echtem Serverneustart, Mehrkonten-Anlage und vollständige Darstellung in schmaler/breiter Konsole. Der Entwicklungsstand ist kein als produktionsbereit geprüfter Release.
 
 Eine spätere Praxisabnahme sollte einen autorisierten Testaccount verwenden und keine Passwörter, Codes, Cookies, Gerätedaten oder Standorte im Repository speichern. Änderungen an laufenden Symcon-Systemen erfolgen nur separat beauftragt.
+
+WoIst wurde mit synthetischen Daten und lokal ersetzten Kartenkacheln in Chromium auf Desktop- und Mobilbreite geprüft. Dabei wurden keine Apple-Konten und keine öffentlichen Kartenserver angesprochen. HTML-SDK-Betrieb und Kartenzugriff in der realen Symcon-Visualisierung sind noch praktisch abzunehmen. Details und die Recherche zu iCloud-/MapKit-Möglichkeiten stehen in ADR 0003.
+
+## WoIst-Ausgaben und Designer
+
+Tile und IPSView verwenden dieselben lokalen Leaflet-/Modulassets und den zentralen `IPSViewHTMLPageHelper` einschließlich `HelperTranslationHelper`. Die gemeinsame HTML-Variablenverwaltung und sichere Seitenerzeugung werden unverändert aus dem kanonischen Helper-Bundle eingebunden. Map-spezifische Einstellungen und die Zuordnung der Standortfarben bleiben in `libs/WoIstDesign.php`; ein neuer allgemeiner Designer-Helper ist dafür nicht erforderlich. ECharts-spezifische Topic-Gruppierung und Gateway-/WebSocket-Transport werden nicht übernommen.
+
+IPSView nutzt eine optionale, vom Helper verwaltete WebContent-Stringvariable `IPSViewWoIst` als stabiles HTML-Dokument. Daten-Broadcasts und Update-/Refresh-Aktionen schreiben ausschließlich einen bereinigten IPSView-Zustandscache; sie verändern die HTML-Variable nicht. Die geöffnete Seite fragt alle fünf Sekunden einen instanzspezifischen, token-geschützten POST-WebHook ab. Es erfolgen weder Kontoabfragen noch Apple-Anfragen im WebHook. Der bestehende `HttpResponseHelper` liefert HTTP-Antworten mit No-Store und Nosniff; ein neuer allgemeiner Helper wurde nicht eingeführt.
+
+Der Zugriffstoken wird nur in der IPSView-Einbindung eingebettet, per Fragment an die echte HTTP(S)-Kartenseite übergeben und vor deren Netzwerkzugriffen aus der Seitenadresse entfernt. Die öffentlich gelieferte Kartenseite enthält keine Tokens, Geräte, Koordinaten oder privaten Anbieterparameter; erst `X-WoIst-Token` autorisiert den Zustandsabruf. Native Tile-Nachrichten, `GetState()` und HTTP-Zustandsantworten enthalten ihn nicht. Deaktivierung und Kontowechsel widerrufen den bisherigen Zugang. CORS ohne Cookies erlaubt auch opaque WebViews; solche Seiten brauchen eine explizite `IPSViewServerURL`, da weder Referrer noch fremde Elternfenster als Token-Ziel herangezogen werden. Die HTML-Variable enthält einen lesenden Bearer-Zugang und ist deshalb vertraulich.
+
+Die Seite hält die Leaflet-Karte und vorhandene Marker am Leben. Aktualisierungen verändern Position, Stil und Popup-Inhalt ohne automatisches Verschieben oder Zoomen. Auswahl bleibt bei gelisteten Geräten auch ohne Position erhalten; ein entferntes Gerät verliert seine Auswahl. Verbindungsfehler zeigen einen Hinweis, behalten Daten und Ansicht und lösen begrenzte Wiederholungen aus. Details stehen in ADR 0005. Änderungen der Konfiguration und ausdrücklich angeforderte HTML-Regeneration dürfen weiterhin die Seite ersetzen.
+
+Formular-Verträge prüfen jetzt die tatsächlich erzeugten Formulare einschließlich Designer-`onChange` und Helper-`MESSAGE:`-Rückgaben. Die Kopieraktion ist ausdrücklich ein Snapshot des gespeicherten Kachel-Designs; sie übernimmt keine ungespeicherten Formulareingaben. Ein realer IPSView-Laufzeittest bleibt offen; die Browserprüfung verwendet synthetische HTML-Ausgaben und lokal ersetzte Kartenkacheln.
+
+Der zentrale HTML-Renderer wurde im selben Arbeitspaket in `Symcon_ModuleHelper` gegen rekursive Platzhalterersetzung korrigiert und mit Tests abgesichert. Das lokale Bundle enthält die byteidentische, noch nicht commitete Quelle; `source_sha` bezeichnet weiterhin den bisherigen Helper-HEAD, der SHA-256-Wert die tatsächlich gelieferten Bytes. Nach dem Benutzer-Commit kann der reguläre Helper-Sync die Provenienz auf den neuen Commit bringen. Keine Version wurde manuell erhöht und kein Consumer-Sync ausgelöst.
+
+Lokaler Nachweis für ADR 0005: Gesamtsuite unter PHP 8.5.10 einschließlich zweier Node-Vertragstests erfolgreich. Chromium-Prüfung mit echtem lokalem Leaflet und synthetischem Fetch-Endpoint: genau ein HTML-Dokument/eine Karteninstanz, exakter Mittelpunkt und Zoom sowie ausgewähltes bewegtes Popup über Updates und Netzfehler/Wiederverbindung erhalten. Positionsverlust erhält die Auswahl, Entfernung des Geräts hebt sie auf. Zusätzliche HTTP-SAPI-Prüfung des echten Handlers mit synthetischer Instanz bestätigt 200/403/405/204, JSON, No-Store, Nosniff und CORS ohne Credentials. Native Symcon-Hook-Weiterleitung und reale IPSView-WebViews bleiben praktisch abzunehmen.
+
+## HTTP(S)-Einbindung der IPSView-Karte
+
+ADR 0006 ergänzt den stabilen Zustandsabruf um eine echte HTTP(S)-Kartenseite unter dem instanzbezogenen Hook-Pfad `/page`. Die WebContent-Variable enthält nur noch einen Loader mit iframe, dessen Ziel über die explizite Server-Adresse oder die eigene HTTP(S)-Seitenadresse aufgelöst wird. Es werden weder Referrer noch fremde Elternfenster zur Zielermittlung verwendet.
+
+Der öffentliche GET liefert nur eine leere Seitenschale mit lokalen Assets. Private Kartenanbieterparameter und Gerätedaten werden ausschließlich durch den geschützten POST geliefert. Das Fragment mit dem Bearer wird vor Karten- und Datenanfragen aus der URL entfernt; wenn das im eingebetteten Kontext nicht möglich ist, startet keine authentifizierte Abfrage. Die Seitenschale setzt `Referrer-Policy: origin`, sodass die Kachelrequests einen echten HTTP(S)-Ursprung melden. Eine Aufhebung externer OSM-Sperren wird nicht zugesagt. Es wurde kein zusätzlicher Helper entwickelt und kein kanonischer Helper verändert.
+
+Nach dem Update ist einmaliges Übernehmen der Instanz nötig, damit die vorhandene HTML-Variable den neuen Loader erhält. Bestehende Tokens und der idempotente Datenabruf bleiben erhalten. Datenupdates ersetzen weder iframe noch Kartenseite. Die native Tile-Karte bleibt beim HTML-SDK.
+
+Lokale Verifikation zu ADR 0006 unter PHP 8.5.10: Gesamtsuite mit drei Node-Vertragstests, Struktur, JSON und php-cs-fixer erfolgreich. Chromium lud den echten Loader als opaque data-Dokument und die echte öffentliche Kartenseite als HTTP(S)-iframe. Abgefangene Kachelrequests enthielten den tatsächlichen Symcon-Ursprung als Referer, keine Token im URL/Referer/Header; der Token erschien ausschließlich im Zustandsheader. Über Updates und Ausfall/Wiederherstellung blieb es bei einem HTTP-Seitenabruf und derselben Leaflet-Karte mit exakt gleichem Mittelpunkt, Zoom, Auswahl und Popup. Desktop-/Mobilansicht ohne horizontales Überlaufen geprüft. Alle Karten- und Serverantworten waren synthetisch; öffentliche OSM-Server und Apple wurden nicht angesprochen. Ein HTTP-SAPI-Test des echten Handlers bestätigte zusätzlich die öffentlichen Seitenheader und den privaten POST-Zugang.
+
+## WoIst-Kachellayout
+
+Native Titelbehandlung entspricht dem vorhandenen ECharts-Vertrag: `options.tileHeaderVisible` und 58 Pixel reservierter Titelbereich, wenn die native Kachelüberschrift sichtbar ist. `ObjectIsHiddenTitle` wird aus `IPS_GetObject` gelesen; das Feld ist laut aktueller offizieller Dokumentation erst ab Symcon 9.1 vorhanden. Unter 9.0 ohne Feld gilt der sichere Standard sichtbar. IPSView erhält durchgehend `false`, auch im Zustands-POST. Es wird keine zusätzliche manuelle Titel-Property benötigt.
+
+Der bestehende ResponsiveVisualizationHelper liefert unverändert den Breitencontainer. Das fachliche Layout nutzt eine vollständige Höhenkette und einen schrumpfbaren Flex-/Grid-Bereich. Breite Kacheln zeigen Karte und scrollende Liste auf gleicher Höhe; schmale Kacheln teilen den übrigen Platz in zwei Zeilen. Ausgeblendete Listen geben beide Achsen frei. Höhe0 bedeutet automatisch; vorhandene Höhenwerte bleiben nur als CSS-Fallback erhalten. Die Kachelgröße hat Vorrang vor alten 480-Pixel-Einstellungen.
+
+Leaflets paralleles Window-Resize wird mit `trackResize:false` abgeschaltet. Ein gemeinsamer ResizeObserver-/Fallback-Handler hält Mittelpunkt und Zoom fest, invalidiert die Größe und setzt dieselbe Ansicht ohne Animation mit `reset:true` zurück. Dadurch werden Pixelrundungen vermieden; initiales automatisches Einpassen bleibt von Größenänderungen unberührt. Reine Datenaktualisierungen lösen keine unnötige Größeninvalidierung aus.
+
+Nachweise: PHP-Verträge für sichtbaren/ausgeblendeten nativen Titel, Default-Autohöhe und IPSView ohne nativen Titelabstand; Node-Verträge für Titelabstand und exakten Ansichtsrestore. Chromium mit echtem Leaflet und synthetischen Kacheln geprüft bei 1900×1050,1200×700,640×600,390×844,480×320 und 320×240 sowie 25 synthetischen Geräten: keine Dokumentüberläufe, gleiche Karten-/Listenhöhe bei breiten Kacheln, gestapelte Bereiche bei schmalen Kacheln, interner Listenscroll und Freigabe der Listenfläche bei Ausblendung. Die native Titelüberlagerung ist im Test als Host-Bereich berücksichtigt; die Live-Symcon-Konsole bleibt praktisch abzunehmen.
+
+## Zentraler Layoutvertrag
+
+Die Erkennung der nativen Titel-Sichtbarkeit, der reservierte Titelabstand und der höhenfüllende Flex-Rahmen liegen kanonisch im `ResponsiveVisualizationHelper` des `Symcon_ModuleHelper`. WoIst nutzt `ResponsiveVisualizationLayoutOptions(!$ipsView)` und `ResponsiveVisualizationCSS('#woist-app', 'woist-map', true)`. Lokale SDK-Objektabfragen und 58-Pixel-Konstanten wurden entfernt. Der Browser überträgt nur noch den gelieferten numerischen `tileHeaderInset` nach `--symc-tile-header-inset`; das ist eine Datenbindung ohne eigene Abstandsentscheidung.
+
+Die Aufteilung von Karte und Geräteliste, deren Standortdarstellung und Leaflet-spezifische Ansichtserhaltung bleiben fachlich in WoIst. Der bestehende zweiargumentige Helper-CSS-Aufruf bleibt rückwärtskompatibel; der volle Rahmen wird ausdrücklich aktiviert. Der Consumer enthält unveränderte kanonische Helper-Bytes mit aktualisiertem SHA-256. Die Änderungen im Helper sind lokal und noch nicht committed; source_sha bezeichnet den bisherigen HEAD. Versionierung und Verteilung bleiben bei der vorhandenen Automation nach Benutzer-Commit.
+
+Zentralisierung ist auch im Referenz-Consumer SymconECharts durchgeführt: alle 29 Diagrammmodule beziehen native Titel-Sichtbarkeit und Inset aus derselben Helper-Quelle. Chart-spezifische Ränder bleiben lokal. Das produktiv geladene BarCategory-Minify-Bundle wurde neu gebaut. Die kanonischen Helper-Tests, WoIst-Integration und synthetischen Browserprüfungen sichern Sichtbarkeit, Höhenfüllung, responsives Verhalten sowie unveränderte Ansicht bei Datenupdates ab.
+
+## OpenFreeMap
+
+OpenFreeMapHelper aus Symcon_ModuleHelper besitzt die unabhängigen Kartenprofile, übersetzten Formulare, Farb-/Sichtbarkeits-/Sprachtransformationen und den persistenten MapLibre-Controller. Leaflet bleibt für Geräte, Auswahl und Ansicht zuständig. MapLibre 5.24.0 und MapLibre-GL-Leaflet 0.1.4 sind unverändert und mit Lizenzen/Hashes im Helper-Bundle enthalten. Der Renderer wird über den öffentlichen gzip-Asset-Endpunkt geliefert; Inline-Ausgabe überschreitet Symcons 1-MB-Buffer. Die öffentliche Kartenseite enthält weiterhin keine privaten Stil-URLs oder Kontodaten.
+
+Live per MCP geprüft: beide Designer-Menüs registriert; native Kachel und IPSView-HTTP-Seite rendern OpenFreeMap. Bei Wechsel dunkel → hell, eigener Wasserfarbe und Cache-Update bleiben Leaflet-Ansicht, Geräteauswahl, Popup und ein einzelnes GL-Canvas erhalten. Temporäre Profileinstellungen wurden wiederhergestellt.
+
+## Praxisnachweis: native Live-Pushs am 22.10.2026
+
+Die WoIst-Karte wurde auf dem vom Benutzer freigegebenen angeschlossenen Symcon-System in der echten Kachelvisualisierung geprüft. Der Nachweis erfolgte im nativen `/visu/`-iframe der Kachel, nicht in der statischen MCP-Kachelvorschau und nicht über den IPSView-Pollingtransport. Damit ist die zuvor noch offene Praxisabnahme des normalen nativen Live-Push-Pfads für diesen Stand erbracht.
+
+Prüfablauf und Ergebnis:
+
+- Ein Gerät ausgewählt, Popup geöffnet, Zoom verändert und den Kartenausschnitt per Tastatur verschoben. Der Vergleichszustand wurde nach Abschluss der Kartenanimation erfasst; Zwischenstände während einer laufenden Verschiebeanimation sind kein belastbarer Beleg für einen Ansichtsverlust.
+- Eine vorübergehende Änderung von `TileCurrentColor` und anschließendes `ApplyChanges`/`ICWI_Update` aus dem vorhandenen Kontocache machten den Eingang des nativen Updates im bereits geöffneten iframe sichtbar. Danach wurde die ursprüngliche Farbe wiederhergestellt und der Cache erneut ohne Designänderung veröffentlicht.
+- Nach den nativen Pushs blieben Zoom, Kartenausschnitt, Geräteauswahl und geöffnetes Popup erhalten. Die iframe-Adresse blieb unverändert und es existierte weiterhin genau ein GL-Canvas; ein Seitenneuladen wurde nicht beobachtet.
+- Browserkonsole und Symcon-Protokoll meldeten im Prüfzeitraum keine Fehler; der Instanzstatus blieb aktiv. Die vollständige Instanzkonfiguration wurde abschließend mit dem Ausgangsstand verglichen und war wiederhergestellt.
+
+Für diesen Test wurden weder Apple-Anmeldung noch ein ausdrücklicher Geräteabruf bei Apple ausgelöst; die Testupdates nutzten den bestehenden Kontocache. Private Geräte-, Standort- und Zugangsdaten sowie Screenshots bleiben außerhalb der versionierten Dokumentation. Der Nachweis gilt für die geprüfte laufende Browser-Sitzung; Wiederverbindung, Serverneustart, Kontowechsel und entfernte Geräte wurden damit nicht zusätzlich abgenommen.
+
+Die vorausgehenden MCP-Prüfungen bestätigen zusätzlich Hell-/Dunkeldarstellung und lokale Bedienung in beiden Kachel-Themes sowie den Erhalt von Ansicht, Auswahl und Popup bei Cache-Updates und Themewechsel in IPSView. Browserprüfungen verwenden den zentral dokumentierten Ablauf aus `../SymconDevelopment/standards/SYMCON_ACCESS.md`: leeren Tab erstellen, navigieren, Ladeabschluss prüfen und erst danach Accessibility-/DOM-Abfragen ausführen. Die statische MCP-Kachelvorschau allein weist keine nativen Live-Pushs nach.
+
+## Wiederverbindung: Korrektur und Praxisnachweis am 22.10.2026
+
+Eine gezielte TCP-Unterbrechung ausschließlich für die Testansichten zeigte zunächst den Unterschied zwischen Daten-Push und Wiederverbindung: Der native Host ersetzt seinen Kachel-iframe und verliert damit den bisherigen JavaScript-Zustand; die IPSView-Seite bleibt geöffnet und setzt ihren Pollingtransport fort. Der native Zustand ging vor der Korrektur verloren, obwohl die normalen Live-Pushs bereits erfolgreich geprüft waren.
+
+`SymconOpenFreeMap.createViewState` aus dem zentralen OpenFreeMapHelper speichert ausschließlich validierten Kartenmittelpunkt, Zoom, Auswahl-ID und Popupstatus im tabgebundenen `sessionStorage`. Der Schlüssel trennt Modulinstanz und Kontoverbindung sowie native Visualisierung und Benutzer. Versionierung, vier Stunden Ablaufzeit, Größenprüfung, ungültige Daten und verweigerter Speicherzugriff sind berücksichtigt. Tokens, Passwörter, Gerätenamen und vollständige Geräteinventare werden nicht gespeichert. Die native WoIst-Kachel stellt die Kamera vor dem ersten automatischen Einpassen wieder her und gleicht die Auswahl mit dem aktuellen Inventar ab. Bei zunächst nicht verfügbarem Cache wartet die Auswahlwiederherstellung auf ein gültiges Inventar; entfernte Geräte werden nicht wieder ausgewählt.
+
+Nach der Korrektur per MCP in der echten Kachelvisualisierung erneut geprüft: Gerät ausgewählt, Popup geöffnet, Zoom verändert und Karte verschoben; anschließend bestehende TCP-Verbindungen über einen temporären Loopback-Relay getrennt und neue Verbindungen zeitweise abgewiesen. Die native Visualisierung zeigte die Unterbrechung und verband sich automatisch wieder. Der neu aufgebaute iframe stellte Mittelpunkt und Zoom wieder her; Geräteauswahl und Popup blieben erhalten, mit einem GL-Canvas. Der gleichzeitig geprüfte IPSView-Pollingtransport zeigte seinen Warnhinweis, nahm den Abruf nach Wiederverbindung wieder auf und erhielt ebenfalls Mittelpunkt, Zoom, Auswahl und Popup. Die Rücksetzung interner Leaflet-Pane-Offsets bei der Größenänderung durch den Hinweis ist kein Verlust des geografischen Kartenmittelpunkts.
+
+Der Test änderte keine dauerhafte Instanzkonfiguration und löste weder Apple-Anmeldung noch einen ausdrücklichen Apple-Geräteabruf aus. Der temporäre Relay und seine Steuerdateien werden nach dem Test entfernt; private Screenshots bleiben außerhalb der Versionierung. Neue Tabs, verweigerter Sitzungsspeicher und abgelaufene Speicherstände beginnen weiterhin ohne gespeicherte Ansicht; ein server- oder geräteübergreifender Ansichtsabgleich ist nicht Bestandteil dieser Korrektur.
+
+## Wiederverbindung nach Helper-Verteilung: erneuter MCP-Nachweis am 22.10.2026
+
+Der auf dem freigegebenen angeschlossenen Symcon-System geladene OpenFreeMapHelper-Stand wurde gegen die auf `dev` verteilte Kartenressource geprüft: OpenFreeMapHelper 1.0.1 aus HelperBundle 3.20.7, identische SHA-256-Prüfsumme. Die erneute Laufzeitprüfung verwendete die echte native Kachelvisualisierung sowie die aktuelle IPSView-HTML-Ausgabe in einer Browser-Testeinbettung mit ihrer echten HTTP-Kartenseite und ihrem echten Pollingtransport. Der vollständige IPSView-Client war nicht Gegenstand dieses erneuten Laufs.
+
+Der abschließende zusammenhängende MCP-Browserlauf trennte über einen temporären lokalen Relay bestehende TCP-Verbindungen und wies neue Verbindungen acht Sekunden lang ab. Neun abgewiesene Verbindungen und ein fehlgeschlagener IPSView-Datenabruf belegten den Ausfall. IPSView zeigte den Transporthinweis. Nach Wiederfreigabe wurde der Retry-Abstand berücksichtigt und weitere 18 Sekunden gewartet: drei erfolgreiche IPSView-Datenabrufe und der verschwundene Hinweis belegten den Wiederanlauf. Der native Host ersetzte seinen Kachel-iframe und verband sich ebenfalls wieder.
+
+Ergebnis in beiden Ausgaben: Zoom unverändert, geografischer Mittelpunkt innerhalb einer Vergleichstoleranz von 0,0000001 Grad unverändert, Geräteauswahl und geöffnetes Popup erhalten, weiterhin genau ein GL-Canvas und keine erfassten JavaScript-Seitenfehler. Der Nachweis betrifft die geprüfte Sitzung und Verbindungsunterbrechung; Serverneustart, neuer Tab und abgelaufene Sitzungsspeicherung wurden nicht erneut getestet.
+
+Die vorausgehenden Timeouts wurden eingegrenzt: Playwright wartete auf einen außerhalb des sichtbaren Host-Bereichs liegenden Gerätebutton. Für den Zustand-/Transporttest wurde dessen vorhandene DOM-Klickaktion verwendet; dies ist kein Nachweis eines erfolgreichen Zeigerklicks. Ein beim absichtlichen Ausfall unbehandelter `ECONNRESET` aus `route.fetch` beendete außerdem die MCP-Testlaufzeit. Nach Behandlung der erwarteten Route-/Transportfehler und Ausführung in einem zusammenhängenden Lauf war der Test erfolgreich. Daraus ergibt sich kein belegter Fehler des Moduls oder des Symcon-MCP. Der verbindliche Ablauf steht unter `../SymconDevelopment/standards/SYMCON_ACCESS.md#mcp-wiederverbindungspruefungen`.
+
+Browser und Relay des abschließenden Laufs wurden im `finally`-Pfad geschlossen. Es gab keine Änderungen an Modulcode oder dauerhafter Instanzkonfiguration und weder Apple-Anmeldung noch einen ausdrücklichen Apple-Geräteabruf. Private Geräte-, Standort- und Zugangsdaten werden nicht in diesem Nachweis gespeichert.
+
+## Wiederverbindung im echten IPSView-Webclient: MCP-Nachweis am 22.10.2026
+
+Zusätzlich zur vorherigen Testeinbettung wurde die WoIst-Karte im echten IPSView-Webclient 6.5.18 auf dem vom Benutzer ausdrücklich genannten Symcon-System geprüft. Die bestehende Ansicht wurde regulär geladen und die Seite mit der eingebundenen WoIst-HTML-Variable über ihre vorhandene Navigation geöffnet. Dieser Nachweis betrifft damit den vollständigen Client einschließlich seiner Datenabrufe und der darin verschachtelten HTTP-Kartenseite.
+
+Ein Gerät wurde über den sichtbaren Gerätebutton ausgewählt, das Popup geöffnet und die Karte auf Zoom 11 gesetzt und verschoben. Nach Abschluss der Auswahlanimation wurden Zoom, geografischer Mittelpunkt und Geräteauswahl erfasst. Die Unterbrechungen erfolgten mit dem Offline-Modus ausschließlich im Browser-Testkontext; dauerhafte Server-/Instanzkonfiguration und andere Clients blieben unverändert.
+
+- Erster Lauf: acht Sekunden offline, danach 18 Sekunden Wiederanlauf. Ein Kartenabruf und zwei Clientabrufe schlugen fehl; anschließend waren zwei Kartenabrufe und 38 Clientabrufe erfolgreich. Zoom, Mittelpunkt, Auswahl und Popup blieben erhalten; der Karten-iframe wurde in diesem Lauf nicht ersetzt.
+- Zweiter Lauf: 17 Sekunden offline, danach 20 Sekunden Wiederanlauf. Der Transporthinweis wurde sichtbar und verschwand nach Wiederverbindung. Zwei Kartenabrufe und 51 Clientabrufe schlugen fehl; anschließend waren ein Kartenabruf und 40 Clientabrufe erfolgreich. Zoom und Auswahl waren unverändert, der Mittelpunkt innerhalb einer Toleranz von 0,0000001 Grad unverändert und das Popup weiterhin geöffnet. Genau ein GL-Canvas und keine erfassten JavaScript-Seitenfehler bestätigten den stabilen Kartenbetrieb.
+
+Zur Messung wurde ausschließlich die Kartenreferenz im Browser erfasst. Ein vorausgehender Versuch mit ersetzter HTTP-Antwort löste Chromes Sperre für Zugriffe auf einen privateren Netzwerkadressraum aus und wurde verworfen. Der erfolgreiche Test verwendete nach regulärem Neustart des Clients unveränderte HTTP-Antworten und keine gelockerten Browser-Sicherheitsregeln.
+
+Der Netzwerkzugriff wurde im Abschluss-/Fehlerpfad wieder freigegeben und der Testbrowser danach geschlossen. Modulcode und dauerhafte Konfiguration wurden nicht geändert; weder Apple-Anmeldung noch ein ausdrücklicher Apple-Geräteabruf wurden ausgelöst. Serverneustart, neuer Tab, abgelaufene Sitzungsspeicherung und native IPSView-Apps wurden mit diesem Lauf nicht zusätzlich geprüft. Private Serveradressen, Objekt-IDs, Geräte- und Standortdaten sowie Zugangsdaten bleiben außerhalb dieses Nachweises.
+
+## WoIst-Designer: zentrale Farb- und Stilkonfiguration am 22.10.2026
+
+Die Designer enthielten bisher nur modulspezifische Kartenparameter und OpenFreeMap-Profile; die bereits vorhandenen zentralen Konfigurations-Helper waren nicht eingebunden. IPSView bekam lediglich das allgemeine Symcon-Theme. WoIst nutzt jetzt `VisualizationThemeConfigurationHelper` für Kachelfarben und `IPSViewStyleConfigurationHelper` für IPSView-Stilquellen, semantische Farben, relevante native Farbfamilien, Transparenz, Typografie, Rahmen und Schatten. Beide Pakete sind in `.helper-sync.json` abonniert und unverändert mit ihren manifestierten Abhängigkeiten, Fonts und Übersetzungen eingebunden. Es war keine neue gemeinsame Helper-Implementierung erforderlich. Der bereits ausgelieferte OpenFreeMap-Stand einschließlich Sitzungsspeicherung bleibt erhalten.
+
+Die Karte bindet die zentralen Farbrollen an ihre eigenen Bedienelemente und Popups. Kartenlayout, Marker und OpenFreeMap-Profil können weiterhin der Kachel folgen oder kopiert werden; die IPSView-Stilquelle ist unabhängig davon. Die zentrale IPSView-Typografie löst das frühere FontSize-Eingabefeld ab; dessen Property bleibt registriert. Änderungen werden über einen eigenen Stylesheet-Knoten in bestehenden Dokumenten angewendet. Ein MM_UPDATE der ausgewählten Stilmedien veröffentlicht den aufgelösten Stil erneut, ohne den IPSView-Loader zu ersetzen.
+
+Nachweise: vollständige Offline-Suite unter PHP 8.5.10, Formular-/Erstellungsverträge, Struktur-/Hash-/LF-Prüfung, gezielte Tests für Designer-Felder, unabhängige Stile, Medienänderungen und Kameraerhalt sowie php-cs-fixer im Prüfmodus. Ein synthetischer Browserlauf bestätigte eigene Kachel-/IPSView-Hintergründe und Textfarben, Popupfarbe, Schriftgröße samt Skalierung, Hell-/Dunkelpresets und Transparenz. Zoom, geografischer Mittelpunkt und Geräteauswahl blieben beim Stilwechsel erhalten. Der Browserlauf ersetzte ausschließlich externe Kartendaten durch synthetische Daten und änderte kein angeschlossenes Symcon-System. Eine Live-Abnahme der neu ergänzten Designer steht noch aus.
+
+## Zentrale Mausradbehandlung am 22.10.2026
+
+Die Ausgabe verwendet die kanonische Interaktionsressource aus `VisualizationAssetHelper`, die `IPSViewHTMLPageHelper` automatisch vor dem Modulskript einbindet. Generische Scroll-/Delta-/Pointer-/Frame-Mechanik wird nicht mehr modulweise neu implementiert. Die verbindliche Prüfregel einschließlich getrenntem Webclient-/App-Nachweis steht in `SymconDevelopment/standards/TESTING.md`.
+
+Einordnung des Praxisbefunds: Chrome- und Edge-Webclients konnten die WoIst-Karte zoomen und die Geräteliste scrollen. Die native Windows-IPSView-App 6.5.19 ignorierte dieselben echten Mausradaktionen in ihrem bisherigen Stand. Die gemeinsame Korrektur ist lokal eingebunden; die direkte native Abnahme nach Aktualisierung des Zielsystems ist noch offen. Synthetische Regressionen sichern umadressierte Ziele mit `(0, 0)`, korrigierte Zeigerposition, Delta-Modi, Ctrl-/Meta-Ausnahmen und skalierte direkte Frame-Weitergabe ab. Browserprüfungen mit überlaufenden synthetischen Geräten bestätigten normalen Kartenzoom sowie Scrollen der inneren Liste über den äußeren Loader, ohne gleichzeitigen Kartenzoom. Diese Nachweise ersetzen keine nachträgliche native App-Abnahme.
+
+WoIst bindet den zentralen Helper auch im äußeren IPSView-Loader ein und registriert den Kartenzoom als Wheel-Region. Der normale Leaflet-Wheelhandler wird nur für IPSView deaktiviert, damit ein Ereignis nicht doppelt zoomt. Der native HTML-SDK-Pfad behält seinen Leaflet-Handler.
+
+Abschließende Prüfungen des lokalen Stands: alle fünf vollständigen PHP-Suiten (zentraler Helper und vier Consumer) bestanden, ebenso die gezielten Wheel-/Kalender-/ECharts-Tests, der Minify-Buildvergleich und die vollständigen manifestierten Ressourcen aller vier Verbraucher. Im finalen lokalen Browserlauf änderte echtes Mausrad den Zoom von 15 auf 16 und scrollte die Liste auf 240 Pixel. An den äußeren Body umadressierte (0, 0)-Ereignisse erreichten über den Helper die innere Karte bzw. Liste: Zoom zurück auf 15, Listenscroll auf 360 Pixel, ohne Kartenzoom beim Scrollen. Styles, Hashes und LF-Zeilenenden geprüft. Die native App-Abnahme des aktualisierten Modulstands bleibt offen; es wurde kein Live-Code ausgetauscht und kein Commit oder Push ausgeführt.
+
+## Hervorgehobene Geräteauswahl am 22.10.2026
+
+Die vorhandene Listenwahl zentriert die Karte bereits auf die Geräteposition. Ergänzt ist eine sichtbare Markerhervorhebung: fünf Pixel zusätzlicher Radius zur Designergröße, stärkerer weißer Rand und Vordergrundposition bei Überlagerung. Aktuelle/veraltete Positionsfarben bleiben erhalten. Ein Wechsel setzt die vorige Hervorhebung zurück und schließt das alte Popup; ein Gerät ohne Position verschiebt die Karte nicht. Datenupdates und Wiederaufbau stellen die Hervorhebung wieder her, ohne die Kamera nachzuführen.
+
+Die Kachel und IPSView verwenden denselben Modulcode sowie die vorhandenen zentralen Karten-, Transport- und Sitzungsspeicher-Helper; neue gemeinsam genutzte Mechanik war nicht erforderlich. Marker- und Geräteauswahl bleiben modulspezifisch. Regressionen und die vollständige Offline-Suite unter PHP 8.5.10 bestanden. Ein lokaler Browserlauf mit synthetischen Geräten bestätigte Listenwahl, genau einen hervorgehobenen Marker, Zentrieren, Gerätewechsel, Mausradzoom und Listenscroll sowie Erhalt von Auswahl und Kamera bei einem tatsächlichen Polling-Update mit bewegter Position. Externe Kartendaten wurden durch eine synthetische Hintergrundkarte ersetzt. Die Live-Abnahme dieses neuen Hervorhebungsstands bleibt offen; das angeschlossene System wurde nicht geändert.
+
+## Explizite Apple-Aktualisierung in IPSView am 22.10.2026
+
+Der bisher ausgeblendete Aktualisieren-Button ist auch in IPSView aktiv. Ein fester POST-Endpunkt `/refresh` verwendet den vorhandenen instanzbezogenen Token sowie die bestehende `RefreshDevices`-Funktion des Kontomoduls. Kontoanmeldung, Serialisierung und Wartezeit bleiben dort zentral. Normales Polling liest weiter nur den Cache. Der Token berechtigt nun auch zu dieser einzelnen ausdruecklichen Aktualisierung; beliebige Fernaktionen sind nicht freigegeben. Falsche Tokens, deaktivierte Ausgabe, unpassende Kontoverbindung, GET und abweichende Pfade werden vor dem Kontoaufruf abgewiesen.
+
+Der Client verhindert parallele Aktualisierungen, unterbricht laufende Cache-Abfragen und nimmt danach das normale Polling wieder auf. Der explizite Aufruf hat ein Zeitlimit von 30 Sekunden und wird nicht automatisch wiederholt. Die Antwort verwendet den vorhandenen Zustandspfad ohne HTML-Neuerzeugung. Die vollstaendige Offline-Suite unter PHP 8.5.10, PHP-Style, JSON- und gezielte PHP-/JS-Transporttests bestanden. Ein lokaler MCP-Browserlauf mit synthetischen Daten bestaetigte den sichtbaren Button, Sperre waehrend des Aufrufs, aktualisierte Daten, Fehlerbehandlung, Kamera-/Auswahlerhalt sowie weiterhin funktionierenden Mausradzoom und Listenscroll. Vor dem Kameravergleich wurde die Auswahlanimation abgeschlossen. Es gab keinen echten Apple-Aufruf und keine Live-Installation; die native IPSView-Abnahme dieses neuen Stands bleibt offen.
+## Anwesenheitswidgets: IPSView-Live-Updates korrigiert (2026-10-23)
+
+Der echte IPSView-Webclient bettet eine HTMLBox als opaque Daten-URL ein.
+Der bisherige direkte Cache-POST mit eigenem Token-Header erforderte dadurch
+eine CORS-Vorabfrage. Der Symcon-Webserver beantwortete OPTIONS ohne die
+erforderlichen CORS-Header; die direkte HTTP-Ausgabe konnte dagegen aktualisieren.
+
+IPSViewPresence enthält jetzt einen stabilen Loader zu einer echten HTTP(S)-
+Widgetseite auf dem Symcon-Server. Deren Cache-POST ist gleichursprünglich.
+Die öffentliche GET-Seite enthält weder Gerätedaten noch Zugriffstoken. Der
+Loader übergibt den instanzbezogenen Token ausschließlich im URL-Fragment;
+die Widgetseite übernimmt ihn in den Arbeitsspeicher und entfernt das Fragment
+aus dem Verlauf. Datenabrufe bleiben authentifiziert und lesen nur den Cache.
+Deaktivierte Ausgabe, falsche Tokens und abweichende Pfade werden abgewiesen.
+
+WoIst und Anwesenheit verwenden denselben Loader unter libs/IPSViewFrame.php
+und libs/visualization. Die vorhandenen zentralen Helper liefern JSON-Kodierung,
+HTTP-Antworten, Seitenerstellung, Ursprungsermittlung und Mausrad-/Frame-Routing.
+Der Loader bleibt wegen tatsächlicher Nutzung nur in iCloud Services librarylokal;
+Symcon_ModuleHelper und regulär verteilte Dateien unter libs/helper sind unverändert.
+
+MCP-Nachweis auf dem freigegebenen Testsystem mit vorübergehendem Prüfstand:
+temporäre echte IPSView-Webclient-Ansicht, bestehende Anwesenheitsinstanz mit
+zwei Geräten und leerem Serveradressfeld, 320 × 230 Pixel. In Hell und Dunkel
+aktualisierte sich die Aufenthaltsdauer mehrfach, während Geräteauswahl und
+Scrollposition von 101 Pixeln erhalten blieben. Die HTML-Variable behielt sowohl
+ihren Inhalt als auch ihren Aktualisierungszeitstempel. Kein Transporthinweis.
+Echte Mausradaktionen bewegten die Liste in beiden Stilen von 101 auf 0 und
+zurück auf 101 Pixel. Wegen eines Actionability-Fehlers der Browsersteuerung
+erfolgte die Geräteauswahl per echter Tab-/Leertastenbedienung; dies wird nicht
+als erfolgreicher Zeigerklick ausgegeben. Die native IPSView-App ist mit der
+verfügbaren Steuerung nicht direkt erreichbar und bleibt als Praxisnachweis offen.
+
+Temporäre Ansicht, HTML-Variable und zusätzliche Laufzeitdateien wurden entfernt,
+die vorherigen Laufzeitquellen vollständig zurückgespielt. Vollständige ursprüngliche
+Konfiguration, Kontoverbindung und alle bisherigen Variablen-IDs sind wiederhergestellt;
+Status 102. Keine Apple-Anmeldung oder zusätzlichen Apple-Abfragen. Der korrigierte
+Stand wird regulär über das Modulupdate installiert; anschließend Konfiguration
+einmal übernehmen, damit vorhandene HTML-Variablen den neuen Loader erhalten.
+
+Nachweise: Regression zunächst am fehlenden HTTP-Loader reproduziert; vollständige
+Offline-Suite einschließlich WoIst, gemeinsamer Loader, private HTTP-Shell,
+Token-Fragment, fehlerhafte Zugriffe und Auswahl-/Scroll-Erhalt bestanden.
+Struktur-/Hash-/LF-, JSON- und vollständige PHP-CS-Fixer-Prüfung gemäß offizieller
+Style-Action bestanden unter PHP 8.5.10 (Fixer 3.95.27). Keine Versionsanhebung,
+Commits oder Pushs durch den Agenten.
+## Native IPSView-HTMLBox: Basisadresse im zentralen Helper (2026-10-23)
+
+Der nach dem ersten HTTP-Fix gemeldete Screenshot zeigt den Fehler des äußeren
+Loaders, nicht den Warnhinweis eines bereits laufenden Cacheabrufs. Ein weiterer
+Fall ließ sich im gemeinsamen Ursprungsermittler reproduzieren: opaque Daten-URL,
+kein zugänglicher Parent, leere ancestorOrigins und leerer Referrer, aber eine
+gültige vom Client eingefügte HTTP(S)-Basisadresse. document.baseURI wurde bisher
+nicht berücksichtigt. Der zentrale VisualizationAssetHelper-Baustein prüft diese
+Adresse jetzt nach dem eigenen HTTP-Ursprung und vor Parent-/Referrer-Fallbacks.
+Eigene HTTP-Adressen behalten Vorrang; unsichere Schemata und Zugangsdaten werden
+weiterhin abgewiesen. Der äußere Anwesenheitsloader zeigt bei Startfehlern einen
+Konfigurationshinweis statt der irreführenden Ankündigung eines erneuten Abrufs.
+
+Die Ressourcen-/Metadatenautomatisierung ordnet die Änderung korrekt dem
+VisualizationAssetHelper zu. Vorhandenes Abonnement und Asset-Deklaration genügen;
+der Paketvertrag prüft http-origin.js nun zusätzlich als transitive Ressource des
+IPSViewHTMLPageHelper. Das vollständige Paket wurde mit der regulären Metadaten-
+und Bundle-Logik ausschließlich in einer temporären Kopie erzeugt. Manifest,
+Verteilungstests, beide vollständigen PHP-Suiten, Basisadressen-Regression und
+der Anwesenheitsloader mit ausschließlich einer Basisadresse bestanden. Keine
+lokalen Testkopien oder Hashänderungen verbleiben unter libs/helper.
+
+MCP: vorübergehender Prüfstand auf dem freigegebenen Testsystem, echte temporäre
+IPSView-Webclient-Ansicht mit leerem Serveradressfeld. Die HTMLBox enthielt ein
+HTTP-Basiselement; die Widgetseite wurde geladen und die Aufenthaltsdauer änderte
+sich bei erhaltenem Gerät und 101 Pixeln Listenscroll. Kein Warnhinweis. Echte
+Mausradaktionen bestätigten 101 auf 0 und zurück auf 101 Pixel. Geräteauswahl per
+Tab-/Leertaste wegen der bereits bekannten Eingabegrenze der Browsersteuerung.
+Dieser Webclient-Nachweis und die simulierte native Basisadressen-Umgebung ersetzen
+keine direkte Abnahme der nativen IPSView-App; diese ist weiterhin offen.
+
+Prüfansicht, neue HTML-Variable und zusätzliche Laufzeitdateien wurden entfernt.
+Ursprüngliche Konfiguration, Kontoverbindung und alle bisherigen Variablen-IDs
+sind wiederhergestellt (Status 102), ebenso die gesicherten Modul-/Helperquellen.
+Keine zusätzliche Apple-Abfrage. Erst den zentralen Helper regulär freigeben und
+verteilen, das Bundle in iCloud Services integrieren und installieren; danach die
+Instanzkonfiguration übernehmen, damit gespeicherte Loader das neue Script enthalten.
+
+## Geraetebilder vom Konsolenrechner (2026-10-24)
+
+Anwesenheit bietet je Geraetezeile zusaetzlich zur bisherigen Medien-ID eine
+Bildquelle (pictureSource: media/upload) und SelectFile (pictureUpload).
+Der native Konsolendialog liest die Datei auf dem Rechner, auf dem die Konsole
+geoeffnet ist; gespeichert werden Base64-Dateiinhalte in der Devices-Property,
+keine Client- oder Serverpfade. Die Bildquelle bleibt ohne neue Felder auf media,
+so dass bestehende Konfigurationen und Bilder kompatibel bleiben. Die Uploadspalte
+ist gespeichert, aber in der Tabelle verborgen; der explizite Zeilendialog zeigt
+die Dateiauswahl und dieselben dynamischen Geraeteoptionen wie bisher.
+
+Medien und Uploads nutzen dieselbe librarylokale Rasterbildpruefung: PNG, JPEG,
+GIF oder WebP, maximal 128 KiB und 1024 x 1024 Pixel. Kein SVG oder Nachladen
+externer URLs; ungueltige/leere Inhalte werden als Initialen dargestellt.
+Bestehende zentrale Layout-, Stil-, Interaktions- und Transporthelper bleiben
+unveraendert. Keine neue zentrale Abstraktion: der konkrete Uploadadapter hat
+nur eine tatsaechlich verwendende Library. Kein Helper-Update erforderlich.
+
+Nachweise: vollstaendige Offline-Suite, Struktur/Hashes/LF, JSON und PHP-CS-Fixer
+3.95.27 unter PHP 8.5.10 bestanden. Tests fuer lokalen Dateiinhalt, Groessen- und
+Dimensionsgrenzen, fehlerhafte Inhalte, Quellwechsel, private HTTP-Shell,
+authentifizierte IPSView-Bilder, Variablen-IDs und unveraenderte GPS-Zustaende.
+Der UI-Vertrag bestaetigt Auswahl und Scrollposition auch beim Bildwechsel durch
+ein Datenupdate. Keine Installation oder Konfigurationsaenderung auf einem
+laufenden System; Dateidialog und neue Bilder sind nach dem Modulupdate noch in
+der echten Konsole und IPSView-App abzunehmen. Die zuvor vom Benutzer bestaetigte
+Mausradfunktion bleibt ein separater Praxisnachweis, kein neuer Upload-Livetest.
+
+## Bild-Upload: konkrete Ablehnungsgruende im Zeilendialog (2026-10-24)
+
+Der Benutzer meldete einen gespeicherten Upload mit angezeigten rund 203 kB,
+waehrend das Widget weiterhin Initialen zeigte. Die bestehende Grenze von
+128 KiB wurde ueberschritten; der Datei-Upload ist von der nachgelagerten
+Rasterbildpruefung zu unterscheiden. Die Grenze wird nicht stillschweigend
+angehoben. Es gibt keine automatische Bildkomprimierung oder Skalierung.
+
+Der Geraetedialog zeigt den Groessen-/Formathinweis jetzt direkt neben der
+Auswahl und besitzt ein eigenes Fehlerfeld. Datei- und Bildquellenwechsel
+validieren den aktuellen, noch nicht gespeicherten Inhalt: Dateigroesse,
+unterstuetztes Rasterformat und Abmessungen haben getrennte, uebersetzte
+Korrekturhinweise. Eine gueltige Datei, das Entfernen der Datei oder der Wechsel
+zum Symcon-Medium loescht den alten Hinweis. Anzeige und Formular benutzen
+dieselbe librarylokale Pruefung; Konfiguration, Variablen und GPS-Auswertung
+werden durch die Formularvalidierung nicht veraendert.
+
+Regression mit synthetischem 203100-Byte-Inhalt und uebergrossen Abmessungen;
+vollstaendige Offline-Suite, JSON, Struktur/Hash/LF und PHP-CS-Fixer bestanden.
+Keine Installation auf einem laufenden System. Der neue Inlinehinweis ist noch
+in der aktualisierten echten Konsole abzunehmen.
+
+## Automatische Bildaufbereitung, zentraler Helper (2026-10-24)
+
+Auf ausdruecklichen Benutzerwunsch wird RasterImageHelper schon mit dieser
+ersten nutzenden Library zentral umgesetzt. Diese bewusste Ausnahme ist im
+AGENTS.md des Helper-Repositories dokumentiert; die allgemeine Regel, erst bei
+zwei tatsaechlich nutzenden Libraries zu zentralisieren, bleibt bestehen.
+
+Lokale PNG/JPEG/GIF/WebP-Uploads bis 10 MiB, 8192 Pixel pro Seite und 16 Millionen
+Pixel werden auf maximal 512 Pixel Kantenlaenge und 128 KiB aufbereitet. Keine
+Hochskalierung oder Beschneidung; Transparenz bleibt erhalten. WebP wird bevorzugt,
+JPEG/PNG dienen als Fallbacks. JPEG-EXIF-Ausrichtung wird bei verfuegbarer EXIF-
+Erweiterung angewendet, Metadaten werden bei Neucodierung nicht uebernommen.
+Umzuwandelnde Animationen verwenden das erste Bild. Unveraendert passende Bilder
+bleiben erhalten. GD ist fuer notwendige Umwandlungen erforderlich.
+
+Die Formularaktion ersetzt ausschliesslich den ungespeicherten SelectFile-Wert
+durch das kompakte Ergebnis. Erst OK und Uebernehmen speichern die Geraetezeile.
+Bereits gespeicherte groessere Uploads funktionieren ebenfalls: Die Ausgabe
+verwendet den zentral aufbereiteten Inhalt. StatusWidgetPictures cached maximal
+64 Ergebnisse anhand des Inhalts-Hashes und wird beim Anwenden der Konfiguration
+geleert. Bilder werden bei Datenupdates nicht erneut konvertiert. Quelle, Zonen,
+GPS-Zustaende und Variablen-IDs bleiben vom Formularpfad unberuehrt.
+
+RasterImageHelper ist als neue Subscription eingetragen; keine Abhaengigkeiten
+oder weiteren Ressourcen. Das vollstaendige kanonische Paket wurde mit der echten
+Metadaten- und Bundle-Logik in einer isolierten temporaeren Kopie aufgebaut.
+Beide kompletten PHP-Suiten, Paket-/Hash-/Ressourcenpruefung, Verteilungs-,
+Metadaten- und Auto-Merge-Vertraege sowie Stilpruefungen bestanden unter PHP 8.5.10
+mit GD/EXIF. Keine Testkopien verbleiben unter libs/helper; der neue Helper muss
+vor der Installation ueber die regulaere Verteilung eintreffen.
+
+MCP: Reiner In-Memory-Rechentest des zentralen Helpers auf dem angeschlossenen
+Symcon mit PHP 8.5.8 und GD/EXIF: synthetisches transparentes Bild von 209131 Byte
+auf 512 x 256 Pixel und 592 Byte WebP reduziert; Alpha erhalten, erneute
+Aufbereitung unveraendert. Keine Quellen installiert, keine Instanzkonfiguration
+geaendert. Der echte Dateidialog muss nach dem regulaeren Update abgenommen werden.
+
+Rollout: Zuerst die neue Subscription in iCloudServices/dev bekannt machen, danach
+den zentralen Helper freigeben und automatisch verteilen. Das komplette Modul
+erst nach dem eingegangenen Helper-Bundle installieren. Bis zur Verteilung ist
+der neue Helper im normalen lokalen Consumer-Arbeitsbaum noch nicht vorhanden;
+die Verhaltensnachweise stammen ausdruecklich aus dem isolierten Gesamtpaket.
+
+## Praxisabnahme des automatischen Bild-Uploads (2026-10-24)
+
+Der Benutzer hat den echten Bild-Upload nach dem Update erfolgreich geprueft
+und mit "Funktioniert perfekt" bestaetigt. Das Auswaehlen eines Bildes vom
+Konsolenrechner mit anschliessender automatischer Verkleinerung und Komprimierung
+funktioniert im praktischen Ablauf. Damit ist die zuvor offene Praxisabnahme
+des Dateidialogs und der automatischen Bildaufbereitung abgeschlossen.
+
+Nachweisquelle ist die ausdrueckliche Benutzerbestaetigung; fuer diese Abnahme
+wurde kein neuer MCP-Lauf ausgefuehrt. Die zuvor dokumentierten Offline- und
+MCP-Rechentests bleiben separate technische Nachweise. Aus der Bestaetigung
+werden keine zusaetzlichen Aussagen zu einzelnen Dateiformaten, Grenzfaellen
+oder Clients abgeleitet.
+
+## Zusaetzliche Anwesenheitsvariante WidgetCompact (2026-10-24)
+
+Widget bleibt die bisherige ausfuehrliche Ausgabe. WidgetCompact zeigt je Geraet
+nur Bild/Initialen, Namen und Zone; bei ungueltigen Standorten weiterhin
+Unbekannt. Entfernung, Aufenthaltsdauer, Diagnosetext und die zweite Zaehlerzeile
+der Gesamtanwesenheit entfallen. Kompakte Karten haben kleinere Abstaende und
+Bilder (maximal 8 bzw. 36 Pixel) sowie eine schmale Gesamtanwesenheits-Kopfzeile.
+
+Die native Instanz bleibt eine Kachel und waehlt im bestehenden Designer mit
+TileWidgetVariant zwischen Widget (Default) und WidgetCompact. IPSView erhaelt
+zusaetzlich IPSViewPresenceCompact; die bestehende IPSViewPresence bleibt mit
+ihrer bisherigen ID und Ausgabe erhalten. Beide Varianten koennen gleichzeitig
+eingebunden werden. Beide verwenden die vorhandenen Bilder und die jeweiligen
+Kachel-/IPSView-Farb-, Schrift- und Hell-/Dunkelvorgaben.
+
+Die neue Variante nutzt /compact/page als private HTTP-Shell und /compact als
+authentifizierten Cache-Endpunkt unter demselben Instanzhook. Keine Geraetedaten
+oder Tokens in der oeffentlichen Shell. Die Authentifizierungs-, Pfad- und
+Abschaltregeln entsprechen der normalen Variante. HTML-Regenerierung rendert
+beide Varianten gesondert mit den zentralen Variablen- und Aufbewahrungshelpern.
+Kein zusaetzlicher zentraler Helper und kein Helper-Update erforderlich.
+
+Regressionen pruefen neue Ausgabe neben unveraenderter alter Variable, getrennte
+Routen, Regenerierung, Variablen-IDs, Abschalten und Datenschutz. Die UI-Vertraege
+pruefen Namen/Zonen ohne Details, Unbekannt sowie Auswahl- und Scroll-Erhalt bei
+Updates. Vollstaendige Offline-Suite, Struktur-/Hash-/LF-, JSON- und Style-
+Pruefungen unter PHP 8.5.10 mit GD/EXIF bestanden. Keine Aenderung am
+angeschlossenen System und keine Apple-Anfrage.
+Die Browser-Vorschau ist offen: Die automatische Befehlspruefung lehnte den
+lokalen Vorschauserver ab; die Browser-Sicherheitsrichtlinie verweigerte die
+Daten-URL-Alternative (nur HTTP/HTTPS erlaubt). Keine Umgehung dieser Sperren.
+Visuelle Abnahme, Hell-/Dunkelmodus und echte Mausradbedienung beider Varianten
+im tatsaechlichen Kachel-/IPSView-Host bleiben nach dem Update zu pruefen.
+
+## Farbkarte im IPSView-Designer der Anwesenheit (2026-10-24)
+
+Unter IPSView-Designer liegt die neue aufklappbare Farbzuordnung fuer Widget und
+WidgetCompact. Das nummerierte Beispielbild zeigt zwoelf technische Rollen:
+ViewBackground, ControlBackground, LabelText, TextInactive, Positive, Information,
+Warning, Border, Accent, AccentSoft, ControlActiveBackground und ShadowColor.
+Eine uebersetzte Legende erklaert die Bereiche und die abgeleitete Auswahlfarbe
+(18 Prozent Akzentdeckkraft), die 13-Prozent-Statusmischung der Kopfzeile sowie
+die allgemeinen Text- und nicht verwendeten Popup-/Diagramm-/Critical-Farben.
+
+Die Grafik nutzt feste schematische Beispielfarben und ist ausdruecklich keine
+Live-Vorschau ungespeicherter Einstellungen. Die Rollen gelten fuer eigene Farben
+und Hell-/Dunkelstile gleichermassen. Keine privaten Geraetedaten oder Fotos.
+Das native Image-Feld nutzt 100 Prozent Breite ohne feste Panelbreite.
+
+Die modulbezogene SVG-Quelle und die vorcodierte Data-URI liegen unter der
+Anwesenheitsvisualisierung. Die Bildressource wurde mit dem vorhandenen zentralen
+SVGPreviewHelper::dataUri erzeugt; Laden erfolgt ueber VisualizationAssetHelper.
+Damit braucht die feste Grafik keinen neuen Laufzeithelper und keine neue
+Subscription. Keine lokale Kopie der SVG-Helperfunktionen. Bei Aenderungen an
+color-guide.svg wird color-guide.image mit dem zentralen SVGPreviewHelper neu
+erzeugt; der Regressionstest verlangt bytegleiche Quelle und decodierte Grafik.
+
+Nachweise: PNG-Render aus dem SVG visuell kontrolliert. Formular-/Bildvertrag
+prueft responsive Einbindung, XML-Gueltigkeit, beide Varianten, Farbrollen,
+Uebersetzungen und das Fehlen aktiver oder externer Ressourcen. Die Farbkarte
+erscheint nur im Designer; Live-Widgets, Transporte und Bedienung bleiben
+unveraendert. Vollstaendige Offline-Suite, Struktur-/Hash-/LF-, JSON- und
+Stilpruefungen unter PHP 8.5.10 bestanden. Die Anzeige im echten Konsolenformular ist nach dem Update noch
+abzunehmen; es wurde kein angeschlossenes System veraendert.
+
+### Deutsche Designerbezeichnungen in Bild und Legende (2026-10-24)
+
+Die Farbkarte verwendet jetzt die tatsaechlichen deutschen Feldnamen des zentralen
+IPSViewStyleHelper-Katalogs, unter anderem View-Hintergrund, Bedienelement-
+Hintergrund, Label-Schrift, Inaktive Schrift, Positiver Status, Informationsfarbe,
+Warnstatus, Rahmenfarbe, Akzentfarbe, Aktiver Bedienelement-Hintergrund und
+Schattenfarbe. Technische Rollennamen stehen als kleinere Zusatzinformation
+darunter. Die abgeleitete Auswahlflaeche ist kein eigenes Designerfarbfeld und
+wird deshalb entsprechend als Ableitung aus Akzentfarbe erklaert.
+
+Die Textlegende liest die Feldnamen zur Laufzeit mit TranslateHelperText aus
+demselben zentralen Katalog wie der Designer. Die Sprachwahl des vorhandenen
+zentralen Helpers waehlt die deutsche oder englische vorbereitete SVG-Bildressource.
+Tests gleichen Bild und Textlegende mit den zentralen deutschen Bezeichnungen ab
+und verlangen fuer beide Sprachen bytegleiche SVG-Quelle und Data-URI. Die
+deutsche Grafik wurde als PNG gerendert und visuell auf Lesbarkeit kontrolliert.
+Keine neue Subscription oder Aenderung eines zentralen Helpers notwendig.
+
+### Praxisabnahme der deutschen Farbzuordnung (2026-10-24)
+
+Der Benutzer hat die deutsche Farbzuordnung im echten IPSView-Designer nach dem
+Update erfolgreich geprueft und mit "Funktioniert" bestaetigt. Damit ist die
+offene Formularabnahme fuer Bild und Legende mit den deutschen Feldbezeichnungen
+abgeschlossen. Die technischen Rollennamen bleiben ergaenzende Informationen.
+Nachweis ist die ausdrueckliche Benutzerbestaetigung, kein neuer MCP-Lauf.
+
+Die daraus abgeleitete allgemeine Vorgabe wurde in SymconDevelopment unter
+standards/CONFIGURATION_FORM.md verankert: Jeder Kachel-/IPSView-Designer mit
+Farboptionen erhaelt eine modulbezogene Farbkarte samt Legende mit den exakt
+verwendeten lokalisierten Designerbezeichnungen. Die Ueberarbeitung der anderen
+Libraries folgt separat; deren Umsetzung oder Abnahme wird hier nicht behauptet.
+
+## WoIst: modulbezogene Farbzuordnung im IPSView-Designer (2026-10-24)
+
+WoIst besitzt eine eigene Kartenillustration mit Bedienleiste, Hinweisbereich,
+Vektorkartenausschnitt, Zoomtasten, Markern, Genauigkeitskreis, Popup und drei
+Geraetekarten (aktuell, ausgewaehlt/veraltet, ohne Position). Keine unveraenderte
+Anwesenheitsgrafik: Das Motiv und die 25 Zuordnungen folgen dem WoIst-HTML/CSS.
+Die schematischen Beispielfarben sind ausdruecklich keine Live-Vorschau.
+
+Die Legende trennt IPSView-Stilrollen, CurrentColor/StaleColor und die sechs
+OpenFreeMap-Palettenfarben. Zentrale deutsche/englische Feldnamen kommen aus
+IPSViewStyleHelper und OpenFreeMapHelper, die beiden Positionsfarbnamen aus der
+WoIst-Lokalisierung. Hinweise erklaeren die Uebernahme des Kachelprofils,
+bedingte benutzerdefinierte Vektorkartenfarben, fest weisse Markerränder,
+Akzentfarbe nur fuer die ausgewaehlte Geraetekarte und den Genauigkeitskreis
+mit aktueller Positionsfarbe und 8 Prozent Fuelldeckkraft.
+
+Die gemeinsame Formularstruktur fuer Farbguide-Panels liegt librarylokal in
+DesignerColorGuide und wird von Anwesenheit und WoIst verwendet. Die konkreten
+Illustrationen und Zuordnungen bleiben getrennt. Wiederverwendung der vorhandenen
+zentralen Uebersetzungs- und Asset-Helper; die Data-URIs werden beim Erzeugen der
+Bildressourcen mit SVGPreviewHelper::dataUri aufgebaut. Keine neue Subscription,
+kein zentraler Helper geaendert und keine Testkopien unter libs/helper.
+
+Reproduzierbarer Aufbau der vier SVG-/Bilddateien (de/en):
+php tests/generate-woist-color-guide.php ../Symcon_ModuleHelper/src/SVGPreviewHelper.php
+Der Generator braucht den zentralen SVG-Helper nur zur Entwicklungszeit.
+
+Nachweise: deutsche Grafik als PNG gerendert und visuell kontrolliert.
+Vertragstests gleichen alle 25 Beschriftungen in beiden Sprachen mit den
+massgeblichen Katalogen ab, pruefen SVG/Data-URI-Identitaet, passive lokale
+Ressourcen, die tatsaechlichen HTML-/CSS-Zuordnungen und die unveraenderten
+festen Markerraender/Genauigkeitsdeckkraft. Die bestehende Anwesenheits-Farbkarte
+bleibt durch ihre Regressionen abgesichert. Vollstaendige Offline-Suite,
+Struktur-/Hash-/LF-, JSON- und Stilpruefungen unter PHP 8.5.10 bestanden.
+Keine Aenderung auf einem
+angeschlossenen Symcon-System, keine Apple- oder Kartendienstabfrage.
+Die Anzeige im echten WoIst-Konsolenformular bleibt nach dem Update abzunehmen.
+
+### Erfolgreiche Praxisabnahme der WoIst-Farbzuordnung (2026-10-24)
+
+Der Benutzer bestaetigt nach dem Update mit "Funktioniert" die erfolgreiche
+Pruefung der Farbzuordnung im echten IPSView-Designer der WoIst-Karte.
+Die bereitgestellten Screenshots zeigen das geoeffnete Panel
+"Farbzuordnung: WoIst-Karte" mit der kartenspezifischen Illustration fuer
+Bedienleiste, Karte, Popup und Geraeteliste. Die nummerierten Zuordnungen
+verwenden die deutschen Designer-Bezeichnungen; technische Feldnamen werden
+ergaenzend angezeigt.
+
+Sichtbar sind sowohl die IPSView-Stilrollen als auch der Abschnitt
+"Karteneinstellungen und OpenFreeMap" mit Positions- und Kartenfarben,
+Erlaeuterungen zu den schematischen Farben und der ergaenzenden Textlegende.
+Damit ist die zuvor offene Anzeigepruefung im echten Konsolenformular
+abgeschlossen.
+
+Nachweisquelle sind die Benutzerbestaetigung und die beiden bereitgestellten
+Screenshots. Fuer diesen Dokumentationsschritt wurde kein neuer MCP-Lauf
+ausgefuehrt; eine erneute Laufzeitpruefung einzelner Farbaenderungen wird damit
+nicht behauptet.
+
+### Vereinfachte WoIst-Farbzuordnung (2026-10-24)
+
+Auf Benutzerwunsch entfallen die OpenFreeMap-Markierungen 20 bis 25 samt
+Bild- und Textlegendeneintraegen fuer Land, Wasser, Gruenflaechen, Strassen,
+Gebaeude und Kartenbeschriftung. Die Farbzuordnung erklaert weiterhin die
+IPSView-Stilrollen und die Positionsfarben mit den unveraenderten Nummern
+1 bis 19. Die schematische Karte bleibt erhalten; die Grafik wird ohne die
+entfallenen Legendenzeilen kuerzer.
+
+Die OpenFreeMap-Paletten bleiben im Formular fuer Hell und Dunkel vollstaendig
+beschriftet und einstellbar. Keine Aenderung an Kartenressourcen zur Laufzeit,
+Farb-Properties, gespeicherten Einstellungen oder zentralen Helpern.
+Der bestehende Generator verwendet weiterhin SVGPreviewHelper zum Erzeugen
+der deutschen und englischen Bildressourcen.
+
+Nachweise: beide neu erzeugten Sprachfassungen gerendert und visuell geprueft.
+Die angepassten Vertragstests bestaetigen exakt die Nummern 1 bis 19, das Fehlen
+der sechs OpenFreeMap-Legendenrollen und den Erhalt saemtlicher heller und
+dunkler OpenFreeMap-Farbfelder in beiden Designern. Die vollstaendige
+Offline-Suite einschliesslich UI-/Transport-, Struktur-/Hash-/LF- und
+Syntaxpruefungen sowie JSON-Check und php-cs-fixer im Pruefmodus sind unter
+PHP 8.5.10 erfolgreich. Kein neuer MCP- oder nativer Client-Test fuer diese
+reine Designer-Ressourcenaenderung.
+
+### Praxisabnahme der vereinfachten Farbzuordnung (2026-10-24)
+
+Der Benutzer bestaetigt mit "Funktioniert" die erfolgreiche Pruefung der
+vereinfachten Farbzuordnung im IPSView-Designer der WoIst-Karte. Damit ist die
+reduzierte Darstellung mit den Zuordnungen 1 bis 19 ohne die OpenFreeMap-
+Markierungen 20 bis 25 und deren Legendeneintraege in der Praxis abgenommen.
+Die schematische Karte und die OpenFreeMap-Farbeinstellungen bleiben erhalten.
+
+Nachweisquelle ist die ausdrueckliche Benutzerbestaetigung. Dieser Schritt
+dokumentiert die Praxisabnahme; es wurde kein neuer MCP- oder Client-Test
+ausgefuehrt. Die zuvor dokumentierten Offline-Nachweise bleiben davon getrennt.
+
+## Direkter Variantenumschalter in der Anwesenheitskachel (2026-10-24)
+
+Die native Kachel bietet Widget und WidgetCompact als lokale Schaltflaechen.
+Der Designerwert TileWidgetVariant ist weiterhin die Startvorgabe. Eine manuelle
+Wahl bleibt ueber SDK-Datenupdates erhalten und wird, soweit zulaessig, als
+einziger Wert im tabgebundenen sessionStorage abgelegt. Der Schluessel trennt
+Instanz und Kontoverbindung; es werden keine Geraete-, Standort- oder Zugangsdaten
+gespeichert. Ungueltige oder verweigerte Speicherung verhindert die Bedienung
+nicht. Getrennte IPSView-Ausgaben bleiben unveraendert und ohne Umschalter.
+
+Native Bootstrap- und Push-Daten enthalten auch bei kompakter Startvorgabe die
+vollstaendigen Anzeigedaten und Designgroessen. Die kompakte Darstellung blendet
+Details lokal aus und begrenzt Bildgroesse/Abstaende; Widget stellt die normalen
+Angaben wieder her. Bestehende Geraetezeilen werden weiterverwendet, die Auswahl
+bleibt ueber ihre ID erhalten. Beide Varianten merken sich ihren jeweiligen
+Scrollwert; beim ersten Wechsel gilt der bisherige Wert bis zur tatsaechlichen
+Scrollgrenze der kuerzeren Darstellung.
+
+Vorhandene zentrale Theme-, HTML-Seiten-, Responsive- und Interaktionshelper
+bleiben eingebunden. Die Umschaltlogik ist modulspezifisch in dieser Library;
+der vorhandene OpenFreeMap-Speichervertrag ist an Kartenansichten gebunden und
+wird nicht fuer Varianten zweckentfremdet. Keine zentralen Helper-Testkopien.
+
+Der Benutzer hat den Wunsch nach zwei benannten Darstellungen direkt im nativen
+Auswahldialog an Symcon gesendet. Der zentrale Standard VARIABLE_PRESENTATION
+und dessen Verweis in SymconDevelopment/AGENTS.md halten fest: Bei Zustimmung
+und Umsetzung durch Symcon die Zwischenloesung anhand des dann verfuegbaren
+SDKs neu pruefen und kompatibel auf die native Variantenwahl umstellen.
+
+Nachweise: der neue Node-Regressionsfall scheiterte vor der Umsetzung am
+fehlenden Umschalter und besteht danach. Geprueft sind beide Richtungen,
+Zeilenidentitaet/Geraeteauswahl, getrennte Scrollwerte, unveraenderte lokale
+Wahl bei SDK-Push, Wiederherstellung der Details und Designgroessen,
+tablokale Speicherung sowie ungueltiger und verweigerter Speicher.
+PHP-Vertraege bestaetigen vollstaendige native Daten auch bei kompakter
+Startvorgabe, die Instanz-/Kontotrennung und unveraenderte IPSView-Varianten.
+Vollstaendige Offline-Suite mit Struktur-/Hash-/LF-, JSON-, Syntax- und
+JavaScript-Pruefungen sowie php-cs-fixer im Pruefmodus unter PHP 8.5.10 bestanden.
+Der neue Stand wurde nicht auf ein Live-System installiert. Praxisabnahme
+des Umschalters samt Mausradbedienung in der echten nativen Kachel nach dem
+Modulupdate bleibt offen; ein neuer MCP-/Browser-Lauf wird nicht behauptet.
+
+## Anwesenheit: Variantenwahl ausschliesslich im Designer (2026-10-24)
+
+Der Benutzer bestaetigt nach dem Update die Funktion des direkten Umschalters,
+wuenscht dessen Schaltflaechen aber nicht in der Kachel selbst. Auf die gezielte
+Rueckfrage wurde ausdruecklich "Entfernen; Auswahl im Kacheldesigner" gewaehlt.
+Diese Entscheidung ersetzt die zuvor dokumentierte lokale Umschaltloesung.
+
+HTML-Bedienelemente, CSS, Umschaltlogik und Sitzungsspeicherung sind entfernt.
+Die native Kachel folgt wieder ausschliesslich TileWidgetVariant aus
+Kacheldesigner / Layout und Inhalt. Bereits gespeicherte lokale Variantenwerte
+werden nicht mehr gelesen und koennen die Designerwahl nicht ueberschreiben.
+WidgetCompact behaelt seine reduzierten Inhalte und Groessen; beide getrennten
+IPSView-Ausgaben und die bestehenden zentralen Helper bleiben erhalten.
+Geraeteauswahl und Scrollposition bleiben bei Datenupdates abgesichert.
+
+Der offene Wunsch nach mehreren benannten instanzspezifischen Darstellungen
+im nativen Symcon-Auswahldialog bleibt in den zentralen Regeln festgehalten.
+Die dort beschriebene Zwischenloesung ist entsprechend auf die ausschliessliche
+Designerwahl angepasst; Neubewertung bei Zustimmung und Umsetzung durch Symcon
+bleibt verbindlich. Die Benutzerbestaetigung betrifft den vorherigen Stand;
+fuer die nun entfernten Schaltflaechen wird kein neuer Live-Nachweis behauptet.
+
+Nachweise: vollstaendige Offline-Suite einschliesslich Varianten-, SDK-/Polling-,
+Auswahl-/Scroll-, Struktur-/Hash-/LF- und Syntaxpruefungen unter PHP 8.5.10
+bestanden. JSON-Check und php-cs-fixer im Pruefmodus ebenfalls erfolgreich.
+Die angepassten Vertraege pruefen die Designerwahl ohne Toolbar oder lokale
+Speicheruebersteuerung sowie die weiterhin getrennten IPSView-Ausgaben.
+
+## Gewuenschte Erweiterungen und Abgrenzung zu OpenCalendar (2026-10-24)
+
+Benutzerprioritaeten fuer die weitere Planung, noch keine Implementierung:
+
+- Handy suchen / Ton abspielen wird auf jeden Fall aufgenommen, vorzugsweise
+  als Aktion der vorhandenen Geraeteinstanz statt als separates Modul.
+- Verloren-Modus ist ebenfalls von hohem Interesse. Tatsaechliche
+  Geraeteunterstuetzung, Rueckmeldungen und die wirksamen Apple-Aktionen sind
+  vor einer Umsetzung gezielt zu pruefen.
+- iCloud Fotos ist ein interessanter Kandidat fuer eine eigene Erweiterung.
+- iCloud Kontakte ist als Datenquelle fuer das geplante Nachrichten-Modul
+  interessant; dessen konkrete Schnittstelle ist noch abzustimmen.
+- iCloud Speicher steht weiter hinten und wird nur bei ausdruecklichem Bedarf
+  umgesetzt. Er ist nicht als unmittelbar naechster Arbeitsschritt vorgesehen.
+- iCloud Kalender wird bereits durch OpenCalendar abgedeckt und hier nicht
+  nochmals implementiert.
+
+Erinnerungen sind fachlich zu unterscheiden: Der gepruefte lokale OpenCalendar-
+Stand liest fuer Apple/CalDAV VEVENT-Termine und deren VALARM-Erinnerungen.
+Seine Aufgabentermine sind bei diesen Providern ganztägige Kalenderereignisse
+mit eigenen X-OPENCALENDAR-Aufgabenfeldern. Native Microsoft-To-Do-Aufgaben
+sind separat angebunden. Daraus folgt keine vorhandene Synchronisation mit
+den eigenstaendigen Aufgaben-/Einkaufslisten der Apple-App Erinnerungen.
+
+Apple-Erinnerungen sind deshalb eine moegliche zusaetzliche Datenquelle,
+keine bereits beschlossene iCloud Services-Erweiterung. Vorher sind Bedarf,
+Zustaendigkeit im Verhaeltnis zu OpenCalendar und die technische Erreichbarkeit
+der aktuellen iCloud-Erinnerungslisten zu klaeren. Die gemeinsame Anzeige
+terminierter Erinnerungen in Apples Kalender-App ist kein Nachweis, dass diese
+Eintraege ueber den bestehenden CalDAV-Kalenderzugang geliefert werden.
+
+Nachweise fuer diese Einordnung: OpenCalendar/README.md (Aufgabentermine),
+libs/CalDavProvider.php (VEVENT-Filter) und libs/ICalendarCodec.php
+(VEVENT/VALARM). Ausschliesslich Quellpruefung und Planungsdokumentation;
+keine Aenderung an OpenCalendar und kein Zugriff auf reale Apple-Daten.
+
+## Handy suchen: explizite Tonaktion der Geraeteinstanz (2026-10-24)
+
+Auf Benutzerauftrag ergaenzt ICID_PlaySound() mit booleschem Ergebnis die
+Geraeteinstanz. Der Formularbutton "Handy suchen (Ton abspielen)" leitet
+RequestAction('PlaySound', '') ueber den vorhandenen DataFlowHelper an das
+verbundene Konto. Die Ziel-ID kommt ausschliesslich aus der angewendeten
+Geraetekonfiguration; das Konto prueft Zugehoerigkeit zum eigenen Cache,
+Konfiguration, Sitzung und gemeinsame Apple-Sperrfrist unter seinem Semaphore.
+AppleClient sendet genau einen festen playSound-POST. Kein automatisches
+Wiederholen bei unsicherem Ergebnis und keine Passwortanmeldung aus der Aktion.
+
+Der Formularhinweis bestaetigt nur die Annahme des Auftrags. Er behauptet keine
+hoerbare Wiedergabe; nicht erreichbare Geraete koennen den Ton spaeter abspielen.
+Ein reiner Befehlsfehler invalidiert keinen sonst nutzbaren Standortcache.
+Authentifizierungsfehler markieren dagegen die Kontositzung als abgelaufen.
+Bestehende Variablen, IDs und Zeitstempel bleiben erhalten. Normale Updates,
+Timer, Formularoeffnung und ApplyChanges loesen keinen Suchton aus.
+
+Vorhandene zentrale Formular-, Parent- und Datenflusshelper werden unveraendert
+genutzt. Apple-spezifische Logik verbleibt in der Library; kein zusaetzliches
+Helper-Abonnement oder lokales Testbundle. ADR 0011 dokumentiert die gezielte
+Erweiterung der bisherigen lesenden Kontogrenze.
+
+Offline-Nachweise verwenden die echten Geraete- und Kontoklassen mit
+synthetischem HTTPS-Transport. Geprueft sind positive Annahme, exaktes Ziel,
+Formularrouting, unveraenderte Variablen-IDs und Cache, unbekannte/entfernte
+Geraete, Kontowechsel, deaktivierte Konten, ungueltige Parameter, HTTP- und
+Anwendungsfehler, Netzwerkfehler ohne Wiederholung, abgelaufene Sitzung und
+kontoweite Sperrfrist.
+
+MCP auf dem bereits freigegebenen angeschlossenen Windows-Testsystem:
+
+- Die sechs betroffenen Laufzeitdateien wurden gegen den bisherigen Commitstand
+  abgeglichen, ausserhalb des versionierten Inhalts gesichert und voruebergehend
+  eingespielt. Syntaxpruefung ohne Fehler; die neue boolesche Funktion und der
+  deutsche Formularbutton waren registriert. Bestehende Geraetevariablen-IDs
+  blieben unveraendert.
+- Eine temporaere echte Geraeteinstanz wies fehlendes Konto und eine unbekannte
+  ID am vorhandenen angemeldeten Konto mit bereinigten deutschen Hinweisen ab.
+- Ein separates synthetisches Testgateway bestaetigte mit der echten neuen
+  Geraetefunktion die positive Rueckgabe, genau einen PlaySound-Befehl und den
+  sichtbaren Formularhinweis. Ein folgender ICID_Update-Aufruf liess den
+  Befehlszaehler unveraendert. Dieses Gateway sendete keine Apple-Anfrage.
+- Alle temporaeren Instanzen samt Variablen und die Testlibrary wurden entfernt.
+  Die sechs urspruenglichen Dateien wurden exakt wiederhergestellt und verglichen.
+  Alle fuenf bestehenden Library-Instanzen waren abschliessend aktiv.
+- Beim Reload traten voruebergehend Interface-Warnungen in Anwesenheit und
+  WoIst-Adressweitergabe auf. Derselbe Effekt trat auch nach Wiederherstellung
+  des bisherigen Codes auf. Anschliessende explizite Cacheupdates von Anwesenheit
+  und WoIst waren erfolgreich; die vorhandene Reload-Reihenfolge wurde im Rahmen
+  dieser Tonaktion nicht umgebaut.
+
+Abgrenzung des ersten Prueflaufs: Bis hier wurde kein echter Tonauftrag an Apple
+gesendet. Die hoerbare Probe war zunaechst bis zur Antwort auf die gezielte
+Geraetefrage offen. Die obigen MCP-Nachweise betreffen Formular, Routing und
+Erfolgs-/Fehlerbehandlung; die anschliessende reale Abnahme folgt unten.
+
+Die abschliessende vollstaendige Offline-Suite unter PHP 8.5.10 einschliesslich
+neuer Suchton-Vertraege, vorhandener Formularaktionen, Struktur-/Hash-/LF-,
+JSON- und Syntaxpruefungen ist erfolgreich. php-cs-fixer im Pruefmodus meldet
+keine Aenderungen. Der lokale Arbeitsbaum enthaelt die neue Implementierung;
+das angeschlossene Testsystem ist wieder auf seinem vorherigen Modulstand.
+
+### Reale MCP-Tonprobe und bestaetigte Wiedergabe (2026-10-24)
+
+Der Benutzer hat das einmalige Ausloesen des Suchtons auf dem zuvor konkret
+benannten iPhone ausdruecklich freigegeben. Die frische Inventarabfrage ueber
+das bestehende Konto war erfolgreich; das Zielgeraet wurde als online und
+verfuegbar gemeldet. Die sechs neuen Laufzeitdateien wurden danach erneut nur
+voruebergehend auf dem angeschlossenen Windows-Testsystem eingespielt.
+
+Genau ein Aufruf der echten ICID_PlaySound-Funktion fuer die freigegebene
+Geraeteinstanz lieferte true. Der Formularhinweis meldete die Annahme des
+Tonauftrags durch Apple. Auf die anschliessende Rueckfrage bestaetigte der
+Benutzer ausdruecklich: "Ja, der Ton war hoerbar". Damit ist neben der
+technischen Annahme auch die tatsaechliche Wiedergabe praktisch bestaetigt.
+Es wurde kein zweiter Suchton-Auftrag gesendet.
+
+Der vorherige Modulstand wurde im finally-Pfad wiederhergestellt; alle sechs
+Dateien wurden exakt mit ihrer Sicherung verglichen. Die vorhandenen
+Geraetevariablen-IDs blieben unveraendert, alle fuenf bestehenden Instanzen
+waren abschliessend aktiv. Die Cacheupdates von Anwesenheit und WoIst lieferten
+erneut true. Die bereits oben dokumentierten voruebergehenden Interface-
+Warnungen beim Library-Reload traten auch hier auf; es blieb kein fehlerhafter
+Instanzstatus bestehen.
+
+Nachweisquellen sind der echte MCP-Funktionsaufruf samt Formularrueckmeldung,
+die Wiederherstellungspruefung und die getrennte Benutzerbestaetigung der
+hoerbaren Wiedergabe. Die zuvor offene reale Tonprobe ist damit abgeschlossen.
+
+### Native Aktionsvariable fuer den Suchton (2026-10-24)
+
+Der erste Stand bot nur Formularbutton und Skriptfunktion. Auf die Rueckfrage
+zur Kacheleinbindung ergaenzt die Geraeteinstanz die Integer-Aktionsvariable
+PlaySound mit dem Namen "Handy suchen". Der vorhandene zentrale
+VariablePresentationHelper erzeugt eine native Aufzaehlung mit genau einer
+Option: Wert 1 / "Ton abspielen". EnableAction bindet den Taster an die
+Geraeteinstanz; ein zusaetzliches Aktionsskript oder HTML-Widget ist nicht noetig.
+Nach dem Update einmal die Instanzkonfiguration uebernehmen und die Variable
+oder eine Verknuepfung darauf als eigene Kachel mit Darstellung Aufzaehlung
+hinzufuegen. Die Instanzliste kann die Aktion ebenfalls darstellen.
+
+Neutraler Wert ist 0, kein vorgetaeuschter Wiedergabe-/Ein-/Auszustand. Nur
+RequestAction mit 1 loest einen Auftrag aus, 0 setzt ausschliesslich neutral
+zurueck. Die Variablenaktion verwendet dieselbe PlaySound-Funktion wie das
+Formular und gibt bei Fehlern einen bereinigten Hinweis an den Client weiter.
+Nach Erfolg und Fehler bleibt der Wert 0; weitere ausdrueckliche Tastendruecke
+sind moeglich. Cacheupdates und ApplyChanges loesen keinen Ton aus.
+Bestehende Variablen behalten ihre IDs; die neue Variable wird hinten ergaenzt.
+
+Nachweise: Der neue Offline-Fall schlug vor der Umsetzung wegen fehlender
+Aktionsvariable fehl. Danach bestehen native Darstellung, Aktionszuordnung,
+mehrfache gezielte Aufrufe, neutraler Endwert, Reset-/Cache-/Konfigurationspfade,
+Fehlerrueckmeldung und unveraenderte IDs bei wiederholter Konfiguration.
+
+MCP pruefte einen isolierten temporaeren Pruefstand mit demselben Geraetecode
+(nur Klassen-/Modulkennungen und Importpfade fuer die Isolation angepasst).
+Die Helper wurden direkt aus der vorhandenen iCloud Services-Library eingebunden,
+nicht kopiert oder veraendert. Ein synthetisches Gateway nahm zwei echte
+Kernel-RequestAction-Aufrufe an, zaehlte genau zwei Auftraege und bestaetigte
+jeweils den neutralen Variablenwert. Reset, ApplyChanges und Cacheupdate liessen
+den Zaehler unveraendert. Ein anschliessend absichtlich abgewiesener Auftrag
+erzeugte den erwarteten Aktionsfehler; der Wert blieb 0 und es gab keinen Retry.
+IPS_GetVariablePresentation bestaetigte die native Aufzaehlung mit deutschem
+Buttontext und IPS_GetVariable die richtige Instanzaktion. Die temporaeren
+Instanzen samt Variablen und die Prueflibrary wurden vollstaendig entfernt.
+
+Keine Aenderung an vorhandenen Live-Instanzen und kein weiterer echter Suchton
+fuer diese Variablenergaenzung. Die vorherige hoerbare Apple-Praxisabnahme gilt
+fuer die gemeinsam verwendete Tonfunktion; ein echter Zeigerklick auf die neue
+Kachel im Benutzerclient bleibt nach dem Modulupdate zu pruefen.
+
+Abschliessend bestanden die vollstaendige Offline-Suite mit Struktur-/Hash-/LF-,
+Formular-, Integrations-, JavaScript- und Syntaxpruefungen sowie JSON-Check und
+php-cs-fixer im Pruefmodus unter PHP 8.5.10. Der neutrale Variablenreset liegt
+im finally-Pfad der Variablenaktion; die vorhandene oeffentliche Tonfunktion
+bleibt unabhaengig von der neuen Darstellung. Der finale Stand dieses Pfads
+wurde nochmals im isolierten MCP-Pruefstand bestaetigt.
+
+### Echte Kachel-Tonprobe nach dem Modulupdate (2026-10-24)
+
+Nach ausdruecklicher Freigabe fuer genau einen Suchton wurde die echte native
+Symcon-Kachelvisualisierung des Produktivsystems per MCP-Browsersteuerung
+geoeffnet. In der erweiterten Geraetekachel des freigegebenen iPhones war die
+Aktionsvariable "Handy suchen" mit dem Taster "Ton abspielen" vorhanden.
+Genau ein sichtbarer Zeigerklick auf diesen Taster loeste die Tonprobe aus;
+kein direkter API-Aufruf und keine statische Vorschau ersetzten den Klick.
+Es wurde kein zweiter Suchton und kein Wiederholungsversuch ausgeloest.
+
+Der Client zeigte danach keinen Aktionsfehler. Der Taster blieb bedienbar,
+und die Browserdiagnose meldete keine Warnungen oder Fehler. Der Benutzer
+bestaetigte anschliessend ausdruecklich: "Ja, der Ton war hoerbar". Damit ist
+die zuvor offene echte Kachelbedienung einschliesslich hoerbarer Wiedergabe
+abgenommen. Konfiguration, Kachelzuordnung und Moduldateien wurden bei dieser
+Pruefung nicht veraendert.
+
+Der numerische Endwert der Produktivvariable wurde in diesem Browserlauf nicht
+direkt aus dem Kernel gelesen. Der neutrale Wert 0 nach Erfolg und Fehler ist
+separat durch die erneut erfolgreich ausgefuehrten Offline-Vertraege unter
+tests/play-sound.php sowie die vorherige isolierte MCP-Pruefung nachgewiesen.
+Die aktuelle Tonprobe bestaetigt den echten Bedienweg und die Wiedergabe;
+sie ersetzt diese getrennten Zustands- und Fehlerpfadnachweise nicht.
+
+Das angeschlossene Windows-MCP-Testsystem hatte noch den vorherigen Modulstand
+ohne Aktionsvariable. Dort erfolgten deshalb weder eine Installation noch ein
+Suchton-Aufruf. Die reale Abnahme fand ausschliesslich am aktualisierten
+Produktivclient statt. Private Endpunkte und Geraetekennungen bleiben ausserhalb
+des versionierten Pruefberichts.
+
+### Bestaetigte Aktivierung des Verloren-Modus (2026-10-24)
+
+Die Geraeteinstanz erhaelt im Aktionsbereich des Formulars einen eigenen
+Abschnitt fuer den Verloren-Modus mit angezeigtem Zielgeraet, optionaler
+Rueckrufnummer, Sperrbildschirmnachricht und optionalem neuem Geraetecode.
+Der native Button-confirm-Vertrag fordert vor jedem Formularauftrag eine
+Ja/Nein-Bestaetigung. Die neue oeffentliche Funktion ICID_ActivateLostMode
+verlangt zusaetzlich einen ausdruecklichen Confirmed-Parameter je Aufruf;
+false erreicht weder das Konto noch Apple. Es gibt keine gespeicherte
+Freigabe und keinen unbestaetigten Kacheltaster fuer diese Sperraktion.
+
+Kontaktangaben und Code sind ausschliesslich fluechtige Formularaktionen,
+keine Properties oder Variablen. Der Code wird maskiert eingegeben. Nach dem
+Aufruf leert die Instanz die drei Eingabefelder per UpdateFormField; gespeichert
+wird nur eine bereinigte Ergebnisnachricht. Ein bestehender Geraetecode wird
+durch ein leeres Codefeld weiterverwendet; fuer neue Codes sind vier oder sechs
+Ziffern zulaessig, einschliesslich fuehrender Nullen. Telefonnummern sind auf
+40 Zeichen und Nachrichten auf 160 Unicode-Zeichen ohne Steuerzeichen begrenzt.
+Geraete- und familienabhaengige zusaetzliche Apple-Anforderungen bleiben bei
+Apple; das Modul umgeht diese nicht. Deaktivierung erfolgt in diesem Stand
+ueber Wo ist? beziehungsweise durch Entsperren gemaess Apples Anleitung.
+
+Das Konto prueft seine Konfiguration, Sitzung, Sperrfrist und den Zielgeraete-
+Eintrag im eigenen Cache. Nur ausdruecklich gemeldete lostModeCapable=true
+erlaubt die Aktivierung; unbekannte Unterstuetzung und bereits aktivierter
+Verloren-Modus werden abgewiesen. Der erlaubte Datenfluss umfasst nur die
+festen Aktionsfelder, keine fremde URL oder zusaetzliche Zielangaben. Konto-
+Semaphore, Sitzungsbehandlung und Cooldown werden mit dem Suchton gemeinsam
+verwendet. Der AppleClient sendet genau einen lostDevice-POST ohne Login,
+Token-Erneuerung oder automatischen Retry. Eine Annahme wird ausdruecklich
+nicht als abgeschlossene Aktivierung gemeldet; LostModeEnabled folgt weiterhin
+den regulaer gelieferten Apple-Geraetedaten. Bestehende Variablen-IDs bleiben
+unveraendert.
+
+Vor der Umsetzung wurden die kanonischen Helper und vergleichbare Formular-
+aktionen geprueft. ConfigurationFormHelper, DataFlowHelper und
+ParentConnectionHelper werden unveraendert verwendet. Die iCloud-spezifische
+Aktionslogik verbleibt in iCloud Services; es entsteht weder ein neuer zentraler
+Helper noch eine lokale Aenderung am automatisch verteilten Helper-Paket.
+
+Nachweise: Der neue gezielte Test scheiterte zunaechst an der fehlenden Aktion.
+Die Integration mit synthetischem Apple-Transport prueft Bestaetigung, exakte
+Zielzuordnung und Payload, fehlende/unguenstige Geraeteunterstuetzung, bereits
+aktiven Modus, Eingabegrenzen, fuehrende Nullen, fluechtige Felder samt SDK-
+Ruecksetzen, Geheimnisschutz, tatsaechlich gemeldeten Status, Konto-/Sitzungs-
+wechsel, HTTP-/Anwendungsfehler und gemeinsame Sperrfristen. Ein gesonderter
+Transportfehler prueft genau einen Sendeversuch ohne Wiederholung. Der
+dokumentbasierte Formularvertrag validiert die Callback-Signatur einschliesslich
+des expliziten booleschen Literals und der nicht leeren Bestaetigung.
+
+Protokollreferenz (keine Codeuebernahme):
+https://github.com/picklepete/pyicloud/blob/master/pyicloud/services/findmyiphone.py
+Apple-Verhalten und Grenzen:
+https://support.apple.com/de-de/guide/icloud/mmfc0f0165/icloud
+Nativer Bestaetigungsdialog und fluechtige Formularfelder:
+https://www.symcon.de/de/service/dokumentation/entwicklerbereich/sdk-tools/sdk-php/konfigurationsformulare/button/
+https://www.symcon.de/de/service/dokumentation/entwicklerbereich/sdk-tools/sdk-php/konfigurationsformulare/passwordtextbox/
+
+Es wurden keine Dateien auf einem laufenden Symcon-System installiert und kein
+echtes Geraet gesperrt. Die Ja/Nein-Bedienung im echten Benutzerclient sowie die
+Apple-Praxisabnahme bleiben nach dem Update gesondert zu pruefen; Offline-
+Vertraege ersetzen diese nicht.
+
+Abschliessend bestanden unter PHP 8.5.10 die vollstaendige Offline-Suite
+einschliesslich neuer Lost-Mode-Vertraege, bisherigem Suchton, Formularaktionen,
+Helper-Hashes, JavaScript- und Syntaxpruefungen sowie der JSON-Check.
+php-cs-fixer im Pruefmodus meldete 0 von 40 Dateien mit Aenderungsbedarf;
+git diff --check war ebenfalls erfolgreich.
+
+### MCP-Abnahme des Verloren-Modus-Dialogs und Abbruchs (2026-10-24)
+
+Nach dem Modulupdate wurde die bestehende Geraeteinstanz auf dem angeschlossenen
+Windows-Testsystem per MCP und in der echten Symcon-Verwaltungskonsole geprueft.
+Die neue Funktion und der Formularbereich waren geladen. Die Statusvariable
+LostModeEnabled meldete vor der Pruefung "Nein"; die Instanz war aktiv.
+
+Ein Klick auf "Verloren-Modus aktivieren" oeffnete den nativen deutschen
+Ja/Nein-Bestaetigungsdialog. Der Dialog zeigte die Hinweise auf Geraetesperre,
+Apple Pay, Kontaktangaben, neuen Geraetecode und eine moegliche spaetere
+Aktivierung bei nicht erreichbaren Geraeten. Anschliessend wurde ausdruecklich
+"Nein" angeklickt. Der Dialog schloss sich und das Formular blieb bedienbar.
+"Ja" wurde nicht angeklickt; es wurden weder Kontaktangaben noch ein Code
+eingegeben und keine Aktivierungsfunktion direkt aufgerufen.
+
+Der anschliessende MCP-Vergleich bestaetigte, dass LostModeResult weiterhin leer
+und unsichtbar war. Damit wurde der Aktivierungs-Callback beim Abbrechen nicht
+ausgefuehrt. LostModeEnabled blieb "Nein", und die Instanz blieb aktiv. Es wurde
+kein Sperrauftrag ausgeloest und kein iPhone gesperrt. Konfiguration,
+Moduldateien und Variablen wurden bei der Praxispruefung nicht veraendert.
+
+Damit sind der zuvor offene echte Bestaetigungsdialog und das sichere Abbrechen
+abgenommen. Eine bestaetigte Aktivierung bei Apple sowie das anschliessende
+Entsperren waren ausdruecklich nicht Teil dieser Pruefung und bleiben ungeprueft.
+Private Endpunkte, Geraetekennungen und lokale Screenshots werden nicht in den
+versionierten Projektkontext uebernommen.
+
+### Deaktivierung des Verloren-Modus mit Bestaetigung (2026-10-24)
+
+Die Geraeteinstanz ergaenzt im vorhandenen Formularbereich den Button
+"Verloren-Modus deaktivieren" mit eigener deutscher Ja/Nein-Abfrage und
+ICID_DeactivateLostMode(int $InstanceID, bool $Confirmed): bool. Die Freigabe
+ist bei jedem Aufruf ausdruecklich erforderlich; false sendet keine Anfrage.
+Der neue Callback verwendet keine Eingaben der Aktivierung. Beide Aktionen
+teilen den internen, an die gespeicherte Geraetezuordnung gebundenen Bedienweg
+und die bereinigte Ergebnisanzeige LostModeResult.
+
+ConfigurationFormHelper, DataFlowHelper und ParentConnectionHelper bleiben
+unveraendert eingebunden. Die providerbezogene Logik bleibt innerhalb von
+iCloud Services; zentrale Helper und deren automatische Verteilung werden nicht
+geaendert. Das Konto verwendet dieselbe Semaphore, Sitzung, Geraetepruefung
+und Sperrfrist wie Suchton und Aktivierung. Der Datenfluss erlaubt fuer die
+Deaktivierung ausschliesslich Command, DeviceID und Confirmed neben DataID.
+Kontakt-, Code-, URL- oder abweichende Schaltparameter werden abgewiesen.
+
+Der AppleClient sendet genau einen lostDevice-POST mit lostModeEnabled=false,
+emailUpdates=false, trackingEnabled=false und userText=false. Weder Kontakttext
+noch Geraetecode werden uebertragen; es gibt keinen alternativen Aufruf mit
+Aktivierungswerten. Bei unklarem Ergebnis erfolgt keine Wiederholung oder
+Neuanmeldung. Der Auftrag kann auch vor Bestaetigung eines frueheren
+Aktivierungsauftrags angefordert werden, weshalb ein bisher mit false oder
+null gemeldeter lostModeEnabled-Cachewert den bewussten Stop nicht blockiert.
+Die vom Konto gemeldete Unterstuetzung muss weiterhin true sein.
+
+Die Rueckmeldung unterscheidet Annahme und tatsaechliche Deaktivierung. Cache,
+LostModeEnabled und Variablen-IDs werden nicht anhand des Auftragserfolgs
+veraendert. Der Geraetezustand folgt weiter den regulaeren Apple-Daten. Die
+Bedienhinweise erklaeren, dass ein Stop-Auftrag weder Geraetecode noch
+Aktivierungssperre entfernt und kein entsperrtes Geraet bestaetigt. Falls Apple
+weitere Schritte verlangt, bleibt Wo ist? beziehungsweise Entsperren am Geraet
+der zusaetzliche Bedienweg.
+
+Protokollreferenz fuer den Stop-Payload (keine Codeuebernahme):
+https://github.com/CaramelFur/findmy.js/blob/c7eec9d0d1ea0bb505942f242c5f5ceeeb31bc85/src/device.ts
+Eine aeltere abweichende Referenz mit einem true-Aktivierungsflag wurde nicht
+uebernommen. Die Implementierung sendet ausschliesslich die festen false-Werte;
+eine echte Apple-Praxisabnahme ist damit nicht vorweggenommen.
+
+Nachweise: Der neue Deaktivierungstest scheiterte zunaechst an der fehlenden
+Funktion. Danach bestanden synthetische Integrationspruefungen fuer fehlende
+Bestaetigung, native Formular-Callbacks, festen Ausschalt-Payload, Ziel-/Konto-
+grenzen, unbekannte Unterstuetzung, aktive/inaktive/unbekannte Cachezustaende,
+unveraenderten Status und IDs, HTTP-/Anwendungsfehler, bereinigte Rueckmeldungen,
+gemeinsame Sperrfristen und abgelaufene Sitzungen. Ein gesonderter Transport-
+Timeout prueft genau einen Sendeversuch ohne Retry oder Aktivierungs-Fallback.
+Der CI-Einstieg lost-mode-deactivation.php fuehrt auch die bisherigen
+Aktivierungsvertraege aus; Suchton und dokumentbasierte Formularpruefung
+bleiben ebenfalls abgedeckt.
+
+Es wurde kein reales iPhone testweise gesperrt und kein echter Apple-
+Geraeteauftrag ausgeloest. Alle Aktionspruefungen verwenden synthetische
+Antworten. Der neue Dialog im echten Client und die tatsaechliche Apple-
+Deaktivierung bleiben nach dem Modulupdate gesondert zu pruefen.
+
+Abschliessend bestanden unter PHP 8.5.10 die vollstaendige Offline-Suite mit
+Aktivierungs-, Deaktivierungs-, Suchton-, Formular-, Helper-Hash-, JavaScript-
+und Syntaxpruefungen sowie der JSON-Check. php-cs-fixer im Pruefmodus meldete
+0 von 41 Dateien mit Aenderungsbedarf. git diff --check war erfolgreich.
+
+### MCP-Abnahme des Deaktivierungsdialogs und sicheren Abbruchs (2026-10-24)
+
+Nach dem Modulupdate wurde der neue Deaktivierungsdialog der bestehenden
+Geraeteinstanz auf dem angeschlossenen Windows-Testsystem per MCP und in der
+echten Symcon-Verwaltungskonsole geprueft. Der Server lieferte die neue
+ICID_DeactivateLostMode-Funktion und den Button samt Bestaetigung. Ein noch
+geoeffneter Reiter zeigte zunaechst das alte Formular; nach dem erneuten Oeffnen
+durch den Benutzer war der Deaktivierungsbutton auch in der Konsole vorhanden.
+
+Ein Klick auf "Verloren-Modus deaktivieren" oeffnete den nativen deutschen
+Ja/Nein-Dialog. Dieser erlaeuterte das Beenden des Verloren-Modus-Schutzes,
+eine moeglicherweise weiter bestehende Geraetesperre, den Erhalt von
+Geraetecode und Aktivierungssperre sowie eine moegliche spaetere Verarbeitung
+bei nicht erreichbaren Geraeten. Anschliessend wurde ausschliesslich "Nein"
+angeklickt. Der Dialog schloss sich; der Deaktivierungsbutton blieb im
+bedienbaren Formular vorhanden.
+
+Der MCP-Vergleich vor und nach dem Abbruch bestaetigte eine unveraendert leere,
+unsichtbare LostModeResult-Anzeige. Es wurde kein Aktions-Callback ausgefuehrt.
+LostModeEnabled blieb "Nein", und die Instanz blieb aktiv. Weder "Ja" noch
+eine direkte Aktivierungs- oder Deaktivierungsfunktion wurden ausgeloest.
+Es wurden keine Kontaktangaben oder Codes eingegeben, keine Einstellungen
+geaendert und keine Geraeteauftraege gesendet. Das iPhone wurde weder gesperrt
+noch sein Verloren-Modus veraendert.
+
+Damit sind der echte Deaktivierungsdialog und das sichere Abbrechen abgenommen.
+Die tatsaechliche Deaktivierung durch Apple war ausdruecklich nicht Teil dieser
+Pruefung und bleibt ungeprueft. Private Endpunkte, Geraetekennungen und lokale
+Screenshots bleiben ausserhalb der versionierten Dokumentation.
+
+### Fotos: HTTP-Seite, grosse Vorschauen und Wiederverbindung (2026-10-24)
+
+Zwei Fehler wurden auf dem angeschlossenen Windows-Testsystem reproduziert und
+behoben: komplette Base64-Vorschauen ueberschritten das Symcon-Ausgabelimit von
+1 MiB; die HTTP-Seite blieb im synthetischen WebHook-Klassenkontext leer.
+Die Fotoinstanz gibt dem vorhandenen zentralen Ressourcenloader nun ihren
+expliziten Visualisierungspfad. Bilddaten werden mit dem unveraenderten,
+bereits veroeffentlichten ChunkedJsonTransferHelper von Konto bis Browser in
+kleinen JSON-Seiten uebertragen. Die neue regulaere Helper-Subscription ist
+einschliesslich Manifest und generierter Dokumentation eingebunden.
+
+Die MCP-Abnahme erfolgte mit echtem lesendem Fotozugriff und Albumauswahl,
+der nativen Symcon-Kachel in der Hauptansicht und der gespeicherten
+IPSView-HTML-Einbettung im Browser. Automatischer Bildwechsel und Pause wurden
+in beiden Darstellungen bestaetigt. Nach einem erfolgreichen Metadatenrefresh
+blieben Bild, Blob-URL und Pause unveraendert. Ein nur fuer die Testclients
+geschaltetes HTTP-/WebSocket-Relay unterbrach danach bestehende Verbindungen
+und blockierte neue Anfragen. IPSView hielt das pausierte Bild sichtbar;
+Symcon ersetzte seinen Kachelrenderer bei der Wiederverbindung. Danach zeigte
+auch dieser wieder dasselbe Bild und blieb pausiert. Beide Verbindungshinweise
+verschwanden. Die Messung bestaetigte neue WebSockets, erfolgreiche Modellabrufe
+und 14 vollstaendig freigegebene Bildtransfers ohne verbleibende Transferdateien.
+Die native IPSView-App war nicht Gegenstand dieser Browserpruefung.
+
+Bei der Vorbereitung mussten nach temporaeren Quelldateiaenderungen die
+WebHook-Handler neu geladen werden. Alte Hintergrundkacheln und Autorisierungen
+im Testrelay stoerten Zwischenmessungen; fuer die abschliessende Abnahme wurden
+frische Clients ohne parallele Hintergrundvorschau verwendet. Album und
+Autorisierung blieben waehrend der erfolgreichen Unterbrechungspruefung stabil.
+Es wurden keine Fotos, Alben oder Apple-Zugangsdaten veraendert.
+
+Regressionen pruefen eine Vorschau mit mehr als 2 MiB, die exakte Rekonstruktion,
+Seiten unter 240 KiB, Bindung an die Fotoidentitaet, Tokenfreigabe und den
+synthetischen WebHook-Pfad. Offline-Gesamttests, Struktur-/Helper-Hashpruefung,
+JSON-Pruefung und PHP-CS-Fixer sind erfolgreich. Die temporaeren Serverdateien
+wurden bytegleich wiederhergestellt, die unveraenderte neue Helperdatei entfernt,
+die vollstaendige Fotokonfiguration wiederhergestellt und die zusaetzliche
+IPSView-Variable entfernt. Relay und Testclients sind beendet; die
+Kontositzung bleibt angemeldet. Die dauerhafte Uebernahme erfolgt ueber den
+regulaeren Modulupdateweg. Die vom Benutzer erneuerten Zugangsdaten wurden
+bei der Wiederherstellung ausdruecklich beibehalten.
+
+### Fotos: erfolgreiche MCP-Nachpruefung nach dem Modulupdate (2026-10-24)
+
+Nach dem regulaeren Update wurden der installierte Foto-Code und der zentrale
+ChunkedJsonTransferHelper auf dem angeschlossenen Windows-Testsystem mit dem
+Repository-Stand abgeglichen. Die Dateien stimmten ueberein; die vorhandene
+Kontositzung war angemeldet. Es waren keine temporaeren Quelldateiaenderungen
+und kein Modul-Reload fuer diese Nachpruefung erforderlich.
+
+Die Abnahme umfasste die echte native Symcon-Kachel in der Hauptansicht und die
+gespeicherte IPSView-HTML-Einbettung im Browser. Die Albumauswahl wurde von einem
+persoenlichen Album ohne unterstuetzte Bildvorschau auf Favoriten gewechselt.
+Beide Ausgaben zeigten zuerst den korrekten Leerzustand und danach die Fotos
+des gewaehlten Albums. Die gespeicherte IPSView-Ausgabe entsprach nach dem
+Albumwechsel der neu erzeugten Einbettung. Automatischer Bildwechsel im
+Fuenfsekundenintervall, Pause sowie echtes Mausrad-Blaettern vorwaerts und
+rueckwaerts funktionierten in beiden Darstellungen.
+
+Vor dem Datenupdate wurden die vollstaendig geladenen, pausierten Bilder
+getrennt je Darstellung erfasst. Ein erfolgreicher Metadatenrefresh und die
+nachfolgenden Modellabrufe veraenderten weder das jeweilige Bild noch dessen
+Blob-URL oder den Pausenzustand.
+
+Anschliessend unterbrach ein temporaeres lokales HTTP-/WebSocket-Relay nur die
+Testclients. Der Ausfall war durch 24 abgewiesene Verbindungen und ausbleibende
+erfolgreiche Modellabrufe belegt. IPSView hielt sein pausiertes Bild sichtbar
+und zeigte den Verbindungshinweis. Der native Host ersetzte seinen
+Kachelrenderer. Nach Freigabe wurden zwei neue WebSocket-Verbindungen und
+erfolgreiche Modellabrufe nachgewiesen: Beide Darstellungen zeigten wieder
+dasselbe jeweilige Bild und blieben pausiert; die Verbindungshinweise
+verschwanden. In IPSView blieb auch die Blob-URL erhalten. Anschliessend liess
+sich die Wiedergabe in beiden Ausgaben fortsetzen. Die abschliessende Kontrolle
+mit dem dokumentierten Ladeablauf zeigte keine JavaScript-Fehler.
+
+Alle 51 gemessenen Bildtransfers wurden freigegeben; es blieben keine
+Transferdateien zurueck. Die vollstaendige urspruengliche Fotokonfiguration
+(ohne Albumauswahl und mit deaktivierter IPSView-Ausgabe) wurde wiederhergestellt,
+die nur fuer den Test angelegte Ausgabevariable entfernt und der vorherige
+Objektbestand bestaetigt. Testclients und Relay wurden beendet und die
+urspruengliche Kachelansicht wieder geoeffnet. Die Kontositzung blieb angemeldet.
+Fotos, Alben, Zugangsdaten und installierte Moduldateien wurden nicht veraendert.
+
+**Zum Zeitpunkt dieser MCP-Pruefung offen:** Der echte IPSView-Client einschliesslich einer nativen IPSView-App
+wurde mit der Fotoausgabe noch nicht geprueft. Der Benutzer hat diesen Test
+ausdruecklich fuer spaeter vorgesehen. Die erfolgreiche Browser-Einbettung ist
+kein Nachweis fuer diesen noch offenen Clientpfad. Private Endpunkte, Album-
+und Fotokennungen, Tokens und Screenshots bleiben ausserhalb des Repositories.
+
+Dieser offene native Clientpfad wurde durch die unten dokumentierte
+Benutzerabnahme vom 2026-10-25 abgeschlossen.
+
+### Kontoschutz, Sitzungspause und datensparsame Diagnose (2026-10-24)
+
+Die Apple-spezifische Schutzlogik liegt librarylokal in AccountProtection und
+wird vom Konto fuer Anmeldung, 2FA, Geraeteaktionen und Fotos verwendet. Vor der
+Umsetzung wurden die zentralen Helper geprueft. Der bereits veroeffentlichte
+DebugHelper wird unveraendert ueber die regulaere Subscription samt generiertem
+Hashmanifest und README eingebunden. Es gibt keinen neuen zentralen
+Authentifizierungshelper und keine Aenderung an Symcon_ModuleHelper.
+
+Passwort-Anmeldungen sind auf drei Versuche je rollierenden 30 Minuten mit
+mindestens 60 Sekunden Abstand begrenzt. Code-Pruefungen sind auf fuenf,
+Code-Zustellungen auf drei je zehn Minuten begrenzt; Zustellungen haben
+mindestens 60 Sekunden Abstand. Auch die erste Code-Zustellung waehrend einer
+Anmeldung zaehlt. Die Zaehler sind persistent und werden durch Logout,
+Zugangsdatenwechsel, explizite Freigabe oder Diagnosebereinigung nicht geloescht.
+Eine bereits angemeldete Sitzung wird ohne erneuten Passwortversuch verwendet;
+eine laufende 2FA-Bestaetigung startet keine neue Passwortanmeldung.
+
+Abgelehnte Authentifizierung und HTTP 423 setzen eine persistente lokale
+Schutzsperre und stoppen weitere Apple-Anfragen. Die Freigabe nach ausdruecklich
+bestaetigter Kontopruefung ist eine lokale Aktion ohne HTTP oder automatischen
+Login. Bestehende Wartezeiten und Versuchslimits bleiben wirksam. HTTP 423 ist
+eine konservativ behandelte Sperrantwort, kein Beweis fuer die genaue Ursache
+einer Apple-Kontosperre. HTTP 429 bleibt eine zeitlich begrenzte Drosselung nach
+Retry-After; Netzwerk-/Serverfehler nutzen getrennte anwachsende Wartezeiten.
+Sitzungstoken-Ablehnungen werden nicht als falsches Passwort bezeichnet.
+Nicht voruebergehende Fehler bei der Token-Erneuerung beenden automatische
+Erneuerungen. Fehlende Foto-Webfreigaben bleiben vom Find-My-Zugang getrennt.
+
+Die neue Property PauseRequests hat den kompatiblen Default false. Eine
+uebernommene Pause stoppt auch explizite Apple-Anfragen und Geraeteaktionen,
+erhaelt aber Sitzung, Vertrauensdaten und Caches. Cachelesevorgaenge bleiben
+moeglich. Deaktivieren des Kontos bleibt davon getrennt und loescht weiterhin
+die Sitzung. Die neuen Instanzstatus 207 bis 210 und die Formularhinweise
+unterscheiden Pause, manuelle Schutzsperre, lokale Versuchslimits und temporaere
+Verbindungswartezeiten. Bestehende Objekt- und Datenflussidentitaeten bleiben
+erhalten; zweimaliges ApplyChanges mit historischen Einstellungen ist abgedeckt.
+
+Der Diagnoseverlauf speichert hoechstens 50 allowlist-basierte Eintraege mit
+Zeitpunkt, fester Anfrageart, HTTP-Status, festem Ergebniscode und Wartezeit.
+Die gleichen bereinigten Felder gehen ueber SendSafeDebug an den Debugkanal.
+Keine URLs, Accountnamen, Codes, Cookies, Tokens, Geraete-/Albumkennungen,
+Antwortinhalte oder rohen Exceptions gelangen in diesen Verlauf. Formular und
+oeffentliche Diagnosefunktionen lesen nur lokalen Zustand; Bereinigung setzt
+keinen Kontoschutz zurueck. Defekte Versuchsdaten stoppen Anfragen konservativ.
+
+Regressionen verwenden ausschliesslich synthetische Apple-Antworten und eine
+kontrollierte Uhr. Sie pruefen Mindestabstaende, Fenstergrenzen, Wiederherstellung
+nach Neustart, Umgehungsversuche durch Logout/Passwortwechsel, 2FA-Limits,
+Pause ohne Sitzungs-/Cacheverlust, abgelehnte Token-Erneuerung ohne Wiederholung,
+423 gegenueber 429, Foto-Freigabe gegenueber gemeinsamem Tokenverlust,
+gestaffelte Netzwerkwartezeiten, Diagnosegrenzen und Geheimnisausschluss.
+Bestehende Aktionsszenarien lassen ihre synthetische Wartezeit ablaufen, bevor
+sie eine unabhaengige Folgeantwort pruefen; die Keine-Retry-Vertraege bleiben
+erhalten. Der zentrale CI-Einstieg fuehrt die neuen Regressionen mit aus.
+
+Die Limits gelten je Kontoinstanz und koordinieren keine weiteren Server oder
+externen iCloud-Anbindungen. Eine Verhinderung jeder Apple-Kontosperre ist nicht
+zugesagt. Es wurden keine realen Apple-Anmeldungen oder Geraeteaktionen
+ausgeloest und keine Live-Dateien veraendert. Die Praxispruefung des neuen
+Formulars und Schutzverhaltens bleibt nach dem regulaeren Update offen.
+
+Abschliessend bestanden die vollstaendige Offline-Suite unter PHP 8.5.10
+einschliesslich der neuen Schutzregressionen, bestehender Geraeteaktionen,
+Foto-/Anwesenheits-/Kartenpruefungen und dokumentbasierter Formularvertraege.
+Die Strukturpruefung bestaetigte auch die neue Helper-Subscription und deren
+Hashes. JSON-Check und git diff --check waren erfolgreich; PHP-CS-Fixer im
+Pruefmodus meldete 0 von 54 Dateien mit Aenderungsbedarf.
+
+### MCP-Abnahme von Kontoschutz, Abfragepause und Diagnose (2026-10-25)
+
+Nach dem regulaeren Modulupdate wurden die installierten Konto-, Schutz-,
+Client- und Fotoquellen sowie der zentrale DebugHelper auf dem angeschlossenen
+Windows-Testsystem per Hash mit dem Repository-Stand abgeglichen. Sie stimmten
+ueberein. Das echte Konto war angemeldet, die Abfragepause ausgeschaltet und
+der regulaere Timer auf 300 Sekunden eingestellt. Die neuen Diagnosefunktionen,
+das Pausefeld und die hinterlegte Freigabebestaetigung waren vorhanden. Dies
+belegt die ausgelieferte Formularkonfiguration; am echten Konto wurde kein
+Freigabedialog ausgefuehrt.
+
+Am echten Konto wurde ausschliesslich PauseRequests voruebergehend aktiviert.
+Die Instanz wechselte zu Status 207 und der Timer auf Intervall 0. Ein danach
+aufgerufener Geraeterefresh wurde lokal mit requestsPaused abgefangen. Der Cache
+blieb lesbar. Sitzung einschliesslich Cookies, Vertrauensdaten und Client-ID
+sowie Geraetecache blieben vor und nach der Pause bytegleich. Versuchshistorie,
+bestehende Schutzsperre und Wartefrist wurden nicht veraendert. Die entstandenen
+Pruefeintraege enthielten nur lokale Ergebnisse mit HTTP-Status 0.
+
+Anmeldelimits und Sperrantworten wurden getrennt an einer temporaeren,
+deaktivierten Kontoinstanz ohne Benutzername oder Passwort geprueft. Eine nur
+im Pruefskript vorhandene Testklasse verwendete eine kontrollierte Uhr und
+verhinderte die Erzeugung eines Netzwerkclients. Lokale Methodenaufrufe
+bestaetigten Mindestabstand, rollierendes Passwortlimit und den Erhalt der
+Zaehler bei einer neuen Objektbindung. Synthetische 423- und 429-Ergebnisse
+prueften Schutzsperre gegenueber Wartefrist. Die lokale Freigabe setzte weder
+Versuchslimits noch eine laufende Wartefrist zurueck. Es wurde kein echter
+Apple-Anmeldeversuch und keine Apple-Kontosperre ausgeloest.
+
+In derselben isolierten Instanz wurde der Diagnoseverlauf ueber 50 Eintraege
+hinaus befuellt. Er blieb auf 50 Eintraege mit exakt den erlaubten Feldern
+begrenzt; unzulaessige synthetische Anfrage-/Ergebniswerte wurden durch feste
+Ersatzwerte ersetzt. Das Loeschen des Diagnoseverlaufs funktionierte und liess
+Schutzsperre, Versuchshistorie und Wartefrist unveraendert. Das echte Konto
+behielt seinen Verlauf; nur die lokalen Pause-/Pruef-/Fortsetzungseintraege
+wurden ergaenzt. Die ausgelieferte schreibgeschuetzte Diagnoseliste zeigte diese
+Eintraege mit den vorgesehenen fuenf Spalten. Die bestehenden synthetischen
+Kontoschutz-Regressionen wurden zusaetzlich erneut erfolgreich ausgefuehrt.
+
+Die vollstaendige Konfiguration des echten Kontos wurde im finally-Pfad
+wiederhergestellt und mit dem Ausgangsstand verglichen. Sitzung, Geraetecache,
+Versuchshistorie, Schutzsperre und Wartefrist blieben unveraendert. Abschliessend
+war das Konto weiterhin angemeldet, die Pause ausgeschaltet, der Status 102
+und der Timer wieder auf 300 Sekunden eingestellt. Die temporaere Instanz
+wurde vollstaendig entfernt; installierte Dateien und Zugangsdaten wurden
+nicht veraendert. Private Endpunkte, Kennungen, Sitzungsinhalte und Hashwerte
+der privaten Laufzeitdaten werden nicht im Repository gespeichert.
+
+Die Wirkung realer Apple-Kontosperren wurde bewusst nicht provoziert. Die
+Abnahme bestaetigt das lokale Schutzverhalten und die Pause am angemeldeten
+Konto, nicht die Ursache der zuvor beobachteten Apple-Sperren.
+
+### Benutzerabnahme der Foto-Diashow in der nativen IPSView-App (2026-10-25)
+
+Der Benutzer hat die Foto-Diashow nach den Updates auch in der nativen
+IPSView-App erfolgreich geprueft und folgende Funktionen bestaetigt:
+
+- Die Bedienung der Diashow mit dem Mausrad funktioniert.
+- Die Albumwahl funktioniert.
+- Bei Datenupdates bleiben das aktuelle Bild und der Pausenzustand erhalten.
+- Auch bei Verbindungsunterbrechung und anschliessender Wiederverbindung
+  bleiben das aktuelle Bild und der Pausenzustand erhalten.
+
+Diese ausdrueckliche Benutzerbestaetigung ergaenzt die erfolgreiche
+MCP-Nachpruefung vom 2026-10-24 fuer die echte Symcon-Kachel und die erzeugte
+IPSView-Ausgabe in der Browser-Einbettung. Der damals noch ausstehende Test
+im nativen IPSView-Client ist damit abgeschlossen. Die native App wurde vom
+Benutzer geprueft; fuer diese Abnahme wurde kein neuer MCP-Test durchgefuehrt.
+
+### Lesendes iCloud-Kontaktverzeichnis fuer Nachrichten (2026-10-25)
+
+Das neue Modul iCloud Contacts (Alias iCloud Kontakte, Praefix ICCT) ist ein
+lesendes Empfaengerverzeichnis. Es verwendet die zentralen Helper
+ConfigurationFormHelper, DataFlowHelper und ParentConnectionHelper. Der
+vorhandene zentrale DebugHelper bleibt die Basis der datensparsamen
+Kontodiagnose. Apple-Protokoll, Kontaktschema und Konto-Cache bleiben in
+iCloud Services; eine tatsaechliche Verwendung durch eine zweite Library besteht
+noch nicht und rechtfertigt daher keine neue Zentralisierung.
+
+Der Benutzer aktiviert den optionalen Zugriff im bestehenden Konto mit
+EnableContacts. ContactsRefreshInterval liegt standardmaessig bei 3600 Sekunden
+und erlaubt 900 bis 604800 Sekunden. Ein eigener Kontotimer liest den gemeinsamen
+Bestand unabhaengig von der Geraeteabfrage; mehrere Kontaktinstanzen teilen
+diesen Cache. ApplyChanges, Formulare, Suche, Blaettern, Push-Nachrichten und
+oeffentliche Lesefunktionen starten keinen Apple-Abruf. Manuelle
+Aktualisierungsversuche erhalten mindestens 60 Sekunden Abstand.
+
+AppleClient uebernimmt den optionalen contacts-Dienst aus accountLogin. Fuer
+alte Sitzungen ohne diese Adresse erfolgt hoechstens eine tokenbasierte
+Dienstermittlung pro zugelassenem Abruf, niemals eine Passwortanmeldung oder
+eine automatische Wiederholung nach einer Authentifizierungsablehnung.
+Die festen lesenden Pfade /co/startup und /co/contacts verwenden dieselbe
+Cookie-Sitzung und HTTPS-Originpruefung. Telefonnummern werden ausdruecklich
+angefordert; Kontaktbilder nicht. Pref-/Sync-Tokens und sonstige
+Provider-Antwortfelder verlassen den Protokolladapter nicht.
+
+Der Cache wird erst nach Pruefung des vollstaendigen Bestands ersetzt. Ein
+erfolgreicher leerer Bestand ist gueltig und entfernt zuvor vorhandene Kontakte.
+Fehlerhafte/zu grosse Antworten behalten den letzten vollstaendigen Cache.
+Bis zu 10000 Kontakte, 4 MiB Antwort-/Cachegroesse, 20 Eintraege je Adresstyp und
+30000 JSON-Bytes je normalisiertem Kontakt sind zugelassen. Namen und Labels
+sind begrenzt; Versandadressen werden bei Ueberlaenge abgelehnt statt gekuerzt.
+Oeffentliche Seiten enthalten hoechstens 100 Kontakte und etwa 32 kB
+Kontaktdaten. nextOffset ist der verbindliche Fortsetzungswert; es wird keine
+Vollkopie des Adressbuchs in einer Statusvariablen oder jedem Kind gespeichert.
+
+Kontoschutz, Semaphore, Pause, manuelle Sperre und Retry-After/Backoff werden
+vor einer Transporterzeugung geprueft. Die Pause erhaelt Sitzung und Kontakte
+bytegleich, stoppt den Kontakttimer und erlaubt weiterhin lokale Cacheleser.
+401/421/450 markieren die gemeinsame Sitzung als abgelaufen; 423 setzt eine
+manuell zu pruefende Kontosperre. 429 und Netzwerk-/Serverfehler verwenden die
+gemeinsamen Wartefristen. Eine reine Kontaktablehnung mit 403 betrifft dagegen
+nur den Kontaktdienst. Deaktivieren des Kontaktzugriffs, Abmelden, Deaktivieren
+des Kontos und Uebernehmen anderer Zugangsdaten entfernen den Kontaktcache.
+Diagnosen speichern nur feste Kategorien, Status und Zeiten, keine Kontakte,
+Adressen, Abfrage-URLs, Tokens oder Antwortinhalte.
+
+ICCT_GetContacts bietet lokale Suche nach Namen, Firma, Nummern und E-Mails;
+ICCT_GetContact liefert einen Kontakt ausschliesslich anhand seiner ID.
+success kennzeichnet einen vorhandenen erfolgreichen Cache; stale, paused,
+updatedAt und error machen Aktualitaet und Abrufprobleme sichtbar. Fehlende
+Adressen sind leere Listen und erscheinen im Formular als Nicht verfuegbar;
+fehlende exakte Kennungen liefern contact: null. Eine Umbenennung aendert die
+Kennung nicht. Kontakte, Notizen und andere persoenliche Felder werden weder
+geschrieben noch an Apple zurueckgesendet.
+
+Fuer das geplante Nachrichten-Modul ist die Kombination aus Kontaktinstanz-ID
+und Kontakt-ID der Empfaengerschluessel. Versandadresse und Kanal muessen dort
+ausdruecklich ausgewaehlt und Regeln fuer veraltete Daten festgelegt werden.
+Keine Zuordnung allein nach Namen, kein Ersatz geloeschter Kontakte durch
+gleichnamige Personen und keine angenommene Messenger-Registrierung aus einer
+Telefonnummer. Kontaktbilder, Gruppen, CardDAV und Nachrichtenversand sind
+nicht Teil dieses Schritts.
+
+Offline-Nachweise: tests/contacts.php prueft den echten Konto-/Kind-Datenfluss
+mit synthetischem HTTPS-Transport, tokenbasierte Dienstermittlung ohne Passwort,
+Normalisierung, fehlende/fehlerhafte Felder, exakte Kennungen und Loeschungen,
+groessenbegrenzte Seiten ohne Luecken, Scopewechsel, Neustart, wiederholtes
+ApplyChanges, konkurrierende Abrufe, unsichere Endpunkte, Pause, 401/403/423/429,
+Serverfehler und datensparsame Diagnose. Der Test ist in tests/run.php
+eingebunden und fuehrt auch die bestehenden Kontoschutztests aus.
+
+Die vollstaendige PHP-/Node-Offlinesuite (tests/run.php), Struktur- und
+Formularvertraege sowie der offizielle JSON-Check bestanden. Der PHP-CS-Fixer
+mit offizieller StylePHP-Konfiguration meldete im Pruefmodus 0 von 58 Dateien
+mit Aenderungsbedarf; git diff --check bestand ebenfalls.
+Ein erster lokaler Gesamtlauf stoppte am bestehenden Bildtest wegen nicht
+geladener GD-Erweiterung; GD und EXIF wurden nur fuer die Testprozesse aus der
+vorhandenen PHP-Installation geladen, ohne die System-php.ini zu veraendern.
+Live-Installation, echte Kontaktantworten und Konsolenbedienung nach dem Update
+bleiben als Praxispruefung offen. Es wurden weder echte Apple-Anmeldungen noch
+private Kontaktabfragen ausgefuehrt.
+
+### Korrektur der Kontaktadressfelder nach Benutzerpruefung (2026-10-25)
+
+Der Benutzer meldete anhand zweier Beispiele, dass Kontakte samt Namen/Firma
+vorhanden waren, Telefonnummern im Empfaengerverzeichnis jedoch als Nicht
+verfuegbar erschienen. Die iCloud-Anzeige enthielt eine beziehungsweise mehrere
+Nummern. Ursache war eine fehlerhafte Feldzuordnung im librarylokalen
+ContactsDirectory: Erwartet wurden phoneNumber/emailAddress statt des von
+iCloud fuer beide Adresstypen verwendeten Schluessels field. Die urspruenglichen
+synthetischen Testdaten verwendeten dieselben falschen Schluessel und erkannten
+diesen Protokollfehler daher nicht.
+
+Die Protokollform ist auch im primaeren PyiCloud-README fuer phones und in
+Kontaktbeispielen anderer iCloud-Clients belegt:
+https://github.com/picklepete/pyicloud#contacts und
+https://github.com/ElyaConrad/iCloud-API#contacts.
+Der Normalisierer verwendet jetzt field als massgeblichen Wert. Die bisherige
+benannte Variante bleibt nur bei fehlendem field kompatibel. Ein vorhandenes,
+aber leeres/ungueltiges field wird nicht durch einen anderen Wert ersetzt.
+Labels, alle gueltigen Nummern und E-Mail-Adressen sowie die vorhandenen
+Laengen-/Groessengrenzen und der Kontoschutz bleiben erhalten.
+
+tests/contacts.php verwendet nun die reale Drahtstruktur mit field, zwei
+unterschiedlichen Telefonnummern und einer E-Mail-Adresse. Der Test scheiterte
+vor der Korrektur am fehlenden normalisierten Telefonnummernwert und bestand
+danach. Zusaetzlich werden die Anzeige aller drei Adressen im echten
+Konto-/Kind-Formulardatenfluss, die Kompatibilitaetsvariante und leere/ungueltige
+kanonische Felder geprueft. Ausschliesslich synthetische Daten; persoenliche
+Kontakte aus den Benutzerbildern werden nicht in Testdaten uebernommen.
+
+Nach dem Modulupdate muss der Kontaktbestand einmal neu von Apple geladen
+werden; ausgelassene Werte koennen nicht aus dem alten normalisierten Cache
+rekonstruiert werden. Es wurden keine Live-Dateien veraendert und keine echte
+Apple-Anmeldung oder Kontaktabfrage ausgefuehrt. Die erneute Benutzerpruefung
+mit dem aktualisierten Modul steht noch aus.
+
+Die vollstaendige PHP-/Node-Offlinesuite, Struktur-/Formularvertraege,
+offizieller JSON-Check, PHP-CS-Fixer im Pruefmodus (0 von 58 Dateien mit
+Aenderungsbedarf) und git diff --check bestanden nach der Korrektur.
+
+### Telefonspalten im Kontaktverzeichnis (2026-10-25)
+
+Der Benutzer bestaetigte nach dem Update die erfolgreiche Uebernahme der
+Telefonnummern und wuenschte getrennte Spalten nach iCloud-Bezeichnung.
+Die Formularanzeige bietet jetzt Mobil, Geschaeftlich, Hauptnummer, Privat,
+iPhone, Fax, Pager und Weitere Telefonnummern. Die lokalen deutschen
+Uebersetzungen sind Teil der Modul-locale.json. Bestehende zentrale Helper
+fuer Formular, Datenfluss und Elternverbindung werden weiterverwendet.
+Die iCloud-spezifische Zuordnung bleibt eine lokale Darstellungsmethode im
+Kontaktmodul, da kein zweiter Library-Verbraucher besteht.
+
+Kanonische Labels werden ohne Beachtung der Gross-/Kleinschreibung zugeordnet;
+Apples interne Labelklammern sowie Leerzeichen, Unterstriche und Bindestriche
+bei Faxlabels werden erkannt. Die Zuordnung verwendet exakte Labels und keine
+Teilwortsuche oder Nummernvorwahlen. Mehrere Nummern derselben Kategorie
+werden vollstaendig zusammen angezeigt. Faxuntertypen bleiben erkennbar.
+Unbeschriftete Nummern und benutzerdefinierte Labels erscheinen in Weitere
+Telefonnummern, eigene Labels bleiben dabei unveraendert sichtbar. Leere
+Kategorien nutzen die vorhandene Kennzeichnung Nicht verfuegbar.
+
+Nur das Konsolenformular und seine formatierten Zeilen wurden erweitert.
+Die API behaelt phones mit label/value, alle urspruenglichen Labels,
+Kennungen, Suche, Cache und Kontoschutz bei. Die Spalten werden aus dem
+bestehenden Cache aufgebaut; nach dem Update genuegt erneutes Oeffnen des
+Formulars. Es entstehen keine zusaetzlichen Apple-Abfragen.
+
+tests/contacts.php prueft die getrennten Spalten im echten synthetischen
+Konto-/Kind-Formularpfad, mehrere Mobilnummern, Standardlabels, Labelklammern,
+Faxuntertypen, Pager, unbeschriftete und benutzerdefinierte Nummern sowie die
+unveraenderte oeffentliche API. Der neue Spaltentest schlug vor der Umsetzung
+fehl und bestand danach. Private Benutzerkontakte oder Screenshots wurden
+nicht als Testdaten verwendet; kein Zugriff auf ein laufendes Apple-Konto.
+
+Die vollstaendige PHP-/Node-Offlinesuite, Struktur-/Formularvertraege,
+offizieller JSON-Check, PHP-CS-Fixer im Pruefmodus (0 von 58 Dateien mit
+Aenderungsbedarf) und git diff --check bestanden. Die sichtbare Abnahme in der
+installierten Konsole bleibt fuer den Stand nach dem Modulupdate offen.
+
+### Drei Mobilspalten und explizit gewuenschte Vorwahlregel (2026-10-25)
+
+Nach dem erfolgreichen Update der getrennten Telefonspalten wuenschte der
+Benutzer die Spalten Mobil1, Mobil2 und Mobil3 sowie eine zusaetzliche
+Zuordnung ueber die Vorwahl. Diese Vorgabe erweitert ausdruecklich die zuvor
+ausschliesslich labelbasierte Darstellungsregel: Nur wenn keine bekannte
+iCloud-Kategorie erkannt wurde, werden Nummern mit Beginn +491 oder 01 nach
+Ausblenden ueblicher Formatierungszeichen unter Mobil einsortiert. Fuer
+explizite Kategorien wie WORK, HOME, MAIN, IPHONE, FAX oder PAGER gilt dieser
+Fallback nicht. Daraus wird keine Erreichbarkeit oder Messenger-Registrierung
+abgeleitet.
+
+Mobil1 und Mobil2 enthalten die ersten beiden Mobilnummern in der gespeicherten
+Reihenfolge. Mobil3 enthaelt die dritte und gegebenenfalls weitere Nummern,
+damit alle erkannten Mobilnummern in den Mobilspalten erhalten bleiben. Eigene
+Labels bleiben sichtbar; Originalnummern werden fuer die Anzeige und API nicht
+umgeschrieben. Nummern anderer Vorwahlen und ungueltige Zeichenfolgen bleiben
+ohne bekannte Kategorie unter Weitere Telefonnummern. Die Aufteilung ist
+weiterhin eine librarylokale Formularfunktion; gemeinsame Helper und die
+oeffentliche phones-Struktur bleiben unveraendert.
+
+Der gezielte Test fuer die neuen Spalten scheiterte vor der Umsetzung und
+bestand danach. tests/contacts.php prueft internationale und nationale
+Schreibweisen, Leerzeichen/Klammern/Schraegstriche/Bindestriche, eigene Labels,
+mehr als drei Mobilnummern, Vorrang bekannter Kategorien, andere Vorwahlen und
+ungueltige Nummern sowie die unveraenderte API und ausbleibende Apple-Anfragen
+beim Formularaufbau. Es wurden nur synthetische Kontakte verwendet. Die
+Benutzeranzeige nach dem Modulupdate war zu diesem Zeitpunkt noch offen;
+die nachfolgende Benutzerabnahme schliesst diese Pruefung ab.
+
+Die vollstaendige PHP-/Node-Offlinesuite, Struktur-/Formularvertraege,
+offizieller JSON-Check, PHP-CS-Fixer im Pruefmodus (0 von 58 Dateien mit
+Aenderungsbedarf) und git diff --check bestanden fuer diesen Stand.
+
+### Benutzerabnahme der Mobilspalten und Vorwahlzuordnung (2026-10-25)
+
+Der Benutzer hat nach dem Modulupdate die Anzeige von Mobil1, Mobil2 und
+Mobil3 sowie die Vorwahlzuordnung erfolgreich geprueft und die Funktion
+ausdruecklich bestaetigt. Damit ist auch die Praxispruefung der Regel
+abgeschlossen, bisher nicht kategorisierte Nummern mit Beginn +491 oder 01
+in die Mobilspalten einzuordnen.
+
+Diese Benutzerabnahme ergaenzt die oben dokumentierten Offline- und
+Regressionstests und schliesst die dort noch offene Anzeigepruefung nach dem
+Update ab. Sie ist eine Rueckmeldung aus der Installation des Benutzers;
+es wurde dafuer kein neuer MCP-Lauf durchgefuehrt. Persoenliche Kontaktdaten
+oder Screenshots werden nicht in das Repository uebernommen.
+
+## Gesamtanwesenheit und Kachelhöhe (2026-11-18)
+
+Kacheldesigner und IPSView-Designer steuern die Kopfzeile getrennt. Beide
+Schalter sind bei bestehenden und neuen Instanzen standardmäßig aktiv und
+gelten jeweils für Widget und WidgetCompact. Die Auswertung liefert ihren
+Gruppenstatus unabhängig von der Darstellung.
+
+Das Layout nutzt die Breite und Höhe des vorhandenen responsiven Containers.
+Flache Ansichten ziehen Kopfzeile und Gerätekarten zusammen. Bei Überlauf
+scrollen Kopfzeile und Geräte in einem gemeinsamen Bereich unterhalb des
+reservierten nativen Kacheltitels. Auswahl und Scrollposition werden bei
+Datenupdates übernommen.
+
+Chromium zeigte mit synthetischen Daten bei 1240 × 154 und 2528 × 202
+CSS-Pixeln vier vollständige Detailkarten. Bei 1240 × 390 expandierten die
+Karten, bei 280 × 160 blieben die Inhalte vertikal scrollbar. Echtes Mausrad
+in beiden Richtungen wurde mit der lokal gerenderten Kachelausgabe und im
+verschachtelten IPSView-Loader mit synthetischer HTTP-Antwort geprüft. Die
+Offline-Suite, Strukturprüfung, der offizielle JSON-Check und PHP-CS-Fixer
+im Prüfmodus bestanden. Die Abnahme im nativen Symcon- und IPSView-Host
+steht aus.
+
+### Größere Gerätebilder bei flacher Kachel (2026-11-18)
+
+Die Bildgröße richtet sich in flachen Ansichten nach der verfügbaren Höhe.
+Ein Chromium-Test mit synthetischen Bildern zeigte bei 2528 × 202 CSS-Pixeln
+vier vollständige Detailkarten mit 48 statt 32 Pixel großen Bildern. Bei
+eingestellten 80 Pixeln passten die Bilder ebenfalls. Bei 280 × 160 mit
+nativem Titelabstand wurden die Bilder auf 41 Pixel begrenzt. Mausradscrollen
+in beide Richtungen funktionierte in der lokalen Kachelausgabe und im
+verschachtelten IPSView-Frame. Die native Anzeige der Bildgröße bleibt nach
+dem Modulupdate zu prüfen.
+
+### Kurzer Gerätestatus in flachen Anwesenheitskacheln (2026-11-18)
+
+Bis einschließlich 200 CSS-Pixel Inhaltshöhe zeigt die Kachel pro Gerät
+Name, optionales Bild und den übersetzten Anwesenheitsstatus. Bei mehr
+Höhe erscheint der Inhalt der ausgewählten Widget-Variante. Der Wechsel
+erfolgt über den vorhandenen CSS-Container.
+
+Chromium bestätigte den Übergang von 200 auf 201 Pixel ohne Neuladen,
+beide Kachelvarianten und lesbare Status bei älteren Cache-Daten.
+Die Geräteauswahl blieb erhalten. Echtes Mausradscrollen in beide
+Richtungen wurde lokal und im verschachtelten IPSView-Frame geprüft.
+Die Prüfung in der nativen Symcon-Konsole steht aus.
+
+### Skalierung der Inhalte in Anwesenheitskacheln (2026-11-18)
+
+Die Kachel zeigt den kurzen Status auch bei bis zu 230 CSS-Pixeln
+Inhaltsbreite. Bei bis zu 140 CSS-Pixeln Inhaltsbreite steht das Bild über
+dem Text. Die Kachelhöhe lässt Bilder und Schrift in Gerätekarten um bis
+zu 50 % über die Designerwerte wachsen. Die Breite der einzelnen Karte
+begrenzt beide Größen.
+
+In Chromium wuchsen bei 680 CSS-Pixeln Breite und einer Höhenänderung
+von 180 auf 580 Pixel das Bild von 48 auf 72 und der Name von 14 auf 21
+Pixel. Bei 220 × 890 CSS-Pixeln passten vier Karten mit einzeiligen
+Statuswörtern auch bei eingestellten 96 Pixeln Bildgröße. Der Wechsel
+bei 230 und 231 CSS-Pixeln Inhaltsbreite, beide Kachelvarianten und das
+Mausradscrollen in beiden Richtungen wurden geprüft. Das Scrollen im
+schmalen IPSView-Frame funktionierte ebenfalls. Offline-Suite, Struktur-
+und Stilprüfungen bestanden. Die Prüfung im nativen Symcon-Client steht aus.
+
+### Bildgröße und Detailzeilen in Anwesenheitskacheln (2026-11-18)
+
+In hohen Gerätekarten kann die Bildgröße bis zum Doppelten des
+Designerwerts wachsen. Bei einer synthetischen Kachelausgabe mit
+626 × 632 CSS-Pixeln wuchs das Bild von 72 auf 96 Pixel. Chromium
+zeigte „14,0 km“ geschlossen in der Folgezeile und „Aufenthalt“ darunter.
+Bei mehr Breite passte die Entfernung wieder neben ihre Beschriftung.
+Der Test prüfte auch Mausradscrollen in beide Richtungen in der
+Kachelausgabe und im verschachtelten IPSView-Frame. Die Prüfung im
+nativen Client steht aus.

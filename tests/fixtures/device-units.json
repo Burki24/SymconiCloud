@@ -1,0 +1,59 @@
+{
+    "provenance": "docs/PROTOCOL_VALUES.md",
+    "cases": [
+        {
+            "raw": {
+                "id": "synthetic-units",
+                "batteryLevel": 0,
+                "location": {
+                    "latitude": 0,
+                    "longitude": 0,
+                    "timeStamp": 1700000000000,
+                    "horizontalAccuracy": 0,
+                    "isOld": false
+                }
+            },
+            "expected": {
+                "batteryPercent": 0,
+                "timestamp": 1700000000,
+                "accuracyMetres": 0
+            }
+        },
+        {
+            "raw": {
+                "id": "synthetic-units",
+                "batteryLevel": 0.5,
+                "location": {
+                    "latitude": -45,
+                    "longitude": 90,
+                    "timeStamp": 1700000001250,
+                    "horizontalAccuracy": 12.5,
+                    "isOld": true
+                }
+            },
+            "expected": {
+                "batteryPercent": 50,
+                "timestamp": 1700000001,
+                "accuracyMetres": 12.5
+            }
+        },
+        {
+            "raw": {
+                "id": "synthetic-units",
+                "batteryLevel": 1,
+                "location": {
+                    "latitude": 90,
+                    "longitude": -180,
+                    "timeStamp": 1700000002000,
+                    "horizontalAccuracy": 100,
+                    "isOld": false
+                }
+            },
+            "expected": {
+                "batteryPercent": 100,
+                "timestamp": 1700000002,
+                "accuracyMetres": 100
+            }
+        }
+    ]
+}

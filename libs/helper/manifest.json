@@ -3,16 +3,16 @@
     "source_repository": "Burki24/Symcon_ModuleHelper",
     "helpers": {
         "ConfigurationFormHelper": {
-            "version": "1.0.1",
-            "sha256": "bd45f15a1c2f6e2800eff51eefeb3094f5745a3469434d6a57b98d54f30d363f",
+            "version": "1.0.3",
+            "sha256": "532c26b557dff545b1a7ea3a845729a932fb65321d62d6276374a33de959deba",
             "path": "libs/helper/ConfigurationFormHelper.php",
-            "source_sha": "d13d726f8df24a5ad6e3d659242f407731a10567"
+            "source_sha": "ce2038f4d5f82d32b7c2c8cfc388fc31a0057e96"
         },
         "DataFlowHelper": {
-            "version": "1.0.0",
-            "sha256": "4c25828b283367692d0db1631d2b7d71ba6012883798bc5ffddb8f2d551d6dfb",
+            "version": "1.0.2",
+            "sha256": "95784922e6b11f95ab3fe6e6d934f46234092b79e8fea11236963845cce2d4e6",
             "path": "libs/helper/DataFlowHelper.php",
-            "source_sha": "d13d726f8df24a5ad6e3d659242f407731a10567"
+            "source_sha": "ce2038f4d5f82d32b7c2c8cfc388fc31a0057e96"
         },
         "ParentConnectionHelper": {
             "version": "1.0.0",
@@ -21,10 +21,412 @@
             "source_sha": "d13d726f8df24a5ad6e3d659242f407731a10567"
         },
         "VariablePresentationHelper": {
-            "version": "2.0.0",
-            "sha256": "ce620078e72bcbffed1adfdd02e8f64baf5f2b2e8e1531e3bb1ae7b32b390fb8",
+            "version": "2.1.1",
+            "sha256": "c3212189b2dffda2e582a59ab8ba5d7f2a563dc2f3ea841ec9e877e4400de650",
             "path": "libs/helper/VariablePresentationHelper.php",
-            "source_sha": "d13d726f8df24a5ad6e3d659242f407731a10567"
+            "source_sha": "d9e6bcf6036fee370a7cbce8ef737234886e36c3"
+        },
+        "VisualizationAssetHelper": {
+            "version": "1.1.4",
+            "sha256": "28d2dbdb7c86c45986b78ba391c260510d4f1c6427481298a00cc775983cee47",
+            "path": "libs/helper/VisualizationAssetHelper.php",
+            "source_sha": "cb8906845b8fe3acb25ae0f3e8233c0382a66816",
+            "assets": [
+                {
+                    "path": "libs/helper/visualization/http-origin.js",
+                    "sha256": "c6c8dd8355b426ddaa38d1789164aac06b4d7d0ccfb8196fcaa88b2ebc2c0456"
+                },
+                {
+                    "path": "libs/helper/visualization/interaction.js",
+                    "sha256": "48f9b1cef490201ab8cde9bdc2367c3c897d34e7f4427da114035c1ca62950c2"
+                },
+                {
+                    "path": "libs/helper/visualization/interaction.min.js",
+                    "sha256": "282d9c70995471a58aa06670b310a578a2358b19ea22478448c857c2892dcdf2"
+                }
+            ]
+        },
+        "VisualizationThemeHelper": {
+            "version": "1.1.2",
+            "sha256": "ffd5ba38a26191fd40c5900f8338ae520fa12904474493712eac7975304f4672",
+            "path": "libs/helper/VisualizationThemeHelper.php",
+            "source_sha": "ce2038f4d5f82d32b7c2c8cfc388fc31a0057e96"
+        },
+        "ResponsiveVisualizationHelper": {
+            "version": "1.0.4",
+            "sha256": "66fd166b804f255e24be1f5bda0b852228f3cc1e6c45c56729b8a55385a20224",
+            "path": "libs/helper/ResponsiveVisualizationHelper.php",
+            "source_sha": "ce2038f4d5f82d32b7c2c8cfc388fc31a0057e96"
+        },
+        "IPSViewHTMLPageHelper": {
+            "version": "1.5.6",
+            "sha256": "c5ac1aeaefa3b909ab3bfa07316322e9b3676dfb08a4e3a9adab63e495ba9c6b",
+            "path": "libs/helper/IPSViewHTMLPageHelper.php",
+            "source_sha": "657dc31a23bf529cc019682c0099d48418f9acc1",
+            "assets": [
+                {
+                    "path": "libs/helper/translations/IPSViewHTMLPageHelper.json",
+                    "sha256": "137ca0ac2f11f871953e71c0fecf20bf584f14a5fac26f4633a83b0890f62c9a"
+                }
+            ],
+            "dependencies": [
+                {
+                    "name": "HelperTranslationHelper",
+                    "version": "1.0.2",
+                    "sha256": "7c0184b51923e3f4f78fb150d403ea092b0117b0b01fb5c04fdc4568b269ebdd",
+                    "path": "libs/helper/HelperTranslationHelper.php",
+                    "source_sha": "ce2038f4d5f82d32b7c2c8cfc388fc31a0057e96"
+                },
+                {
+                    "name": "VisualizationAssetHelper",
+                    "version": "1.1.4",
+                    "sha256": "28d2dbdb7c86c45986b78ba391c260510d4f1c6427481298a00cc775983cee47",
+                    "path": "libs/helper/VisualizationAssetHelper.php",
+                    "source_sha": "cb8906845b8fe3acb25ae0f3e8233c0382a66816",
+                    "assets": [
+                        {
+                            "path": "libs/helper/visualization/http-origin.js",
+                            "sha256": "c6c8dd8355b426ddaa38d1789164aac06b4d7d0ccfb8196fcaa88b2ebc2c0456"
+                        },
+                        {
+                            "path": "libs/helper/visualization/interaction.js",
+                            "sha256": "48f9b1cef490201ab8cde9bdc2367c3c897d34e7f4427da114035c1ca62950c2"
+                        },
+                        {
+                            "path": "libs/helper/visualization/interaction.min.js",
+                            "sha256": "282d9c70995471a58aa06670b310a578a2358b19ea22478448c857c2892dcdf2"
+                        }
+                    ]
+                }
+            ]
+        },
+        "HelperTranslationHelper": {
+            "version": "1.0.2",
+            "sha256": "7c0184b51923e3f4f78fb150d403ea092b0117b0b01fb5c04fdc4568b269ebdd",
+            "path": "libs/helper/HelperTranslationHelper.php",
+            "source_sha": "ce2038f4d5f82d32b7c2c8cfc388fc31a0057e96"
+        },
+        "HttpResponseHelper": {
+            "version": "1.1.0",
+            "sha256": "be4fae4c23f757ab462237d8e74d2a9dca1b504937ed4d4b51c7ff76004cf1cd",
+            "path": "libs/helper/HttpResponseHelper.php",
+            "source_sha": "7b3bdd2634666c863061e084a68838baaa44295e"
+        },
+        "OpenFreeMapHelper": {
+            "version": "1.0.3",
+            "sha256": "86bb678869e27cb188dac9b6ce0d000b0b46a978a22776052bddaf889db69209",
+            "path": "libs/helper/OpenFreeMapHelper.php",
+            "source_sha": "657dc31a23bf529cc019682c0099d48418f9acc1",
+            "assets": [
+                {
+                    "path": "libs/helper/maps/openfreemap.js",
+                    "sha256": "2e2117fa40f9d3104333336d99f297c2a305899bef62df02a7aa6f83f099af3d"
+                },
+                {
+                    "path": "libs/helper/maps/vendor/BRIDGE-LICENSE",
+                    "sha256": "eaa721ba158cbeff47ad53b1035dfc26ff744df66662c93ff715c9885197ebf3"
+                },
+                {
+                    "path": "libs/helper/maps/vendor/leaflet-maplibre-gl.js",
+                    "sha256": "1e6cf8cb3eb5fd909879aa1bf36a383fb506c9a5b2dbbfababce65a294dd1fcb"
+                },
+                {
+                    "path": "libs/helper/maps/vendor/maplibre-gl.css",
+                    "sha256": "ab1e70d59ec40465bae7e7030da2f3ccf28133fd502e62bd598eefbadfd7a732"
+                },
+                {
+                    "path": "libs/helper/maps/vendor/maplibre-gl.js",
+                    "sha256": "45a9b07a9189ce56054c620a947ccf41e291e58c95e9b61533b740aaa65ee5cb"
+                },
+                {
+                    "path": "libs/helper/maps/vendor/MAPLIBRE-LICENSE.txt",
+                    "sha256": "ee5fc05a0677eaf69601d2c7db0d9ecd6cc27c3abc1d0733bc9ed34707cf8ef2"
+                },
+                {
+                    "path": "libs/helper/maps/vendor/NOTICE.json",
+                    "sha256": "7ca96c1b37e965261d9e51db1bd0de8ddcea4706f6b41bb85c0471958f09d114"
+                },
+                {
+                    "path": "libs/helper/translations/OpenFreeMapHelper.json",
+                    "sha256": "96f0af1be8c6e65b43e900638f9a67147331096f43db2980a0508289f5c6d5c0"
+                }
+            ],
+            "dependencies": [
+                {
+                    "name": "HelperTranslationHelper",
+                    "version": "1.0.2",
+                    "sha256": "7c0184b51923e3f4f78fb150d403ea092b0117b0b01fb5c04fdc4568b269ebdd",
+                    "path": "libs/helper/HelperTranslationHelper.php",
+                    "source_sha": "ce2038f4d5f82d32b7c2c8cfc388fc31a0057e96"
+                },
+                {
+                    "name": "VisualizationAssetHelper",
+                    "version": "1.1.4",
+                    "sha256": "28d2dbdb7c86c45986b78ba391c260510d4f1c6427481298a00cc775983cee47",
+                    "path": "libs/helper/VisualizationAssetHelper.php",
+                    "source_sha": "cb8906845b8fe3acb25ae0f3e8233c0382a66816",
+                    "assets": [
+                        {
+                            "path": "libs/helper/visualization/http-origin.js",
+                            "sha256": "c6c8dd8355b426ddaa38d1789164aac06b4d7d0ccfb8196fcaa88b2ebc2c0456"
+                        },
+                        {
+                            "path": "libs/helper/visualization/interaction.js",
+                            "sha256": "48f9b1cef490201ab8cde9bdc2367c3c897d34e7f4427da114035c1ca62950c2"
+                        },
+                        {
+                            "path": "libs/helper/visualization/interaction.min.js",
+                            "sha256": "282d9c70995471a58aa06670b310a578a2358b19ea22478448c857c2892dcdf2"
+                        }
+                    ]
+                }
+            ]
+        },
+        "VisualizationThemeConfigurationHelper": {
+            "version": "1.0.2",
+            "sha256": "a0319239cf638dc42586fc77b16986f33f8b08387dec4bfc8d734dd2c5a1b316",
+            "path": "libs/helper/VisualizationThemeConfigurationHelper.php",
+            "source_sha": "657dc31a23bf529cc019682c0099d48418f9acc1",
+            "assets": [
+                {
+                    "path": "libs/helper/translations/VisualizationThemeConfigurationHelper.json",
+                    "sha256": "d6bdb94af8fe86647f2350be25b6bed1aee481bc6866bf205a7537e2d5b533bc"
+                }
+            ],
+            "dependencies": [
+                {
+                    "name": "HelperTranslationHelper",
+                    "version": "1.0.2",
+                    "sha256": "7c0184b51923e3f4f78fb150d403ea092b0117b0b01fb5c04fdc4568b269ebdd",
+                    "path": "libs/helper/HelperTranslationHelper.php",
+                    "source_sha": "ce2038f4d5f82d32b7c2c8cfc388fc31a0057e96"
+                },
+                {
+                    "name": "VisualizationThemeHelper",
+                    "version": "1.1.2",
+                    "sha256": "ffd5ba38a26191fd40c5900f8338ae520fa12904474493712eac7975304f4672",
+                    "path": "libs/helper/VisualizationThemeHelper.php",
+                    "source_sha": "ce2038f4d5f82d32b7c2c8cfc388fc31a0057e96"
+                }
+            ]
+        },
+        "IPSViewStyleConfigurationHelper": {
+            "version": "1.1.1",
+            "sha256": "1b367ca24374d5cd0eb0fe1db9289b5f1ed1c4ea47e44197388792a9dbfe9a62",
+            "path": "libs/helper/IPSViewStyleConfigurationHelper.php",
+            "source_sha": "657dc31a23bf529cc019682c0099d48418f9acc1",
+            "assets": [
+                {
+                    "path": "libs/helper/translations/IPSViewStyleConfigurationHelper.json",
+                    "sha256": "99dfca0fbd64ed77ff85f6ed6359adac9ab0eae1cbc2b1c8e4d8d58cc41847b5"
+                }
+            ],
+            "dependencies": [
+                {
+                    "name": "IPSViewStylePresetHelper",
+                    "version": "1.0.1",
+                    "sha256": "770bfc48051a908b55e931f6d4eba6e8984ba73b4aa78cd987470006c7b3a9e7",
+                    "path": "libs/helper/IPSViewStylePresetHelper.php",
+                    "source_sha": "464ac7f20a25b93528e2a8c06797c934df0e1f1e"
+                },
+                {
+                    "name": "IPSViewControlThemeHelper",
+                    "version": "1.0.3",
+                    "sha256": "7be5f3300ebf0562f818b050a53cfa67d7631a30e3d62f1ab41525501604fac6",
+                    "path": "libs/helper/IPSViewControlThemeHelper.php",
+                    "source_sha": "464ac7f20a25b93528e2a8c06797c934df0e1f1e"
+                },
+                {
+                    "name": "HelperTranslationHelper",
+                    "version": "1.0.2",
+                    "sha256": "7c0184b51923e3f4f78fb150d403ea092b0117b0b01fb5c04fdc4568b269ebdd",
+                    "path": "libs/helper/HelperTranslationHelper.php",
+                    "source_sha": "ce2038f4d5f82d32b7c2c8cfc388fc31a0057e96"
+                },
+                {
+                    "name": "IPSViewFontCatalogHelper",
+                    "version": "1.1.0",
+                    "sha256": "cddb6f51b2d4ceb76d8b291204d26fa17d7ccf4711c3f4f462ec7f73f5514c25",
+                    "path": "libs/helper/IPSViewFontCatalogHelper.php",
+                    "source_sha": "464ac7f20a25b93528e2a8c06797c934df0e1f1e",
+                    "assets": [
+                        {
+                            "path": "libs/helper/fonts/Apache-2.0.txt",
+                            "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+                        },
+                        {
+                            "path": "libs/helper/fonts/BebasNeue-Regular.ttf",
+                            "sha256": "8c6b9d4587002e47891b0d7dd66e37b5ecb6c61d0d571144d9e7dce03b6661f2"
+                        },
+                        {
+                            "path": "libs/helper/fonts/DancingScript-Bold.ttf",
+                            "sha256": "953d83cf694dd25031eaf93de3161f271faf2a61c51f143d09adb5d8788af84a"
+                        },
+                        {
+                            "path": "libs/helper/fonts/DancingScript-Regular.ttf",
+                            "sha256": "bebd5c61533d48c9d9812f590fa6274dc8e907a62d573f52933c19d1a33caa10"
+                        },
+                        {
+                            "path": "libs/helper/fonts/IndieFlower-Regular.ttf",
+                            "sha256": "e92aceba3c95fabe12edf01ae248f613f6d97eef3bdb7009200cb3fae53df609"
+                        },
+                        {
+                            "path": "libs/helper/fonts/NOTICE.md",
+                            "sha256": "8382ef7a68e2bc68836fd9b27aa7d890ebd4a3c048b880c6b1514ae5a5489936"
+                        },
+                        {
+                            "path": "libs/helper/fonts/OFL-1.1.txt",
+                            "sha256": "6863ff4dc820f24756b6acfb38a2c6bc19d5b8d71b17030330a6f16eb4cee348"
+                        },
+                        {
+                            "path": "libs/helper/fonts/OpenSans-Bold.ttf",
+                            "sha256": "f7916a37377e38527d4306303cfe89b653b49b0a6b0b05c6b7593f7ab0248da8"
+                        },
+                        {
+                            "path": "libs/helper/fonts/OpenSans-BoldItalic.ttf",
+                            "sha256": "b08b454c8e47e7ba3cbb59c0e6a8344174363c034d581fe12cb3c6fc3942b6d3"
+                        },
+                        {
+                            "path": "libs/helper/fonts/OpenSans-Regular.ttf",
+                            "sha256": "037236ed4bf58a85f67074c165d308260fd6be01c86d7df4e79ea16eb273f8c5"
+                        },
+                        {
+                            "path": "libs/helper/fonts/OpenSans-RegularItalic.ttf",
+                            "sha256": "df8cd21a27b100aeb75454d0c4cb04bbf5d1cc54676cc35718189bf07b774000"
+                        },
+                        {
+                            "path": "libs/helper/fonts/ParaType-Free-Font-License.txt",
+                            "sha256": "7b5da0a0bd901f50e4325f8258a814ff791a4281c262b2150a9215bed0241d3c"
+                        },
+                        {
+                            "path": "libs/helper/fonts/PTSans-Bold.ttf",
+                            "sha256": "af2ea7b99dfa8102105df9ddbf0aa58893169d9bf5befe54fb9d8f12549c477d"
+                        },
+                        {
+                            "path": "libs/helper/fonts/PTSans-BoldItalic.ttf",
+                            "sha256": "ffd600561e9bc58f6ad014fb74e8790134dd735f40e504059aa3717fe7be6e11"
+                        },
+                        {
+                            "path": "libs/helper/fonts/PTSans-Regular.ttf",
+                            "sha256": "419e240303f11800c2b0d24b19bd361831be1789142586aeca5bf078a1e7733e"
+                        },
+                        {
+                            "path": "libs/helper/fonts/PTSans-RegularItalic.ttf",
+                            "sha256": "187f3d67223972f22229cfcfaf1c26aef0f06db1e8130e1bbb8056b10d67af83"
+                        },
+                        {
+                            "path": "libs/helper/fonts/Roboto-Bold.ttf",
+                            "sha256": "c9cc991deb5d27f267830a19f2301eb164d9e61ec08669c1a1a291c5620ff40a"
+                        },
+                        {
+                            "path": "libs/helper/fonts/Roboto-BoldItalic.ttf",
+                            "sha256": "e408e93bc15805661247698520f1ab944bbc2899fbd9ca71edc1b24dea6565f7"
+                        },
+                        {
+                            "path": "libs/helper/fonts/Roboto-Regular.ttf",
+                            "sha256": "017c0be9aaa6d0359737e1fa762ad304c0e0107927faff5a6c1f415c7f5244ed"
+                        },
+                        {
+                            "path": "libs/helper/fonts/Roboto-RegularItalic.ttf",
+                            "sha256": "2c0958e0c7e9b63f36f672d3cccba14ca0d7ce2e3d6945b38e4ef3de35b79691"
+                        },
+                        {
+                            "path": "libs/helper/fonts/RobotoMono-Bold.ttf",
+                            "sha256": "d580ebfd08b9b1bb637021ac9a34d30abdf3a1a731865886ec01e0c5859f29c8"
+                        },
+                        {
+                            "path": "libs/helper/fonts/RobotoMono-BoldItalic.ttf",
+                            "sha256": "ff99cc35746371f5cf412823d5237ad4c038a3b8a5e5eaad9b854d30075bc13a"
+                        },
+                        {
+                            "path": "libs/helper/fonts/RobotoMono-Regular.ttf",
+                            "sha256": "c59ecb6c18e38d4194249b6e1c555eb55c8e809258cf6d9b624d19d9268253bf"
+                        },
+                        {
+                            "path": "libs/helper/fonts/RobotoMono-RegularItalic.ttf",
+                            "sha256": "591503d536469d17b08282d15f7f7b25fa2bfb5ed01ff9555808bd0439043b05"
+                        },
+                        {
+                            "path": "libs/helper/fonts/Segment7-Regular.ttf",
+                            "sha256": "defa7e57af4c4447d9b2875feedcdaa727df3acc67ee237aa74ed575f3616ed2"
+                        }
+                    ]
+                },
+                {
+                    "name": "IPSViewStyleProfileHelper",
+                    "version": "1.0.1",
+                    "sha256": "eca6aa486d60b0db11cc7db0b486dc5b1723c49e26c23fe72465a33cf73f453d",
+                    "path": "libs/helper/IPSViewStyleProfileHelper.php",
+                    "source_sha": "464ac7f20a25b93528e2a8c06797c934df0e1f1e"
+                },
+                {
+                    "name": "IPSViewStyleHelper",
+                    "version": "1.6.10",
+                    "sha256": "16773fc594ae3b6df9b7d352611ec79a02c4c7089466769c94b77b1f90cdc7d9",
+                    "path": "libs/helper/IPSViewStyleHelper.php",
+                    "source_sha": "657dc31a23bf529cc019682c0099d48418f9acc1",
+                    "assets": [
+                        {
+                            "path": "libs/helper/translations/IPSViewStyleHelper.json",
+                            "sha256": "b1ad10c03c1e3baf0526b805862d49ac4ce65a05a40cd26ae8d81b77edbfd4fb"
+                        }
+                    ]
+                }
+            ]
+        },
+        "ReverseGeocodingHelper": {
+            "version": "1.1.1",
+            "sha256": "074ff0b278647716e87e844c6a58942070feba4b051632dcaa15cf721298abfa",
+            "path": "libs/helper/ReverseGeocodingHelper.php",
+            "source_sha": "f44349716dcf828f3e2f294cdc31e726650ef611",
+            "dependencies": [
+                {
+                    "name": "PersistentJsonCacheHelper",
+                    "version": "1.0.1",
+                    "sha256": "e048ce434b80f396e1821fdfba65982ad6c02123c50a2e335c6d436d0aa3ae38",
+                    "path": "libs/helper/PersistentJsonCacheHelper.php",
+                    "source_sha": "f44349716dcf828f3e2f294cdc31e726650ef611"
+                }
+            ]
+        },
+        "GeofenceHelper": {
+            "version": "1.2.1",
+            "sha256": "8e856a675a7b53106979a2f6346ee38de959aa57208ffb5b23ac721fd96f6ca8",
+            "path": "libs/helper/GeofenceHelper.php",
+            "source_sha": "f44349716dcf828f3e2f294cdc31e726650ef611"
+        },
+        "RasterImageHelper": {
+            "version": "1.0.0",
+            "sha256": "2c9f18d6ad9809015e6415f510106c02f1bb709b1d37e8acba4a6ad4ef151a81",
+            "path": "libs/helper/RasterImageHelper.php",
+            "source_sha": "d64feed9d8a817000ef5bac0aecc2a16ee8b5b4e"
+        },
+        "ChunkedJsonTransferHelper": {
+            "version": "1.1.0",
+            "sha256": "13e009dac28cda9bbf22638db00bd8d562a522a10fd592d9c770a7c5f22cf1fb",
+            "path": "libs/helper/ChunkedJsonTransferHelper.php",
+            "source_sha": "d64feed9d8a817000ef5bac0aecc2a16ee8b5b4e"
+        },
+        "DebugHelper": {
+            "version": "1.0.5",
+            "sha256": "a3db963c500a56d7daaa6cab71fe51f236d9859c93cb75cc9100e9f47dc93d04",
+            "path": "libs/helper/DebugHelper.php",
+            "source_sha": "ce2038f4d5f82d32b7c2c8cfc388fc31a0057e96"
+        },
+        "DebugFlowHelper": {
+            "version": "1.1.0",
+            "sha256": "ee763d210b8883c5e8a483e51f6a87e9cefeee73a89f6ef7bc7b4cfd61e28005",
+            "path": "libs/helper/DebugFlowHelper.php",
+            "source_sha": "a80c7b9fc1d943651a37128d174ee56be0cb275f",
+            "dependencies": [
+                {
+                    "name": "DebugHelper",
+                    "version": "1.0.5",
+                    "sha256": "a3db963c500a56d7daaa6cab71fe51f236d9859c93cb75cc9100e9f47dc93d04",
+                    "path": "libs/helper/DebugHelper.php",
+                    "source_sha": "ce2038f4d5f82d32b7c2c8cfc388fc31a0057e96"
+                }
+            ]
         }
     }
 }

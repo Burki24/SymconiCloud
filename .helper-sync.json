@@ -4,6 +4,9 @@
     "base_branch": "dev",
     "readme_language": "en",
     "helpers": {
+        "RasterImageHelper": {
+            "target": "libs/helper/RasterImageHelper.php"
+        },
         "ConfigurationFormHelper": {
             "target": "libs/helper/ConfigurationFormHelper.php"
         },
@@ -15,6 +18,48 @@
         },
         "VariablePresentationHelper": {
             "target": "libs/helper/VariablePresentationHelper.php"
+        },
+        "VisualizationAssetHelper": {
+            "target": "libs/helper/VisualizationAssetHelper.php"
+        },
+        "VisualizationThemeHelper": {
+            "target": "libs/helper/VisualizationThemeHelper.php"
+        },
+        "ResponsiveVisualizationHelper": {
+            "target": "libs/helper/ResponsiveVisualizationHelper.php"
+        },
+        "IPSViewHTMLPageHelper": {
+            "target": "libs/helper/IPSViewHTMLPageHelper.php"
+        },
+        "HelperTranslationHelper": {
+            "target": "libs/helper/HelperTranslationHelper.php"
+        },
+        "HttpResponseHelper": {
+            "target": "libs/helper/HttpResponseHelper.php"
+        },
+        "OpenFreeMapHelper": {
+            "target": "libs/helper/OpenFreeMapHelper.php"
+        },
+        "VisualizationThemeConfigurationHelper": {
+            "target": "libs/helper/VisualizationThemeConfigurationHelper.php"
+        },
+        "IPSViewStyleConfigurationHelper": {
+            "target": "libs/helper/IPSViewStyleConfigurationHelper.php"
+        },
+        "ReverseGeocodingHelper": {
+            "target": "libs/helper/ReverseGeocodingHelper.php"
+        },
+        "GeofenceHelper": {
+            "target": "libs/helper/GeofenceHelper.php"
+        },
+        "ChunkedJsonTransferHelper": {
+            "target": "libs/helper/ChunkedJsonTransferHelper.php"
+        },
+        "DebugHelper": {
+            "target": "libs/helper/DebugHelper.php"
+        },
+        "DebugFlowHelper": {
+            "target": "libs/helper/DebugFlowHelper.php"
         }
     }
 }

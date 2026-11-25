@@ -1,0 +1,435 @@
+<?php
+
+declare(strict_types=1);
+
+ob_start();
+require_once __DIR__ . '/modules.php';
+
+// RegisterHook is a volatile SDK registration; it must exist before output is enabled.
+// https://www.symcon.de/de/service/dokumentation/entwicklerbereich/sdk-tools/sdk-php/module/registerhook/
+class HookLifecycleMap extends iCloudWoIst
+{
+    public array $registeredHooks = [];
+
+    protected function RegisterHook(string $HookPath): bool
+    {
+        $this->registeredHooks[$HookPath] = true;
+        return true;
+    }
+
+    protected function UnregisterHook(string $HookPath): bool
+    {
+        unset($this->registeredHooks[$HookPath]);
+        return true;
+    }
+}
+$modules = $metadata->getValue();
+$modules['{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}']['Class'] = HookLifecycleMap::class;
+$metadata->setValue(null, $modules);
+$lifecycleID = IPS_CreateInstance('{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}');
+$lifecycle = IPS\InstanceManager::getInstanceInterface($lifecycleID);
+$check(isset($lifecycle->registeredHooks['ICloudServicesWoIst' . $lifecycleID]), 'Create must register the hook even with IPSView disabled.');
+$configureTransport = new ReflectionMethod($lifecycle, 'ConfigureWoIstIPSViewTransport');
+foreach ([true, false, true] as $enabled) {
+    IPS_SetProperty($lifecycleID, 'EnableIPSView', $enabled);
+    $configureTransport->invoke($lifecycle);
+    $check(isset($lifecycle->registeredHooks['ICloudServicesWoIst' . $lifecycleID]), 'Output toggles must retain the registered hook.');
+}
+$modules['{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}']['Class'] = iCloudWoIst::class;
+$metadata->setValue(null, $modules);
+
+// Symcon's WebHook class is evaluated with a synthetic filename. The module's
+// explicit asset directory must keep rendering independent of that filename.
+eval('class RuntimeContextMap extends iCloudWoIst {}');
+$modules['{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}']['Class'] = RuntimeContextMap::class;
+$metadata->setValue(null, $modules);
+$runtimeID = IPS_CreateInstance('{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}');
+$runtimeMap = IPS\InstanceManager::getInstanceInterface($runtimeID);
+$check(str_contains($runtimeMap->GetVisualizationTile(), 'woist-app'), 'Synthetic reflection filenames must not prevent asset loading.');
+$modules['{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}']['Class'] = iCloudWoIst::class;
+$metadata->setValue(null, $modules);
+
+class MissingAssetMap extends iCloudWoIst
+{
+    protected function VisualizationAsset(string $filename): string
+    {
+        return '';
+    }
+}
+$modules['{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}']['Class'] = MissingAssetMap::class;
+$metadata->setValue(null, $modules);
+$missingID = IPS_CreateInstance('{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}');
+IPS_ConnectInstance($missingID, $firstAccount);
+IPS_SetProperty($missingID, 'EnableIPSView', true);
+IPS_ApplyChanges($missingID);
+$missingMap = IPS\InstanceManager::getInstanceInterface($missingID);
+(new ReflectionMethod($missingMap, 'ConfigureWoIstIPSViewTransport'))->invoke($missingMap);
+$_SERVER = ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/hook/ICloudServicesWoIst' . $missingID . '/page'];
+ob_start();
+(new ReflectionMethod($missingMap, 'ProcessHookData'))->invoke($missingMap);
+$missingHTML = ob_get_clean();
+$check(http_response_code() === 503 && $missingHTML === 'Map document unavailable.', 'Missing page assets must return 503 instead of an empty successful document.');
+$modules['{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}']['Class'] = iCloudWoIst::class;
+$metadata->setValue(null, $modules);
+
+class FormDraftMap extends iCloudWoIst
+{
+    public array $fieldUpdates = [];
+
+    protected function LoadConfigurationForm(): array
+    {
+        return json_decode(file_get_contents(dirname(__DIR__) . '/iCloud WoIst/form.json'), true, 512, JSON_THROW_ON_ERROR);
+    }
+
+    protected function UpdateFormField(string $Field, string $Parameter, mixed $Value): bool
+    {
+        $this->fieldUpdates[$Field][$Parameter] = $Value;
+        return parent::UpdateFormField($Field, $Parameter, $Value);
+    }
+}
+
+// Use genuine map behavior and kernel routing; record the SDK's form updates.
+$firstBoundary->result = $envelope;
+$modules['{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}']['Class'] = FormDraftMap::class;
+$metadata->setValue(null, $modules);
+$mapID = IPS_CreateInstance('{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}');
+$modules['{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}']['Class'] = iCloudWoIst::class;
+$metadata->setValue(null, $modules);
+IPS_ConnectInstance($mapID, $firstAccount);
+IPS_ApplyChanges($mapID);
+$map = IPS\InstanceManager::getInstanceInterface($mapID);
+$state = static fn (): array => json_decode($map->GetState(), true, 512, JSON_THROW_ON_ERROR);
+$check(IPS_GetInstance($mapID)['InstanceVisualizationType'] === INSTANCE_VISUALIZATION_TYPE_HTML, 'WoIst must register an HTML visualization.');
+$check(IPS_GetInstance($mapID)['InstanceStatus'] === IS_ACTIVE, 'An authenticated account cache must activate the map.');
+$method = new ReflectionMethod($map, 'GetVisualizationTile');
+$check($method->getNumberOfParameters() === 0 && (string) $method->getReturnType() === 'string', 'HTML SDK requires GetVisualizationTile(): string.');
+$parents = json_decode($map->GetCompatibleParents(), true, 512, JSON_THROW_ON_ERROR);
+$check($parents === ['type' => 'connect', 'moduleIDs' => [$accountModule]], 'The map must offer the official shared account parent descriptor.');
+$firstBoundary->commands = [];
+$initial = $state();
+$check($initial['options']['tileHeaderVisible'] === true && $initial['options']['tileHeaderInset'] === 58, 'Native tiles must reserve the Symcon title by default.');
+$check($initial['options']['design']['height'] === 0, 'New map designs must fit the viewport automatically.');
+$check($initial['options']['openFreeMap']['theme'] === 'auto' && $initial['options']['openFreeMap']['lightStyle'] === 'liberty', 'OpenFreeMap must follow the designer theme by default.');
+$form = json_decode($map->GetConfigurationForm(), true, 512, JSON_THROW_ON_ERROR);
+$mapMenus = array_filter($form['elements'], static fn ($item): bool => in_array($item['caption'] ?? '', ['Tile designer', 'IPSView designer'], true));
+$check(count($mapMenus) === 2, 'Both designers must exist.');
+foreach ($mapMenus as $panel) {
+    $sections = array_filter($panel['items'], static fn ($item): bool => ($item['caption'] ?? '') === 'OpenFreeMap');
+    $check(count($sections) === 1, 'Every designer needs its own OpenFreeMap menu.');
+}
+
+// Official stubs predate the Symcon 9.1 title field; supply it without modifying vendor sources.
+$objectsProperty = new ReflectionProperty(IPS\ObjectManager::class, 'objects');
+$objects = $objectsProperty->getValue();
+$objects[$mapID]['ObjectIsHiddenTitle'] = true;
+$objectsProperty->setValue(null, $objects);
+$check($state()['options']['tileHeaderVisible'] === false && $state()['options']['tileHeaderInset'] === 0, 'Hidden native titles must release their reserved header space.');
+$objects[$mapID]['ObjectIsHiddenTitle'] = false;
+$objectsProperty->setValue(null, $objects);
+$check($state()['options']['tileHeaderVisible'] === true, 'Title visibility must be read again for SDK state updates.');
+$check($initial['state']['devices'][0]['location']['latitude'] === 51.25, 'Map must preserve normalized account coordinates.');
+$check($initial['state']['devices'][0]['batteryLevel'] === 0.42, 'Map must preserve normalized battery fractions.');
+$check($map->Update(), 'Cache update must succeed.');
+$map->RequestAction('GetState', '');
+$tile = $map->GetVisualizationTile();
+$check(str_contains($tile, '"viewStateKey":"ICWI:' . $mapID . ':' . IPS_GetInstance($mapID)['ConnectionID'] . '"'), 'Native view state must be scoped to the map instance and its account connection.');
+$check(!str_contains($tile, '{{BOOTSTRAP}}') && str_contains($tile, 'woist-app'), 'HTML tile must embed its bootstrap and local assets.');
+$check(strlen($tile) < 1048576, 'The native tile must stay below the Symcon output-buffer limit.');
+$check(array_unique($firstBoundary->commands) === ['GetDevices'], 'Opening, rendering and SDK cache actions must never refresh Apple.');
+$messages = $map->getMessages();
+$last = end($messages);
+$check($last['Message'] === 10541 && is_array(json_decode($last['Data'][0], true, 512, JSON_THROW_ON_ERROR)), 'SDK state action must publish JSON through UpdateVisualizationValue.');
+$check($map->RefreshDevices() && end($firstBoundary->commands) === 'RefreshDevices', 'Only explicit refresh must request fresh account data.');
+
+$unsafe = $syntheticDevice;
+$unsafe['name'] = '</script><script>alert("synthetic")</script>';
+$unsafe['password'] = 'synthetic-secret';
+$firstBoundary->result = $envelope + ['token' => 'synthetic-token'];
+$firstBoundary->result['devices'] = [$unsafe, $unsafe];
+$json = $map->GetState();
+$check(!str_contains($json, '</script>') && !str_contains($json, 'synthetic-secret') && !str_contains($json, 'synthetic-token'), 'Bootstrap must escape script boundaries and exclude credentials and unnormalized fields.');
+$check(count($state()['state']['devices']) === 1, 'Duplicate account device IDs must not generate duplicate markers.');
+$zero = $syntheticDevice;
+$zero['location']['latitude'] = 0;
+$zero['location']['longitude'] = 0;
+$firstBoundary->result['devices'] = [$zero];
+$check($state()['state']['devices'][0]['location']['latitude'] === 0.0, 'Zero coordinates are valid positions, not missing data.');
+foreach ([null, ['latitude' => 91, 'longitude' => 0, 'timestamp' => time()], ['latitude' => 1, 'longitude' => 181, 'timestamp' => time()], ['latitude' => 1, 'longitude' => 1, 'timestamp' => time() + 3600], ['latitude' => '1', 'longitude' => 1, 'timestamp' => time()]] as $invalid) {
+    $firstBoundary->result['devices'][0]['location'] = $invalid;
+    $check($state()['state']['devices'][0]['location'] === null, 'Missing, malformed, out-of-range and future locations must not produce fabricated markers.');
+}
+$firstBoundary->result = $envelope;
+$firstBoundary->result['success'] = false;
+$firstBoundary->result['state'] = 'expired';
+$failed = $state()['state'];
+$check(!$failed['success'] && $failed['devices'][0]['location']['latitude'] === 51.25, 'Unavailable accounts may display last-known positions only with failure state.');
+$firstBoundary->result = $envelope;
+$map->ReceiveData('{broken');
+$check(IPS_GetInstance($mapID)['InstanceStatus'] === 202, 'Malformed account notifications must fail closed.');
+$map->ReceiveData(json_encode(['DataID' => '{00000000-0000-0000-0000-000000000000}'] + $envelope, JSON_THROW_ON_ERROR));
+$check(IPS_GetInstance($mapID)['InstanceStatus'] === 202, 'Notifications from an unexpected data interface must fail closed.');
+
+foreach (['StaleAfter' => 0] as $property => $invalid) {
+    $old = IPS_GetProperty($mapID, $property);
+    IPS_SetProperty($mapID, $property, $invalid);
+    $firstBoundary->commands = [];
+    IPS_ApplyChanges($mapID);
+    $check(!$map->RefreshDevices() && !$state()['state']['success'], 'Invalid map settings must reject cache and refresh actions.');
+    $check($firstBoundary->commands === [], 'Invalid settings must be rejected before contacting the account.');
+    IPS_SetProperty($mapID, $property, $old);
+    IPS_ApplyChanges($mapID);
+}
+$secondBoundary->result = $envelope;
+$secondBoundary->result['devices'] = [];
+IPS_DisconnectInstance($mapID);
+IPS_ConnectInstance($mapID, $secondAccount);
+IPS_ApplyChanges($mapID);
+$check($state()['state']['devices'] === [], 'Changing account connection must not retain another account coordinates.');
+$before = $state();
+$firstBoundary->broadcast();
+$check($state() === $before, 'Notifications from another account must not affect the map.');
+try {
+    $map->RequestAction('UnrecognizedAction', '');
+    throw new RuntimeException('Map actions must be allowlisted.');
+} catch (InvalidArgumentException) {
+}
+
+$hook = new ReflectionMethod($map, 'ProcessHookData');
+$callHook = static function (string $method = 'POST', ?string $provided = null, ?string $path = null) use ($map, $mapID, $hook): array
+{
+    $_SERVER = ['REQUEST_METHOD' => $method, 'REQUEST_URI' => $path ?? '/hook/ICloudServicesWoIst' . $mapID];
+    if ($provided !== null) {
+        $_SERVER['HTTP_X_WOIST_TOKEN'] = $provided;
+    }
+    ob_start();
+    $hook->invoke($map);
+    return [http_response_code(), ob_get_clean()];
+};
+
+// Optional IPSView output uses the same account cache and managed WebContent lifecycle.
+IPS_DisconnectInstance($mapID);
+IPS_ConnectInstance($mapID, $firstAccount);
+$firstBoundary->result = $envelope;
+$firstBoundary->commands = [];
+$check(@IPS_GetObjectIDByIdent('IPSViewWoIst', $mapID) === false, 'IPSView output must remain opt-in.');
+IPS_SetProperty($mapID, 'EnableIPSView', true);
+IPS_ApplyChanges($mapID);
+$outputID = IPS_GetObjectIDByIdent('IPSViewWoIst', $mapID);
+$html = GetValueString($outputID);
+$check(str_contains($html, '/page') && !str_contains($html, 'leaflet'), 'IPSView must create a small loader for the real HTTP map page.');
+[$pageStatus, $pageHTML] = $callHook('GET', null, '/hook/ICloudServicesWoIst' . $mapID . '/page');
+$check(str_contains($pageHTML, '"tileHeaderVisible":false'), 'Standalone IPSView pages must not reserve a native Symcon title.');
+$check($pageStatus === 200 && str_contains($pageHTML, '"mode":"ipsview"') && str_contains($pageHTML, '--symc-background'), 'The HTTP page must embed the complete standalone map and theme.');
+$check(IPS_GetVariable($outputID)['VariableType'] === VARIABLETYPE_STRING, 'IPSView output must be a String WebContent variable.');
+$check(!str_contains($html, '{{') && !str_contains($html, 'synthetic-secret-session'), 'IPSView must resolve templates and exclude account secrets.');
+$check(array_unique($firstBoundary->commands) === ['GetDevices'], 'Enabling and rendering IPSView must only read the account cache.');
+$literalData = $envelope;
+$literalData['devices'][0]['name'] = '{{MODULE_SCRIPT}} {{UNKNOWN}}';
+$firstBoundary->result = $literalData;
+$check(str_contains($map->GetVisualizationTile(), '"name":"{{MODULE_SCRIPT}} {{UNKNOWN}}"'), 'Literal template-like device names must remain data in the native tile.');
+$check(!str_contains($map->GetIPSViewHTML(), '{{MODULE_SCRIPT}}'), 'The persistent IPSView loader must never embed device names.');
+$firstBoundary->result = $envelope;
+$map->RequestAction('IPSViewHTMLRegenerateVariables', '');
+$check(IPS_GetObjectIDByIdent('IPSViewWoIst', $mapID) === $outputID, 'HTML regeneration must preserve its output variable.');
+$html = GetValueString($outputID);
+$notification = $envelope;
+$notification['devices'][0]['name'] = 'Synthetic IPSView update';
+$firstBoundary->commands = [];
+$map->ReceiveData(json_encode(['DataID' => '{FCE7780F-9520-4E52-92F3-60034FFAED6D}'] + $notification, JSON_THROW_ON_ERROR));
+$check(GetValueString($outputID) === $html, 'Data notifications must never rewrite the persistent IPSView document.');
+$check($firstBoundary->commands === [], 'Publishing received IPSView data must not request the account again.');
+IPS_SetProperty($mapID, 'IPSViewUseTileDesign', false);
+IPS_SetProperty($mapID, 'IPSViewMarkerSize', 13);
+IPS_SetProperty($mapID, 'IPSViewMapTheme', 'dark');
+IPS_SetProperty($mapID, 'TileMapTheme', 'light');
+IPS_SetProperty($mapID, 'TileMapLightWaterColor', 0x123456);
+IPS_SetProperty($mapID, 'TileMarkerSize', 7);
+IPS_ApplyChanges($mapID);
+$check(str_contains($callHook('GET', null, '/hook/ICloudServicesWoIst' . $mapID . '/page')[1], '"markerSize":13'), 'The HTTP page must render its independent IPSView design.');
+$check(str_contains($map->GetVisualizationTile(), '"markerSize":7'), 'Native tile must retain its own design.');
+$check(json_decode($callHook('POST', (new ReflectionMethod($map, 'ReadAttributeString'))->invoke($map, 'IPSViewTransportToken'))[1], true)['options']['openFreeMap']['theme'] === 'dark', 'IPSView map design must be independent.');
+IPS_SetProperty($mapID, 'IPSViewUseTileDesign', true);
+IPS_SetProperty($mapID, 'TileMapShowLabels', false);
+IPS_ApplyChanges($mapID);
+$savedDesign = IPS_GetConfiguration($mapID);
+$savedHtml = GetValueString($outputID);
+$firstBoundary->commands = [];
+$map->fieldUpdates = [];
+$map->CopyTileDesignToIPSView();
+$draft = [];
+foreach ($map->fieldUpdates as $name => $parameters) {
+    if (array_key_exists('value', $parameters)) {
+        $draft[$name] = $parameters['value'];
+    }
+}
+$check(IPS_GetConfiguration($mapID) === $savedDesign && GetValueString($outputID) === $savedHtml && $firstBoundary->commands === [], 'Copying must update the form only and leave stored settings and output intact.');
+$check(($draft['IPSViewMapTheme'] ?? null) === 'light' && ($draft['IPSViewMapLightWaterColor'] ?? null) === 0x123456 && ($draft['IPSViewMapShowLabels'] ?? null) === false, 'The form draft must include Select, color and CheckBox values from the saved map profile.');
+$check(($draft['IPSViewMarkerSize'] ?? null) === 7 && ($draft['IPSViewUseTileDesign'] ?? null) === false && !isset($draft['IPSViewFontSize']), 'The draft must enable independent map editing and leave separate IPSView typography alone.');
+$check(($map->fieldUpdates['IPSViewMarkerSize']['enabled'] ?? null) === true && ($map->fieldUpdates['IPSViewMapTheme']['enabled'] ?? null) === true, 'Both map and OpenFreeMap fields must become editable.');
+foreach ($draft as $name => $value) {
+    IPS_SetProperty($mapID, $name, $value);
+}
+IPS_ApplyChanges($mapID);
+$check(IPS_GetProperty($mapID, 'IPSViewMapTheme') === 'light' && IPS_GetProperty($mapID, 'IPSViewUseTileDesign') === false, 'Applying the draft must save independent IPSView settings.');
+$lastHtml = GetValueString($outputID);
+IPS_SetProperty($mapID, 'EnableIPSView', false);
+IPS_ApplyChanges($mapID);
+$check(IPS_GetObjectIDByIdent('IPSViewWoIst', $mapID) === $outputID && GetValueString($outputID) === $lastHtml, 'Disabling optional output must retain its variable and content.');
+$map->ReceiveData(json_encode(['DataID' => '{FCE7780F-9520-4E52-92F3-60034FFAED6D}'] + $notification, JSON_THROW_ON_ERROR));
+$check(GetValueString($outputID) === $lastHtml, 'Disabled IPSView output must stop updating retained content.');
+$check($callHook('GET', null, '/hook/ICloudServicesWoIst' . $mapID . '/page')[0] === 404, 'Disabled output must reject the page even while the hook remains registered.');
+$check($callHook('POST', null, '/hook/ICloudServicesWoIst' . $mapID . '/refresh')[0] === 404, 'Disabled output must not expose the refresh operation.');
+
+// The standalone document receives data through a read-only authenticated cache endpoint.
+IPS_SetProperty($mapID, 'EnableIPSView', true);
+IPS_ApplyChanges($mapID);
+$readAttribute = new ReflectionMethod($map, 'ReadAttributeString');
+$token = $readAttribute->invoke($map, 'IPSViewTransportToken');
+$check(strlen($token) === 64 && ctype_xdigit($token), 'IPSView must have a cryptographically random per-instance token.');
+$check(!str_contains($map->GetState(), $token) && !str_contains($map->GetVisualizationTile(), $token), 'Native SDK state and Tile must never expose the standalone transport token.');
+$firstBoundary->commands = [];
+$stableHtml = GetValueString($outputID);
+$map->ReceiveData(json_encode(['DataID' => '{FCE7780F-9520-4E52-92F3-60034FFAED6D}'] + $notification, JSON_THROW_ON_ERROR));
+[$status, $body] = $callHook('POST', $token);
+$payload = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+$check($status === 200 && $payload['state']['devices'][0]['name'] === 'Synthetic IPSView update', 'Authenticated polling must deliver current notifications from the sanitized cache.');
+$check(!str_contains($body, $token) && $payload['options']['design']['markerSize'] === 7, 'State responses must preserve IPSView design and omit transport credentials.');
+$check(GetValueString($outputID) === $stableHtml && $firstBoundary->commands === [], 'Polling and notifications must neither rewrite HTML nor contact the account.');
+$refreshPath = '/hook/ICloudServicesWoIst' . $mapID . '/refresh';
+$check($callHook('POST', null, $refreshPath)[0] === 403, 'An explicit refresh requires the existing transport token.');
+$check($callHook('POST', 'invalid', $refreshPath)[0] === 403, 'An incorrect bearer must not trigger Apple refresh.');
+$check($callHook('GET', $token, $refreshPath)[0] === 405, 'GET must never trigger an account refresh.');
+$check($callHook('POST', $token, $refreshPath . '/extra')[0] === 404, 'Refresh accepts only its exact allowlisted path.');
+$check($firstBoundary->commands === [], 'Rejected refresh requests must not reach the account.');
+[$refreshStatus, $refreshBody] = $callHook('POST', $token, $refreshPath);
+$check($refreshStatus === 200 && $firstBoundary->commands === ['RefreshDevices'], 'One authenticated explicit POST must use the existing account refresh command exactly once.');
+$check(is_array(json_decode($refreshBody, true, 512, JSON_THROW_ON_ERROR)['state']['devices']), 'Refresh must return normalized map data.');
+$check(GetValueString($outputID) === $stableHtml, 'An IPSView refresh must not replace the embedded HTML page.');
+$beforeRefreshFailure = $firstBoundary->result;
+$firstBoundary->result = ['success' => false, 'state' => 'cooldown', 'updatedAt' => 0, 'devices' => [], 'error' => 'Synthetic cooldown'];
+[$cooldownStatus, $cooldownBody] = $callHook('POST', $token, $refreshPath);
+$cooldownState = json_decode($cooldownBody, true, 512, JSON_THROW_ON_ERROR)['state'];
+$check($cooldownStatus === 200 && !$cooldownState['success'] && $cooldownState['error'] === 'Synthetic cooldown', 'Account cooldown failures must reach IPSView through the existing sanitized state.');
+$firstBoundary->result = $beforeRefreshFailure;
+$firstBoundary->commands = [];
+$check($callHook('OPTIONS')[0] === 204 && $callHook('OPTIONS')[1] === '', 'CORS preflight must return no device state.');
+$check($callHook('POST')[0] === 403 && $callHook('POST', 'invalid')[0] === 403, 'Missing and incorrect transport tokens must be rejected.');
+[$rendererStatus, $rendererBytes] = $callHook('GET', null, '/hook/ICloudServicesWoIst' . $mapID . '/assets/maplibre-gl.js');
+$check($rendererStatus === 200 && strlen($rendererBytes) < 1048576 && hash('sha256', gzdecode($rendererBytes)) === hash_file('sha256', dirname(__DIR__) . '/libs/helper/maps/vendor/maplibre-gl.js'), 'The renderer must be compressed, immutable vendor code below the output limit.');
+$check($callHook('GET', $token)[0] === 405 && $callHook('POST', $token, '/hook/ICloudServicesWoIst' . $mapID . '/extra')[0] === 404, 'Only POST on the exact instance hook is allowed.');
+// A public shell has no private bootstrap and accepts neither credentials in URLs nor extra routes.
+$provider = IPS_GetProperty($mapID, 'IPSViewMapLightStyleURL');
+$attribution = IPS_GetProperty($mapID, 'IPSViewMapDarkStyleURL');
+IPS_SetProperty($mapID, 'IPSViewMapLightStyleURL', 'https://styles.example.invalid/map.json?key=synthetic-provider-secret');
+IPS_SetProperty($mapID, 'IPSViewMapDarkStyleURL', 'https://styles.example.invalid/map.json?key=synthetic-private-attribution');
+IPS_ApplyChanges($mapID);
+$firstBoundary->commands = [];
+[$pageStatus, $pageHTML] = $callHook('GET', null, '/hook/ICloudServicesWoIst' . $mapID . '/page');
+$check($pageStatus === 200 && str_contains($pageHTML, '"fragmentToken":true') && str_contains($pageHTML, '"openFreeMap":null'), 'Public HTTP shell must wait for fragment authentication before loading provider tiles.');
+foreach ([$token, 'Synthetic IPSView update', 'synthetic-provider-secret', 'synthetic-private-attribution', '51.25'] as $privateValue) {
+    $check(!str_contains($pageHTML, $privateValue), 'Public HTTP shell must never embed account data, provider credentials or bearer tokens.');
+}
+$check($firstBoundary->commands === [], 'Rendering the public HTTP page must not read the account cache.');
+$pagePath = '/hook/ICloudServicesWoIst' . $mapID . '/page';
+$check($callHook('POST', $token, $pagePath)[0] === 405, 'Public HTTP shell allows GET only.');
+foreach ([$pagePath . '?token=' . $token, $pagePath . '/' . $token, $pagePath . '/extra', $pagePath . '/', '/hook/ICloudServicesWoIst' . $mapID . '?token=' . $token] as $invalidPath) {
+    $check($callHook('GET', null, $invalidPath)[0] === 404, 'Query credentials and non-exact page paths must be rejected.');
+}
+IPS_SetProperty($mapID, 'IPSViewMapLightStyleURL', $provider);
+IPS_SetProperty($mapID, 'IPSViewMapDarkStyleURL', $attribution);
+IPS_ApplyChanges($mapID);
+$stableHtml = GetValueString($outputID);
+$map->Update();
+$map->RefreshDevices();
+$check(GetValueString($outputID) === $stableHtml, 'Cache updates and explicit Apple refresh must preserve the IPSView document.');
+IPS_DisconnectInstance($mapID);
+IPS_ConnectInstance($mapID, $secondAccount);
+$check($callHook('POST', $token)[0] === 404, 'Connection changes must immediately deny access to the prior account cache.');
+$check($callHook('POST', $token, $refreshPath)[0] === 404, 'A stale account connection must also reject explicit refresh.');
+IPS_ApplyChanges($mapID);
+$newToken = $readAttribute->invoke($map, 'IPSViewTransportToken');
+$check($newToken !== $token && $callHook('POST', $token)[0] === 403, 'Changing accounts must rotate standalone credentials.');
+$check(json_decode($callHook('POST', $newToken)[1], true, 512, JSON_THROW_ON_ERROR)['state']['devices'] === [], 'New account polling must not retain prior account positions.');
+foreach (['https://user@example.invalid', 'https://example.invalid/path', 'https://example.invalid?query=1', 'javascript:alert(1)', "https://example.invalid\n"] as $invalidOrigin) {
+    IPS_SetProperty($mapID, 'IPSViewServerURL', $invalidOrigin);
+    IPS_ApplyChanges($mapID);
+    $check($callHook('POST', $newToken)[0] === 404, 'Invalid explicit server origins must disable transport.');
+}
+IPS_SetProperty($mapID, 'IPSViewServerURL', 'https://symcon.example.invalid:3777');
+IPS_ApplyChanges($mapID);
+$check(str_contains(str_replace('\\/', '/', $map->GetIPSViewHTML()), 'https://symcon.example.invalid:3777/hook/ICloudServicesWoIst'), 'Configured origins must resolve the IPSView endpoint explicitly.');
+$otherMapID = IPS_CreateInstance('{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}');
+IPS_ConnectInstance($otherMapID, $secondAccount);
+IPS_SetProperty($otherMapID, 'EnableIPSView', true);
+IPS_ApplyChanges($otherMapID);
+$otherMap = IPS\InstanceManager::getInstanceInterface($otherMapID);
+$otherToken = $readAttribute->invoke($otherMap, 'IPSViewTransportToken');
+$currentToken = $readAttribute->invoke($map, 'IPSViewTransportToken');
+$check($otherToken !== $currentToken && $callHook('POST', $otherToken)[0] === 403, 'Separate map instances must never share transport authorization.');
+IPS_SetProperty($mapID, 'EnableIPSView', false);
+IPS_ApplyChanges($mapID);
+$check($readAttribute->invoke($map, 'IPSViewTransportToken') === '' && $readAttribute->invoke($map, 'IPSViewTransportState') === '' && $callHook('POST', $newToken)[0] === 404, 'Disabling IPSView must revoke tokens and clear its device cache.');
+$_SERVER = [];
+// Designer completeness and rendered style transport use the real module and canonical helpers.
+$styleMapID = IPS_CreateInstance('{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}');
+IPS_ConnectInstance($styleMapID, $firstAccount);
+$styleMap = IPS\InstanceManager::getInstanceInterface($styleMapID);
+$flatten = static function (array $items) use (&$flatten): array
+{
+    $fields = [];
+    foreach ($items as $item) {
+        if (isset($item['name'])) {
+            $fields[$item['name']] = $item;
+        }
+        foreach (['items', 'edit'] as $key) {
+            if (isset($item[$key])) {
+                $fields += $flatten($item[$key]);
+            }
+        }
+    }
+    return $fields;
+};
+$styleForm = json_decode($styleMap->GetConfigurationForm(), true, 512, JSON_THROW_ON_ERROR);
+$fields = $flatten($styleForm['elements']);
+foreach (['VisualizationThemeUseCustomColors', 'VisualizationThemeTextColor', 'VisualizationThemeBackgroundColor',
+    'IPSViewStyleSource', 'IPSViewStyleMediaID', 'IPSViewStyleProfileMediaID', 'IPSViewStyleViewBackgroundColor',
+    'IPSViewStyleTextColor', 'IPSViewStyleTextActiveColor', 'IPSViewStylePopupBackgroundColor',
+    'IPSViewStyleTransparentBackground', 'IPSViewStyleFontFamily', 'IPSViewStyleFontScale',
+    'IPSViewStyleNativeFamily_base'] as $field) {
+    $check(isset($fields[$field]), 'The shared designer field must be exposed: ' . $field);
+}
+$check(!isset($fields['IPSViewStyleNativeFamily_slider']), 'Unrelated native control families must not clutter a map designer.');
+IPS_SetProperty($styleMapID, 'VisualizationThemeUseCustomColors', true);
+IPS_SetProperty($styleMapID, 'VisualizationThemeBackgroundColor', 0x123456);
+IPS_SetProperty($styleMapID, 'IPSViewStyleViewBackgroundColor', 0x654321);
+IPS_SetProperty($styleMapID, 'IPSViewStyleBaseFontSize', 24);
+IPS_SetProperty($styleMapID, 'IPSViewStyleFontScale', 125);
+IPS_SetProperty($styleMapID, 'EnableIPSView', true);
+IPS_ApplyChanges($styleMapID);
+$tileStyle = json_decode($styleMap->GetState(), true)['options']['design'];
+$check(str_contains($tileStyle['themeCSS'], '#123456'), 'Native custom colors must reach published tile data.');
+$ipsState = json_decode($readAttribute->invoke($styleMap, 'IPSViewTransportState'), true);
+$ipsStyle = $ipsState['options']['design'];
+$check(str_contains($ipsStyle['themeCSS'], '101, 67, 33') || str_contains($ipsStyle['themeCSS'], '#654321'), 'IPSView must publish its independent view background even when map settings follow Tile.');
+$check((float) $ipsStyle['fontSize'] === 30.0 && $tileStyle['fontSize'] === 14, 'Only IPSView typography follows the central base size and font scale.');
+IPS_SetProperty($styleMapID, 'IPSViewStyleSource', 3);
+IPS_ApplyChanges($styleMapID);
+$darkStyle = json_decode($readAttribute->invoke($styleMap, 'IPSViewTransportState'), true)['options']['design'];
+$check($darkStyle['themeCSS'] !== $ipsStyle['themeCSS'], 'A central dark preset must change the published IPSView style.');
+$check(json_decode($styleMap->GetState(), true)['options']['design']['themeCSS'] === $tileStyle['themeCSS'], 'IPSView source changes must not affect the native tile theme.');
+$styleMediaID = IPS_CreateMedia(0);
+IPS_SetMediaContent($styleMediaID, base64_encode(json_encode(['ColorView' => ['A' => 255, 'R' => 17, 'G' => 34, 'B' => 51], 'DefaultFontSize' => 18])));
+IPS_SetProperty($styleMapID, 'IPSViewStyleSource', 1);
+IPS_SetProperty($styleMapID, 'IPSViewStyleMediaID', $styleMediaID);
+IPS_ApplyChanges($styleMapID);
+$mediaBefore = json_decode($readAttribute->invoke($styleMap, 'IPSViewTransportState'), true)['options']['design']['themeCSS'];
+$unchangedLoader = $styleMap->GetIPSViewHTML();
+IPS_SetMediaContent($styleMediaID, base64_encode(json_encode(['ColorView' => ['A' => 255, 'R' => 68, 'G' => 85, 'B' => 102], 'DefaultFontSize' => 20])));
+$styleMap->MessageSink(time(), $styleMediaID, MM_UPDATE, []);
+$mediaAfter = json_decode($readAttribute->invoke($styleMap, 'IPSViewTransportState'), true)['options']['design']['themeCSS'];
+$check($mediaAfter !== $mediaBefore, 'A selected media update must republish the resolved style.');
+$check($styleMap->GetIPSViewHTML() === $unchangedLoader, 'Style changes must retain the persistent IPSView loader.');
+$check(str_contains($styleMap->GetVisualizationTile(), 'id="woist-theme"'), 'Theme updates need one dedicated stylesheet in the existing map document.');
+
+echo "Map integration checks passed.\n";
+ob_end_flush();

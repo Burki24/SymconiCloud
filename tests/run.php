@@ -2,8 +2,22 @@
 
 declare(strict_types=1);
 
-foreach (['validate_structure.php', 'apple-client.php', 'account.php', 'modules.php'] as $test) {
+// sdk-contracts.php also runs the shared module integration scenarios.
+// contact-transfer.php also runs Contacts, account protection and account integration scenarios.
+// compact-address.php also runs Geoapify, precision, device address and map geocoding scenarios.
+// lost-mode-deactivation.php also runs the confirmed activation contracts.
+// apple-2fa.php and account-2fa.php also run the existing client and account security scenarios.
+// map-device-order.php also runs device-selection and multi-account scenarios.
+require __DIR__ . '/release-automation.php';
+require __DIR__ . '/readme-examples.php';
+foreach (['boolean-update.php', 'validate_structure.php', 'visualization-hook.php', 'photos-cache.php', 'photos-boundaries.php', 'apple-2fa.php', 'account-2fa.php', 'fast-location.php', 'debug-output.php', 'debug-data.php', 'contact-transfer.php', 'play-sound.php', 'device-widget.php', 'lost-mode-deactivation.php', 'sdk-contracts.php', 'device-details.php', 'debug-presence.php', 'presence-form.php', 'presence-address.php', 'presence-widget.php', 'presence-widget-compact.php', 'presence-widget-images.php', 'map.php', 'map-device-order.php', 'woist-color-guide.php', 'compact-address.php'] as $test) {
     $process = proc_open([PHP_BINARY, __DIR__ . '/' . $test], [STDIN, STDOUT, STDERR], $pipes, dirname(__DIR__));
+    if (!is_resource($process) || proc_close($process) !== 0) {
+        exit(1);
+    }
+}
+foreach (['photos-ui.js', 'map-ui.js', 'map-transport.js', 'map-loader.js', 'presence-widget-ui.js', 'device-widget-ui.js'] as $test) {
+    $process = proc_open(['node', __DIR__ . '/' . $test], [STDIN, STDOUT, STDERR], $pipes, dirname(__DIR__));
     if (!is_resource($process) || proc_close($process) !== 0) {
         exit(1);
     }

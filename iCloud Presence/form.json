@@ -1,0 +1,348 @@
+{
+    "elements": [
+        {
+            "type": "CheckBox",
+            "name": "Enabled",
+            "caption": "Enable presence evaluation"
+        },
+        {
+            "type": "List",
+            "name": "Devices",
+            "caption": "Devices",
+            "rowCount": 6,
+            "add": true,
+            "delete": true,
+            "changeOrder": true,
+            "columns": [
+                {
+                    "name": "deviceID",
+                    "caption": "Device",
+                    "width": "auto",
+                    "add": "",
+                    "edit": {
+                        "type": "Select",
+                        "options": [
+                            {
+                                "caption": "Select device",
+                                "value": ""
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "name",
+                    "caption": "Display name (optional)",
+                    "width": "220px",
+                    "add": "",
+                    "edit": {
+                        "type": "ValidationTextBox"
+                    }
+                },
+                {
+                    "name": "picture",
+                    "caption": "Picture (optional)",
+                    "width": "180px",
+                    "add": 0,
+                    "edit": {
+                        "type": "SelectMedia"
+                    }
+                },
+                {
+                    "name": "pictureSource",
+                    "caption": "Picture source",
+                    "width": "180px",
+                    "add": "media",
+                    "edit": {
+                        "type": "Select",
+                        "onChange": "ICPR_ValidatePictureUpload($id, $pictureSource, $pictureUpload);",
+                        "options": [
+                            {
+                                "caption": "Symcon medium",
+                                "value": "media"
+                            },
+                            {
+                                "caption": "File from computer",
+                                "value": "upload"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "pictureUpload",
+                    "caption": "Picture file from computer (optional)",
+                    "width": "0px",
+                    "visible": false,
+                    "save": true,
+                    "add": "",
+                    "edit": {
+                        "type": "SelectFile",
+                        "onChange": "ICPR_ValidatePictureUpload($id, $pictureSource, $pictureUpload);",
+                        "extensions": ".png,.jpg,.jpeg,.gif,.webp"
+                    }
+                }
+            ]
+        },
+        {
+            "type": "Label",
+            "caption": "All selected devices share these zones and the reference zone. Each device retains its own GPS evaluation and stay duration."
+        },
+        {
+            "type": "List",
+            "name": "Zones",
+            "caption": "Zones",
+            "onAdd": "ICPR_ValidateZoneSettings($id, json_encode($Zones), $Hysteresis);",
+            "onEdit": "ICPR_ValidateZoneSettings($id, json_encode($Zones), $Hysteresis);",
+            "onDelete": "ICPR_ValidateZoneSettings($id, json_encode($Zones), $Hysteresis);",
+            "form": [
+                {
+                    "type": "ValidationTextBox",
+                    "name": "id",
+                    "caption": "Zone ID"
+                },
+                {
+                    "type": "ValidationTextBox",
+                    "name": "name",
+                    "caption": "Name"
+                },
+                {
+                    "type": "NumberSpinner",
+                    "name": "latitude",
+                    "caption": "Latitude",
+                    "digits": 6,
+                    "minimum": -90,
+                    "maximum": 90
+                },
+                {
+                    "type": "NumberSpinner",
+                    "name": "longitude",
+                    "caption": "Longitude",
+                    "digits": 6,
+                    "minimum": -180,
+                    "maximum": 180
+                },
+                {
+                    "type": "NumberSpinner",
+                    "name": "radius",
+                    "caption": "Radius (m)",
+                    "minimum": 1,
+                    "maximum": 1000000
+                },
+                {
+                    "type": "CheckBox",
+                    "name": "reference",
+                    "caption": "Reference zone"
+                },
+                {
+                    "type": "CheckBox",
+                    "name": "customGPS",
+                    "caption": "Use custom GPS settings for this zone",
+                    "value": false
+                },
+                {
+                    "type": "ExpansionPanel",
+                    "name": "ZoneGPS",
+                    "caption": "Zone GPS settings",
+                    "visible": false,
+                    "items": [
+                        {
+                            "type": "NumberSpinner",
+                            "name": "hysteresis",
+                            "caption": "Zone boundary buffer (m)",
+                            "minimum": 0,
+                            "maximum": 10000
+                        },
+                        {
+                            "type": "NumberSpinner",
+                            "name": "maxAccuracy",
+                            "caption": "Maximum location uncertainty (m)",
+                            "minimum": 1,
+                            "maximum": 10000
+                        },
+                        {
+                            "type": "NumberSpinner",
+                            "name": "confirmSeconds",
+                            "caption": "Zone change confirmation (seconds)",
+                            "minimum": 0,
+                            "maximum": 3600
+                        }
+                    ]
+                },
+                {
+                    "type": "Label",
+                    "name": "ZoneDraftError",
+                    "caption": "",
+                    "visible": false
+                },
+                {
+                    "type": "Label",
+                    "caption": "Without custom GPS settings this zone inherits the global defaults. A switch must meet the departure and arrival rules; the longer confirmation time applies."
+                }
+            ],
+            "rowCount": 6,
+            "add": true,
+            "delete": true,
+            "changeOrder": true,
+            "columns": [
+                {
+                    "name": "id",
+                    "caption": "Zone ID",
+                    "width": "100px",
+                    "add": "",
+                    "edit": {
+                        "type": "ValidationTextBox"
+                    }
+                },
+                {
+                    "name": "name",
+                    "caption": "Name",
+                    "width": "auto",
+                    "add": "",
+                    "edit": {
+                        "type": "ValidationTextBox"
+                    }
+                },
+                {
+                    "name": "latitude",
+                    "caption": "Latitude",
+                    "width": "110px",
+                    "add": 0.0,
+                    "edit": {
+                        "type": "NumberSpinner",
+                        "digits": 6,
+                        "minimum": -90,
+                        "maximum": 90
+                    }
+                },
+                {
+                    "name": "longitude",
+                    "caption": "Longitude",
+                    "width": "110px",
+                    "add": 0.0,
+                    "edit": {
+                        "type": "NumberSpinner",
+                        "digits": 6,
+                        "minimum": -180,
+                        "maximum": 180
+                    }
+                },
+                {
+                    "name": "radius",
+                    "caption": "Radius (m)",
+                    "width": "100px",
+                    "add": 100,
+                    "edit": {
+                        "type": "NumberSpinner",
+                        "minimum": 1,
+                        "maximum": 1000000
+                    }
+                },
+                {
+                    "name": "reference",
+                    "caption": "Reference zone",
+                    "width": "120px",
+                    "add": false,
+                    "edit": {
+                        "type": "CheckBox"
+                    }
+                }
+            ]
+        },
+        {
+            "type": "Label",
+            "caption": "Mark exactly one reference zone. Presence refers to this zone. Use stable unique zone IDs. The reference zone takes priority; otherwise the first matching zone wins."
+        },
+        {
+            "type": "ExpansionPanel",
+            "caption": "GPS stabilization",
+            "items": [
+                {
+                    "type": "NumberSpinner",
+                    "name": "MaxLocationAge",
+                    "caption": "Maximum location age (seconds)",
+                    "minimum": 30,
+                    "maximum": 86400
+                },
+                {
+                    "type": "NumberSpinner",
+                    "name": "MaxAccuracy",
+                    "caption": "Maximum location uncertainty (m)",
+                    "minimum": 1,
+                    "maximum": 10000
+                },
+                {
+                    "type": "NumberSpinner",
+                    "name": "Hysteresis",
+                    "caption": "Zone boundary buffer (m)",
+                    "onChange": "ICPR_ValidateZoneSettings($id, json_encode($Zones), $Hysteresis);",
+                    "minimum": 0,
+                    "maximum": 10000
+                },
+                {
+                    "type": "NumberSpinner",
+                    "name": "ConfirmationTime",
+                    "caption": "Zone change confirmation (seconds)",
+                    "minimum": 0,
+                    "maximum": 3600
+                },
+                {
+                    "type": "NumberSpinner",
+                    "name": "MaxSpeed",
+                    "caption": "Maximum plausible speed (km/h; 0 disables)",
+                    "minimum": 0,
+                    "maximum": 2000
+                }
+            ]
+        },
+        {
+            "type": "Label",
+            "caption": "The zone radius must exceed the boundary buffer. A confirmation time greater than zero requires another newer Apple location after the interval; repeated evaluations of the same cached position never confirm a change. The account refresh interval therefore also affects the delay. Set confirmation to 0 for immediate reliable changes."
+        },
+        {
+            "type": "Label",
+            "name": "ZoneSettingsError",
+            "caption": "",
+            "visible": false
+        },
+        {
+            "type": "SelectInstance",
+            "name": "AddressSource",
+            "caption": "WoIst address cache for outside positions (optional)",
+            "validModules": [
+                "{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}"
+            ]
+        },
+        {
+            "type": "Label",
+            "caption": "Select a WoIst map on the same account with address resolution enabled. Matching cached addresses supplement outside-zone positions in tiles and IPSView. Without a selection, the zone display remains unchanged. No device instance or additional address request is required."
+        }
+    ],
+    "actions": [
+        {
+            "type": "Label",
+            "name": "Result",
+            "caption": ""
+        },
+        {
+            "type": "Button",
+            "caption": "Evaluate cached position",
+            "onClick": "IPS_RequestAction($id, 'Update', '');"
+        }
+    ],
+    "status": [
+        {
+            "code": 201,
+            "icon": "inactive",
+            "caption": "Check the device selection, zones, reference zone and GPS settings."
+        },
+        {
+            "code": 202,
+            "icon": "error",
+            "caption": "Account data unavailable."
+        },
+        {
+            "code": 203,
+            "icon": "inactive",
+            "caption": "Device not in current account list."
+        }
+    ]
+}

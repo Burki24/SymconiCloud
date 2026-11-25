@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="650" viewBox="0 0 1120 650">
+  <title>IPSView-Designer: Widget / WidgetCompact</title>
+  <defs>
+    <style>
+      text{font-family:Arial,sans-serif;fill:#263448;font-size:16px}
+      .small{font-size:13px;fill:#68758a}.role{font-size:15px}.heading{font-size:21px;font-weight:bold}
+      .number{fill:#fff;font-size:13px;font-weight:bold;text-anchor:middle;dominant-baseline:central}
+      .pin{fill:#263448;stroke:#fff;stroke-width:2}.wire{fill:none;stroke:#263448;stroke-width:1.5}
+    </style>
+  </defs>
+  <rect width="1120" height="650" rx="16" fill="#fff"/>
+  <rect x="18" y="18" width="726" height="610" rx="12" fill="#f2f5f9" stroke="#d3dae5"/>
+  <text x="42" y="55" class="heading">Widget</text>
+  <rect x="42" y="72" width="674" height="68" rx="10" fill="#dceee8"/>
+  <rect x="42" y="72" width="4" height="68" rx="2" fill="#2b9a75"/>
+  <text x="60" y="100" font-weight="bold">Anwesenheit</text>
+  <text x="60" y="121" class="small">1 / 1 / 1</text>
+  <text x="619" y="107" style="fill:#2b9a75">Zone A</text>
+  <rect x="42" y="158" width="210" height="145" rx="10" fill="#97a4b7" opacity=".3" transform="translate(0 5)"/>
+  <rect x="42" y="158" width="210" height="145" rx="10" fill="#fff" stroke="#c7d0dd"/>
+  <path d="M45 170V290" stroke="#2b9a75" stroke-width="3"/>
+  <circle cx="73" cy="190" r="19" fill="#e7edf6"/><text x="68" y="196">A</text>
+  <text x="105" y="184" font-weight="bold">Alex</text>
+  <text x="105" y="211" style="fill:#2b9a75">Zone A</text>
+  <text x="60" y="247" class="small">25 m</text><text x="60" y="274" class="small">0:15:00</text>
+  <rect x="268" y="158" width="210" height="145" rx="10" fill="#fff" stroke="#c7d0dd"/>
+  <path d="M271 170V290" stroke="#3c78c4" stroke-width="3"/>
+  <circle cx="299" cy="190" r="19" fill="#e7edf6"/><text x="294" y="196">B</text>
+  <text x="331" y="184" font-weight="bold">Blake</text><text x="331" y="211" style="fill:#3c78c4">Zone B</text>
+  <text x="286" y="247" class="small">125 m</text><text x="286" y="274" class="small">0:05:00</text>
+  <rect x="494" y="158" width="222" height="145" rx="10" fill="#e4eafb" stroke="#5573cd" stroke-width="3"/>
+  <path d="M497 170V290" stroke="#bb8526" stroke-width="3"/>
+  <circle cx="525" cy="190" r="19" fill="#e7edf6"/><text x="519" y="196">C</text>
+  <text x="557" y="184" font-weight="bold">Casey</text><text x="557" y="211" style="fill:#bb8526">?</text>
+  <text x="512" y="247" class="small">...</text>
+  <text x="42" y="370" class="heading">WidgetCompact</text>
+  <rect x="42" y="387" width="674" height="34" rx="8" fill="#dceee8"/>
+  <path d="M44 392V416" stroke="#2b9a75" stroke-width="3"/>
+  <text x="60" y="410" font-weight="bold">Anwesenheit</text><text x="619" y="410" style="fill:#2b9a75">Zone A</text>
+  <rect x="42" y="434" width="210" height="62" rx="8" fill="#fff" stroke="#c7d0dd"/>
+  <path d="M45 443V487" stroke="#2b9a75" stroke-width="3"/>
+  <circle cx="71" cy="465" r="16" fill="#e7edf6"/><text x="65" y="471">A</text>
+  <text x="98" y="459" font-weight="bold">Alex</text><text x="98" y="482" style="fill:#2b9a75">Zone A</text>
+  <rect x="268" y="434" width="210" height="62" rx="8" fill="#fff" stroke="#c7d0dd"/>
+  <path d="M271 443V487" stroke="#3c78c4" stroke-width="3"/>
+  <circle cx="297" cy="465" r="16" fill="#e7edf6"/><text x="291" y="471">B</text>
+  <text x="324" y="459" font-weight="bold">Blake</text><text x="324" y="482" style="fill:#3c78c4">Zone B</text>
+  <rect x="494" y="434" width="222" height="62" rx="8" fill="#e4eafb" stroke="#5573cd" stroke-width="3"/>
+  <path d="M497 443V487" stroke="#bb8526" stroke-width="3"/>
+  <circle cx="523" cy="465" r="16" fill="#e7edf6"/><text x="517" y="471">C</text>
+  <text x="550" y="459" font-weight="bold">Casey</text><text x="550" y="482" style="fill:#bb8526">?</text>
+  <path class="wire" d="M35 557H716"/>
+  <text x="44" y="591" class="small">View-Hintergrund + Positiver Status: 13 %</text>
+  <text x="44" y="612" class="small">Auswahlfläche aus Akzentfarbe (18 %)</text>
+  <g>
+    <circle class="pin" cx="30" cy="85" r="12"/><text class="number" x="30" y="85">1</text>
+    <circle class="pin" cx="219" cy="279" r="12"/><text class="number" x="219" y="279">2</text>
+    <circle class="pin" cx="172" cy="181" r="12"/><text class="number" x="172" y="181">3</text>
+    <circle class="pin" cx="136" cy="271" r="12"/><text class="number" x="136" y="271">4</text>
+    <circle class="pin" cx="172" cy="211" r="12"/><text class="number" x="172" y="211">5</text>
+    <circle class="pin" cx="398" cy="211" r="12"/><text class="number" x="398" y="211">6</text>
+    <circle class="pin" cx="593" cy="211" r="12"/><text class="number" x="593" y="211">7</text>
+    <circle class="pin" cx="238" cy="302" r="12"/><text class="number" x="238" y="302">8</text>
+    <circle class="pin" cx="702" cy="158" r="12"/><text class="number" x="702" y="158">9</text>
+    <circle class="pin" cx="674" cy="276" r="12"/><text class="number" x="674" y="276">10</text>
+    <circle class="pin" cx="63" cy="219" r="12"/><text class="number" x="63" y="219">11</text>
+    <circle class="pin" cx="104" cy="313" r="12"/><text class="number" x="104" y="313">12</text>
+  </g>
+  <text x="775" y="55" class="heading">IPSView-Designer</text>
+  <g class="role">
+    <text x="775" y="94">1   View-Hintergrund</text><text x="793" y="112" class="small">ViewBackground</text>
+    <text x="775" y="136">2   Bedienelement-Hintergrund</text><text x="793" y="154" class="small">ControlBackground</text>
+    <text x="775" y="178">3   Label-Schrift</text><text x="793" y="196" class="small">LabelText</text>
+    <text x="775" y="220">4   Inaktive Schrift</text><text x="793" y="238" class="small">TextInactive</text>
+    <text x="775" y="262">5   Positiver Status</text><text x="793" y="280" class="small">Positive</text>
+    <text x="775" y="304">6   Informationsfarbe</text><text x="793" y="322" class="small">Information</text>
+    <text x="775" y="346">7   Warnstatus</text><text x="793" y="364" class="small">Warning</text>
+    <text x="775" y="388">8   Rahmenfarbe</text><text x="793" y="406" class="small">Border</text>
+    <text x="775" y="430">9   Akzentfarbe</text><text x="793" y="448" class="small">Accent</text>
+    <text x="775" y="472">10 Auswahlfläche (abgeleitet)</text><text x="793" y="490" class="small">AccentSoft</text>
+    <text x="775" y="514">11 Aktiver Bedienelement-Hintergrund</text><text x="793" y="532" class="small">ControlActiveBackground</text>
+    <text x="775" y="556">12 Schattenfarbe</text><text x="793" y="574" class="small">ShadowColor</text>
+  </g>
+</svg>

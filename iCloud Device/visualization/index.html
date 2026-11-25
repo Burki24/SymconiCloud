@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="{{HTML_LANGUAGE}}" class="{{HTML_CLASSES}}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="{{VIEWPORT_CONTENT}}">
+    <title>{{DOCUMENT_TITLE}}</title>
+    <style>html { font-size: {{ROOT_FONT_SIZE}}; }</style>
+    <style>{{VISUALIZATION_THEME}}{{IPSVIEW_STYLE}}</style>
+    <style>{{RESPONSIVE_CSS}}{{MODULE_STYLE}}</style>
+</head>
+<body>
+    <main id="device-widget">
+        <div id="device-content" tabindex="0">
+            <header><strong id="device-name"></strong><span id="device-model"></span></header>
+            <p id="device-status"></p>
+            <section aria-labelledby="location-label">
+                <h2 id="location-label"></h2>
+                <p id="location-value"></p>
+                <p id="location-time"></p>
+                <p id="location-accuracy"></p>
+                <p id="location-warning" role="status" hidden></p>
+            </section>
+            <p id="device-error" role="status" hidden></p>
+            <button id="play-sound" type="button" disabled></button>
+            <p id="sound-result" role="status" hidden></p>
+        </div>
+    </main>
+    <script type="application/json" id="device-bootstrap">{{BOOTSTRAP_JSON}}</script>
+    <script>{{MODULE_SCRIPT}}</script>
+</body>
+</html>

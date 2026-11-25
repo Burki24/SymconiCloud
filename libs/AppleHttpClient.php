@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace SymconiCloud;
+namespace ICloudServices;
 
 require_once __DIR__ . '/AppleTransport.php';
 require_once __DIR__ . '/AppleException.php';
@@ -68,7 +68,7 @@ final class AppleHttpClient implements AppleTransport
             CURLOPT_SSL_VERIFYHOST => 2,
             CURLOPT_CONNECTTIMEOUT => 10,
             CURLOPT_TIMEOUT        => 30,
-            CURLOPT_USERAGENT      => 'Mozilla/5.0 SymconiCloud/0.1',
+            CURLOPT_USERAGENT      => 'Mozilla/5.0 ICloudServices/0.1',
             CURLOPT_HEADERFUNCTION => static function ($handle, string $line) use (&$responseHeaders): int
             {
                 if (str_starts_with($line, 'HTTP/')) {

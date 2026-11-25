@@ -1,0 +1,272 @@
+{
+    "elements": [
+        {
+            "type": "Label",
+            "caption": "Connect an iCloud account and enable read-only Contacts access there. Search and browsing use the cache; only Refresh contacts contacts Apple."
+        },
+        {
+            "type": "Label",
+            "caption": "No contact editing or message delivery. Missing numbers and email addresses are shown as Not available."
+        },
+        {
+            "type": "ExpansionPanel",
+            "caption": "Recipient transfer",
+            "items": [
+                {
+                    "type": "Label",
+                    "caption": "Choose a cached contact and explicit addresses. Notice users are merged by stable ID; notification levels and actions are numbered from 1. New Notice users are inactive."
+                },
+                {
+                    "type": "Select",
+                    "name": "TransferTargetID",
+                    "caption": "Recipient target",
+                    "options": [
+                        {
+                            "caption": "Select target",
+                            "value": 0
+                        }
+                    ],
+                    "onChange": "ICCT_InvalidateRecipientTransfer($id);"
+                },
+                {
+                    "type": "Select",
+                    "name": "TransferContactID",
+                    "caption": "Source contact",
+                    "options": [
+                        {
+                            "caption": "Select contact",
+                            "value": ""
+                        }
+                    ],
+                    "onChange": "ICCT_UpdateRecipientChoices($id, $TransferContactID);"
+                },
+                {
+                    "type": "Select",
+                    "name": "TransferPhone",
+                    "caption": "Phone number to transfer",
+                    "options": [
+                        {
+                            "caption": "Do not transfer this address",
+                            "value": ""
+                        }
+                    ],
+                    "onChange": "ICCT_InvalidateRecipientTransfer($id);"
+                },
+                {
+                    "type": "Select",
+                    "name": "TransferEmail",
+                    "caption": "Email address to transfer",
+                    "options": [
+                        {
+                            "caption": "Do not transfer this address",
+                            "value": ""
+                        }
+                    ],
+                    "onChange": "ICCT_InvalidateRecipientTransfer($id);"
+                },
+                {
+                    "type": "ValidationTextBox",
+                    "name": "TransferUserID",
+                    "caption": "Notice user ID (existing or new)",
+                    "validate": "^[0-9A-Za-z]*$",
+                    "onChange": "ICCT_InvalidateRecipientTransfer($id);"
+                },
+                {
+                    "type": "NumberSpinner",
+                    "name": "TransferLevel",
+                    "caption": "Notification level (from 1)",
+                    "minimum": 1,
+                    "maximum": 1000,
+                    "onChange": "ICCT_InvalidateRecipientTransfer($id);"
+                },
+                {
+                    "type": "NumberSpinner",
+                    "name": "TransferAction",
+                    "caption": "Notification action (from 1)",
+                    "minimum": 1,
+                    "maximum": 1000,
+                    "onChange": "ICCT_InvalidateRecipientTransfer($id);"
+                },
+                {
+                    "type": "Button",
+                    "caption": "Preview recipient transfer",
+                    "onClick": "ICCT_PreviewRecipientTransfer($id, $TransferTargetID, $TransferContactID, $TransferPhone, $TransferEmail, $TransferUserID, $TransferLevel, $TransferAction);"
+                }
+            ]
+        }
+    ],
+    "actions": [
+        {
+            "type": "Label",
+            "name": "ContactResult",
+            "caption": "No contact snapshot available."
+        },
+        {
+            "type": "ValidationTextBox",
+            "name": "ContactSearch",
+            "caption": "Search contacts",
+            "onChange": "ICCT_SearchContacts($id, $ContactSearch);"
+        },
+        {
+            "type": "List",
+            "name": "ContactList",
+            "caption": "Recipients",
+            "rowCount": 12,
+            "add": false,
+            "delete": false,
+            "columns": [
+                {
+                    "name": "Name",
+                    "caption": "Name",
+                    "width": "220px"
+                },
+                {
+                    "name": "Company",
+                    "caption": "Company",
+                    "width": "180px"
+                },
+                {
+                    "name": "Mobile1",
+                    "caption": "Mobile1",
+                    "width": "180px"
+                },
+                {
+                    "name": "Mobile2",
+                    "caption": "Mobile2",
+                    "width": "180px"
+                },
+                {
+                    "name": "Mobile3",
+                    "caption": "Mobile3",
+                    "width": "180px"
+                },
+                {
+                    "name": "Work",
+                    "caption": "Work",
+                    "width": "180px"
+                },
+                {
+                    "name": "Main",
+                    "caption": "Main",
+                    "width": "180px"
+                },
+                {
+                    "name": "Home",
+                    "caption": "Home",
+                    "width": "180px"
+                },
+                {
+                    "name": "IPhone",
+                    "caption": "iPhone",
+                    "width": "180px"
+                },
+                {
+                    "name": "Fax",
+                    "caption": "Fax",
+                    "width": "180px"
+                },
+                {
+                    "name": "Pager",
+                    "caption": "Pager",
+                    "width": "180px"
+                },
+                {
+                    "name": "OtherPhones",
+                    "caption": "Other phone numbers",
+                    "width": "180px"
+                },
+                {
+                    "name": "Emails",
+                    "caption": "Email addresses",
+                    "width": "240px"
+                },
+                {
+                    "name": "ContactID",
+                    "caption": "Contact ID",
+                    "width": "220px"
+                }
+            ],
+            "values": []
+        },
+        {
+            "type": "Button",
+            "caption": "First page",
+            "onClick": "ICCT_FirstContacts($id);"
+        },
+        {
+            "type": "Button",
+            "name": "ContactNextPage",
+            "caption": "Next page",
+            "onClick": "ICCT_NextContacts($id);"
+        },
+        {
+            "type": "Button",
+            "caption": "Refresh contacts",
+            "onClick": "ICCT_Refresh($id);"
+        },
+        {
+            "type": "ExpansionPanel",
+            "caption": "Recipient transfer preview",
+            "items": [
+                {
+                    "type": "Label",
+                    "name": "RecipientTransferResult",
+                    "caption": "Create a preview before applying recipient changes."
+                },
+                {
+                    "type": "List",
+                    "name": "RecipientTransferPreview",
+                    "rowCount": 5,
+                    "add": false,
+                    "delete": false,
+                    "columns": [
+                        {
+                            "name": "Field",
+                            "caption": "Field",
+                            "width": "auto"
+                        },
+                        {
+                            "name": "Before",
+                            "caption": "Before",
+                            "width": "auto"
+                        },
+                        {
+                            "name": "After",
+                            "caption": "After",
+                            "width": "auto"
+                        }
+                    ],
+                    "values": []
+                },
+                {
+                    "type": "Button",
+                    "caption": "Apply previewed recipient changes",
+                    "confirm": "Apply exactly the previewed recipient changes? No message will be sent.",
+                    "onClick": "ICCT_ApplyRecipientTransfer($id, true);"
+                }
+            ]
+        }
+    ],
+    "status": [
+        {
+            "code": 102,
+            "icon": "active",
+            "caption": "Contact directory is current."
+        },
+        {
+            "code": 201,
+            "icon": "error",
+            "caption": "No iCloud account connected."
+        },
+        {
+            "code": 202,
+            "icon": "error",
+            "caption": "No contact snapshot available."
+        },
+        {
+            "code": 203,
+            "icon": "inactive",
+            "caption": "Cached contacts are not current."
+        }
+    ]
+}

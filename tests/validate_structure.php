@@ -11,7 +11,7 @@ $assert = static function (bool $condition, string $message): void
 };
 $json = static fn (string $path): array => json_decode(file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
 $library = $json($root . '/library.json');
-$assert($library['name'] === 'SymconiCloud' && $library['compatibility']['version'] === '9.0', 'Library identity/platform');
+$assert($library['name'] === 'iCloud Services' && $library['compatibility']['version'] === '9.0', 'Library identity/platform');
 $assert(str_contains(file_get_contents($root . '/LICENSE'), 'PolyForm Noncommercial License 1.0.0'), 'PolyForm license');
 $required = ['AGENTS.md', 'README.md', 'CHANGELOG.md', 'PROJECT_CONTEXT.md', '.gitattributes', '.editorconfig', '.gitmodules', '.helper-sync.json',
     '.style/.php-cs-fixer.php', '.style/json-check.php', 'tests/stubs/autoload.php', '.github/workflows/tests.yml', '.github/workflows/style.yml'];
@@ -22,7 +22,7 @@ $modules = [];
 $ids = [$library['id']];
 foreach (glob($root . '/*/module.json') as $file) {
     $module = $json($file);
-    $modules[$module['type']] = $module;
+    $modules[$module['id']] = $module;
     $assert(preg_match('/\A[A-Z0-9]{4}\z/D', $module['prefix']) === 1, 'Module prefixes must have exactly four characters');
     $assert(!in_array($module['id'], $ids, true), 'Duplicate module ID');
     $assert(preg_match('/\A\{[A-F0-9]{8}(?:-[A-F0-9]{4}){3}-[A-F0-9]{12}\}\z/D', $module['id']) === 1, 'Invalid module GUID');
@@ -45,27 +45,63 @@ foreach (glob($root . '/*/module.json') as $file) {
             if (isset($item['items'])) {
                 $walk($item['items']);
             }
+            if (isset($item['form']) && is_array($item['form'])) {
+                $walk($item['form']);
+            }
         }
     };
     $walk($form['elements']);
     $walk($form['actions']);
 }
-$assert(count($modules) === 3 && isset($modules[2], $modules[3], $modules[4]), 'Account splitter, device and configurator required');
-$assert($modules[2]['parentRequirements'] === [], 'HTTPS account needs no artificial I/O parent');
-foreach ([3, 4] as $type) {
-    $assert(str_contains($modules[$type]['name'], 'WoIst'), 'Service module name must include WoIst');
-    $assert($modules[$type]['parentRequirements'] === $modules[2]['implemented'], 'Upstream data contract');
-    $assert($modules[$type]['implemented'] === $modules[2]['childRequirements'], 'Downstream data contract');
+$account = $modules['{10BF9A03-98A3-495A-B0FA-A4FA0B1002D5}'];
+$assert(count($modules) === 7 && $account['type'] === 2, 'Account splitter, device, configurator, map, presence, photos and contacts required');
+$assert($account['parentRequirements'] === [], 'HTTPS account needs no artificial I/O parent');
+foreach ($modules as $module) {
+    if ($module['id'] === $account['id']) {
+        continue;
+    }
+    $assert($module['parentRequirements'] === $account['implemented'], 'Upstream data contract');
+    $assert($module['implemented'] === $account['childRequirements'], 'Downstream data contract');
+}
+$map = $modules['{B67E8FEF-2144-4D93-88D0-FF6FEE4FC92F}'];
+$assert($map['name'] === 'iCloud WoIst' && $map['prefix'] === 'ICWI' && $map['type'] === 3, 'WoIst map identity');
+$presence = $modules['{00438FA2-CF5C-45B0-AFF0-A5A5CE66595E}'];
+$assert($presence['name'] === 'iCloud Presence' && $presence['prefix'] === 'ICPR' && $presence['type'] === 3, 'Presence evaluation identity');
+$photos = $modules['{7F1383D4-5B82-4F95-A52B-664E56FA5C3A}'];
+$assert($photos['name'] === 'iCloud Photos' && $photos['prefix'] === 'ICPH' && $photos['type'] === 3, 'Read-only Photos widget identity');
+$contacts = $modules['{D9D8872B-3323-41AC-BB8F-D2756D5694E1}'];
+$assert($contacts['name'] === 'iCloud Contacts' && $contacts['prefix'] === 'ICCT' && $contacts['type'] === 3, 'Read-only Contacts directory identity');
+$vendorRoot = $root . '/libs/vendor/leaflet/';
+foreach ($json($vendorRoot . 'manifest.json')['files'] as $name => $hash) {
+    $assert(hash_file('sha256', $vendorRoot . $name) === $hash, 'Leaflet vendor integrity: ' . $name);
 }
 $manifest = $json($root . '/libs/helper/manifest.json');
 $subscriptions = $json($root . '/.helper-sync.json')['helpers'];
+$checkHelperFile = static function (array $entry, string $name) use ($root, $assert): void
+{
+    $path = $entry['path'] ?? '';
+    $assert($path !== '' && is_file($root . '/' . $path), 'Missing helper package file: ' . $name . ' (' . $path . ')');
+    $assert(hash_file('sha256', $root . '/' . $path) === ($entry['sha256'] ?? ''), 'Changed helper package file: ' . $name . ' (' . $path . ')');
+};
+$checkHelper = static function (array $entry, string $name) use (&$checkHelper, $checkHelperFile): void
+{
+    $checkHelperFile($entry, $name);
+    foreach ($entry['assets'] ?? [] as $asset) {
+        $checkHelperFile($asset, $name . ' resource');
+    }
+    foreach ($entry['dependencies'] ?? [] as $dependency) {
+        $checkHelper($dependency, $name . ' -> ' . $dependency['name']);
+    }
+};
 foreach ($subscriptions as $name => $subscription) {
+    $assert(isset($manifest['helpers'][$name]), 'Missing subscribed helper in manifest: ' . $name . ' (' . $subscription['target'] . ')');
     $meta = $manifest['helpers'][$name] ?? [];
-    $assert(($meta['path'] ?? '') === $subscription['target'], 'Helper subscription path');
-    $assert(hash_file('sha256', $root . '/' . $subscription['target']) === ($meta['sha256'] ?? ''), 'Changed upstream helper: ' . $name);
+    $assert(($meta['path'] ?? '') === $subscription['target'], 'Helper subscription path mismatch: ' . $name);
+    $checkHelper($meta, $name);
 }
 $workflow = file_get_contents($root . '/.github/workflows/tests.yml');
 $assert(str_contains($workflow, 'Burki24/Symcon_ModuleCI/php-tests@v1.0.0') && str_contains($workflow, "php-version: '8.5'") && str_contains($workflow, 'bcmath'), 'Pinned shared CI and dependencies');
+$assert(str_contains($workflow, 'test-command: php tests/run.php') && str_contains(file_get_contents($root . '/tests/run.php'), "'sdk-contracts.php'"), 'CI must run the documented SDK contract tests');
 $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS));
 foreach ($iterator as $file) {
     $relative = str_replace('\\', '/', substr($file->getPathname(), strlen($root) + 1));

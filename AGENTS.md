@@ -1,14 +1,19 @@
-# SymconiCloud
+# iCloud Services
 
 Lies `../SymconDevelopment/AGENTS.md`, `../SymconDevelopment/ARCHITECTURE.md`, die zentralen `principles/` und die relevanten Standards. Sie gelten für dieses Projekt.
 
 - Ziel: IP-Symcon 9.0 / PHP 8.5; eigenständige Library mit `IPSModuleStrict`.
-- Library: SymconiCloud. Erster Dienst: WoIst. Weitere Dienste sind keine zugesagten Funktionen.
-- Öffentliche Präfixe sind vierstellig: ICAC (Konto), ICWC (WoIst-Konfigurator), ICWD (WoIst-Gerät).
+- Library: iCloud Services. Kontomodul, allgemeiner Gerätekonfigurator, iCloud-Gerät, WoIst-Karte, iCloud-Anwesenheit, iCloud-Fotos und iCloud-Kontakte sind getrennte Module. WoIst liest den verbundenen Kontocache und optional explizit zugewiesene weitere Konten über deren öffentliche Cache-APIs; die primäre Verbindung bleibt im Datenfluss. Kontofilter sind Anzeigeoptionen, keine Zugriffssperre; Details stehen in ADR 0012. Anwesenheit wertet mehrere ausgewählte Geräte eines Kontos mit gemeinsamen Zonen und Gesamtanwesenheit aus. GPS-Zustand und Aufenthaltsdauer bleiben je Gerät getrennt.
+- Öffentliche Präfixe sind vierstellig: ICAC (Konto), ICDC (Device-Konfigurator), ICID (iCloud-Gerät), ICWI (WoIst-Karte), ICPR (Anwesenheit), ICPH (Fotos), ICCT (Kontakte).
+- iCloud Kontakte ist ein lesendes Empfängerverzeichnis mit gemeinsamem Konto-Cache. Protokoll und Normalisierung bleiben librarylokal; Kontaktabfragen verwenden die bestehende Sitzung und alle Kontoschutzgrenzen. Kein Schreiben von Kontakten und kein Nachrichtenversand.
+- Die ausdrückliche Empfängerübernahme darf nach Vorschau und Bestätigung die ausgewählten Empfängerfelder installierter Mitteilungen-/Benachrichtigungsinstanzen konfigurieren. Sonstige Einstellungen bleiben erhalten; kein automatischer Abgleich und kein Auslösen von Versand oder Eskalation. Die Adapter bleiben librarylokal und verwenden vorhandene zentrale Formular-/Datenfluss-Helper.
 - Keine Implementierung aus iCloud3 übernehmen. Externe Protokollinformationen sind Quellen, keine Kopiervorlage.
-- Kontomodul besitzt Anmeldung, Sitzung, HTTPS und Gerätecache. Kinder erhalten ausschließlich normalisierte Gerätedaten, keine Zugangsdaten oder Tokens.
+- Kontomodul besitzt Anmeldung, Sitzung, HTTPS und Gerätecache. Kinder erhalten ausschließlich normalisierte Daten, keine Zugangsdaten oder Tokens.
+- Fotos: optionaler lesender CloudKit-Zugriff im Konto, privater geteilter Festplatten-Cache mit Anzahl- und Bytegrenzen; keine Apple-URLs oder Sitzungsdaten an Widgets. Foto-Code bleibt librarylokal.
 - Keine realen Apple-Anmeldungen ohne ausdrücklichen Praxisauftrag. Offline-Tests verwenden synthetische Daten.
 - `libs/helper` enthält unveränderte, manifestierte Quellen aus Symcon_ModuleHelper; Änderungen erfolgen dort separat.
+- Leaflet unter `libs/vendor` bleibt unverändert und wird per SHA-256 geprüft. Browserprüfungen verwenden synthetische Daten und lokal ersetzte Kartenkacheln.
 - Lizenz: PolyForm Noncommercial License 1.0.0.
-- Entwicklung auf `dev`. Keine Commits, Pushes, Releases oder Live-Installation ohne Auftrag.
+- Entwicklung auf `dev`. Commit und Push führt ausschließlich der Benutzer über GitHub Desktop aus. Nach Änderungen liefert der Agent Commit-Betreff und Erklärung auf Englisch. Releases und Live-Installation erfordern einen gesonderten Auftrag.
 - Prüfung: `php tests/run.php`, `php tests/validate_structure.php`, offizielle StylePHP-Prüfung und php-cs-fixer im Prüfmodus.
+- Jede neue/geänderte libraryeigene öffentliche Aktion, Timer-, Export- und Lebenszyklusmethode folgt `../SymconDevelopment/standards/DEBUG_OUTPUT.md`: zentrale `DebugFlowHelper`-Abläufe, sichere deutsche Fachmeldungen und Start/Ende auch bei Abbruch. Umfang und reine Getter-Ausnahmen stehen in `docs/DEBUG_CONTRACT.md`; `tests/debug-output.php` und `tests/debug-data.php` sichern die Einbindung ab. Keine privaten Payloads oder ungeprüften Exception-Texte an Debug übergeben.

@@ -1,0 +1,126 @@
+{
+    "schema": 1,
+    "sourceLanguage": "en",
+    "requiredLanguages": [
+        "en",
+        "de"
+    ],
+    "translations": {
+        "palette_note": {
+            "en": "Enable custom map colors to apply the light and dark palettes below.",
+            "de": "Eigene Kartenfarben aktivieren, um die folgenden hellen und dunklen Farbpaletten anzuwenden."
+        },
+        "panel": {
+            "en": "OpenFreeMap",
+            "de": "OpenFreeMap"
+        },
+        "theme": {
+            "en": "Map appearance",
+            "de": "Kartendarstellung"
+        },
+        "auto": {
+            "en": "Use designer theme",
+            "de": "Designer-Darstellung übernehmen"
+        },
+        "light": {
+            "en": "Light",
+            "de": "Hell"
+        },
+        "dark": {
+            "en": "Dark",
+            "de": "Dunkel"
+        },
+        "light_style": {
+            "en": "Light map style",
+            "de": "Heller Kartenstil"
+        },
+        "dark_style": {
+            "en": "Dark map style",
+            "de": "Dunkler Kartenstil"
+        },
+        "light_url": {
+            "en": "Custom light style URL (optional)",
+            "de": "Eigene helle Stil-URL (optional)"
+        },
+        "dark_url": {
+            "en": "Custom dark style URL (optional)",
+            "de": "Eigene dunkle Stil-URL (optional)"
+        },
+        "visibility": {
+            "en": "Map details",
+            "de": "Kartendetails"
+        },
+        "labels": {
+            "en": "Show labels",
+            "de": "Beschriftungen anzeigen"
+        },
+        "poi": {
+            "en": "Show points of interest",
+            "de": "Sehenswürdigkeiten und Orte anzeigen"
+        },
+        "buildings": {
+            "en": "Show buildings",
+            "de": "Gebäude anzeigen"
+        },
+        "boundaries": {
+            "en": "Show administrative boundaries",
+            "de": "Verwaltungsgrenzen anzeigen"
+        },
+        "language": {
+            "en": "Label language",
+            "de": "Sprache der Beschriftungen"
+        },
+        "local": {
+            "en": "Local names",
+            "de": "Lokale Namen"
+        },
+        "german": {
+            "en": "German",
+            "de": "Deutsch"
+        },
+        "english": {
+            "en": "English",
+            "de": "Englisch"
+        },
+        "custom_colors": {
+            "en": "Use custom map colors",
+            "de": "Eigene Kartenfarben verwenden"
+        },
+        "light_colors": {
+            "en": "Light map colors",
+            "de": "Helle Kartenfarben"
+        },
+        "dark_colors": {
+            "en": "Dark map colors",
+            "de": "Dunkle Kartenfarben"
+        },
+        "land": {
+            "en": "Land color",
+            "de": "Landfarbe"
+        },
+        "water": {
+            "en": "Water color",
+            "de": "Wasserfarbe"
+        },
+        "park": {
+            "en": "Green areas color",
+            "de": "Farbe der Grünflächen"
+        },
+        "road": {
+            "en": "Road color",
+            "de": "Straßenfarbe"
+        },
+        "building": {
+            "en": "Building color",
+            "de": "Gebäudefarbe"
+        },
+        "text": {
+            "en": "Label color",
+            "de": "Beschriftungsfarbe"
+        },
+        "description": {
+            "en": "Custom HTTPS MapLibre style JSON URLs override the selected styles. Attribution remains visible. Colors and visibility apply to compatible vector layers.",
+            "de": "Eigene HTTPS-URLs zu MapLibre-Stil-JSON ersetzen den gewählten Stil. Quellenangaben bleiben sichtbar. Farben und Sichtbarkeit gelten für passende Vektorebenen."
+        }
+    }
+}

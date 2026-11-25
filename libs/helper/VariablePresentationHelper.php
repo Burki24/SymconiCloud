@@ -14,7 +14,7 @@ use JsonException;
  * deliberately returns presentation arrays only and has no dependency on a
  * concrete module class, device model, transport or expose structure.
  *
- * @version 2.0.0
+ * @version 2.1.1
  */
 trait VariablePresentationHelper
 {
@@ -28,6 +28,8 @@ trait VariablePresentationHelper
 
     /**
      * Creates a value presentation for a boolean variable with custom captions.
+     * Missing icon/background/text-color overrides are supplied as inactive defaults
+     * for the Symcon 9.0 value-presentation form; false/true and captions are preserved.
      *
      * @param string $trueCaption  Caption displayed for true.
      * @param string $falseCaption Caption displayed for false.
@@ -40,7 +42,7 @@ trait VariablePresentationHelper
     {
         return [
             'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
-            'OPTIONS'      => $this->EncodePresentationData([
+            'OPTIONS'      => $this->EncodePresentationData($this->CompleteValueOptions([
                 [
                     'Value'   => false,
                     'Caption' => $falseCaption
@@ -49,7 +51,7 @@ trait VariablePresentationHelper
                     'Value'   => true,
                     'Caption' => $trueCaption
                 ]
-            ])
+            ]))
         ];
     }
 
@@ -554,10 +556,11 @@ trait VariablePresentationHelper
     }
 
     /**
-     * Creates a read-only value presentation with an option list.
+     * Creates a read-only value presentation for Boolean or string options.
      *
-     * Useful for boolean/string states or enumerations that must not expose an
-     * action in the visualization.
+     * Integer variables must use IntegerOptionsPresentation: Symcon ignores
+     * OPTIONS for numeric value presentations. Boolean/string rows receive missing
+     * inactive override fields; explicit caller values and legacy numeric rows are preserved.
      *
      * @param list<array<string,mixed>> $options Native option definitions.
      *
@@ -583,8 +586,55 @@ trait VariablePresentationHelper
             'COLOR'        => $color,
             'PREFIX'       => $prefix,
             'SUFFIX'       => $suffix,
-            'OPTIONS'      => $this->EncodePresentationData($options)
+            'OPTIONS'      => $this->EncodePresentationData($this->CompleteValueOptions($options))
         ];
+    }
+
+    /**
+     * Creates read-only integer states using exact intervals and constant captions.
+     *
+     * @param list<array<string,mixed>> $options Unique integer Value/string Caption pairs, with optional icon/color overrides.
+     *
+     * @return array<string,mixed> Native numeric value presentation, without OPTIONS.
+     *
+     * @throws InvalidArgumentException If options are empty, values are not unique integers or captions are not strings.
+     * @throws JsonException            If interval data cannot be encoded.
+     */
+    protected function IntegerOptionsPresentation(
+        array $options,
+        string $icon = '',
+        int $color = -1,
+        string $prefix = '',
+        string $suffix = ''
+    ): array {
+        if ($options === []) {
+            throw new InvalidArgumentException('Integer state options must not be empty.');
+        }
+        $intervals = [];
+        $seen = [];
+        foreach ($options as $option) {
+            $value = $option['Value'] ?? null;
+            if (!is_int($value) || isset($seen[$value]) || !is_string($option['Caption'] ?? null)) {
+                throw new InvalidArgumentException('Integer states require unique integer values and string captions.');
+            }
+            $seen[$value] = true;
+            $intervals[] = [
+                'IntervalMinValue' => $value,
+                'IntervalMaxValue' => $value,
+                'ConstantActive'   => true,
+                'ConstantValue'    => $option['Caption'],
+                'ConversionFactor' => 1,
+                'PrefixActive'     => false,
+                'SuffixActive'     => false,
+                'DigitsActive'     => false,
+                'IconActive'       => $option['IconActive'] ?? false,
+                'IconValue'        => $option['IconValue'] ?? '',
+                'ColorActive'      => $option['ColorActive'] ?? false,
+                'ColorValue'       => $option['ColorValue'] ?? -1
+            ];
+        }
+        $values = array_keys($seen);
+        return $this->ValuePresentation(prefix: $prefix, suffix: $suffix, min: min($values), max: max($values), icon: $icon, color: $color, intervals: $intervals);
     }
 
     /**
@@ -788,5 +838,30 @@ trait VariablePresentationHelper
     private function EncodePresentationData(array $data): string
     {
         return json_encode($data, self::VARIABLE_PRESENTATION_JSON_FLAGS);
+    }
+
+    /**
+     * Completes Boolean/string value options without altering supplied values or other schemas.
+     *
+     * @param array<array-key,mixed> $options Native value-option rows.
+     * @return array<array-key,mixed> Rows with only missing override keys added.
+     */
+    private function CompleteValueOptions(array $options): array
+    {
+        $completed = [];
+        foreach ($options as $key => $option) {
+            if (is_array($option) && (is_bool($option['Value'] ?? null) || is_string($option['Value'] ?? null))) {
+                $option = $option + [
+                    'IconActive'         => false,
+                    'IconValue'          => '',
+                    'ColorActive'        => false,
+                    'ColorValue'         => -1,
+                    'ContentColorActive' => false,
+                    'ContentColorValue'  => -1
+                ];
+            }
+            $completed[$key] = $option;
+        }
+        return $completed;
     }
 }

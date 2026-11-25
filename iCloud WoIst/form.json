@@ -1,0 +1,197 @@
+{
+    "elements": [
+        {
+            "type": "NumberSpinner",
+            "name": "StaleAfter",
+            "caption": "Mark positions as old after seconds",
+            "minimum": 60,
+            "maximum": 86400
+        },
+        {
+            "type": "Label",
+            "caption": "Map tiles are loaded by your browser. Device names and account credentials are not sent to the tile provider."
+        },
+        {
+            "type": "Label",
+            "caption": "Add this instance to the tile visualization. Choose the devices below; separate device instances are not required."
+        },
+        {
+            "type": "ExpansionPanel",
+            "name": "AdditionalAccountsPanel",
+            "caption": "Additional iCloud accounts",
+            "items": [
+                {
+                    "type": "Label",
+                    "caption": "The connected account remains included. Add up to 20 existing iCloud accounts. Only their caches are read every five seconds; no additional login is started."
+                },
+                {
+                    "type": "List",
+                    "name": "AdditionalAccounts",
+                    "caption": "Additional accounts",
+                    "rowCount": 4,
+                    "add": true,
+                    "delete": true,
+                    "columns": [
+                        {
+                            "name": "AccountID",
+                            "caption": "iCloud account",
+                            "width": "auto",
+                            "add": 0,
+                            "edit": {
+                                "type": "SelectInstance",
+                                "validModules": [
+                                    "{10BF9A03-98A3-495A-B0FA-A4FA0B1002D5}"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "ExpansionPanel",
+            "name": "DeviceSelectionPanel",
+            "caption": "Device selection",
+            "items": [
+                {
+                    "type": "CheckBox",
+                    "name": "ShowAllDevices",
+                    "caption": "Show all devices"
+                },
+                {
+                    "type": "Label",
+                    "caption": "When all devices is disabled, only the selected devices appear in the map and device list in tiles and IPSView. An empty selection shows no devices. New devices are not added automatically."
+                },
+                {
+                    "type": "Label",
+                    "caption": "Choices come from the assigned account caches. After adding accounts, apply the configuration and reopen this form to update the choices. Unavailable saved devices remain selected."
+                },
+                {
+                    "type": "List",
+                    "name": "SelectedDevices",
+                    "caption": "Selected devices",
+                    "rowCount": 6,
+                    "add": true,
+                    "delete": true,
+                    "columns": [
+                        {
+                            "name": "DeviceKey",
+                            "caption": "Device and account",
+                            "width": "auto",
+                            "add": "",
+                            "edit": {
+                                "type": "Select",
+                                "options": [
+                                    {
+                                        "caption": "Select a cached device",
+                                        "value": ""
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "type": "Label",
+                    "name": "DeviceSelectionWarning",
+                    "caption": "The saved device selection is invalid. Correct the selected devices and apply the configuration.",
+                    "visible": false
+                }
+            ]
+        },
+        {
+            "type": "ExpansionPanel",
+            "name": "AddressResolution",
+            "caption": "Address resolution",
+            "items": [
+                {
+                    "type": "CheckBox",
+                    "name": "EnableAddressResolution",
+                    "caption": "Resolve device positions to addresses"
+                },
+                {
+                    "type": "Select",
+                    "name": "AddressProvider",
+                    "caption": "Address provider",
+                    "options": [
+                        {
+                            "caption": "Private Nominatim server",
+                            "value": "nominatim"
+                        },
+                        {
+                            "caption": "Geoapify (external service)",
+                            "value": "geoapify"
+                        }
+                    ]
+                },
+                {
+                    "type": "ValidationTextBox",
+                    "name": "NominatimServer",
+                    "caption": "Private Nominatim server base URL"
+                },
+                {
+                    "type": "PasswordTextBox",
+                    "name": "GeoapifyAPIKey",
+                    "caption": "Geoapify API key"
+                },
+                {
+                    "type": "NumberSpinner",
+                    "name": "GeoapifyDailyLimit",
+                    "caption": "Geoapify daily request limit per instance (UTC; 0 = no new requests)",
+                    "minimum": 0,
+                    "maximum": 1000000
+                },
+                {
+                    "type": "Label",
+                    "name": "GeoapifyUsage",
+                    "caption": "",
+                    "visible": false
+                },
+                {
+                    "type": "ValidationTextBox",
+                    "name": "AddressLanguage",
+                    "caption": "Address language (e.g. de or en)"
+                },
+                {
+                    "type": "Label",
+                    "caption": "Only the selected provider is used. Geoapify sends coordinates to an external service and requires your own API key. Daily limits apply per instance, including failed requests; shared keys require coordinated budgets. Nominatim uses your private server."
+                },
+                {
+                    "type": "Label",
+                    "name": "GeocodingConfigurationWarning",
+                    "visible": false,
+                    "caption": "Address resolution is unavailable. Check the selected provider, its credentials or server URL, language and daily limit. The map remains available."
+                }
+            ]
+        }
+    ],
+    "actions": [
+        {
+            "type": "Button",
+            "caption": "Read account cache",
+            "onClick": "ICWI_Update($id);"
+        },
+        {
+            "type": "Button",
+            "caption": "Refresh devices from Apple",
+            "onClick": "ICWI_RefreshDevices($id);"
+        }
+    ],
+    "status": [
+        {
+            "code": 201,
+            "icon": "inactive",
+            "caption": "No iCloud account connected."
+        },
+        {
+            "code": 202,
+            "icon": "error",
+            "caption": "Account data unavailable."
+        },
+        {
+            "code": 203,
+            "icon": "error",
+            "caption": "Invalid map configuration."
+        }
+    ]
+}
