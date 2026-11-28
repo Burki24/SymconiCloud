@@ -97,7 +97,8 @@
                 {
                     "type": "ValidationTextBox",
                     "name": "id",
-                    "caption": "Zone ID"
+                    "caption": "Zone ID",
+                    "validate": "^[A-Za-z][A-Za-z0-9_-]{0,47}$"
                 },
                 {
                     "type": "ValidationTextBox",
@@ -172,6 +173,10 @@
                     "name": "ZoneDraftError",
                     "caption": "",
                     "visible": false
+                },
+                {
+                    "type": "Label",
+                    "caption": "Start the zone ID with a letter (A-Z or a-z). Use up to 48 letters, digits, underscores or hyphens. An example is home_office."
                 },
                 {
                     "type": "Label",

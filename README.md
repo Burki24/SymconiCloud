@@ -57,11 +57,13 @@ die Ausrichtung von JPEG-Bildern. Der Fototransport benötigt OpenSSL mit
 AES-256-GCM. Diese optionalen Funktionen und ihre Grenzen sind in den jeweiligen
 Modulanleitungen beschrieben.
 
-Die Anbindung verwendet Apples Web-Endpunkte. Apple stellt dafür keine zugesicherte öffentliche WoIst-Entwicklerschnittstelle bereit; Änderungen bei Apple können erneute Anmeldung oder Anpassungen erfordern. Die Library befindet sich in der Testphase.
+Die Anbindung verwendet Apples Web-Endpunkte. Apple stellt dafür keine zugesicherte öffentliche WoIst-Entwicklerschnittstelle bereit; Änderungen bei Apple können erneute Anmeldung oder Anpassungen erfordern.
 
 ## Installation und Einrichtung
 
-1. `https://github.com/Burki24/iCloudServices` in der Modulverwaltung als Bibliothek hinzufügen. Die erste Entwicklung liegt auf `dev`.
+**iCloud Services 0.54** ist die erste Stable-Version im Symcon Module Store.
+
+1. Im Symcon Module Store nach **iCloud Services** suchen und installieren.
 2. **[iCloud Konto](iCloud%20Account/README.md)** anlegen, aktivieren, Zugangsdaten speichern und **Anmelden** wählen.
 3. Den Code vom vertrauenswürdigen Apple-Gerät unter **Zwei-Faktor-Authentifizierung** eingeben und bestätigen. Nach erfolgreicher Anmeldung wird die Geräteliste abgerufen.
 4. Bei Bedarf den **[iCloud Geräte Konfigurator](iCloud%20Device%20Configurator/README.md)** anlegen und mit diesem Konto verbinden.
@@ -75,6 +77,11 @@ Die Anbindung verwendet Apples Web-Endpunkte. Apple stellt dafür keine zugesich
    gewünschte Foto- beziehungsweise Kontaktinstanz mit diesem Konto verbinden.
 
 Ein Konto kann mehrere Geräte bedienen; mehrere Apple-Konten verwenden getrennte Kontoinstanzen. Das Konto speichert Sitzung und Gerätecache über Symcon-Neustarts hinweg. Passwörter und Sitzungstokens gehören zu den vertraulichen Instanzdaten; Symcon-Konfiguration und Backups entsprechend schützen.
+
+Wer bereits **Beta 0.49** installiert hat, kann im bestehenden Store-Eintrag
+über **Betaeinstellungen → Kanal wechseln** auf Stable umstellen.
+Installationen über Module Control können über die bestehende GitHub-Einbindung
+aktualisiert werden.
 
 Beim Update auf iCloud Services behalten bestehende Instanzen ihre
 Konfiguration. Die Library erzeugt die IPSView-Einbindungen für Fotos und
@@ -110,8 +117,8 @@ Die Versionsfelder werden nicht von Hand gepflegt. **Vor weiteren lokalen
 Der Ablauf und die Einrichtung sind in
 [Automatische Versionierung](docs/automatic-versioning.md) beschrieben.
 
-Die Dokumentationsschaltflächen aller sieben Module führen während der
-Beta-Vorbereitung auf die aktuellen Anleitungen im Entwicklungszweig `dev`.
+Die Dokumentationsschaltflächen aller sieben Module führen zu den aktuellen
+Anleitungen im Entwicklungszweig `dev`.
 
 [Änderungen](CHANGELOG.md)
 

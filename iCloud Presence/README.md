@@ -22,7 +22,7 @@ Eine Geräteinstanz oder WoIst-Karte ist nicht erforderlich.
 
    | Spalte | Bedeutung |
    | --- | --- |
-   | Zonen-ID | Eindeutige stabile ID, etwa `home` oder `work`; beginnt mit einem Buchstaben, danach Buchstaben, Ziffern, `_` oder `-`; maximal 48 Zeichen |
+   | Zonen-ID | Eindeutige stabile ID, etwa `home` oder `home_office`. Sie beginnt mit A–Z oder a–z und umfasst höchstens 48 Zeichen. Danach sind auch Ziffern, `_` und `-` erlaubt. Das Formular prüft die ID beim Bestätigen der Zone. |
    | Name | Angezeigter Name, maximal 80 Zeichen |
    | Breitengrad / Längengrad | Mittelpunkt in Dezimalgrad |
    | Radius | Kreisradius in Metern, 1 bis 1.000.000 |

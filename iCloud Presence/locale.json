@@ -9,6 +9,7 @@
             "Select device": "Gerät auswählen",
             "Zones": "Zonen",
             "Zone ID": "Zonen-ID",
+            "Start the zone ID with a letter (A-Z or a-z). Use up to 48 letters, digits, underscores or hyphens. An example is home_office.": "Die Zonen-ID beginnt mit einem Buchstaben (A–Z oder a–z). Insgesamt sind bis zu 48 Buchstaben, Ziffern, Unterstriche oder Bindestriche erlaubt. Eine gültige ID ist home_office.",
             "Name": "Name",
             "Latitude": "Breitengrad",
             "Longitude": "Längengrad",

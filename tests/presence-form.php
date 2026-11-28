@@ -62,6 +62,15 @@ $custom[1]['hysteresis'] = 2;
 ICPR_ValidateZoneSettings($probeID, json_encode($custom, JSON_THROW_ON_ERROR), 25);
 $check($probe->fieldUpdates['Hysteresis']['maximum'] === 10000, 'All custom zones must release the global buffer limit.');
 $row = json_decode(ICPR_GetZoneEditForm($probeID, 25, 50, 60, true, 10, 2), true, 512, JSON_THROW_ON_ERROR);
+$zoneID = $row[0];
+$check($zoneID['name'] === 'id' && $zoneID['type'] === 'ValidationTextBox' && isset($zoneID['validate']), 'The zone row dialog must validate the ID before accepting it.');
+$pattern = '~' . $zoneID['validate'] . '~D';
+foreach (['A', 'office_2-west', 'z' . str_repeat('0', 47)] as $id) {
+    $check(preg_match($pattern, $id) === 1, 'The form must accept valid zone IDs, including the maximum length.');
+}
+foreach (['', '2home', '_home', 'home office', 'home.office', 'home!', 'büro', "home\n", 'z' . str_repeat('0', 48)] as $id) {
+    $check(preg_match($pattern, $id) === 0, 'The form must reject invalid IDs, including separators outside the supported character set.');
+}
 $check($row[4]['minimum'] === 3 && $row[7]['visible'] === true, 'A custom row radius uses its own buffer.');
 $check($row[7]['items'][1]['value'] === 50 && $row[7]['items'][2]['value'] === 60, 'New custom values must start from the unsaved global defaults.');
 $row = json_decode(ICPR_GetZoneEditForm($probeID, 25, 50, 60, false, 10, 2), true, 512, JSON_THROW_ON_ERROR);
@@ -86,4 +95,4 @@ IPS_ApplyChanges($probeID);
 $check(IPS_GetInstance($probeID)['InstanceStatus'] === 201 && str_contains($value($probeID, 'Reason'), 'Synthetic home'), 'Returning to globals must reject the now-incompatible radius without changing settings.');
 $check(IPS_GetChildrenIDs($probeID) === $ids, 'Zone override validation must preserve every existing variable ID.');
 
-echo "Presence form radius/buffer constraints and read-only draft validation passed.\n";
+echo "Presence form zone IDs, radius/buffer constraints and read-only draft validation passed.\n";

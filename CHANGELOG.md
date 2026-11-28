@@ -2,6 +2,14 @@
 
 ## Fixes
 
+- **iCloud Anwesenheit:** Der Zonendialog prüft die Zonen-ID beim
+  Bestätigen. Eingaben mit Leerzeichen oder unzulässigen Sonderzeichen
+  müssen direkt im Dialog korrigiert werden.
+
+# 28.11.2026 - Version 0.54
+
+## Fixes
+
 - **iCloud Services:** Die Library und der Store-Eintrag tragen den neuen Namen.
   Bestehende Installationen behalten ihre Instanzen. Beim Update erzeugt die
   Library die IPSView-Ausgaben mit den neuen WebHook-Adressen.

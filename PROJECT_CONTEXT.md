@@ -1,5 +1,38 @@
 # Entwicklungsstand
 
+## Erste Stable-Veröffentlichung von iCloud Services 0.54
+
+Am 28.11.2026 wurde die Veröffentlichung im Stable-Kanal des Symcon Module
+Stores bestätigt. Der veröffentlichte Eintrag lautet **iCloud Services** mit
+der bestehenden Bundle-ID `de.burki24.symconicloud`. Die Store-Einreichung
+22645 verwendet den Commit `cad43c2e87ced0e9e38d2911fb8a1866d2942a8e` aus
+`Burki24/iCloudServices`, Version 0.54 und Build 33070660. Der
+Metadaten-Zeitstempel der Library ist `1795627800` (25.11.2026, 18:30 MEZ).
+GitHub Tests und Check Style sind für diesen Commit erfolgreich.
+
+Die Library und der Store-Eintrag tragen nach dem Review den neuen Namen.
+Vorschauen und Albumindizes werden unter `iCloudServices/photos/<Konto-ID>/`
+im allgemeinen Symcon-Datenverzeichnis verschlüsselt abgelegt. Bereits
+synchronisierte Bilder werden lokal übernommen. Der Abgleich mit Apple
+startet weiterhin auf ausdrückliche Anforderung. Die Vorabstimmung zur
+bestätigten Empfängerübernahme und zur Mehrkonten-Karte steht in den
+Versionsinformationen im Store.
+
+Der Benutzer hat das Update einer bestehenden Installation auf 0.54 über
+Module Control auf seinem Produktivsystem ohne manuelle Anpassungen
+bestätigt. Für den Kanalwechsel von der veröffentlichten Beta 0.49 auf
+Stable liegt bisher kein Praxisnachweis vor.
+
+## Prüfung der Zonen-ID im Anwesenheitsformular
+
+Der Zonendialog für neue und bestehende Zonen übernimmt das bereits in
+der Anwesenheitslogik geltende Format über die native Eingabeprüfung.
+Der Dialog erläutert die erlaubten Zeichen und die Höchstlänge. Bestehende
+IDs werden unverändert geladen und lassen sich im Dialog korrigieren.
+Der Regressionstest prüft gültige IDs bis zur Maximallänge sowie unzulässige
+Zeichen im erzeugten Zeilenformular. Offline-Suite, Struktur- und Stilprüfung
+sind erfolgreich.
+
 ## Automatische Boolean-Aktualisierung nach Modulupdate (2026-10-31)
 
 Die bisherigen Hinweise auf ein manuelles Übernehmen nach dem Update waren
